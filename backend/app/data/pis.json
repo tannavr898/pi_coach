@@ -1,40 +1,2651 @@
 {
-  "_note": "PLACEHOLDER DATA. The performance-indicator text below is NOT official DECA wording. Replace each entry's `text` with the verbatim official PI once provided. Area ids/names are real; PI ids use the `-P##` suffix to mark them as placeholders.",
+  "_note": "Official DECA Business Administration Core (Tier 1) performance indicators, 2025-2026 (MBAResearch/DECA Inc.). `id`, `text`, `level` (PQ/CS/SP) and `performance_element` are verbatim from the official list. `definition` is a plain-language gloss (study aid, not official wording): sourced from a community study list where it matched, otherwise authored to fit the instructional area and performance element.",
   "instructional_areas": [
     {
-      "id": "MK",
-      "name": "Marketing",
+      "id": "BL",
+      "name": "Business Law",
       "performance_indicators": [
-        { "id": "MK-P01", "text": "[PLACEHOLDER] Explain marketing and its importance in a global economy." },
-        { "id": "MK-P02", "text": "[PLACEHOLDER] Describe marketing functions and related activities." },
-        { "id": "MK-P03", "text": "[PLACEHOLDER] Explain factors that influence customer/client/business buying behavior." }
+        {
+          "id": "BL:163",
+          "text": "Comply with the spirit and intent of laws and regulations",
+          "level": "CS",
+          "performance_element": "Acquire foundational knowledge of business laws and regulations to understand their nature and scope",
+          "definition": "Law is a body of rules prescribed by a controlling authority (government) with binding legal force. The law consists of rules that regulate the conduct of individuals, businesses, and other organizations within societies. The law is intended to protect people against unwanted interference from others."
+        },
+        {
+          "id": "BL:067",
+          "text": "Discuss the nature of law and sources of law in the United States",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of business laws and regulations to understand their nature and scope",
+          "definition": "Law is the body of enforceable rules a government sets to regulate conduct. In the U.S., law flows from several sources: constitutions, statutes passed by legislatures, regulations from administrative agencies, common law built from court decisions, and executive orders."
+        },
+        {
+          "id": "BL:068",
+          "text": "Describe the United States' judicial system",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of business laws and regulations to understand their nature and scope",
+          "definition": "The judicial branch of the federal government interprets, applies, and administers the laws of the US. It is a network of courts at all levels of government. Federal courts include district courts, federal courts of appeals, and the U.S. Supreme Court."
+        },
+        {
+          "id": "BL:051",
+          "text": "Describe methods used to protect intellectual property",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of business laws and regulations to understand their nature and scope",
+          "definition": "Intellectual property can be protected through patents, trademarks, and copyrights. A patent: legal ownership of an item or idea Trademark. A word, name, symbol, sound or color that identifies a good or a service Copyrights: legal protection for anything that is authored by an individual or company, such as writings, music and artwork."
+        },
+        {
+          "id": "BL:001",
+          "text": "Describe legal issues affecting businesses",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of business laws and regulations to understand their nature and scope",
+          "definition": "Among the legal issues affecting businesses are the following. Consumer protection issues include product safety (for everything from toys to furniture), zoning laws to protect real estate value and quality of life, public health (i.e. at restaurants), and licensing for personal service providers (such as hairstylists and electricians)."
+        },
+        {
+          "id": "BL:069",
+          "text": "Identify the basic torts relating to business enterprises",
+          "level": "SP",
+          "performance_element": "Understand the civil foundations of the legal environment of business to demonstrate knowledge of contracts",
+          "definition": "Torts are civil (or public) wrongdoings against a person or organization that causes measurable harm (not necessarily criminal, but can be); usually satisfied by a lawsuit. (fraud, defamation, contractual interference, false advertising, etc.)."
+        },
+        {
+          "id": "BL:002",
+          "text": "Describe the nature of legally binding contracts",
+          "level": "SP",
+          "performance_element": "Understand the civil foundations of the legal environment of business to demonstrate knowledge of contracts",
+          "definition": "A contract that is legally binding is considered valid and enforceable in a court of law. A contract is a clear outline of an agreement between at least two parties."
+        },
+        {
+          "id": "BL:070",
+          "text": "Describe the nature of legal procedure",
+          "level": "SP",
+          "performance_element": "Explore the regulatory environment of United States' businesses to understand the diversity of regulations",
+          "definition": "The rules by which a court hears and determines what happens in civil lawsuit, criminal or administrative proceedings. Describe factors affecting the settlement of legal matters A settlement is a set of terms that the parties agree to fulfill within a certain time frame after conclusion of the trial."
+        },
+        {
+          "id": "BL:071",
+          "text": "Discuss the nature of debtor-creditor relationships",
+          "level": "SP",
+          "performance_element": "Explore the regulatory environment of United States' businesses to understand the diversity of regulations",
+          "definition": "Debtor-creditor relationships are created either voluntarily or involuntarily. Voluntarily: most of our debtor-creditor relationships arise from voluntary interactions. ... If the payments aren't made, the creditor can often force the sale of the house to satisfy the mortgage debt."
+        },
+        {
+          "id": "BL:072",
+          "text": "Explain the nature of agency relationships",
+          "level": "SP",
+          "performance_element": "Explore the regulatory environment of United States' businesses to understand the diversity of regulations",
+          "definition": "An agency relationship exists when one party (the agent) is authorized to act on behalf of another (the principal) in dealings with third parties. The principal is generally bound by, and liable for, the agent's authorized actions—common in employment, sales, and contracting."
+        },
+        {
+          "id": "BL:073",
+          "text": "Discuss the nature of environmental law",
+          "level": "SP",
+          "performance_element": "Explore the regulatory environment of United States' businesses to understand the diversity of regulations",
+          "definition": "Environmental law is the set of regulations governing how businesses affect air, water, land, and natural resources. Agencies such as the EPA enforce standards on pollution, emissions, and waste disposal; noncompliance brings fines and liability."
+        },
+        {
+          "id": "BL:074",
+          "text": "Discuss the role of administrative law",
+          "level": "SP",
+          "performance_element": "Explore the regulatory environment of United States' businesses to understand the diversity of regulations",
+          "definition": "Administrative Law integrates several areas of law, which include administrative rules, regulations and procedures for government agencies and bodies; the scope of agency authority, in particular individual privacy; and enforcement powers of agencies."
+        },
+        {
+          "id": "BL:003",
+          "text": "Explain types of business ownership",
+          "level": "CS",
+          "performance_element": "Apply knowledge of business ownership to establish and continue business operations",
+          "definition": "There are three types of business ownership: sole proprietorship, partnership, and corporation. A sole proprietor owns and operates a business by oneself. A partnership is owned and operated by two or more people and is jointly responsible for the business' outcomes. A corporation is operated by several people and owned by stockholders."
+        },
+        {
+          "id": "BL:145",
+          "text": "Explain the nature of import/export law",
+          "level": "SP",
+          "performance_element": "Acquire knowledge of commerce laws and regulations to continue business operations",
+          "definition": "A tax collected on imports and some exports by the customs authorities of a country. This tax is used to raise state revenue. It is based on the value of goods called ad valorem duty or the weight, dimensions, or other criteria of the item such as its size."
+        },
+        {
+          "id": "BL:126",
+          "text": "Describe the nature of customs regulations",
+          "level": "SP",
+          "performance_element": "Acquire knowledge of commerce laws and regulations to continue business operations",
+          "definition": "A tariff or tax imposed on goods when transported across international borders. The purpose of Customs Duty is to protect each country's economy, residents, jobs, environment, etc., by controlling the flow of goods, especially restrictive and prohibited goods, into and out of the country."
+        }
+      ]
+    },
+    {
+      "id": "CO",
+      "name": "Communication Skills",
+      "performance_indicators": [
+        {
+          "id": "CO:054",
+          "text": "Identify sources that provide relevant, valid written material",
+          "level": "PQ",
+          "performance_element": "Read to acquire meaning from written material and to apply the information to a task",
+          "definition": "When evaluating material, determine if the content is fact, opinion, or marketing information. Other factors can include validity of research, relevance, timeliness, authority of the author, and evidence offered to support a claim. If you are validating written material, ensure that you have cross-checked information that is provided by that source."
+        },
+        {
+          "id": "CO:055",
+          "text": "Extract relevant information from written materials",
+          "level": "PQ",
+          "performance_element": "Read to acquire meaning from written material and to apply the information to a task",
+          "definition": "Extracting information while reading is a process that consists of three main activities: pre-reading,reading and review. Before you begin to read, determine what you need to know as a result of your reading. Scan the titles, headings, sub-headings, topic sentences and graphics to more efficiently gather and prioritize the information."
+        },
+        {
+          "id": "CO:056",
+          "text": "Apply written directions to achieve tasks",
+          "level": "PQ",
+          "performance_element": "Read to acquire meaning from written material and to apply the information to a task",
+          "definition": "Read all of the written instructions all the way through at least once. Understand the written instructions. If you have a question, reread the instructions or the part you do not understand. Comprehend what the instructions tell you to do. Do not start to follow the instructions until you are completely clear with them."
+        },
+        {
+          "id": "CO:057",
+          "text": "Analyze company resources to ascertain policies and procedures",
+          "level": "CS",
+          "performance_element": "Read to acquire meaning from written material and to apply the information to a task",
+          "definition": "Locating and reading a company's own materials—handbooks, intranet, manuals, memos—to determine the official policies and procedures that govern how a task should be done before acting."
+        },
+        {
+          "id": "CO:082",
+          "text": "Explain communication techniques that support and encourage a speaker",
+          "level": "PQ",
+          "performance_element": "Apply active listening skills to demonstrate understanding of what is being said",
+          "definition": "Verbal and nonverbal cues that show you are engaged and invite the speaker to continue: nodding, eye contact, brief affirmations ('I see', 'go on'), paraphrasing, and not interrupting."
+        },
+        {
+          "id": "CO:119",
+          "text": "Follow oral directions",
+          "level": "PQ",
+          "performance_element": "Apply active listening skills to demonstrate understanding of what is being said",
+          "definition": "Listening carefully to spoken instructions, confirming understanding, and carrying out each step in the correct order, asking clarifying questions when needed."
+        },
+        {
+          "id": "CO:017",
+          "text": "Demonstrate active listening skills",
+          "level": "PQ",
+          "performance_element": "Apply active listening skills to demonstrate understanding of what is being said",
+          "definition": "There are five key techniques you can use to develop your active listening skills: Pay attention. Show that you're listening. Provide feedback. Defer judgment. Respond appropriately"
+        },
+        {
+          "id": "CO:147",
+          "text": "Explain the nature of effective verbal communications",
+          "level": "PQ",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Ongoing communication (before, during, and after customer interaction) Eliminate nonsense like slang or foul language or anything that makes you look less professional Always follow-up; never take anything for granted. \"How is that new purchase working out for you?\" \"Is there anything else I can do?\""
+        },
+        {
+          "id": "CO:058",
+          "text": "Ask relevant questions",
+          "level": "PQ",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Posing focused, on-topic questions that fill gaps in understanding, clarify expectations, or gather the specific information needed to complete a task or serve a customer."
+        },
+        {
+          "id": "CO:059",
+          "text": "Interpret others' nonverbal cues",
+          "level": "PQ",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Reading body language, facial expressions, tone, posture, and gestures to understand what a person feels or means beyond their words."
+        },
+        {
+          "id": "CO:060",
+          "text": "Provide legitimate responses to inquiries",
+          "level": "PQ",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Answering questions accurately, honestly, and completely; if you do not know, committing to find the correct answer rather than guessing."
+        },
+        {
+          "id": "CO:083",
+          "text": "Give verbal directions",
+          "level": "PQ",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Communicating clear, sequenced spoken instructions another person can follow, using plain language and checking for understanding."
+        },
+        {
+          "id": "CO:084",
+          "text": "Employ communication styles appropriate to target audience",
+          "level": "CS",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Communication channels used for business communication include websites, letters, email, phone conversations, videoconferences and face-to-face meetings. Effective communication relies on selecting an appropriate communication channel for your message."
+        },
+        {
+          "id": "CO:061",
+          "text": "Defend ideas objectively",
+          "level": "CS",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Supporting your position with facts, evidence, and reasoning rather than emotion, while staying open to other viewpoints and avoiding personal attacks."
+        },
+        {
+          "id": "CO:114",
+          "text": "Handle phone calls in a businesslike manner",
+          "level": "CS",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "A businesslike manner on the telephone includes a formal greeting including \"Good morning/afternoon\", name of business, and name of department or person answering the call. Calls should be answered promptly, take messages as needed, and use the hold button if needed."
+        },
+        {
+          "id": "CO:053",
+          "text": "Participate in group discussions",
+          "level": "CS",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Contributing relevant ideas, listening to others, building on their points, and helping the group reach its purpose while respecting differing opinions."
+        },
+        {
+          "id": "CO:201",
+          "text": "Facilitate (lead) group discussions",
+          "level": "SP",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Guiding a group conversation: setting the agenda, drawing out participation, keeping it on topic, managing time, and steering toward a decision or outcome."
+        },
+        {
+          "id": "CO:025",
+          "text": "Make oral presentations",
+          "level": "SP",
+          "performance_element": "Apply verbal skills to obtain and convey information",
+          "definition": "Delivering information to an audience in an organized, clear, and engaging spoken format, using appropriate visuals, pacing, and delivery."
+        },
+        {
+          "id": "CO:085",
+          "text": "Utilize note-taking strategies",
+          "level": "CS",
+          "performance_element": "Record information to maintain and present a report of business activity",
+          "definition": "Capturing key points from spoken or written sources efficiently—using abbreviations, outlines, or methods like Cornell notes—so the information can be recalled and used later."
+        },
+        {
+          "id": "CO:086",
+          "text": "Organize information",
+          "level": "CS",
+          "performance_element": "Record information to maintain and present a report of business activity",
+          "definition": "Arranging facts and data into a logical structure (by category, sequence, or importance) so it is easy to understand, retrieve, and act on."
+        },
+        {
+          "id": "CO:087",
+          "text": "Select and use appropriate graphic aids",
+          "level": "CS",
+          "performance_element": "Record information to maintain and present a report of business activity",
+          "definition": "The goal is to make the data stand out on the page, and to make the data support the main purpose of the document as clearly and strongly as possible. We want the reader to grasp the speaker's ideas and opinions from their words, and then turn to the graphics for support of those ideas and opinions."
+        },
+        {
+          "id": "CO:016",
+          "text": "Explain the nature of effective written communications",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Written communications is the most common form of business communication and therefore requires employees to write frequently and rapidly. \"The words we write are very real representations of our companies and ourselves\" Janis Fisher Chan."
+        },
+        {
+          "id": "CO:088",
+          "text": "Select and utilize appropriate formats for professional writing",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Choosing the right document type and layout—email, memo, letter, report—for the audience and purpose, and following its conventions."
+        },
+        {
+          "id": "CO:089",
+          "text": "Edit and revise written work consistent with professional standards",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Reviewing writing for clarity, accuracy, grammar, tone, and formatting, then improving it to meet professional expectations before it is sent."
+        },
+        {
+          "id": "CO:090",
+          "text": "Write professional emails",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Composing clear, concise, courteous business email with an informative subject line, appropriate greeting and tone, an organized body, and a clear call to action."
+        },
+        {
+          "id": "CO:133",
+          "text": "Write business letters",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Producing formal correspondence in standard business-letter format (heading, inside address, salutation, body, closing) for external, professional communication."
+        },
+        {
+          "id": "CO:039",
+          "text": "Write informational messages",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Conveying facts or updates clearly and neutrally—announcements, instructions, confirmations—so the reader understands the message without ambiguity."
+        },
+        {
+          "id": "CO:040",
+          "text": "Write inquiries",
+          "level": "CS",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Composing a clear written request for information, products, or services that states exactly what is needed and how to respond."
+        },
+        {
+          "id": "CO:031",
+          "text": "Write persuasive messages",
+          "level": "SP",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Crafting writing designed to convince the reader to think or act a certain way, using benefits, evidence, and a clear call to action while addressing the reader's needs."
+        },
+        {
+          "id": "CO:091",
+          "text": "Write executive summaries",
+          "level": "SP",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Condensing a longer report into a brief overview of its key points, findings, and recommendations so a busy decision-maker can grasp it quickly."
+        },
+        {
+          "id": "CO:094",
+          "text": "Prepare simple written reports",
+          "level": "SP",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Organizing findings or activity into a structured document with a clear purpose, supporting detail, and conclusions for a business audience."
+        },
+        {
+          "id": "CO:202",
+          "text": "Explain how digital communications (e.g., email, text messages, chats) exposes business to risk",
+          "level": "SP",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Leave humor out of emails to avoid misinterpretation. External tools risk exposing private, confidential, trademarked, financial, or other sensitive information to the public or competitors. Another negative is the use of the platforms for personal business."
+        },
+        {
+          "id": "CO:203",
+          "text": "Adapt written correspondence to targeted audiences",
+          "level": "SP",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Written correspondence should be written similarly to an oral presentation when directing it to a certain audience through methods such as humor and strong emotion. Writing for an audience is usually as simple as maintaining awareness of them while you write. For example, observe age, location, income level, etc."
+        },
+        {
+          "id": "CO:204",
+          "text": "Use data visualization techniques (e.g., infographics, heat-maps, dynamic model outputs)",
+          "level": "SP",
+          "performance_element": "Write internal and external business correspondence to convey and obtain information effectively",
+          "definition": "Presenting data graphically—charts, infographics, heat-maps, dashboards—so patterns and insights are easy to grasp and support the message."
+        },
+        {
+          "id": "CO:205",
+          "text": "Describe the impact of a person's social media brand on the achievement of organizational objectives",
+          "level": "CS",
+          "performance_element": "Use social media to communicate with a business's stakeholders",
+          "definition": "An individual's online presence and reputation can help or harm their employer; professional, consistent social media supports company goals, while careless posts can damage trust and image."
+        },
+        {
+          "id": "CO:206",
+          "text": "Distinguish between using social media for business and personal purposes",
+          "level": "CS",
+          "performance_element": "Use social media to communicate with a business's stakeholders",
+          "definition": "Social media can be used personally to communicate with friends and family, while professionally to promote products and events. - businesses use social media to advertise their company and to get connected with their customers/users and personal purposes are like email, and for employees to use for their daily life."
+        },
+        {
+          "id": "CO:014",
+          "text": "Explain the nature of staff communication",
+          "level": "CS",
+          "performance_element": "Communicate with staff to clarify workplace objectives",
+          "definition": "Allows employees to receive regular updates and remain current with business issues Allows employee conflicts and issues to be resolved Keeps all employees \"on the same page\" in regards to company policies, procedures, promotional themes, etc."
+        },
+        {
+          "id": "CO:092",
+          "text": "Choose and use appropriate channel for workplace communication",
+          "level": "CS",
+          "performance_element": "Communicate with staff to clarify workplace objectives",
+          "definition": "To determine the appropriate communication channel, identify the people you want to communicate with, research how they obtain information, consider the complexity of the message you want to communicate, calculate the cost of communicating and decide whether you want the communication to be interactive."
+        },
+        {
+          "id": "CO:063",
+          "text": "Participate in a staff meeting",
+          "level": "CS",
+          "performance_element": "Communicate with staff to clarify workplace objectives",
+          "definition": "Engaging productively in a workplace meeting—coming prepared, contributing relevant input, listening, and following up on assigned actions."
+        },
+        {
+          "id": "CO:067",
+          "text": "Participate in problem-solving groups",
+          "level": "CS",
+          "performance_element": "Communicate with staff to clarify workplace objectives",
+          "definition": "Collaborating with coworkers to define a problem, generate and evaluate options, and agree on a solution."
+        }
+      ]
+    },
+    {
+      "id": "CR",
+      "name": "Customer Relations",
+      "performance_indicators": [
+        {
+          "id": "CR:003",
+          "text": "Explain the nature of positive customer relations",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Customers are the life of any business; any interaction should be positive, courteous, and respectful. Positive customer relations can include showing appreciation, delivering timely service, training employees effectively to interact with clients, and appeasing any concerns brought forward."
+        },
+        {
+          "id": "CR:004",
+          "text": "Demonstrate a customer service mindset",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Customer is always right! (Keep that positive attitude.) Customers are a business's most important concern; without them there is no business and no jobs. Customer service is an investment, not a cost."
+        },
+        {
+          "id": "CR:029",
+          "text": "Develop rapport with customers",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Building a friendly, trusting connection with customers through warmth, attentiveness, personalization, and genuine interest, which encourages loyalty and repeat business."
+        },
+        {
+          "id": "CR:005",
+          "text": "Reinforce service orientation through communication",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Customer surveys are used to pinpoint areas for improvement Employee surveys are also good to pinpoint areas for improvement or of concern Follow-up procedures with customers can help strengthen loyalty"
+        },
+        {
+          "id": "CR:006",
+          "text": "Respond to customer inquiries",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Acknowledge what the customer has said (clarify). Demonstrate your willingness to help the customer. Reply promptly and completely. Don't know? Assure them you'll get the answer. Go the extra mile for them. \"I know you didn't ask for this, but I thought you might like . . . \""
+        },
+        {
+          "id": "CR:019",
+          "text": "Adapt communication to the cultural and social differences among clients",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Begin by respecting differences among people. Another key is to avoid and overcome stereotypes. A stereotype is an oversimplified, distorted belief about a person or group. Keep an open mind and treat people with respect and you will maintain smooth relationships."
+        },
+        {
+          "id": "CR:007",
+          "text": "Interpret business policies to customers/clients",
+          "level": "CS",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Explain company procedures to customers, especially to those who are already irritated and/or upset, is difficult. Acknowledge the customers' frustration and use clear, direct & simple language to describe what's required from the customer to proceed with their issue."
+        },
+        {
+          "id": "CR:030",
+          "text": "Build and maintain relationships with customers",
+          "level": "SP",
+          "performance_element": "Foster positive relationships with customers to enhance company image",
+          "definition": "Focus on Exceptional Communication (timely and efficient) Always follow through and do what you promise Maintain a positive attitude Share knowledge Be open Exceed Expectations Describe factors used by marketers to position products/services The focus of product/service positioning is to set the product apart from the competition."
+        },
+        {
+          "id": "CR:009",
+          "text": "Handle difficult customers",
+          "level": "CS",
+          "performance_element": "Resolve conflicts with/for customers to encourage repeat business",
+          "definition": "Most important - listen; build a rapport through empathy (put yourself in the customer's shoes); lower your voice, assume all your customers are watching; know when to give in; never get angry or upset; never take it personally; remember that you're interacting with a human; if you promise a callback - call back; summarize the next steps, to be clear."
+        },
+        {
+          "id": "CR:010",
+          "text": "Handle customer/client complaints",
+          "level": "CS",
+          "performance_element": "Resolve conflicts with/for customers to encourage repeat business",
+          "definition": "Listen & understand; empathize with their situation; offer a solution; execute the solution; and follow-up. There are a variety of difficult customers including those who are angry, impatient, demanding, and indecisive."
+        },
+        {
+          "id": "CR:001",
+          "text": "Identify company's brand promise",
+          "level": "CS",
+          "performance_element": "Reinforce company's image to exhibit the company's brand promise",
+          "definition": "Brand promise: benefits and experiences that marketing campaigns try to associate with a product in its current and prospective consumers' minds (acts as an extension of the company's positioning). A brand promise is a value or experience a company's customers can expect to receive every single time they interact with that company."
+        },
+        {
+          "id": "CR:002",
+          "text": "Determine ways of reinforcing the company's image through employee performance",
+          "level": "CS",
+          "performance_element": "Reinforce company's image to exhibit the company's brand promise",
+          "definition": "Employee performance can reinforce a company's image through suggestion selling, order processing and fulfillment, and effective selling skills. Suggestion selling is useful for making the customer happier with his/her original purchase. Sales employees can improve customer satisfaction by the speed and care in which they handle orders."
+        },
+        {
+          "id": "CR:016",
+          "text": "Discuss the nature of customer relationship management",
+          "level": "SP",
+          "performance_element": "Understand the nature of customer relationship management to show its contributions to a company",
+          "definition": "The goal of Customer Relationship Management (CRM) is to maximize the value and effectiveness of all opportunities that businesses have to connect with customers, provide outstanding service to customers, maximize customer satisfaction, attract and retain loyal customers, cultivate and maintain positive, profitable relationships with customers, and develop individualized relationships with customers."
+        },
+        {
+          "id": "CR:017",
+          "text": "Explain the role of ethics in customer relationship management",
+          "level": "SP",
+          "performance_element": "Understand the nature of customer relationship management to show its contributions to a company",
+          "definition": "Ethical CRM means handling customer data honestly and securely, being truthful in communications, respecting privacy, and treating customers fairly to build lasting trust."
+        },
+        {
+          "id": "CR:018",
+          "text": "Describe the use of technology in customer relationship management",
+          "level": "SP",
+          "performance_element": "Understand the nature of customer relationship management to show its contributions to a company",
+          "definition": "Technology serves as the partner of CRM in order to cater the needs of the customers. It makes their relationship meaningful in a way that the company understands what the customers need. It gathers information from the customers through the use of the internet that makes communication faster."
+        }
+      ]
+    },
+    {
+      "id": "EC",
+      "name": "Economics",
+      "performance_indicators": [
+        {
+          "id": "EC:002",
+          "text": "Distinguish between economic goods and services",
+          "level": "CS",
+          "performance_element": "Understand fundamental economic concepts to obtain a foundation for employment in business",
+          "definition": "A good is something that you can use or consume. You buy a good with the idea that you will use it, either just once or over and over again. A service is something that someone does for you, like give you a haircut or fix you dinner. Another way to identify the difference is that a good is tangible and a service is"
+        },
+        {
+          "id": "EC:003",
+          "text": "Explain the concept of economic resources",
+          "level": "CS",
+          "performance_element": "Understand fundamental economic concepts to obtain a foundation for employment in business",
+          "definition": "Resources used in the production of goods and services, which include: Land or Natural Resources: naturally-occurring goods such as soil and minerals Labor: human effort, which also includes technical and marketing expertise Capital Goods: goods used in the production of other goods Explain concept of risk Risk is related to the expected losses which can be caused by a risky event and to the probability of this event occurring."
+        },
+        {
+          "id": "EC:001",
+          "text": "Describe the concepts of economics and economic activities",
+          "level": "CS",
+          "performance_element": "Understand fundamental economic concepts to obtain a foundation for employment in business",
+          "definition": "Economics deals with the production, distribution, and consumption of goods and services. Economic activities include\": manufacturing, buying, selling, transportation, and investing."
+        },
+        {
+          "id": "EC:004",
+          "text": "Determine economic utilities created by business activities",
+          "level": "CS",
+          "performance_element": "Understand fundamental economic concepts to obtain a foundation for employment in business",
+          "definition": "The ability of a good or service to satisfy one or more needs or wants of a consumer (ex: Form - product/service provides use or value; Place - availability is local or convenient; Time - customers can get when they need; Possession - easy for customers to pay for/own product.)"
+        },
+        {
+          "id": "EC:005",
+          "text": "Explain the principles of supply and demand",
+          "level": "CS",
+          "performance_element": "Understand fundamental economic concepts to obtain a foundation for employment in business",
+          "definition": "In a market-oriented economy like in the United States, supply and demand determine the prices and quantities of goods and services produced. Supply is the amount of goods and services producers are willing to make and sell. Demand is the willingness and ability of consumers to buy goods and services."
+        },
+        {
+          "id": "EC:006",
+          "text": "Describe the functions of prices in markets",
+          "level": "CS",
+          "performance_element": "Understand fundamental economic concepts to obtain a foundation for employment in business",
+          "definition": "Prices signal value, ration scarce goods, and motivate producers. They communicate information to buyers and sellers, allocate resources, and provide incentives that balance supply and demand."
+        },
+        {
+          "id": "EC:070",
+          "text": "Explain the role of business in society",
+          "level": "CS",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "The role of business in society is \"to innovate and deliver products and services, to use resources efficiently so that the value is created, and to conduct operations so they are performed profitability and accepted by society.\" In summary, \"the role of business in society is a coherent way of thinking about a company's impact and interaction with society.\" Niall Fitzgerald KBE and Mandy Cormack, The Role of Business in Society: An Agenda for Action; Harvard John F."
+        },
+        {
+          "id": "EC:071",
+          "text": "Describe types of business activities",
+          "level": "CS",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "There are six general business activities. Generating ideas is an important activity in that businesses must remain competitive with other firms. Businesses also need to raise capital to finance their operations. Another important business activity is employing and training human resources. Businesses buy and sell goods and services."
+        },
+        {
+          "id": "EC:138",
+          "text": "Describe types of business models",
+          "level": "SP",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "Subscription model customer pays a recurring payment on a monthly basis for access to a service or product. Franchise model A franchise is an established business blueprint that is simply purchased and reproduced by the buyer, the franchisee."
+        },
+        {
+          "id": "EC:103",
+          "text": "Explain the organizational design of businesses",
+          "level": "SP",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "How a company structures roles, authority, and departments—functional, divisional, or matrix—to coordinate work and meet objectives."
+        },
+        {
+          "id": "EC:104",
+          "text": "Discuss the global environment in which businesses operate",
+          "level": "SP",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "Businesses operate amid international competition, trade, cultures, currencies, and regulations; understanding this global context shapes strategy and opportunity."
+        },
+        {
+          "id": "EC:105",
+          "text": "Describe factors that affect the business environment",
+          "level": "SP",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "External forces—economic, social, technological, political/legal, and competitive—that influence how a business operates and the decisions it must make."
+        },
+        {
+          "id": "EC:106",
+          "text": "Explain the nature of business ethics",
+          "level": "SP",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "Business ethics is important to making the general public happy about what happens in the business world (public relations). It creates a good reputation, balances the needs of the stakeholders with the needs of the company, helps the business thrive in the global economy, helps to retain employees, and keeps the business from being penalized under the law."
+        },
+        {
+          "id": "EC:107",
+          "text": "Explain how organizations adapt to today's markets",
+          "level": "SP",
+          "performance_element": "Understand the nature of business to show its contributions to society",
+          "definition": "Organizations adapt to today's markets by using tools like SWOT Analysis and environmental scans to identify ways the business can improve. A SWOT Analysis assesses a company's strengths and weaknesses and the opportunities and threats that surround it."
+        },
+        {
+          "id": "EC:007",
+          "text": "Explain the types of economic systems",
+          "level": "CS",
+          "performance_element": "Understand economic systems to be able to recognize the environments in which businesses function",
+          "definition": "There are four types of economic systems commonly studied. A traditional economy relies on custom and ritual to make its choices. A market economy relies on the consumption choice of consumers. A command economy relies on the government making all the choices for consumers."
+        },
+        {
+          "id": "EC:065",
+          "text": "Identify the impact of small business/entrepreneurship on market economies",
+          "level": "CS",
+          "performance_element": "Understand economic systems to be able to recognize the environments in which businesses function",
+          "definition": "Small businesses diversify market economies by claiming small parts of market share which may appeal to a more specific demographic and consumers."
+        },
+        {
+          "id": "EC:009",
+          "text": "Explain the concept of private enterprise",
+          "level": "CS",
+          "performance_element": "Understand economic systems to be able to recognize the environments in which businesses function",
+          "definition": "A private-enterprise (free-market) system lets individuals own businesses and property, make their own economic choices, compete, and earn profit with limited government control."
+        },
+        {
+          "id": "EC:010",
+          "text": "Identify factors affecting a business's profit",
+          "level": "CS",
+          "performance_element": "Understand economic systems to be able to recognize the environments in which businesses function",
+          "definition": "Sales and expenses There are two ways to increase profit: Increase revenue Decrease expenses"
+        },
+        {
+          "id": "EC:011",
+          "text": "Determine factors affecting business risk",
+          "level": "CS",
+          "performance_element": "Understand economic systems to be able to recognize the environments in which businesses function",
+          "definition": "Risk is the possibility of incurring a loss. Economic risks are those that can result in a financial loss. Pure risk is one that presents the chance of loss but no opportunity for gain. Speculative risks offer the chance to either gain or lose. Some risks are controllable, while others are not."
+        },
+        {
+          "id": "EC:012",
+          "text": "Explain the concept of competition",
+          "level": "CS",
+          "performance_element": "Understand economic systems to be able to recognize the environments in which businesses function",
+          "definition": "Seen as the pillar of capitalism in that it may stimulate innovation, encourage efficiency, or drive down prices Competition causes firms to develop new products, services, and technologies This gives consumers greater selection and better products The greater selection typically causes lower prices for the products compared to what the price would be if there were no"
+        },
+        {
+          "id": "EC:008",
+          "text": "Determine the relationship between government and business",
+          "level": "CS",
+          "performance_element": "Acquire knowledge of the impact of government on business activities to make informed economic decisions",
+          "definition": "The government serves as both a protector and a regulator of business in a free market economy. It serves to protect business property, enforce contracts and settle disagreements through the courts, and collect taxes on the products businesses sell."
+        },
+        {
+          "id": "EC:072",
+          "text": "Describe the nature of taxes",
+          "level": "SP",
+          "performance_element": "Acquire knowledge of the impact of government on business activities to make informed economic decisions",
+          "definition": "Taxes are compulsory payments to government used to fund public goods and services. Types include income, sales, property, and payroll taxes, each affecting businesses and consumers differently."
+        },
+        {
+          "id": "EC:013",
+          "text": "Explain the concept of productivity",
+          "level": "CS",
+          "performance_element": "Analyze cost/profit relationships to guide business decision-making",
+          "definition": "Productivity is the output of work, per worker, often measured per hour Most obvious method to increase productivity involves automation and computerization, which minimize the tasks performed by employees Other methods of improving productivity are advanced employee training or new, easier-to-use equipment Training enables employees to work quicker and smarter Explain nature"
+        },
+        {
+          "id": "EC:014",
+          "text": "Analyze impact of specialization/division of labor on productivity",
+          "level": "SP",
+          "performance_element": "Analyze cost/profit relationships to guide business decision-making",
+          "definition": "Dividing work into specialized tasks lets workers become faster and more skilled, raising output and efficiency—though overspecialization can reduce flexibility and morale."
+        },
+        {
+          "id": "EC:015",
+          "text": "Explain the concept of organized labor and business",
+          "level": "SP",
+          "performance_element": "Analyze cost/profit relationships to guide business decision-making",
+          "definition": "Organized labor refers to workers uniting in unions to bargain collectively with employers over wages, hours, and conditions, balancing power between labor and business."
+        },
+        {
+          "id": "EC:023",
+          "text": "Explain the impact of the law of diminishing returns",
+          "level": "SP",
+          "performance_element": "Analyze cost/profit relationships to guide business decision-making",
+          "definition": "Beyond a point, adding more of one input (such as labor) to fixed resources yields smaller and smaller increases in output, raising per-unit cost and guiding how much to produce."
+        },
+        {
+          "id": "EC:081",
+          "text": "Discuss the measure of consumer spending as an economic indicator",
+          "level": "SP",
+          "performance_element": "Understand economic indicators to recognize economic trends and conditions",
+          "definition": "Consumer spending—how much households buy—drives most economic activity; rising spending signals a growing economy, while falling spending can signal a slowdown."
+        },
+        {
+          "id": "EC:083",
+          "text": "Describe the economic impact of inflation on business",
+          "level": "SP",
+          "performance_element": "Understand economic indicators to recognize economic trends and conditions",
+          "definition": "Inflation, a general rise in prices, raises input and labor costs, erodes purchasing power, complicates pricing and planning, and can shrink real profits."
+        },
+        {
+          "id": "EC:017",
+          "text": "Explain the concept of Gross Domestic Product (GDP)",
+          "level": "SP",
+          "performance_element": "Understand economic indicators to recognize economic trends and conditions",
+          "definition": "GDP is the total market value of all goods and services a nation produces in a period. It is the primary measure of economic size and growth."
+        },
+        {
+          "id": "EC:082",
+          "text": "Discuss the impact of a nation's unemployment rates",
+          "level": "SP",
+          "performance_element": "Understand economic indicators to recognize economic trends and conditions",
+          "definition": "The unemployment rate—the share of job-seekers without work—reflects economic health; high unemployment lowers spending and confidence, while very low rates can pressure wages."
+        },
+        {
+          "id": "EC:084",
+          "text": "Explain the economic impact of interest-rate fluctuations",
+          "level": "SP",
+          "performance_element": "Understand economic indicators to recognize economic trends and conditions",
+          "definition": "Interest rates set the cost of borrowing; lower rates encourage spending and investment, higher rates slow them—affecting business expansion, loans, and consumer demand."
+        },
+        {
+          "id": "EC:018",
+          "text": "Determine the impact of business cycles on business activities",
+          "level": "SP",
+          "performance_element": "Understand economic indicators to recognize economic trends and conditions",
+          "definition": "Economies move through expansion, peak, contraction, and trough. Where the economy sits in this cycle affects sales, hiring, investment, and risk."
+        },
+        {
+          "id": "EC:016",
+          "text": "Explain the nature of global trade",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Any trade conducted between different self-governing states. One nation will purchase goods and materials it doesn't produce and sell goods or materials it produces to other nations. The effects of global trade on retailing Global trade means an expansion of its customer base for retailers."
+        },
+        {
+          "id": "EC:109",
+          "text": "Discuss the impact of globalization on business",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Globalization—the growing integration of markets across borders—expands customers and suppliers but increases competition, complexity, and exposure to global events."
+        },
+        {
+          "id": "EC:100",
+          "text": "Describe the determinants of exchange rates and their effects on the domestic economy",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Exchange rates—shaped by trade balances, interest rates, inflation, and demand for a currency—affect import/export prices, competitiveness, and inflation at home."
+        },
+        {
+          "id": "EC:110",
+          "text": "Explain cultural considerations that impact global business relations",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Differences in language, customs, etiquette, values, and negotiation styles shape international business; respecting them builds trust and avoids costly missteps."
+        },
+        {
+          "id": "EC:045",
+          "text": "Discuss the impact of cultural and social environments on global trade",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "A society's customs, beliefs, tastes, and norms influence what products sell, how they are marketed, and how business is conducted across countries."
+        },
+        {
+          "id": "EC:111",
+          "text": "Describe the impact of electronic communication tools (e.g., internet, video- and computer- conferencing, webcasts, email) on global business activities",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Internet, email, video- and computer-conferencing, and webcasts let businesses coordinate, market, and trade worldwide instantly, lowering the barriers of distance and time."
+        },
+        {
+          "id": "EC:112",
+          "text": "Explain the impact of major trade alliances on business activities",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Trade alliances and agreements (e.g., USMCA, the EU) reduce tariffs and barriers among members, opening markets and shaping where businesses source and sell."
+        },
+        {
+          "id": "EC:113",
+          "text": "Describe the impact of the political environment on world trade",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Government stability, policies, tariffs, sanctions, and relations between nations can open or restrict international markets and create risk for businesses."
+        },
+        {
+          "id": "EC:114",
+          "text": "Explain the impact of geography on world trade",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Location, climate, natural resources, and access to ports and transport routes shape what nations produce, trade, and how goods move globally."
+        },
+        {
+          "id": "EC:115",
+          "text": "Describe the impact of a country's history on world trade",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "A nation's past—colonial ties, conflicts, alliances, and traditions—shapes its trading partners, industries, and attitudes toward foreign business."
+        },
+        {
+          "id": "EC:116",
+          "text": "Explain the impact of a country's economic development on world trade",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "A country's level of development affects what it produces and buys—developed nations trade advanced goods and services, while developing nations often export raw materials."
+        },
+        {
+          "id": "EC:140",
+          "text": "Discuss the impact of bribery and foreign monetary payments on business",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "Bribery distorts fair competition, is illegal under laws like the Foreign Corrupt Practices Act, and exposes businesses to legal penalties and reputational damage in global dealings."
+        },
+        {
+          "id": "EC:141",
+          "text": "Identify requirements for international business travel (e.g., passport, visa, proof of citizenship, immunizations, and sponsorship letters)",
+          "level": "SP",
+          "performance_element": "Understand global trade's impact to aid business decision-making",
+          "definition": "International travel may require a valid passport, visas, proof of citizenship, immunizations, and sponsorship letters; requirements vary by destination and purpose."
+        }
       ]
     },
     {
       "id": "EI",
       "name": "Emotional Intelligence",
       "performance_indicators": [
-        { "id": "EI-P01", "text": "[PLACEHOLDER] Explain the concept of emotional intelligence." },
-        { "id": "EI-P02", "text": "[PLACEHOLDER] Recognize and overcome personal biases and stereotypes." },
-        { "id": "EI-P03", "text": "[PLACEHOLDER] Demonstrate ethical work habits." }
+        {
+          "id": "EI:001",
+          "text": "Describe the nature of emotional intelligence",
+          "level": "PQ",
+          "performance_element": "Foster self-understanding to recognize the impact of personal feelings on others",
+          "definition": "Emotional intelligence is the ability to recognize, understand, and manage your own emotions and to perceive and respond effectively to others' emotions—key to strong workplace relationships."
+        },
+        {
+          "id": "EI:016",
+          "text": "Explain the concept of self-esteem",
+          "level": "PQ",
+          "performance_element": "Foster self-understanding to recognize the impact of personal feelings on others",
+          "definition": "Self-esteem is the confidence in one's own worth or abilities; self-respect. Compliment employees on a job well done; give them some recognition in front of peers. Pumping up someone's self-esteem helps create a more enthusiastic and loyal employee."
+        },
+        {
+          "id": "EI:017",
+          "text": "Recognize and overcome personal biases and stereotypes",
+          "level": "PQ",
+          "performance_element": "Foster self-understanding to recognize the impact of personal feelings on others",
+          "definition": "Identifying your own unfair assumptions about people or groups and consciously setting them aside to judge individuals fairly and treat everyone with respect."
+        },
+        {
+          "id": "EI:002",
+          "text": "Assess personal strengths and weaknesses",
+          "level": "PQ",
+          "performance_element": "Foster self-understanding to recognize the impact of personal feelings on others",
+          "definition": "Honestly evaluating your own skills, traits, and limitations so you can build on what you do well and improve the areas that hold you back."
+        },
+        {
+          "id": "EI:126",
+          "text": "Assess personal behavior and values",
+          "level": "PQ",
+          "performance_element": "Foster self-understanding to recognize the impact of personal feelings on others",
+          "definition": "Reflecting on how you act and what principles guide you, so your conduct aligns with your values and with professional expectations."
+        },
+        {
+          "id": "EI:018",
+          "text": "Identify desirable personality traits important to business",
+          "level": "PQ",
+          "performance_element": "Develop personal traits to foster career advancement",
+          "definition": "Be persistent, learn to easily adapt to change, assess risks, continue to learn, welcome responsibility, be creative, take charge, know your numbers, don't procrastinate, become self-reliant, and focus on the business not your personal needs."
+        },
+        {
+          "id": "EI:023",
+          "text": "Exhibit self-confidence",
+          "level": "PQ",
+          "performance_element": "Develop personal traits to foster career advancement",
+          "definition": "Self-confidence can be demonstrated by how you present yourself and through your actions. It is shown in your personal hygiene and the way you dress. It can also be shown through your relationships with others and your work habits."
+        },
+        {
+          "id": "EI:020",
+          "text": "Demonstrate interest and enthusiasm",
+          "level": "PQ",
+          "performance_element": "Develop personal traits to foster career advancement",
+          "definition": "Enthusiasm for one's job is interest on steroids. Positive outlook, \"I can\" attitude, cooperative with others, willingness to listen & learn & try new things. Showing enthusiasm is smiling, eye contact, upbeat manner, etc. Showing interest is much more subdued; you are curious or you show that you like or approve something. That's it."
+        },
+        {
+          "id": "EI:024",
+          "text": "Explain the importance of demonstrating initiative",
+          "level": "PQ",
+          "performance_element": "Develop personal traits to foster career advancement",
+          "definition": "Initiative—taking action and seeking responsibility without being told—shows motivation and reliability, drives results, and stands out to employers."
+        },
+        {
+          "id": "EI:022",
+          "text": "Demonstrate honesty and integrity",
+          "level": "PQ",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "honesty is about a fair adherence to the facts integrity is about righteous conduct"
+        },
+        {
+          "id": "EI:021",
+          "text": "Demonstrate responsible behavior",
+          "level": "PQ",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Being dependable and accountable: meeting obligations, following through on commitments, and accepting the consequences of your actions."
+        },
+        {
+          "id": "EI:127",
+          "text": "Demonstrate fairness",
+          "level": "PQ",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Treating people impartially and consistently, giving equal consideration and opportunity, and making decisions free of favoritism or bias."
+        },
+        {
+          "id": "EI:091",
+          "text": "Assess risks of personal decisions",
+          "level": "PQ",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Weighing the possible costs, benefits, and consequences of a choice before acting, so decisions are thoughtful rather than impulsive."
+        },
+        {
+          "id": "EI:004",
+          "text": "Demonstrate ethical work habits",
+          "level": "PQ",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Consistently acting with honesty, integrity, punctuality, and respect on the job—doing the right thing even when no one is watching."
+        },
+        {
+          "id": "EI:075",
+          "text": "Take responsibility for decisions and actions",
+          "level": "PQ",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Owning your choices and their outcomes—good or bad—without blaming others, and learning from mistakes."
+        },
+        {
+          "id": "EI:128",
+          "text": "Build trust in relationships",
+          "level": "CS",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Another way to build trust is to demonstrate that you're interested in their well-being -- beyond your own profit potential. Know and appreciate your customers' needs beyond your product. See what you can do to help them meet those needs."
+        },
+        {
+          "id": "EI:123",
+          "text": "Describe the nature of ethics",
+          "level": "CS",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Important to make the general public happy about what happens in the business world (public relations)."
+        },
+        {
+          "id": "EI:124",
+          "text": "Explain reasons for ethical dilemmas",
+          "level": "CS",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Ethical dilemmas arise when values, interests, or obligations conflict—such as loyalty versus honesty or profit versus fairness—leaving no clearly right choice."
+        },
+        {
+          "id": "EI:125",
+          "text": "Recognize and respond to ethical dilemmas",
+          "level": "CS",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Identifying situations with competing right-versus-wrong considerations and working through them using values, policies, and sound judgment."
+        },
+        {
+          "id": "EI:077",
+          "text": "Manage commitments in a timely manner",
+          "level": "CS",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Tracking your obligations and deadlines and delivering on them when promised, prioritizing so nothing important is missed."
+        },
+        {
+          "id": "EI:092",
+          "text": "Develop tolerance for ambiguity",
+          "level": "CS",
+          "performance_element": "Apply ethics to demonstrate trustworthiness",
+          "definition": "Staying effective and calm when situations are uncertain or information is incomplete, rather than needing every answer before acting."
+        },
+        {
+          "id": "EI:019",
+          "text": "Exhibit a positive attitude",
+          "level": "PQ",
+          "performance_element": "Exhibit techniques to manage emotional reactions to people and situations",
+          "definition": "Approaching work and people with optimism, energy, and a constructive outlook, which improves morale, relationships, and results."
+        },
+        {
+          "id": "EI:025",
+          "text": "Demonstrate self-control",
+          "level": "PQ",
+          "performance_element": "Exhibit techniques to manage emotional reactions to people and situations",
+          "definition": "Managing your impulses, emotions, and reactions—staying composed under pressure or provocation rather than acting rashly."
+        },
+        {
+          "id": "EI:003",
+          "text": "Explain the use of feedback for personal growth",
+          "level": "PQ",
+          "performance_element": "Exhibit techniques to manage emotional reactions to people and situations",
+          "definition": "Treating constructive criticism as useful information, accepting it without defensiveness, and using it to improve your skills and performance."
+        },
+        {
+          "id": "EI:026",
+          "text": "Adjust to change",
+          "level": "PQ",
+          "performance_element": "Exhibit techniques to manage emotional reactions to people and situations",
+          "definition": "Adapting your attitude and behavior to new circumstances, expectations, or methods with flexibility rather than resistance."
+        },
+        {
+          "id": "EI:029",
+          "text": "Respect the privacy of others",
+          "level": "PQ",
+          "performance_element": "Identify with others' feelings, needs, and concerns to enhance interpersonal relations",
+          "definition": "Honoring people's personal boundaries and confidential information—not prying or sharing what is not yours to share."
+        },
+        {
+          "id": "EI:030",
+          "text": "Show empathy for others",
+          "level": "PQ",
+          "performance_element": "Identify with others' feelings, needs, and concerns to enhance interpersonal relations",
+          "definition": "\"I'm sorry we don't have that brand any longer. I know that it's frustrating when you find something you like and then it's no longer available. Can I help you compare what items we do have, so you can find a new choice?\""
+        },
+        {
+          "id": "EI:103",
+          "text": "Maintain the confidentiality of others",
+          "level": "CS",
+          "performance_element": "Identify with others' feelings, needs, and concerns to enhance interpersonal relations",
+          "definition": "Safeguarding sensitive personal or business information entrusted to you and disclosing it only to those authorized to know."
+        },
+        {
+          "id": "EI:033",
+          "text": "Exhibit cultural sensitivity",
+          "level": "CS",
+          "performance_element": "Identify with others' feelings, needs, and concerns to enhance interpersonal relations",
+          "definition": "A culturally sensitive employee will value diversity, be willing to adapt communication and behavior to be compatible with another's cultural norms, and be willing to learn traditions and characteristics of other cultures. Apply ethics to online communications."
+        },
+        {
+          "id": "EI:104",
+          "text": "Leverage personality types in business situations",
+          "level": "SP",
+          "performance_element": "Identify with others' feelings, needs, and concerns to enhance interpersonal relations",
+          "definition": "Recognizing different personality styles and adapting your approach to communicate, collaborate, and resolve conflict more effectively with each."
+        },
+        {
+          "id": "EI:007",
+          "text": "Explain the nature of effective communications",
+          "level": "PQ",
+          "performance_element": "Use communication skills to foster open, honest communications",
+          "definition": "Effective communication ensures that messages are not misunderstood, misinterpreted, or lost during the communication process. Carefully choosing the right words, method of communication, and intended audience can eliminate many barriers to communication. Messages should be free of any tone, attitude, and vagueness."
+        },
+        {
+          "id": "EI:038",
+          "text": "Explain ethical considerations in providing information",
+          "level": "SP",
+          "performance_element": "Use communication skills to foster open, honest communications",
+          "definition": "Ethical business practices ensure that the highest standards of conduct are observed in a company's relationships with everyone in the company or who is affected by its activities. Ethical behavior is lawful and does not harm some while benefiting others."
+        },
+        {
+          "id": "EI:129",
+          "text": "Foster open, honest communication",
+          "level": "SP",
+          "performance_element": "Use communication skills to foster open, honest communications",
+          "definition": "communication skills influence others' POV - apply problem solving techniques to obtain solutions - manage stressful situations to minimize negative situations - teamwork techniques to accomplish goals. - leadership skills to achieve objectives. - manage internal and external business relationships fostering positive interactions )"
+        },
+        {
+          "id": "EI:130",
+          "text": "Collaborate with others",
+          "level": "SP",
+          "performance_element": "Use communication skills to foster open, honest communications",
+          "definition": "Working cooperatively toward a shared goal—sharing information, dividing tasks, valuing input, and supporting teammates."
+        },
+        {
+          "id": "EI:106",
+          "text": "Solicit feedback",
+          "level": "SP",
+          "performance_element": "Use communication skills to foster open, honest communications",
+          "definition": "Actively asking others for honest input on your work or behavior so you can identify blind spots and improve."
+        },
+        {
+          "id": "EI:107",
+          "text": "Use social media to solicit new ideas and solutions",
+          "level": "SP",
+          "performance_element": "Use communication skills to foster open, honest communications",
+          "definition": "Tapping online communities and platforms to crowdsource ideas, gather input, and find solutions from a wide audience."
+        },
+        {
+          "id": "EI:108",
+          "text": "\"Sell\" ideas to others",
+          "level": "SP",
+          "performance_element": "Use communication skills to influence others",
+          "definition": "Persuading colleagues or decision-makers to support your proposal by framing its benefits, addressing concerns, and building buy-in."
+        },
+        {
+          "id": "EI:012",
+          "text": "Persuade others",
+          "level": "SP",
+          "performance_element": "Use communication skills to influence others",
+          "definition": "Influencing people's beliefs or actions through reasoning, evidence, credibility, and appeals to their needs—without manipulation or coercion."
+        },
+        {
+          "id": "EI:062",
+          "text": "Demonstrate negotiation skills",
+          "level": "SP",
+          "performance_element": "Use communication skills to influence others",
+          "definition": "Working with another party to reach a mutually acceptable agreement through listening, give-and-take, and seeking win-win outcomes."
+        },
+        {
+          "id": "EI:008",
+          "text": "Use appropriate assertiveness",
+          "level": "PQ",
+          "performance_element": "Manage stressful situations to minimize potential negative impact",
+          "definition": "Expressing your needs, opinions, and boundaries clearly and confidently while still respecting others—neither passive nor aggressive."
+        },
+        {
+          "id": "EI:015",
+          "text": "Use conflict-resolution skills",
+          "level": "CS",
+          "performance_element": "Manage stressful situations to minimize potential negative impact",
+          "definition": "Addressing disagreements constructively: understanding each side, finding common ground, and reaching a solution that preserves relationships."
+        },
+        {
+          "id": "EI:109",
+          "text": "Explain the nature of office politics",
+          "level": "CS",
+          "performance_element": "Manage stressful situations to minimize potential negative impact",
+          "definition": "Multiple employees battle for dominance over decision-making - can be helpful (clear leader)/harmful (uncontrollable conflict) Use conflict resolution strategies Begin by allowing each party of a dispute to define the problem from his/her point of view. Then, allow each one to suggest a solution to the problem."
+        },
+        {
+          "id": "EI:095",
+          "text": "Overcome problems and difficulties associated with office politics/turf wars",
+          "level": "CS",
+          "performance_element": "Manage stressful situations to minimize potential negative impact",
+          "definition": "Using negotiation, office drama can be resolved in an effective manner. Trying to stay neutral and ethical is the key to solving these types of problems that may arise. It's ok if these issues occur, but not ok if they aren't handled efficiently and effectively."
+        },
+        {
+          "id": "EI:028",
+          "text": "Explain the nature of stress management",
+          "level": "SP",
+          "performance_element": "Manage stressful situations to minimize potential negative impact",
+          "definition": "Recognizing sources of stress and using healthy strategies—prioritizing, time management, breaks, support—to stay productive and well under pressure."
+        },
+        {
+          "id": "EI:045",
+          "text": "Participate as a team member",
+          "level": "CS",
+          "performance_element": "Implement teamwork techniques to accomplish goals",
+          "definition": "Teamwork includes leadership and collaboration. Providing input to a task + facilitating new initiatives. Putting the team in front of yourself is what needs to be done. There's no \"I\" in team but a \"me.\""
+        },
+        {
+          "id": "EI:011",
+          "text": "Use consensus-building skills",
+          "level": "SP",
+          "performance_element": "Implement teamwork techniques to accomplish goals",
+          "definition": "Guiding a group toward a decision everyone can support by surfacing concerns, finding common ground, and blending viewpoints."
+        },
+        {
+          "id": "EI:059",
+          "text": "Motivate team members",
+          "level": "SP",
+          "performance_element": "Implement teamwork techniques to accomplish goals",
+          "definition": "Inspiring and energizing others to do their best through recognition, shared goals, encouragement, and meeting their needs."
+        },
+        {
+          "id": "EI:009",
+          "text": "Explain the concept of leadership",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Leadership is the ability to influence and guide others toward achieving goals through vision, example, communication, and support."
+        },
+        {
+          "id": "EI:131",
+          "text": "Explain the nature of ethical leadership",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Leading with integrity—modeling honesty, fairness, and accountability—so that others trust and follow your example."
+        },
+        {
+          "id": "EI:132",
+          "text": "Model ethical behavior",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Setting the standard by personally acting ethically, since others take cues from what leaders and coworkers actually do."
+        },
+        {
+          "id": "EI:063",
+          "text": "Determine personal vision",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Defining a clear picture of what you want to achieve and become, which gives direction and motivation to your decisions."
+        },
+        {
+          "id": "EI:133",
+          "text": "Inspire others",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Energizing and uplifting people through enthusiasm, vision, and example so they feel motivated to contribute their best."
+        },
+        {
+          "id": "EI:006",
+          "text": "Demonstrate adaptability",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Adjusting readily to new tasks, roles, and conditions, staying effective when priorities or environments shift."
+        },
+        {
+          "id": "EI:027",
+          "text": "Develop an achievement orientation",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Setting high standards and pursuing goals with persistence and a drive to accomplish results."
+        },
+        {
+          "id": "EI:134",
+          "text": "Challenge the status quo",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Questioning 'the way things have always been done' and proposing better approaches to improve and innovate."
+        },
+        {
+          "id": "EI:005",
+          "text": "Lead change",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Establish a sense of urgency, generate the guiding coalition, and develop a change vision. Journalize business transactions. Journalizing is the process of recording a business transaction in the accounting records. This activity only applies to the double-entry bookkeeping system."
+        },
+        {
+          "id": "EI:060",
+          "text": "Enlist others in working toward a shared vision",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Collaboration is a powerful tool and it is important that fellow workers exhibit personality traits such as motivation, positive attitude, empathy, and conflict resolution skills in order to form the perfect work team."
+        },
+        {
+          "id": "EI:041",
+          "text": "Coach others",
+          "level": "CS",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Make sure they understand what they are supposed to do. Do it sans error. Be patient and always positive when helping others out. Proper coaching can lead to better employee retention and sustainability as a result."
+        },
+        {
+          "id": "EI:135",
+          "text": "Use power appropriately",
+          "level": "SP",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Exercising authority responsibly and fairly to advance goals, not personal gain, and without intimidating or abusing others."
+        },
+        {
+          "id": "EI:014",
+          "text": "Recognize/Reward others for their efforts and contributions",
+          "level": "SP",
+          "performance_element": "Employ leadership skills to achieve workplace objectives",
+          "definition": "Acknowledging and appreciating people's work through praise, recognition, or rewards, which boosts morale and motivation."
+        },
+        {
+          "id": "EI:036",
+          "text": "Treat others with dignity and respect",
+          "level": "PQ",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "Valuing every person—being courteous, considerate, and fair regardless of role, background, or differences."
+        },
+        {
+          "id": "EI:037",
+          "text": "Foster positive working relationships",
+          "level": "CS",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "To judge: \"I have some exciting ideas about the spring promotion. The ideas will involve all of the store's employees. I think you'll like these ideas and I'll be happy to explain the sales contest at the next meeting. This will give you the time you've been needing to research other promotional events.\" Determine ethical work habits."
+        },
+        {
+          "id": "EI:136",
+          "text": "Consider conflicting viewpoints",
+          "level": "CS",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "Genuinely weighing opinions that differ from your own before deciding, which leads to better, more balanced choices."
+        },
+        {
+          "id": "EI:137",
+          "text": "Assess long-term value and impact of actions on others",
+          "level": "SP",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "Need to realize how own actions might affect others and operations within the company. It's important to take into account all possible outcomes of a decision/action before carrying it out. Usually this will vary depending on the business situation and the position you are in within the company."
+        },
+        {
+          "id": "EI:061",
+          "text": "Maintain collaborative partnerships with colleagues",
+          "level": "SP",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "Building and sustaining cooperative, trusting working relationships that support shared goals over time."
+        },
+        {
+          "id": "EI:034",
+          "text": "Explain the impact of political relationships within an organization",
+          "level": "SP",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "Informal networks of influence and alliances shape how decisions get made; understanding them helps you work effectively and ethically within an organization."
+        },
+        {
+          "id": "EI:064",
+          "text": "Explain the nature of organizational culture",
+          "level": "SP",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "A system of shared assumptions, values, and beliefs, which governs how people behave in organizations. These shared values have a strong influence on the people in the organization and dictate how they dress, act, and perform their jobs."
+        },
+        {
+          "id": "EI:112",
+          "text": "Interpret and adapt to a business's culture",
+          "level": "SP",
+          "performance_element": "Manage internal and external business relationships to foster positive interactions",
+          "definition": "Reading an organization's values, norms, and unwritten rules and adjusting your behavior to fit in and succeed there."
+        }
       ]
     },
     {
-      "id": "CO",
-      "name": "Communications",
+      "id": "EN",
+      "name": "Entrepreneurship",
       "performance_indicators": [
-        { "id": "CO-P01", "text": "[PLACEHOLDER] Explain the nature of effective communications." },
-        { "id": "CO-P02", "text": "[PLACEHOLDER] Address the needs of individual personalities." },
-        { "id": "CO-P03", "text": "[PLACEHOLDER] Persuade others." }
+        {
+          "id": "EN:039",
+          "text": "Describe the nature of entrepreneurship",
+          "level": "SP",
+          "performance_element": "Understand fundamental factors about entrepreneurship to recognize its role and importance in the economy",
+          "definition": "Entrepreneurship is a dynamic activity which helps the entrepreneur to bring changes in the process of production, innovation in production, new usage of materials, creator of market etc. It is a strong will & attitude to foresee risk and uncertainty and do something new in an effective manner to achieve goals."
+        },
+        {
+          "id": "EN:040",
+          "text": "Explain the role requirements of entrepreneurs and owners",
+          "level": "SP",
+          "performance_element": "Understand fundamental factors about entrepreneurship to recognize its role and importance in the economy",
+          "definition": "An entrepreneur is someone who sets up and grows a business; involved in all the operations and activities of the business. Owners are not engaged in day-to-day activities. They are focused on the \"big picture\" and future direction of the business."
+        },
+        {
+          "id": "EN:044",
+          "text": "Describe the use of business ethics in entrepreneurship",
+          "level": "SP",
+          "performance_element": "Understand fundamental factors about entrepreneurship to recognize its role and importance in the economy",
+          "definition": "Business ethics ensure that a certain basic level of trust exists between consumers and various forms of market participants with businesses. Business ethics are meant to ensure a certain level of trust between consumers and corporations, guaranteeing the public fair and equal treatment."
+        },
+        {
+          "id": "EN:041",
+          "text": "Describe small-business opportunities in international trade",
+          "level": "SP",
+          "performance_element": "Understand fundamental factors about entrepreneurship to recognize its role and importance in the economy",
+          "definition": "Small businesses that export are 20% more productive and have 20% greater job growth than non-exporters, and they are 9% more like to stay financially solvent. Opportunities from global trade also can help fuel the entrepreneurial spirit, open new markets, increase customer base, find new ventures & create new jobs."
+        }
+      ]
+    },
+    {
+      "id": "FI",
+      "name": "Financial Analysis",
+      "performance_indicators": [
+        {
+          "id": "FI:058",
+          "text": "Explain forms of financial exchange (cash, credit, debit, electronic funds transfer, etc.)",
+          "level": "PQ",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "The methods used to transfer value in transactions—cash, check, credit, debit, and electronic funds transfer—each with different convenience, cost, and risk."
+        },
+        {
+          "id": "FI:059",
+          "text": "Identify types of currency (paper money, coins, banknotes, government bonds, treasury notes, etc.)",
+          "level": "PQ",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "The forms money takes—paper money (banknotes), coins, and government instruments such as bonds and treasury notes—used as accepted mediums of value."
+        },
+        {
+          "id": "FI:060",
+          "text": "Describe functions of money (medium of exchange, unit of measure, store of value)",
+          "level": "PQ",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "Money serves three functions: a medium of exchange (to buy and sell), a unit of measure (to price value), and a store of value (to save for later)."
+        },
+        {
+          "id": "FI:061",
+          "text": "Describe sources of income and compensation",
+          "level": "CS",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "Ways people earn money—wages, salary, commission, tips, bonuses, benefits, and investment or business income."
+        },
+        {
+          "id": "FI:062",
+          "text": "Explain the time value of money",
+          "level": "CS",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "The time value of money is based on the premise that receiving a certain amount of money today, rather than the same amount in the future, is more attractive. Money received today is more valuable by the amount of interest the money can earn."
+        },
+        {
+          "id": "FI:002",
+          "text": "Explain the purposes and importance of credit",
+          "level": "CS",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "Credit gives the customer more purchasing power. Credit falls under the category of possession utility. It is a convenience to the customer and in many instances enables a customer to buy a product at a time of need that could not be obtained any other way than with credit."
+        },
+        {
+          "id": "FI:063",
+          "text": "Explain legal responsibilities associated with consumer financial products and services",
+          "level": "CS",
+          "performance_element": "Understand the fundamental principles of money needed to make financial exchanges",
+          "definition": "Providers must follow laws on disclosure, fair lending, and consumer protection; consumers are responsible for understanding terms and meeting their obligations."
+        },
+        {
+          "id": "FI:270",
+          "text": "Explain the need to save and invest",
+          "level": "CS",
+          "performance_element": "Analyze financial needs and goals to determine financial requirements",
+          "definition": "Saving sets aside money for goals and emergencies; investing grows money over time. Both build financial security and put money to work toward future needs."
+        },
+        {
+          "id": "FI:065",
+          "text": "Set financial goals",
+          "level": "CS",
+          "performance_element": "Analyze financial needs and goals to determine financial requirements",
+          "definition": "Defining specific, measurable money targets—short- and long-term—that guide saving, spending, and investing decisions."
+        },
+        {
+          "id": "FI:066",
+          "text": "Develop personal budget",
+          "level": "CS",
+          "performance_element": "Analyze financial needs and goals to determine financial requirements",
+          "definition": "A personal budget is a plan for saving and spending your money based on your income and expenses. Start your budget by defining your needs and your goals, considering both short- and long-term goals. Write them down in a list, with a target date or time frame to reach them."
+        },
+        {
+          "id": "FI:562",
+          "text": "Determine personal net worth",
+          "level": "CS",
+          "performance_element": "Analyze financial needs and goals to determine financial requirements",
+          "definition": "Net worth is what you own (assets) minus what you owe (liabilities); calculating it shows your overall financial position."
+        },
+        {
+          "id": "FI:067",
+          "text": "Explain the nature of tax liabilities",
+          "level": "PQ",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Tax liability is the total amount of tax a person or business legally owes to government based on income, sales, property, or other taxable activity."
+        },
+        {
+          "id": "FI:068",
+          "text": "Interpret a pay stub",
+          "level": "PQ",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Your pay stub includes many important things, starting with your name and social security number. It lists the current pay period. Your current and year-to-date earnings, taxes, and deductions are listed."
+        },
+        {
+          "id": "FI:560",
+          "text": "Write checks",
+          "level": "PQ",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Completing a check correctly—date, payee, amount in numbers and words, and signature—to authorize payment from a bank account."
+        },
+        {
+          "id": "FI:069",
+          "text": "Maintain financial records",
+          "level": "PQ",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Financial records should be done on a regular basis to minimize cost & have more/better control of operations & to get a better understanding of financial information. Day-to-day book-keeping is common for small businesses. Accountants and bookkeepers can help."
+        },
+        {
+          "id": "FI:070",
+          "text": "Balance a bank account",
+          "level": "PQ",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Reconciling your records with the bank's statement—accounting for deposits, withdrawals, and fees—to confirm the true available balance."
+        },
+        {
+          "id": "FI:567",
+          "text": "Explain the nature of charitable giving",
+          "level": "PQ",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Donating money, goods, or time to nonprofit causes; it supports the community and may offer tax deductions when properly documented."
+        },
+        {
+          "id": "FI:830",
+          "text": "Manage online accounts",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Safely setting up, monitoring, and maintaining digital financial accounts—tracking activity, protecting passwords, and watching for fraud."
+        },
+        {
+          "id": "FI:782",
+          "text": "Calculate the cost of credit",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Determining the true cost of borrowing by accounting for the interest rate (APR), fees, and repayment time—not just the amount borrowed."
+        },
+        {
+          "id": "FI:071",
+          "text": "Demonstrate the wise use of credit",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Borrowing responsibly—only what you can repay, paying on time, and keeping balances low—to build good credit and avoid costly debt."
+        },
+        {
+          "id": "FI:072",
+          "text": "Validate credit history",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Reviewing your credit report for accuracy, disputing errors, and confirming the record lenders see reflects your true history."
+        },
+        {
+          "id": "FI:783",
+          "text": "Make responsible financial decisions",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Weighing needs versus wants, costs versus benefits, and short- versus long-term impact to manage money wisely."
+        },
+        {
+          "id": "FI:073",
+          "text": "Protect against identity theft",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Safeguarding personal and financial information—secure passwords, careful sharing, monitoring accounts—to prevent others from stealing your identity."
+        },
+        {
+          "id": "FI:565",
+          "text": "Pay bills",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Paying what you owe accurately and on time, through appropriate methods, to avoid late fees and protect your credit."
+        },
+        {
+          "id": "FI:625",
+          "text": "Apply for a consumer loan",
+          "level": "SP",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Requesting borrowed funds from a lender by providing financial information and meeting credit and income requirements, then agreeing to repayment terms."
+        },
+        {
+          "id": "FI:568",
+          "text": "Control debt",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Managing what you owe so it stays affordable—limiting borrowing, prioritizing high-interest debt, and keeping payments on track."
+        },
+        {
+          "id": "FI:074",
+          "text": "Prepare personal income tax forms",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Completing required tax returns accurately—reporting income, deductions, and credits—to determine and file what you owe or are refunded."
+        },
+        {
+          "id": "FI:831",
+          "text": "Discuss options for financing a college education",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Ways to pay for college—savings, scholarships, grants, work-study, and student loans—each with different costs and obligations."
+        },
+        {
+          "id": "FI:569",
+          "text": "Discuss the nature of retirement planning",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Saving and investing over a career—through accounts such as 401(k)s and IRAs—to build enough income to live on after you stop working."
+        },
+        {
+          "id": "FI:572",
+          "text": "Explain the nature of estate planning",
+          "level": "CS",
+          "performance_element": "Manage personal finances to achieve financial goals",
+          "definition": "Arranging in advance how your assets will be managed and distributed after death—through wills, trusts, and beneficiaries—to carry out your wishes."
+        },
+        {
+          "id": "FI:075",
+          "text": "Describe types of financial-services providers",
+          "level": "CS",
+          "performance_element": "Understand the use of financial-services providers to aid in financial-goal achievement",
+          "definition": "Institutions that offer financial products—banks, credit unions, brokerages, and insurance companies—each serving different needs."
+        },
+        {
+          "id": "FI:076",
+          "text": "Discuss considerations in selecting a financial-services provider",
+          "level": "CS",
+          "performance_element": "Understand the use of financial-services providers to aid in financial-goal achievement",
+          "definition": "Comparing fees, services, convenience, reputation, credentials, and fit with your needs before choosing a provider."
+        },
+        {
+          "id": "FI:077",
+          "text": "Explain types of investments",
+          "level": "CS",
+          "performance_element": "Use investment strategies to ensure financial well-being",
+          "definition": "Vehicles for growing money—stocks, bonds, mutual funds, and real estate—each with different levels of risk and return."
+        },
+        {
+          "id": "FI:081",
+          "text": "Describe the concept of insurance",
+          "level": "CS",
+          "performance_element": "Use risk management products to protect a business's financial well- being",
+          "definition": "Insurance provides a company or individual peace of mind and the financial freedom from the devastation of unforeseen occurrences resulting from natural, human, or economic disasters. Some risks may be transferred in the form of insurance."
+        },
+        {
+          "id": "FI:571",
+          "text": "Determine insurance needs",
+          "level": "SP",
+          "performance_element": "Identify potential threats and opportunities to protect financial well- being",
+          "definition": "Assessing personal or business risks and assets to decide what types and amounts of insurance coverage are appropriate."
+        },
+        {
+          "id": "FI:579",
+          "text": "Describe the need for financial information",
+          "level": "CS",
+          "performance_element": "Acquire a foundational knowledge of accounting to understand its nature and scope",
+          "definition": "Accurate financial information lets owners, investors, lenders, and managers judge performance, make decisions, and meet legal requirements."
+        },
+        {
+          "id": "FI:085",
+          "text": "Explain the concept of accounting",
+          "level": "CS",
+          "performance_element": "Acquire a foundational knowledge of accounting to understand its nature and scope",
+          "definition": "Accounting is the system of recording, classifying, summarizing, and reporting financial transactions to show a business's financial status."
+        },
+        {
+          "id": "FI:351",
+          "text": "Discuss the role of ethics in accounting",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of accounting to understand its nature and scope",
+          "definition": "Ethics ensures that all members of the company demonstrate integrity and honesty in their work with clients and other professional relationships. Good ethics also prevent accountants from associating themselves with any information that could be misleading or damaging to the client or the organisation."
+        },
+        {
+          "id": "FI:352",
+          "text": "Explain the use of technology in accounting",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of accounting to understand its nature and scope",
+          "definition": "Most businesses use some type of accounting software to record and report their business transactions. Even when using an automated system, you still need to collect and keep your source documents and each business transaction must be separated into its debit and credit parts."
+        },
+        {
+          "id": "FI:353",
+          "text": "Explain legal considerations for accounting",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of accounting to understand its nature and scope",
+          "definition": "The most significant changes to corporate governance and accounting practice came with the Sarbanes-Oxley Act of 2002. The act requires that CEOs, financial officers, accountants, and auditors comply with regulations and procedures designed to ensure accurate representation of companies' financial positions."
+        },
+        {
+          "id": "FI:091",
+          "text": "Describe the nature of cash flow statements",
+          "level": "SP",
+          "performance_element": "Implement accounting procedures to track money flow and to determine financial status",
+          "definition": "A cash flow statement tracks cash coming in and going out over a period—from operations, investing, and financing—showing whether a business can cover its obligations."
+        },
+        {
+          "id": "FI:093",
+          "text": "Explain the nature of balance sheets",
+          "level": "SP",
+          "performance_element": "Implement accounting procedures to track money flow and to determine financial status",
+          "definition": "A balance sheet is a summary of a business' assets, liabilities, and owners' equity. Assets are anything of monetary value that you own and are classified as current or fixed. A current asset is cash or anything that can be converted into cash in a year."
+        },
+        {
+          "id": "FI:094",
+          "text": "Describe the nature of income statements",
+          "level": "SP",
+          "performance_element": "Implement accounting procedures to track money flow and to determine financial status",
+          "definition": "Reports revenues, expenses and profits (or losses) for a period of time. Shows a firm's profit after costs, expenses and taxes. Summarizes all resources that have come into the firm (revenue), all the resources that have left the firm, and the resulting net income or loss."
+        },
+        {
+          "id": "FI:354",
+          "text": "Explain the role of finance in business",
+          "level": "CS",
+          "performance_element": "Acquire a foundational knowledge of finance to understand its nature and scope",
+          "definition": "The role of finance in business is to help capital move from investors to businesses. Businesses need finance to assist with operations. This is possible through financial markets and various investment vehicles including loans and short and long term financing."
+        },
+        {
+          "id": "FI:355",
+          "text": "Discuss the role of ethics in finance",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of finance to understand its nature and scope",
+          "definition": "Ethical finance means honest, accurate reporting, avoiding conflicts of interest and fraud, and handling money and information with integrity and transparency."
+        },
+        {
+          "id": "FI:356",
+          "text": "Explain legal considerations for finance",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of finance to understand its nature and scope",
+          "definition": "Finance must comply with laws and regulations on reporting, disclosure, securities, and fraud to protect investors and the public."
+        },
+        {
+          "id": "FI:106",
+          "text": "Describe the nature of budgets",
+          "level": "SP",
+          "performance_element": "Manage financial resources to ensure solvency",
+          "definition": "A budget is an itemized forecast of an individual or company's income and expenses for a designated period of time. This allows the entity to evaluate how to use funds in fixed and discretionary categories as well as provides focus to achieve financial goals and avoid debt. Describe the relationship between accounting and finance."
+        }
+      ]
+    },
+    {
+      "id": "HR",
+      "name": "Human Resources Management",
+      "performance_indicators": [
+        {
+          "id": "HR:410",
+          "text": "Discuss the nature of human resources management",
+          "level": "CS",
+          "performance_element": "Understand the role and function of human resources management to obtain a foundational knowledge of its nature and scope",
+          "definition": "The main duties involved in human resources management include recruiting, hiring, orientation and training, scheduling, handling employee complaints, assessing performance, discipline, and termination. Recruiting is the process of locating a pool of job applicants and selecting potential employees from this pool."
+        },
+        {
+          "id": "HR:411",
+          "text": "Explain the role of ethics in human resources management",
+          "level": "SP",
+          "performance_element": "Understand the role and function of human resources management to obtain a foundational knowledge of its nature and scope",
+          "definition": "Ethics are standards set by organizations that help ensure that people are treated fairly and honestly. In human resources management this includes making decisions that promote workplace cohesion and establishing standards and procedures that assures in all situations that individuals are treated equally."
+        },
+        {
+          "id": "HR:412",
+          "text": "Describe the use of technology in human resources management",
+          "level": "SP",
+          "performance_element": "Understand the role and function of human resources management to obtain a foundational knowledge of its nature and scope",
+          "definition": "Technology is used more and more in the area of recruiting and hiring employees. Effective sources for locating prospective employees now include Internet career services and company websites. Many companies ask applicants to fill out an application online or at a computer terminal at the company's location."
+        },
+        {
+          "id": "HR:360",
+          "text": "Orient new employees",
+          "level": "CS",
+          "performance_element": "Manage staff growth and development to increase productivity and employee satisfaction",
+          "definition": "Welcoming and introducing new hires to the company—its policies, culture, people, and their role—so they become productive and comfortable quickly."
+        }
+      ]
+    },
+    {
+      "id": "MK",
+      "name": "Marketing",
+      "performance_indicators": [
+        {
+          "id": "MK:001",
+          "text": "Explain marketing and its importance in a global economy",
+          "level": "CS",
+          "performance_element": "Understand marketing's role and function in business to facilitate economic exchanges with customers",
+          "definition": "As the global economy has expanded, brands must use technology and communication to establish themselves in a variety of markets. Marketing is a tool that is used to persuade customers and must be employed in order for businesses to sell their products."
+        },
+        {
+          "id": "MK:002",
+          "text": "Describe marketing functions and related activities",
+          "level": "CS",
+          "performance_element": "Understand marketing's role and function in business to facilitate economic exchanges with customers",
+          "definition": "Marketing functions include 4 P's (Price, Promotion, Place, Product). Better 4 P's means more customer loyalty. Explain how businesses can use trade-show/exposition participation to communicate with targeted audiences. A trade show is an exhibit of products of interest to a specific industry."
+        },
+        {
+          "id": "MK:014",
+          "text": "Explain factors that influence customer/client/business buying behavior",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of customer/client/business behavior to understand what motivates decision-making",
+          "definition": "Decisions to buy are shaped by needs, motives, perceptions, attitudes, social and cultural influences, price, and the buying situation."
+        },
+        {
+          "id": "MK:015",
+          "text": "Discuss actions employees can take to achieve the company's desired results",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of customer/client/business behavior to understand what motivates decision-making",
+          "definition": "Employees advance company goals through good service, quality work, suggestive selling, efficiency, and behavior that reflects the brand."
+        },
+        {
+          "id": "MK:019",
+          "text": "Describe connections between company actions and results (e.g., influencing consumer buying behavior, gaining market share, etc.)",
+          "level": "SP",
+          "performance_element": "Acquire foundational knowledge of customer/client/business behavior to understand what motivates decision-making",
+          "definition": "Specific actions—marketing, service, pricing—drive outcomes like influencing buying behavior, gaining market share, and building loyalty; understanding the link guides decisions."
+        }
+      ]
+    },
+    {
+      "id": "NF",
+      "name": "Information Management",
+      "performance_indicators": [
+        {
+          "id": "NF:077",
+          "text": "Assess information needs",
+          "level": "CS",
+          "performance_element": "Use information literacy skills to increase workplace efficiency and effectiveness",
+          "definition": "Determining what information is required to make a decision or complete a task before searching, so effort is focused and efficient."
+        },
+        {
+          "id": "NF:078",
+          "text": "Obtain needed information efficiently",
+          "level": "CS",
+          "performance_element": "Use information literacy skills to increase workplace efficiency and effectiveness",
+          "definition": "Locating accurate information quickly using the right sources and search techniques, without wasting time on irrelevant material."
+        },
+        {
+          "id": "NF:079",
+          "text": "Evaluate quality and source of information",
+          "level": "CS",
+          "performance_element": "Use information literacy skills to increase workplace efficiency and effectiveness",
+          "definition": "Information is widely accessible in today's market so evaluation tools can be used to determine validity. A reader should determine who the intended audience is, if the data provided is fact or opinion, and if a credible author is attached to the information."
+        },
+        {
+          "id": "NF:278",
+          "text": "Draw conclusions based on information analysis",
+          "level": "CS",
+          "performance_element": "Use information literacy skills to increase workplace efficiency and effectiveness",
+          "definition": "Examining gathered data, identifying patterns and meaning, and reaching sound, supportable conclusions to guide decisions."
+        },
+        {
+          "id": "NF:080",
+          "text": "Apply information to accomplish a task",
+          "level": "CS",
+          "performance_element": "Use information literacy skills to increase workplace efficiency and effectiveness",
+          "definition": "Info can be applied to brainstorm promotional strategies based on data, important for marketing (different info gives you different consumer preferences)."
+        },
+        {
+          "id": "NF:081",
+          "text": "Store information for future use",
+          "level": "CS",
+          "performance_element": "Use information literacy skills to increase workplace efficiency and effectiveness",
+          "definition": "Saving and organizing information securely—labeled, backed up, and retrievable—so it can be found and reused when needed."
+        },
+        {
+          "id": "NF:110",
+          "text": "Discuss the nature of information management",
+          "level": "CS",
+          "performance_element": "Acquire a foundational knowledge of information management to understand its nature and scope",
+          "definition": "Information management is the process of collecting and analyzing data that can be used in the strategic decision making process for a business. This can support a variety of business functions including developing customer databases, managing electronic purchasing decisions, and monitoring competitor information."
+        },
+        {
+          "id": "NF:111",
+          "text": "Explain the role of ethics in information management",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of information management to understand its nature and scope",
+          "definition": "Handling information honestly and responsibly—respecting privacy, ensuring accuracy, securing data, and using it only for proper purposes."
+        },
+        {
+          "id": "NF:076",
+          "text": "Explain legal issues associated with information management",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of information management to understand its nature and scope",
+          "definition": "Laws govern data privacy, security, ownership, and use; businesses must comply to avoid liability and protect customers and themselves."
+        },
+        {
+          "id": "NF:003",
+          "text": "Identify ways that technology impacts business",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Technology allows the speed of business transactions to occur globally; financial transactions are becoming instantaneous. Customers have come to expect more choices and higher levels of customer service due to advances in technology."
+        },
+        {
+          "id": "NF:083",
+          "text": "Explain the role of information systems",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "An information system is a set of procedures and methods that generate, store, analyze, and distribute information for use in making business decisions. Such systems organize, collect, and store data for current use or future decisions. Most information systems rely on data about current customers, sales reports, and inventory levels."
+        },
+        {
+          "id": "NF:084",
+          "text": "Discuss principles of computer systems",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "A system of interconnected computers that share a central storage system and various peripheral devices such as printers, scanners, or routers. Each computer connected to the system can operate independently, but has the ability to communicate with other external devices and computers."
+        },
+        {
+          "id": "NF:085",
+          "text": "Use basic operating systems",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Operating a computer's core software to manage files, run programs, and control settings and devices."
+        },
+        {
+          "id": "NF:086",
+          "text": "Describe the scope of the internet",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "The internet is the worldwide, publicly accessible system of interconnected computer networks that transmit data by packet switching using the standard IP."
+        },
+        {
+          "id": "NF:004",
+          "text": "Demonstrate basic email functions",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Sending, receiving, replying, forwarding, attaching files, and organizing messages in an email program."
+        },
+        {
+          "id": "NF:005",
+          "text": "Demonstrate personal information management/productivity applications",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Using tools like calendars, contacts, tasks, and notes to organize schedules, information, and work."
+        },
+        {
+          "id": "NF:006",
+          "text": "Demonstrate basic web-search skills",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Finding relevant, credible information online using search engines, keywords, and filters effectively."
+        },
+        {
+          "id": "NF:007",
+          "text": "Demonstrate basic word processing skills",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Creating, formatting, editing, and saving documents in a word-processing program."
+        },
+        {
+          "id": "NF:008",
+          "text": "Demonstrate basic presentation applications",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Building and delivering slide presentations with text, images, and visuals using presentation software."
+        },
+        {
+          "id": "NF:009",
+          "text": "Demonstrate basic database applications",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Maintaining a database for each customer group enables the company to better promote information to each individual based on their product needs and wants. Zip code information saves money on mailings due to bulk rates."
+        },
+        {
+          "id": "NF:010",
+          "text": "Demonstrate basic spreadsheet applications",
+          "level": "PQ",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Entering, organizing, and calculating data in spreadsheets using formulas, functions, and charts."
+        },
+        {
+          "id": "NF:088",
+          "text": "Use an integrated business software application package",
+          "level": "CS",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Working across a suite of connected programs (word processing, spreadsheet, presentation, database) that share data to perform business tasks."
+        },
+        {
+          "id": "NF:011",
+          "text": "Demonstrate collaborative/groupware applications",
+          "level": "CS",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Using shared online tools that let teams work together on documents, projects, and communication in real time."
+        },
+        {
+          "id": "NF:042",
+          "text": "Create and post basic web page",
+          "level": "CS",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Building a simple web page with text, images, and links and publishing it online."
+        },
+        {
+          "id": "NF:215",
+          "text": "Collaborate on and aggregate complex internal documents to create a common voice",
+          "level": "SP",
+          "performance_element": "Utilize information-technology tools to manage and perform work responsibilities",
+          "definition": "Combining input from multiple contributors into a unified document with consistent style, tone, and message."
+        },
+        {
+          "id": "NF:001",
+          "text": "Describe the nature of business records",
+          "level": "SP",
+          "performance_element": "Maintain business records to facilitate business operations",
+          "definition": "meeting minutes, memoranda, employment contracts, and accounting source document, revenue/income/capita statements, etc. To be reviewed for monitoring process, accidents, patterns, employee evaluation"
+        },
+        {
+          "id": "NF:002",
+          "text": "Maintain customer records",
+          "level": "SP",
+          "performance_element": "Maintain business records to facilitate business operations",
+          "definition": "Keeping customer information accurate, current, complete, and secure so it can support service and decision-making."
+        },
+        {
+          "id": "NF:013",
+          "text": "Describe current business trends",
+          "level": "SP",
+          "performance_element": "Acquire information to guide business decision-making",
+          "definition": "Assessing current business trends is important to both business and professional growth. Business owners and entrepreneurs should keep up-to-date through a variety of means. Classes are offered at vocational/technical schools, two- and four-year colleges, and online."
+        },
+        {
+          "id": "NF:014",
+          "text": "Monitor internal records for business information",
+          "level": "SP",
+          "performance_element": "Acquire information to guide business decision-making",
+          "definition": "Regularly reviewing a company's own records—sales, inventory, finances—to spot trends and inform decisions."
+        },
+        {
+          "id": "NF:015",
+          "text": "Conduct an environmental scan to obtain business information",
+          "level": "SP",
+          "performance_element": "Acquire information to guide business decision-making",
+          "definition": "Systematically gathering information about external conditions—market, competitors, trends, regulations—to guide strategy."
+        },
+        {
+          "id": "NF:093",
+          "text": "Interpret statistical findings",
+          "level": "SP",
+          "performance_element": "Acquire information to guide business decision-making",
+          "definition": "Reading and making sense of statistical data—averages, percentages, trends—to draw accurate, useful conclusions."
+        },
+        {
+          "id": "NF:216",
+          "text": "Translate research findings into actionable business recommendations",
+          "level": "SP",
+          "performance_element": "Acquire information to guide business decision-making",
+          "definition": "Turning data and analysis into clear, practical recommendations that managers can act on."
+        },
+        {
+          "id": "NF:139",
+          "text": "Explain the principles of data analysis",
+          "level": "SP",
+          "performance_element": "Create and access databases to acquire information for business decision- making",
+          "definition": "Data analysis is examining raw data to find patterns and meaning—collecting, cleaning, processing, and interpreting it to support decisions."
+        },
+        {
+          "id": "NF:140",
+          "text": "Explain the nature of tools that can be used to access information in the database system",
+          "level": "SP",
+          "performance_element": "Create and access databases to acquire information for business decision- making",
+          "definition": "Queries, reports, and software tools let users retrieve and view specific information stored in a database."
+        },
+        {
+          "id": "NF:141",
+          "text": "Access information in the database system",
+          "level": "SP",
+          "performance_element": "Create and access databases to acquire information for business decision- making",
+          "definition": "Retrieving specific records or data from a database using queries, searches, or reports."
+        },
+        {
+          "id": "NF:148",
+          "text": "Discuss the nature of data mining",
+          "level": "CS",
+          "performance_element": "Apply data mining methods to acquire pertinent information for business decision-making",
+          "definition": "Data mining analyzes large data sets to discover hidden patterns, relationships, and trends useful for business decisions."
+        },
+        {
+          "id": "NF:149",
+          "text": "Describe data mining tools and techniques",
+          "level": "SP",
+          "performance_element": "Apply data mining methods to acquire pertinent information for business decision-making",
+          "definition": "Methods and software—classification, clustering, association, and predictive modeling—used to extract insights from large data sets."
+        },
+        {
+          "id": "NF:150",
+          "text": "Discuss the importance of ethics in data mining",
+          "level": "SP",
+          "performance_element": "Apply data mining methods to acquire pertinent information for business decision-making",
+          "definition": "Mining data ethically means respecting privacy, obtaining proper consent, securing data, and avoiding misuse or discrimination."
+        },
+        {
+          "id": "NF:151",
+          "text": "Demonstrate basic data mining techniques",
+          "level": "SP",
+          "performance_element": "Apply data mining methods to acquire pertinent information for business decision-making",
+          "definition": "Applying simple methods to explore a data set and surface patterns or relationships."
+        },
+        {
+          "id": "NF:152",
+          "text": "Interpret data mining findings",
+          "level": "SP",
+          "performance_element": "Apply data mining methods to acquire pertinent information for business decision-making",
+          "definition": "Making sense of patterns discovered through data mining and judging what they mean for the business."
+        }
+      ]
+    },
+    {
+      "id": "OP",
+      "name": "Operations",
+      "performance_indicators": [
+        {
+          "id": "OP:189",
+          "text": "Explain the nature of operations",
+          "level": "CS",
+          "performance_element": "Understand operation's role and function in business to value its contribution to a company",
+          "definition": "Operations include the activities involved in the daily functions of the business to generate revenue."
+        },
+        {
+          "id": "OP:190",
+          "text": "Discuss the role of ethics in operations",
+          "level": "SP",
+          "performance_element": "Understand operation's role and function in business to value its contribution to a company",
+          "definition": "Business operations employees should not disclose information unless authorized and decisions should not be made unless it is permitted."
+        },
+        {
+          "id": "OP:191",
+          "text": "Describe the use of technology in operations",
+          "level": "SP",
+          "performance_element": "Understand operation's role and function in business to value its contribution to a company",
+          "definition": "Technology—software, automation, tracking systems—improves operations by increasing efficiency, accuracy, and visibility across processes."
+        },
+        {
+          "id": "OP:004",
+          "text": "Describe health and safety regulations in business",
+          "level": "PQ",
+          "performance_element": "Adhere to health and safety regulations to support a safe work environment",
+          "definition": "Businesses must adhere to health and safety regulations established by the U.S.Department of Labor. Workplace safety regulations are enforced by the Occupational Safety and Health Administration (OSHA) through inspections and fines. Employers must maintain health and safety records and provide safety training."
+        },
+        {
+          "id": "OP:005",
+          "text": "Report noncompliance with business health and safety regulations",
+          "level": "PQ",
+          "performance_element": "Adhere to health and safety regulations to support a safe work environment",
+          "definition": "Promptly informing the appropriate person or authority when safety or health rules are being violated, to protect people and the business."
+        },
+        {
+          "id": "OP:006",
+          "text": "Follow instructions for use of equipment, tools, and machinery",
+          "level": "PQ",
+          "performance_element": "Implement safety procedures to minimize loss",
+          "definition": "Choose learning methods Any method of learning should support individuals, teams or the organization as a whole to build capability that meets business needs."
+        },
+        {
+          "id": "OP:007",
+          "text": "Follow safety precautions",
+          "level": "PQ",
+          "performance_element": "Implement safety procedures to minimize loss",
+          "definition": "Observing established safety rules and practices to prevent injuries, accidents, and loss on the job."
+        },
+        {
+          "id": "OP:008",
+          "text": "Maintain a safe work environment",
+          "level": "CS",
+          "performance_element": "Implement safety procedures to minimize loss",
+          "definition": "Creating a safe work environment is important due to the significant financial impact these policies can have on a business."
+        },
+        {
+          "id": "OP:009",
+          "text": "Explain procedures for handling accidents",
+          "level": "CS",
+          "performance_element": "Implement safety procedures to minimize loss",
+          "definition": "Immediately make sure if everyone is alright, call 911 ASAP, report and record the incident, take steps to make sure the incident never happens again. Explain how frequency schedules are determined for guestroom cleaning Frequency schedules indicate how often items on inventory lists are to be cleaned or maintained."
+        },
+        {
+          "id": "OP:010",
+          "text": "Handle and report emergency situations",
+          "level": "CS",
+          "performance_element": "Implement safety procedures to minimize loss",
+          "definition": "Responding to emergencies calmly using proper procedures and notifying the right people to keep people safe and limit damage."
+        },
+        {
+          "id": "OP:013",
+          "text": "Explain routine security precautions",
+          "level": "CS",
+          "performance_element": "Implement security policies/procedures to minimize chance for loss",
+          "definition": "Encourage and assist employees to be prepared for personal, natural, and technological emergencies. Review and update the call down list for emergency response teams. Conduct training for employees on physical security precautions. Develop emergency response and business resumption plans around these emergencies."
+        },
+        {
+          "id": "OP:152",
+          "text": "Follow established security procedures/policies",
+          "level": "CS",
+          "performance_element": "Implement security policies/procedures to minimize chance for loss",
+          "definition": "Adhering to the company's rules for protecting people, property, and information from theft, harm, or loss."
+        },
+        {
+          "id": "OP:153",
+          "text": "Protect company information and intangibles",
+          "level": "CS",
+          "performance_element": "Implement security policies/procedures to minimize chance for loss",
+          "definition": "Safeguarding sensitive assets—data, trade secrets, intellectual property, and reputation—from theft, leaks, or misuse."
+        },
+        {
+          "id": "OP:441",
+          "text": "Explain information privacy, security, and confidentiality considerations in business",
+          "level": "CS",
+          "performance_element": "Comply with security rules, regulations, and codes (e.g., property, privacy, access, confidentiality) to protect customer and company information, reputation, and image",
+          "definition": "Businesses must protect personal and proprietary information from unauthorized access and use, balancing access with privacy and legal duties."
+        },
+        {
+          "id": "OP:064",
+          "text": "Maintain data security",
+          "level": "CS",
+          "performance_element": "Comply with security rules, regulations, and codes (e.g., property, privacy, access, confidentiality) to protect customer and company information, reputation, and image",
+          "definition": "Protecting digital information through measures like passwords, encryption, backups, and access controls to prevent breaches and loss."
+        },
+        {
+          "id": "OP:158",
+          "text": "Explain the nature of project management",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of project management to understand its nature and scope",
+          "definition": "Project management is using knowledge, skills, and techniques to execute a temporary group activity designed to develop a product, service, or outcome both effectively and efficiently. There are five processes needed in project management: initiating, planning, executing, monitoring, and controlling and closing."
+        },
+        {
+          "id": "OP:675",
+          "text": "Describe the role of ethics in project management",
+          "level": "SP",
+          "performance_element": "Acquire a foundational knowledge of project management to understand its nature and scope",
+          "definition": "Ethical project management means honest reporting of progress and costs, fair treatment of stakeholders, and responsible use of resources."
+        },
+        {
+          "id": "OP:519",
+          "text": "Plan project",
+          "level": "CS",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Defining a project's goals, tasks, timeline, resources, and responsibilities before work begins."
+        },
+        {
+          "id": "OP:520",
+          "text": "Monitor projects and take corrective actions",
+          "level": "CS",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Once you've identified areas where need improvement,you will have to take corrective actions to get your project back on track. An example is refocusing the scope of your project. Project failure, risk tracking, and stakeholder management are not types of corrective actions to take if your project has derailed."
+        },
+        {
+          "id": "OP:521",
+          "text": "Evaluate project success",
+          "level": "CS",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Judging whether a project met its goals, budget, timeline, and quality standards, and what can be learned for next time."
+        },
+        {
+          "id": "OP:003",
+          "text": "Identify resources needed for project",
+          "level": "SP",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Determining the people, money, materials, time, and tools a project requires to be completed."
+        },
+        {
+          "id": "OP:001",
+          "text": "Develop project plan",
+          "level": "SP",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Creating a detailed roadmap of a project's scope, schedule, resources, tasks, and milestones to guide execution."
+        },
+        {
+          "id": "OP:002",
+          "text": "Apply project-management tools to monitor and communicate project progress",
+          "level": "SP",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Using tools such as Gantt charts, dashboards, and software to track tasks and keep stakeholders informed of status."
+        },
+        {
+          "id": "OP:159",
+          "text": "Evaluate project results",
+          "level": "SP",
+          "performance_element": "Utilize project management skills to improve workflow and minimize costs",
+          "definition": "Assessing a completed project's outcomes against its objectives to measure success and capture lessons learned."
+        },
+        {
+          "id": "OP:015",
+          "text": "Explain the nature and scope of purchasing",
+          "level": "CS",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "The actions that a company takes to bring in their products Businesses want to purchase the highest quality goods at the lowest possible cost The actions that a company takes to bring in their products Explain buying strategies Attending industry trade shows offers a method of seeing new products and determining what will complement the business' product line."
+        },
+        {
+          "id": "OP:016",
+          "text": "Place orders/reorders",
+          "level": "CS",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Purchasing needed goods or supplies—initial orders and restocking—at the right quantity and time to keep operations running."
+        },
+        {
+          "id": "OP:031",
+          "text": "Maintain inventory of supplies",
+          "level": "CS",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Tracking stock levels and reordering as needed so the right supplies are available without overstocking."
+        },
+        {
+          "id": "OP:246",
+          "text": "Discuss the importance of utilizing ethical purchasing methods",
+          "level": "SP",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Buying honestly and fairly—avoiding kickbacks, conflicts of interest, and favoritism—and treating suppliers equitably."
+        },
+        {
+          "id": "OP:247",
+          "text": "Explain the impact of the purchasing process on productivity",
+          "level": "SP",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Efficient, well-timed purchasing keeps materials available and costs controlled, directly affecting how smoothly and profitably work flows."
+        },
+        {
+          "id": "OP:160",
+          "text": "Manage the bid process in purchasing",
+          "level": "SP",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Soliciting and comparing competitive bids from suppliers to obtain the best value fairly and transparently."
+        },
+        {
+          "id": "OP:161",
+          "text": "Select vendors",
+          "level": "SP",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Choosing suppliers based on price, quality, reliability, service, and terms to meet the business's needs."
+        },
+        {
+          "id": "OP:162",
+          "text": "Evaluate vendor performance",
+          "level": "SP",
+          "performance_element": "Implement purchasing activities to obtain business supplies, equipment, resources, and services",
+          "definition": "Measuring how well suppliers deliver on quality, timeliness, price, and service to decide whether to continue with them."
+        },
+        {
+          "id": "OP:017",
+          "text": "Explain the concept of production",
+          "level": "CS",
+          "performance_element": "Understand production's role and function in business to recognize its need in an organization",
+          "definition": "Production decisions concentrate on what goods to produce, how to produce them, the costs of producing them, and optimizing the mix of resource inputs used in their production This production information can then be combined with market information (like demand and marginal revenue) to determine the quantity of products to produce and the optimum pricing Explain the concept of"
+        },
+        {
+          "id": "OP:163",
+          "text": "Identify quality-control measures",
+          "level": "SP",
+          "performance_element": "Implement quality-control processes to minimize errors and to expedite workflow",
+          "definition": "Quality control is a process through which a business seeks to ensure that product quality is maintained or improved and manufacturing errors are reduced or eliminated. Quality control requires the business to create an environment in which both management and employees strive for perfection."
+        },
+        {
+          "id": "OP:164",
+          "text": "Utilize quality control methods at work",
+          "level": "SP",
+          "performance_element": "Implement quality-control processes to minimize errors and to expedite workflow",
+          "definition": "Applying inspection and process checks to catch and prevent defects, keeping products and services up to standard."
+        },
+        {
+          "id": "OP:019",
+          "text": "Describe crucial elements of a quality culture",
+          "level": "SP",
+          "performance_element": "Implement quality-control processes to minimize errors and to expedite workflow",
+          "definition": "A quality culture is an organization-wide commitment to high standards—continuous improvement, accountability, and customer focus at every level."
+        },
+        {
+          "id": "OP:652",
+          "text": "Resolve problems with suppliers' quality issues",
+          "level": "SP",
+          "performance_element": "Implement quality-control processes to minimize errors and to expedite workflow",
+          "definition": "Identifying defects or shortfalls in supplier goods and working with the supplier to correct them and prevent recurrence."
+        },
+        {
+          "id": "OP:024",
+          "text": "Explain the nature of overhead/operating costs",
+          "level": "SP",
+          "performance_element": "Implement expense-control strategies to enhance a business's financial wellbeing",
+          "definition": "Operating costs are the recurring expenses, which are related to the operation of a business, piece of equipment or facility For a commercial enterprise, operating costs fall into two broad categories: Overhead/fixed costs: costs that are the same whether the operation is closed or running at 100% capacity (examples: rent, management salaries, etc.) Variable costs: costs that"
+        },
+        {
+          "id": "OP:025",
+          "text": "Explain employee's role in expense control",
+          "level": "SP",
+          "performance_element": "Implement expense-control strategies to enhance a business's financial wellbeing",
+          "definition": "Employees control expenses by reducing waste, using resources wisely, and following cost-conscious practices in daily work."
+        },
+        {
+          "id": "OP:228",
+          "text": "Organize and prioritize work",
+          "level": "CS",
+          "performance_element": "Implement organizational skills to improve efficiency and work flow",
+          "definition": "Arranging tasks by importance and deadline and managing time so the most critical work gets done efficiently."
+        },
+        {
+          "id": "OP:230",
+          "text": "Coordinate work with that of team members",
+          "level": "CS",
+          "performance_element": "Implement organizational skills to improve efficiency and work flow",
+          "definition": "Aligning your tasks and timing with teammates' so work flows smoothly and goals are met together."
+        },
+        {
+          "id": "OP:196",
+          "text": "Coordinate activities with those of other departments",
+          "level": "SP",
+          "performance_element": "Implement organizational skills to improve efficiency and work flow",
+          "definition": "Aligning work across departments so efforts complement rather than conflict, supporting overall company goals."
+        },
+        {
+          "id": "OP:354",
+          "text": "Monitor and ensure completion of delegated tasks",
+          "level": "SP",
+          "performance_element": "Maintain work flow to enhance productivity",
+          "definition": "Following up on work assigned to others to confirm it is done correctly and on time."
+        },
+        {
+          "id": "OP:355",
+          "text": "Streamline work processes",
+          "level": "SP",
+          "performance_element": "Maintain work flow to enhance productivity",
+          "definition": "Improving how work is done by removing unnecessary steps, reducing waste, and increasing efficiency."
+        },
+        {
+          "id": "OP:442",
+          "text": "Comply with policies and procedures for use of property and equipment",
+          "level": "CS",
+          "performance_element": "Maintain property and equipment to facilitate ongoing business activities",
+          "definition": "Using company property and equipment according to established rules to keep it safe, functional, and well-maintained."
+        },
+        {
+          "id": "OP:443",
+          "text": "Explain the concept of supply chain",
+          "level": "CS",
+          "performance_element": "Understand supply chain management's role in business to appreciate its contributions to efficiency and profitability",
+          "definition": "A supply chain is the network of organizations and steps that move a product from raw materials through production to the final customer."
+        },
+        {
+          "id": "OP:444",
+          "text": "Explain the benefits of supply chain collaboration",
+          "level": "SP",
+          "performance_element": "Understand supply chain management's role in business to appreciate its contributions to efficiency and profitability",
+          "definition": "Partners sharing information and coordinating across the supply chain reduce costs, delays, and waste while improving service and responsiveness."
+        }
       ]
     },
     {
       "id": "PD",
       "name": "Professional Development",
       "performance_indicators": [
-        { "id": "PD-P01", "text": "[PLACEHOLDER] Explain the concept of professionalism in the workplace." },
-        { "id": "PD-P02", "text": "[PLACEHOLDER] Maintain appropriate personal appearance." },
-        { "id": "PD-P03", "text": "[PLACEHOLDER] Demonstrate initiative and self-direction." }
+        {
+          "id": "PD:002",
+          "text": "Maintain appropriate personal appearance",
+          "level": "PQ",
+          "performance_element": "Acquire self-development skills to enhance relationships and improve efficiency in the work environment",
+          "definition": "Maintaining your personal appearance is necessary as employees represent the business in which he/she is employed. Personal appearance includes facial expressions, body language, as well as clothes and grooming."
+        },
+        {
+          "id": "PD:009",
+          "text": "Demonstrate systematic behavior",
+          "level": "PQ",
+          "performance_element": "Acquire self-development skills to enhance relationships and improve efficiency in the work environment",
+          "definition": "Demonstrating systematic behavior is immensely profitable in the workplace."
+        },
+        {
+          "id": "PD:018",
+          "text": "Set personal goals",
+          "level": "CS",
+          "performance_element": "Acquire self-development skills to enhance relationships and improve efficiency in the work environment",
+          "definition": "Defining specific, achievable objectives for yourself, with steps and timelines, to direct effort and measure progress."
+        },
+        {
+          "id": "PD:179",
+          "text": "Balance personal and professional responsibilities",
+          "level": "SP",
+          "performance_element": "Acquire self-development skills to enhance relationships and improve efficiency in the work environment",
+          "definition": "Managing work and personal life so both receive appropriate time and attention, sustaining well-being and performance."
+        },
+        {
+          "id": "PD:250",
+          "text": "Adhere to company protocols and policies",
+          "level": "CS",
+          "performance_element": "Understand and follow company rules and regulations to maintain employment",
+          "definition": "Following the organization's established rules, procedures, and standards in your work."
+        },
+        {
+          "id": "PD:251",
+          "text": "Follow rules of conduct",
+          "level": "CS",
+          "performance_element": "Understand and follow company rules and regulations to maintain employment",
+          "definition": "Behaving according to the workplace's expected standards of professional and ethical conduct."
+        },
+        {
+          "id": "PD:252",
+          "text": "Follow chain of command",
+          "level": "CS",
+          "performance_element": "Understand and follow company rules and regulations to maintain employment",
+          "definition": "Respecting the organization's lines of authority—reporting to and communicating through the proper levels."
+        },
+        {
+          "id": "PD:254",
+          "text": "Determine the nature of organizational goals",
+          "level": "SP",
+          "performance_element": "Achieve organizational goals to contribute to company growth",
+          "definition": "Understanding what an organization is trying to achieve—its mission, objectives, and priorities—so work aligns with them."
+        },
+        {
+          "id": "PD:255",
+          "text": "Ascertain employee's role in meeting organizational goals",
+          "level": "SP",
+          "performance_element": "Achieve organizational goals to contribute to company growth",
+          "definition": "Recognizing how your specific tasks and performance contribute to the company's larger objectives."
+        },
+        {
+          "id": "PD:126",
+          "text": "Explain the need for innovation skills",
+          "level": "CS",
+          "performance_element": "Utilize critical-thinking skills to determine best options/outcomes",
+          "definition": "Innovation is necessary for an organization to continue to move forward in the marketplace and meet customer needs."
+        },
+        {
+          "id": "PD:017",
+          "text": "Make decisions",
+          "level": "CS",
+          "performance_element": "Utilize critical-thinking skills to determine best options/outcomes",
+          "definition": "Choosing among options by weighing information, alternatives, and consequences to reach the best outcome."
+        },
+        {
+          "id": "PD:077",
+          "text": "Demonstrate problem-solving skills",
+          "level": "CS",
+          "performance_element": "Utilize critical-thinking skills to determine best options/outcomes",
+          "definition": "Problem solving skills include decision-making, reasoning (logic), and creativity."
+        },
+        {
+          "id": "PD:012",
+          "text": "Demonstrate appropriate creativity",
+          "level": "SP",
+          "performance_element": "Utilize critical-thinking skills to determine best options/outcomes",
+          "definition": "Make connections, Ask questions, Make observations, Networking, Experimenting."
+        },
+        {
+          "id": "PD:019",
+          "text": "Use time-management skills",
+          "level": "SP",
+          "performance_element": "Utilize critical-thinking skills to determine best options/outcomes",
+          "definition": "Stay organized, prioritize tasks, set short-term & long-term goals, communicate, plan delegate, and manage stress."
+        },
+        {
+          "id": "PD:013",
+          "text": "Assess personal interests and skills needed for success in business",
+          "level": "PQ",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "communication skills, technology skills, leadership, creative and innovative skills."
+        },
+        {
+          "id": "PD:020",
+          "text": "Analyze employer expectations in the business environment",
+          "level": "PQ",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "Employers expect a lot of things from their employees, including cooperation, initiative, and a strong work ethic. Employees need to display a willingness to follow directions, to learn job tasks and skills, and to take on responsibility on the job. Employers expect you to manage yourself, your time, and your emotions in the workplace."
+        },
+        {
+          "id": "PD:021",
+          "text": "Explain the rights of workers",
+          "level": "PQ",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "Employees are legally entitled to protections such as fair pay, safe conditions, freedom from discrimination, and the right to organize."
+        },
+        {
+          "id": "PD:022",
+          "text": "Identify sources of career information",
+          "level": "CS",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "Knowing where to find career data—labor websites, professionals, schools, associations—to make informed career choices."
+        },
+        {
+          "id": "PD:023",
+          "text": "Identify tentative occupational interest",
+          "level": "CS",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "Exploring and naming careers that fit your interests, skills, and values as a starting point for planning."
+        },
+        {
+          "id": "PD:025",
+          "text": "Explain employment opportunities in business",
+          "level": "CS",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "The range of jobs and career paths available across business functions such as marketing, finance, management, and operations."
+        },
+        {
+          "id": "PD:066",
+          "text": "Explain career opportunities in entrepreneurship",
+          "level": "CS",
+          "performance_element": "Participate in career planning to enhance job-success potential",
+          "definition": "Paths in starting and running your own venture, including the roles, rewards, and risks of being a business owner."
+        },
+        {
+          "id": "PD:026",
+          "text": "Utilize job-search strategies",
+          "level": "PQ",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Using methods—job boards, networking, applications, referrals—to find and pursue employment opportunities effectively."
+        },
+        {
+          "id": "PD:027",
+          "text": "Complete a job application",
+          "level": "PQ",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Filling out an employer's application accurately, completely, and professionally to be considered for a job."
+        },
+        {
+          "id": "PD:028",
+          "text": "Interview for a job",
+          "level": "PQ",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Presenting yourself effectively to an employer—prepared, professional, and articulate—to demonstrate fit for a position."
+        },
+        {
+          "id": "PD:029",
+          "text": "Write a follow-up letter after job interviews",
+          "level": "CS",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Sending a prompt, courteous note thanking the interviewer, reaffirming interest, and reinforcing your qualifications."
+        },
+        {
+          "id": "PD:030",
+          "text": "Write a cover letter",
+          "level": "CS",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Composing a letter that accompanies a resume, introducing yourself and highlighting why you fit the specific job."
+        },
+        {
+          "id": "PD:031",
+          "text": "Prepare a resume",
+          "level": "CS",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Creating a clear, organized summary of your skills, experience, and education to present to employers."
+        },
+        {
+          "id": "PD:037",
+          "text": "Use networking techniques to identify employment opportunities",
+          "level": "SP",
+          "performance_element": "Implement job-seeking skills to obtain employment",
+          "definition": "Building and using professional relationships to learn about and access job openings, often before they are advertised."
+        },
+        {
+          "id": "PD:032",
+          "text": "Describe techniques for obtaining work experience (e.g., volunteer activities, internships)",
+          "level": "PQ",
+          "performance_element": "Utilize career-advancement activities to enhance professional development",
+          "definition": "Analyze the impact of technology on marketing - Customer relationship management (CRM) involves finding customers & keeping them satisfied through: database marketing, creating and maintaining customer lists, and online customer surveys. - Television advertising has less impact than it used to."
+        },
+        {
+          "id": "PD:033",
+          "text": "Explain the need for ongoing education as a worker",
+          "level": "PQ",
+          "performance_element": "Utilize career-advancement activities to enhance professional development",
+          "definition": "changes in laws and regulations become more competent in job/field learn new techniques improve employability skills advance in career professional development can continue through academics (degree, graduate or master programs) Social Networking provides an opportunity to connect and share ideas with other professionals (twitter, facebook, linkedin, etc)."
+        },
+        {
+          "id": "PD:034",
+          "text": "Explain possible advancement patterns for jobs",
+          "level": "PQ",
+          "performance_element": "Utilize career-advancement activities to enhance professional development",
+          "definition": "In many industries, jobs can be categorized based on skill level. One can advance from one level to the next through experience, education, attrition, and promotion. Entry-level jobs usually require no prior experience and involve only limited decision making. Career-sustaining jobs are the next level, requiring more skill and experience."
+        },
+        {
+          "id": "PD:035",
+          "text": "Identify skills needed to enhance career progression",
+          "level": "SP",
+          "performance_element": "Utilize career-advancement activities to enhance professional development",
+          "definition": "Consideration should be given to employees who seek to better themselves Good employees should display personal drive and motivation combined with passion. Also, negotiation and communication skills help."
+        },
+        {
+          "id": "PD:036",
+          "text": "Utilize resources that can contribute to professional development (e.g., trade journals/periodicals, professional/trade associations, classes/seminars, trade shows, and mentors)",
+          "level": "SP",
+          "performance_element": "Utilize career-advancement activities to enhance professional development",
+          "definition": "Publications such as e-mail newsletters, on-line discussion boards and industry magazines can provide info on the latest technology and trends in the industry."
+        }
+      ]
+    },
+    {
+      "id": "SM",
+      "name": "Strategic Management",
+      "performance_indicators": [
+        {
+          "id": "SM:001",
+          "text": "Explain the concept of management",
+          "level": "CS",
+          "performance_element": "Recognize management's role to understand its contribution to business success",
+          "definition": "Management is the coordination of activities a business uses to achieve results; this includes both marketing and innovations. Describe the nature of managerial control."
+        },
+        {
+          "id": "SM:100",
+          "text": "Explain factors that affect management",
+          "level": "SP",
+          "performance_element": "Recognize management's role to understand its contribution to business success",
+          "definition": "Internal and external factors—resources, employees, the economy, competition, technology, and regulations—shape how a business must be managed."
+        },
+        {
+          "id": "SM:075",
+          "text": "Explain the nature of risk management",
+          "level": "SP",
+          "performance_element": "Identify potential business threats and opportunities to protect a business's financial well-being",
+          "definition": "Marketing is the management of the exchanges between an organization and its stakeholders -- customers, employees, community groups, and others. The two primary roles of marketing are to attain and retain target customers. Markets can be defined from both supply and demand perspectives."
+        },
+        {
+          "id": "SM:076",
+          "text": "Conduct a risk assessment of an event",
+          "level": "SP",
+          "performance_element": "Identify potential business threats and opportunities to protect a business's financial well-being",
+          "definition": "Identifying what could go wrong with an event, judging the likelihood and impact of each risk, and planning to prevent or reduce them."
+        }
       ]
     }
   ]

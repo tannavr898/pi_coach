@@ -1,4 +1,5 @@
 {
+  "_note": "Principles (Tier 1) events. Per the official Business Administration Core, role-play PIs for all five Principles events are selected from the full BA Core (all 13 instructional areas). pi_count is how many PIs a single role-play surfaces (~4).",
   "events": [
     {
       "code": "PMK",
@@ -6,7 +7,39 @@
       "level": "principles",
       "type": "principles",
       "pi_count": 4,
-      "instructional_areas": ["MK", "EI", "CO", "PD"]
+      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
+    },
+    {
+      "code": "PBM",
+      "name": "Principles of Business Management and Administration",
+      "level": "principles",
+      "type": "principles",
+      "pi_count": 4,
+      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
+    },
+    {
+      "code": "PEN",
+      "name": "Principles of Entrepreneurship",
+      "level": "principles",
+      "type": "principles",
+      "pi_count": 4,
+      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
+    },
+    {
+      "code": "PFN",
+      "name": "Principles of Finance",
+      "level": "principles",
+      "type": "principles",
+      "pi_count": 4,
+      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
+    },
+    {
+      "code": "PHT",
+      "name": "Principles of Hospitality and Tourism",
+      "level": "principles",
+      "type": "principles",
+      "pi_count": 4,
+      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
     }
   ]
 }
