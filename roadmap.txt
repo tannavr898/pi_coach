@@ -1,0 +1,308 @@
+DECA Roleplay Trainer — Complete MVP Roadmap
+The single source of truth for building and launching the MVP. It captures every decision made during planning, explains the why behind each one (so you understand the engine, not just run it), and sequences the work into build phases with acceptance tests plus a parallel distribution track. Read it fully once before writing code.
+
+0. The one-paragraph summary
+You're building an AI trainer that lets a DECA competitor practice a roleplay end to end: it generates an original scenario in DECA's format, runs a real prep timer, takes a spoken response, and gives feedback on two layers no single competitor combines well — content (did you cover the performance indicators, was it structured) and delivery (pace, filler words, time management, from your actual voice). The content layer is validated and copyright-clean; it ships first. The voice layer is the differentiator — it does the thing the market leader (Case Ace) left empty, since it has voice input but only grades the transcript. Because the technical moat is thin (the underlying speech tech is rentable), defensibility comes from being first in the DECA niche, the DECA-specific framing, and distribution — which is also exactly the skill the Lumos cohort exists to teach you. The objective isn't to "beat Case Ace"; it's to ship something real people use, learn the full build-and-distribute loop, and have a genuine portfolio artifact. By those goals, this is a clear go.
+
+1. Positioning — what it is, who it's for, what it is not
+The wedge, in one line: "Case Ace checks what you say. We also coach how you say it — practice out loud and walk in ready for the room, not just the rubric."
+Primary user (v1): entry-level DECA competitors doing Principles events — the largest, most nervous, most underserved group, and the one you can reach first (your chapter).
+What it is: a practice tool for solo reps under realistic conditions, with honest, specific feedback.
+What it is NOT, and must never claim to be: a predictor of your real judge score, a replacement for a human's read on charisma and strategy, or an official DECA product. (See §2 — these are product requirements, not disclaimers.)
+Why this clears the bar the earlier ideas didn't: Codexa, Savva, and Pulse all failed the "would real, reachable people use this twice?" test. This passes it — you're the user, your chapter is the market, and the value is legible. The thin moat matters far less here than it would for a pure startup, because your goals (usage, learning, a portfolio story) are won even in the scenario where a competitor eventually copies you.
+
+2. Guardrails — non-negotiable product rules
+These came out of validation and competitor research. They protect you in the exact tight-knit network that is also your distribution engine — where a tool that over-promises dies by word of mouth.
+Claim discipline. Label all output as "PI coverage + delivery feedback," never "judge score" or "competition score." The content score is the model's structured opinion guided by the official PIs; there is no public dataset of real judge scores to calibrate against, so a calibrated prediction is impossible and must never be implied.
+Delivery honesty. The delivery layer reliably measures pace, fillers, pauses, and time use. It does not measure tone, confidence, charisma, or strategy quality in v1. Say so in the UI. Don't let the voice feature tempt you into claims you can't back.
+Clean-room scenarios. Generate original scenarios in DECA's format, informed by public PI lists and published samples. Never reproduce DECA's branding, event codes, copyright lines, logos, or their actual scenario files verbatim. Original practice content in DECA's style — never a counterfeit of an official document.
+Public materials only. PI lists and published sample roleplays are fine. Anything involving other competitors' personal data (rosters, names, who's in your event) is permanently out.
+Minors' data minimization. Your users are minors and the voice layer captures their audio. Default to ephemeral: process the audio, return feedback, delete it. Store recordings only on explicit opt-in. Keep the footprint near zero.
+
+3. Scope — qualitative events only (and why)
+v1 covers qualitative events only (Principles of Marketing, Principles of Business Management & Administration, and the instructional areas built on concepts — Emotional Intelligence, Communications, Customer Relations, Professional Development, etc.).
+Why this boundary is deliberate, not lazy: hand-testing surfaced the real ground-truth problem. Qualitative events are scored on whether you covered and explained a concept — something the model does well and can't get dangerously wrong. Quantitative events (Accounting, Finance math) require a verified-correct numerical solution, and AI generates plausible-but-wrong math (e.g., mishandling unearned revenue). Scoring a student's math against an unverified AI solution could confidently mark correct answers wrong — actively harmful. So quantitative events are v2, with a deliberate solution-generation-and-verification step. Shipping qualitative-only means generation and scoring are reliable on day one, across a huge slice of competitors.
+
+4. Architecture overview
+Two pipelines feed one feedback view.
+                      React SPA (Vite + TS + Tailwind)
+                                   │
+     ┌─────────────────────────────┼─────────────────────────────┐
+     │ CONTENT PIPELINE            │            VOICE PIPELINE     │
+     ▼                             ▼                              ▼
+  POST /api/scenario        POST /api/score-content      POST /api/score-delivery
+     │                             │                              │
+  FastAPI builds prompt      FastAPI builds scoring        Browser captures raw audio
+  from pis.json/events.json  prompt from PIs + response    (MediaRecorder) → upload
+     │                             │                              │
+  Anthropic API →            Anthropic API →               Transcription API
+  original scenario JSON      PI-by-PI feedback JSON       (word timestamps + fillers)
+                                                                  │
+                                                          FastAPI computes delivery
+                                                          metrics from timestamps
+                                                                  │
+                              ┌───────────────────────────────────┘
+                              ▼
+                  Unified feedback view:
+            PI coverage + structure + delivery + 1 judge follow-up
+            rendered as a highlighted, playback-able transcript
+
+Why this split: the content pipeline is the validated, working part — it ships first and stands alone. The voice pipeline is additive. Keeping them as separate endpoints means you can launch the content loop to your chapter while the voice layer is still in progress, instead of holding everything for the hard part.
+
+5. Tech stack
+Layer
+Choice
+Why
+Frontend
+React + Vite + TypeScript + Tailwind
+You know it (Pulse). Fast, simple SPA.
+Backend
+FastAPI (Python)
+You know Python. Holds API keys, the PI dataset, prompt construction, and delivery-metric math. Room to add the v2 readiness model later.
+Content LLM
+Anthropic API (Claude)
+Scenario generation + content scoring. Sonnet-class for quality; it's the product.
+Transcription
+A timestamp-returning STT API (e.g. Amazon Transcribe ≈ $0.024/min, or AssemblyAI ≈ $0.45/hr)
+Returns clean word-level timestamps + fillers from raw audio — the things the browser Web Speech API could not do reliably.
+Audio capture
+Browser MediaRecorder
+Proven working in your probe. You hold the raw audio (the only path that can grow into v2 tone analysis).
+Persistence
+Supabase (Postgres), optional for true v1
+You know it (Savva). Enables history/weakness-tracking later. Don't let DB work block the core loop.
+Hosting
+Your Oracle Cloud box (runs Pulse) and/or Vercel for the frontend
+No new infra.
+
+Hard rule (the Savva lesson): every API key (Anthropic, transcription) lives only on the backend as an env var. The frontend talks only to your FastAPI endpoints; FastAPI talks to the providers. A key in the bundle is a key anyone can lift and run up your bill on.
+
+6. The source of truth — data model
+The quality ceiling of the whole app is set by this data. Spend real care here.
+pis.json — performance indicators
+Compile the official PIs (public), grouped by instructional area, for the qualitative areas Principles events use.
+{
+  "instructional_areas": [
+    {
+      "id": "EI",
+      "name": "Emotional Intelligence",
+      "performance_indicators": [
+        { "id": "EI-001", "text": "Explain the concept of emotional intelligence." }
+      ]
+    }
+  ]
+}
+
+Keep the wording faithful to DECA's published text — that fidelity is what makes scoring credible.
+events.json — event → instructional areas
+{
+  "events": [
+    {
+      "code": "PMK",
+      "name": "Principles of Marketing",
+      "level": "principles",
+      "type": "principles",
+      "pi_count": 4,
+      "instructional_areas": ["MK", "EI", "CO", "..."]
+    }
+  ]
+}
+
+pi_count reflects how many PIs a real roleplay surfaces (Principles events ≈ 4). Start with the one Principles event your chapter runs most.
+
+7. The prompts — this is the product
+The app is only as good as these. Treat them as the primary engineering artifact and tune them on real output, not in the abstract.
+7.1 Scenario generation (refined, with the fixes from hand-testing)
+You are an expert DECA roleplay author who has written and judged hundreds of
+events. You write ORIGINAL practice scenarios in DECA's official format. You
+never copy published scenarios and never reproduce DECA's branding, event codes,
+copyright lines, or logos — these are original practice materials in DECA's style.
+
+EVENT: [name]   LEVEL: [district/state/ICDC]   EVENT TYPE: principles
+PERFORMANCE INDICATORS (verbatim; the scenario must give a natural reason to
+address every one):
+[paste PI list]
+
+Write the participant sheet in this structure:
+[Header: Career Cluster / Instructional Area]
+[EVENT NAME] — PARTICIPANT INSTRUCTIONS
+PROCEDURES (standard 10-min prep / 10-min role-play / evaluated on PIs / turn in notes)
+PERFORMANCE INDICATORS (verbatim)
+EVENT SITUATION   // use "INTERVIEW SITUATION" ONLY if the scenario is literally a job interview
+   - realistic, current, specific company + business context (no placeholder names)
+   - the specific challenge/decision; the participant's exact role and task
+   - the task must naturally require every PI
+   - how the meeting begins; that the judge asks follow-ups
+JUDGE INSTRUCTIONS / JUDGE ROLE-PLAY CHARACTERIZATION
+   - mirror the situation from the judge's POV
+   - exactly TWO specific questions the judge asks every participant
+   - standard closing (thank participant; no other comments)
+
+Constraints: solvable in 10 min prep + ~10 min presentation; difficulty matched
+to LEVEL; every PI genuinely relevant (adjust the scenario if any feels forced).
+Output ONLY the scenario sheet — no preamble, no notes about how you wrote it.
+
+7.2 Content scoring (PI coverage + structure)
+You are an experienced DECA judge and coach. You evaluate a participant's
+response strictly against the assigned performance indicators and on general
+response quality. You are specific and honest, cite evidence from their response,
+and never inflate. Assess only what the words show — content, structure, PI
+coverage — NOT delivery, confidence, or presence (those are scored separately).
+
+SCENARIO: [scenario block]
+ASSIGNED PERFORMANCE INDICATORS: [list]
+PARTICIPANT RESPONSE (transcript): [text]
+
+For EACH PI: coverage = "hit" | "partial" | "missed"; quote/paraphrase the
+evidence; give one concrete improvement.
+Then assess: structure/organization; did they address the task; specificity and
+business reasoning. Finally, write ONE realistic judge follow-up question
+targeting the weakest-covered PI or an obvious gap.
+
+Return ONLY valid JSON:
+{ "pi_results":[{"id":"","text":"","coverage":"","evidence":"","improvement":""}],
+  "structure_feedback":"", "addressed_task":true, "overall_notes":"",
+  "pi_coverage_summary":{"hit":0,"partial":0,"missed":0}, "followup_question":"" }
+
+Engineering notes: force JSON-only output and parse defensively (strip code fences, try/catch). Keep PI wording verbatim in the prompt. Log all inputs/outputs in development so you can catch bad scenarios and scoring drift.
+
+8. The voice pipeline — explained in detail
+Your probe proved the browser's Web Speech API can't be trusted for this (it caught fillers half the time then none, and exposed no timestamps). So the architecture is raw audio → transcription API → your own metric math.
+Step 1 — capture. Browser records the response with MediaRecorder (confirmed working in your probe). Default to delete-after; download/keep only on opt-in.
+Step 2 — transcribe. Upload the audio to a transcription API that returns, per word, the text plus start/end timestamps, plus filler markers. This is the unlock — clean timing and reliable fillers, which the browser API could not give you.
+Step 3 — compute delivery metrics (deterministic, reliable, cheap). From the timestamped words, FastAPI computes:
+Pace (WPM): words ÷ speaking minutes. Flag too fast (>~180) or too slow (<~110); presentation sweet spot ≈ 130–160.
+Filler rate: count and per-minute rate of um/uh/like/you know/etc., with where they cluster.
+Pauses: number and length of silences from the gaps between word timestamps; flag long stalls (>~3s).
+Time management: did they use a sensible share of the ~10-minute window.
+Reading-vs-presenting proxy: unnaturally even pacing with no natural pauses can suggest reading — surface gently, labeled as a soft signal, never a hard penalty.
+All of the above is arithmetic on timestamps — accurate and trustworthy, which protects your credibility.
+Step 4 — content score the transcript. Same transcript also goes through §7.2.
+Step 5 — render. One unified view: PI coverage, structure, delivery metrics, the judge follow-up, and the highlighted, playback-able transcript (color-coded: filler-heavy / rushed / good moment). Playback lets the student hear themselves; the highlights show them exactly where.
+Explicitly v2, not now: true tone/confidence analysis (pitch, energy). It needs an audio-native API (e.g. the kind that returns emotion/vocal-style/tone profiling) and careful validation so it never gives harmful false feedback. The architecture above keeps the raw audio, so you can add it later — but don't claim it until it's built and validated.
+
+9. Cost model & safeguards
+All figures below are rough, current-ballpark estimates — confirm live pricing on each provider's site before budgeting. API prices change.
+Cost per loop (the four billable pieces)
+Piece
+What happens
+Rough cost
+Scenario generation (LLM)
+short prompt in, ~1k-token scenario out, Sonnet-class
+fraction of a cent → ~2¢ (or ~0 if you reuse a pre-generated library)
+Transcription (voice)
+3–6 min of audio at ~$0.02–0.03/min
+~$0.06–$0.18 — the biggest per-loop line item
+Content scoring (LLM)
+scenario + transcript in, structured feedback out
+fraction of a cent → a few cents
+Visual evidence (vision LLM), if used
+one image per figure, priced by size
+a few cents per figure, only when uploaded
+
+One full spoken loop ≈ $0.10–$0.25, dominated by transcription. A typed-only loop is ~a couple cents (no transcription). This is why Phase 2 (content-only) is nearly free to run and cost only becomes real when voice turns on in Phase 3.
+Cost at scale
+You testing during the build: a few hundred loops → single-digit to low-double-digit dollars total. Negligible.
+Your chapter, ~30 kids × 10 loops before a competition (300 loops): ~$30–$75 for that burst, mostly in competition season. Pizza money.
+It takes off — thousands of loops/month: hundreds of dollars/month. The good problem, far off, and exactly when you'd pull the levers below.
+Takeaway: at MVP and chapter scale this is a low-tens-of-dollars hobby cost, not a financial risk.
+The real danger is a runaway, not normal use
+The financial risk isn't usage — it's a bug that loops an API call a thousand times, or abuse once it's public. Three safeguards, installed before wiring up any paid API:
+Hard spend cap + budget alerts in every provider console (Anthropic, transcription, vision). This is the real protection — it makes a runaway impossible, not just unlikely. Set it first.
+Rate limiting per user on your backend (e.g. X loops/user/hour).
+Keys server-side only — so nobody can lift them from the frontend and spend your money.
+Cost levers (build only if volume forces it — the Codexa lesson)
+In order of impact: (1) reuse pre-generated scenarios instead of fresh generation; (2) unlimited typed practice free, voice loops capped weekly or behind a paid tier — roughly the freemium shape Case Ace already uses, which signals it's sane; (3) cache aggressively. Do not build any of this for v1 — optimizing the economics of a product with zero users is premature.
+Note: the Anthropic API is billed separately from any Claude.ai subscription; new accounts sometimes include a small starter credit — check the console.
+
+10. Build phases — with acceptance tests
+Each phase has a pass condition. Don't start a phase until the previous one passes.
+Phase 0 — Validate scenarios (mostly done, free, by hand)
+Generate 3 scenarios for one Principles event by pasting the §7.1 prompt + real PIs into a Claude chat. Show them to your advisor and 2–3 experienced competitors.
+Acceptance: they say it "feels like a real roleplay." (Your hand-test already shows strong format fidelity; close the loop with the human difficulty/plausibility check you can't do yourself.)
+Phase 1 — Data foundation
+Compile pis.json (qualitative instructional areas for Principles events) and events.json.
+Acceptance: given an event code, a script returns the correct instructional areas and the PI pool.
+Phase 2 — Content loop MVP (ship this first)
+Scaffold the repo. Build POST /api/scenario and POST /api/score-content, and the typed UI: pick event → render scenario → 10-min prep timer → typed response → PI-by-PI feedback + structure + one follow-up.
+Acceptance: a chapter-mate completes a full typed loop on their own phone and the feedback is useful. Launch this to your chapter now — don't wait for voice.
+Phase 3 — Voice capture + transcription
+Add MediaRecorder capture, upload, and the transcription API integration. Compute and display the §8 delivery metrics.
+Acceptance: you speak a response, and pace/filler/pause/time numbers come back accurate (sanity-check fillers and pace by hand against a known take).
+Phase 4 — Integration: unified feedback + highlighted transcript
+Run the spoken response through both content scoring and delivery metrics; render the unified view with the color-coded, playback-able transcript and the follow-up question. Ephemeral audio by default.
+Acceptance: one spoken loop produces honest content + delivery feedback, a playable recording, and a highlighted transcript — all labeled "PI coverage + delivery feedback," never a judge score.
+Phase 5 — Polish + deploy
+Error/empty/loading states, mobile layout, the honesty framing visible in-UI, spend caps + rate limits live. Deploy.
+Acceptance: a chapter-mate completes a full spoken loop unaided and would use it again before a competition.
+Stop here for the cohort. Resist v2 features until real users have run the loop repeatedly.
+
+11. Distribution track — runs in PARALLEL, from day one
+For a thin-moat product, distribution is the strategy, and it's the half of the loop you most need to learn. Treat it as a scheduled build track, not a phase-5 afterthought. You already spotted the opening: almost nobody makes content about these tools.
+D0 (alongside Phase 0–1): start a DECA-prep content presence (short-form video / posts). Teach roleplay tips, PI breakdowns, common mistakes — useful content that builds an audience before you have a product to point them to.
+D1 (alongside Phase 2): your own chapter is beta cohort #1. Get real reactions; post the build-in-public story.
+D2 (alongside Phase 3–4): line up your advisor and 1–2 other chapter advisors as early adopters — the advisor channel onboards a whole chapter at once and is the seed of the v2 chapter dashboard.
+D3 (alongside Phase 5): launch to your chapter + the audience you've been building; gather usage and testimonials.
+The principle: arrive at launch with an audience, not a finished product and silence. Honesty is distribution here — the network that spreads you is the same one that punishes over-claiming.
+
+12. Explicitly deferred to v2+ (write these down so they don't creep into v1)
+Deferred
+Why it waits
+Visual evidence upload (flagship differentiator)
+Authentic to real competition (competitors sketch charts/maps on paper). Student uploads or photographs a figure, labels it (Figure 1, 2…), refers to it during the response. Client-side document-scan filter (the iOS-Notes-style contrast boost that makes pencil lines pop) runs in the browser before upload to make hand-drawn sketches legible. The part that makes it real, not decorative: a vision-capable model reads the figure and scores whether it supports the point made — feed the image to the model alongside the transcript. Photo-of-paper path needs the most tuning. No in-app drawing canvas (too big a build). Privacy-light (a chart isn't biometric data). Likely the most distinctive v2 feature — it proves you actually competed.
+Personalized tone baseline + tone/confidence analysis
+When tone analysis is added, calibrate to the student's own real practice history, NOT a performed-emotion onboarding (that produces fake data — the Argix circular-evaluation trap — and storing minors' emotional voice samples is a steep, trust-destroying privacy cost). Their baseline emerges naturally from real reps the app already hears. Needs an audio-native API + careful validation against harmful false feedback.
+Quantitative events (Accounting/Finance math)
+Requires verified-correct solutions; AI math is unreliable
+Chapter / advisor dashboard
+Real growth engine + monetization path, but build after the solo loop is great
+Video delivery analysis
+Bigger build; voice first
+Weakness-tracking dashboard over time
+Needs persistence + repeated use to be meaningful
+Written-event exemplar library, PI drill mode, mock-judge multi-turn Q&A
+All real, all later
+Strategy-quality / "is this a good business idea" grading
+Hardest to do reliably; easy to harm users by being confidently wrong
+
+
+13. Driving it in Claude Code
+"Read deca_trainer_mvp_roadmap.md. Scaffold the repo: empty FastAPI backend + Vite/React/TS/Tailwind frontend per §4–5. No features yet."
+"Phase 1: build pis.json and events.json from the PIs I paste for one Principles event. Then a script that returns the PI pool for an event code."
+"Phase 2: build the scenario endpoint and content-scoring endpoint using the §7 prompts. Show me each prompt you send and explain how you parse the JSON."
+Ship Phase 2 to your chapter. Then: "Phase 3: add MediaRecorder capture and the transcription API; compute the §8 delivery metrics and explain the timestamp math."
+Continue phase by phase. Ask it to explain the why of each non-trivial decision — especially prompt construction, JSON parsing, and the delivery-metric math — so you own the engine.
+Working principle: the prompts and the PI data are the product. When something feels off, the fix is almost always there, not in the React code.
+
+14. Success metrics (judge the right things)
+Because the goal is usage, learning, and a portfolio story — not revenue — measure:
+Reps: total practice loops run, and loops-per-user (are people coming back?).
+Reach: chapter-mates using it, then advisors/other chapters.
+Honest usefulness: do users say the feedback helped them prep — and does it hold up when they compete?
+Distribution learned: audience growth, what content converted, what didn't.
+Revenue is explicitly not a v1 metric. Seasonal-but-real usage beats year-round-but-nonexistent.
+
+15. Risk register
+Risk
+Mitigation
+Thin technical moat (speech tech is rentable; Case Ace could copy)
+Be first + fast in the DECA niche; DECA-specific framing; win on distribution. Your goals are met even if copied.
+Scenarios feel fake to experienced competitors
+Phase 0 human validation before building; tune the prompt on real reactions.
+Over-claiming ("judge score") burns you in the network
+Strict claim discipline (§2); label everything as coverage + delivery feedback.
+AI math errors on quantitative events
+Out of scope for v1; qualitative only.
+Harmful false delivery feedback (e.g. penalizing accents)
+v1 delivery is deterministic timing only; flag low-confidence audio, never punish; tone analysis deferred until validated.
+Cost runaway from a bug or abuse
+Spend caps + rate limits + server-side keys before wide sharing.
+Minors' voice data
+Ephemeral by default; store only on opt-in; minimal footprint. Do NOT collect performed emotional voice samples in onboarding — scariest data category, steep trust/liability cost; personalize from real reps later instead.
+Building the exciting hard part (voice) delays the working part (content)
+Ship the content loop in Phase 2 before voice.
+Distribution treated as an afterthought (the recurring trap)
+Parallel distribution track from day one (§11).
+
+
+This roadmap is the product of killing four earlier ideas and following the evidence each time. The discipline that got you here — validate before building, check competition early, scope to what you can do reliably, claim only what's true — is the same discipline that ships this one. Build the content loop first, get it in front of your chapter, then layer on the voice wedge.
