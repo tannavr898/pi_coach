@@ -1,0 +1,41 @@
+{
+  "_note": "PLACEHOLDER DATA. The performance-indicator text below is NOT official DECA wording. Replace each entry's `text` with the verbatim official PI once provided. Area ids/names are real; PI ids use the `-P##` suffix to mark them as placeholders.",
+  "instructional_areas": [
+    {
+      "id": "MK",
+      "name": "Marketing",
+      "performance_indicators": [
+        { "id": "MK-P01", "text": "[PLACEHOLDER] Explain marketing and its importance in a global economy." },
+        { "id": "MK-P02", "text": "[PLACEHOLDER] Describe marketing functions and related activities." },
+        { "id": "MK-P03", "text": "[PLACEHOLDER] Explain factors that influence customer/client/business buying behavior." }
+      ]
+    },
+    {
+      "id": "EI",
+      "name": "Emotional Intelligence",
+      "performance_indicators": [
+        { "id": "EI-P01", "text": "[PLACEHOLDER] Explain the concept of emotional intelligence." },
+        { "id": "EI-P02", "text": "[PLACEHOLDER] Recognize and overcome personal biases and stereotypes." },
+        { "id": "EI-P03", "text": "[PLACEHOLDER] Demonstrate ethical work habits." }
+      ]
+    },
+    {
+      "id": "CO",
+      "name": "Communications",
+      "performance_indicators": [
+        { "id": "CO-P01", "text": "[PLACEHOLDER] Explain the nature of effective communications." },
+        { "id": "CO-P02", "text": "[PLACEHOLDER] Address the needs of individual personalities." },
+        { "id": "CO-P03", "text": "[PLACEHOLDER] Persuade others." }
+      ]
+    },
+    {
+      "id": "PD",
+      "name": "Professional Development",
+      "performance_indicators": [
+        { "id": "PD-P01", "text": "[PLACEHOLDER] Explain the concept of professionalism in the workplace." },
+        { "id": "PD-P02", "text": "[PLACEHOLDER] Maintain appropriate personal appearance." },
+        { "id": "PD-P03", "text": "[PLACEHOLDER] Demonstrate initiative and self-direction." }
+      ]
+    }
+  ]
+}
