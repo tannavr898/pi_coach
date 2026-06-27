@@ -1,0 +1,12 @@
+{
+  "events": [
+    {
+      "code": "PMK",
+      "name": "Principles of Marketing",
+      "level": "principles",
+      "type": "principles",
+      "pi_count": 4,
+      "instructional_areas": ["MK", "EI", "CO", "PD"]
+    }
+  ]
+}

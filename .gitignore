@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Environment / secrets
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+*.log
+
+# TS build artifacts (tsc -b emits these from the composite vite.config project)
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
