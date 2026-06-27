@@ -12,29 +12,44 @@ every decision.
 ## Repo layout
 
 ```
-backend/   FastAPI (Python, uv) — data, prompts (later), provider keys
+backend/   FastAPI (Python, uv) — data, prompts, Anthropic calls, provider keys
 frontend/  Vite + React + TS + Tailwind SPA — talks only to /api/*
 ```
 
-## Current status: Step 1 — Scaffold + Phase 1 data foundation
+## Current status: Phase 2 — Content loop MVP (typed)
 
-- Health endpoint + frontend that proves the SPA→backend wire works.
-- Phase 1 data layer: `event code → instructional areas + PI pool` for all five
-  Principles events (PMK, PBM, PEN, PFN, PHT), backed by the full official DECA
-  **Business Administration Core** — 13 instructional areas, 367 performance
-  indicators with verbatim text + level (PQ/CS/SP).
+The full typed loop works: pick an event → generate an original DECA-format
+scenario → 10-min prep timer → type a response → PI-by-PI feedback + structure +
+one judge follow-up.
+
+- **Data (Phase 1):** the full official DECA **Business Administration Core** —
+  13 instructional areas, 367 PIs (verbatim text + level), behind all five
+  Principles events (PMK, PBM, PEN, PFN, PHT).
+- **Endpoints:** `POST /api/scenario` and `POST /api/score-content`, built from
+  the roadmap §7 prompts and backed by the Anthropic API (Sonnet 4.6 by
+  default). `GET /api/events` feeds the picker.
+- **Guardrails:** keys stay server-side; per-IP rate limit on the paid
+  endpoints; output labelled "PI coverage feedback," never a judge score.
 
 ## Run it (two terminals)
 
 ```bash
-# Terminal 1 — backend
-cd backend && uv sync && uv run uvicorn app.main:app --reload --port 8000
+# Terminal 1 — backend (needs an Anthropic key)
+cd backend
+uv sync
+cp .env.example .env        # then put your key in ANTHROPIC_API_KEY
+uv run uvicorn app.main:app --reload --port 8000
 
 # Terminal 2 — frontend (proxies /api -> :8000)
 cd frontend && npm install && npm run dev
 ```
 
-Open the Vite URL; the page should show the backend as connected.
+Open the Vite URL and run a full typed loop. Without a key the scenario/scoring
+endpoints return a clear 503; the rest of the UI still works.
+
+> **Note (this machine):** `npm install` here hits a TLS-inspection cert error
+> (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`). Run it as
+> `NODE_OPTIONS=--use-system-ca npm install` so Node trusts the Windows CA store.
 
 Backend details (lookup script, tests) are in
 [`backend/README.md`](./backend/README.md).

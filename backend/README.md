@@ -8,7 +8,7 @@ provider API keys. The frontend talks only to `/api/*`; keys never leave here.
 ```bash
 cd backend
 uv sync
-cp .env.example .env   # fill in keys later; none are needed for this step
+cp .env.example .env   # put your key in ANTHROPIC_API_KEY (needed for Phase 2)
 ```
 
 ## Run
@@ -18,6 +18,22 @@ uv run uvicorn app.main:app --reload --port 8000
 # health check:
 curl localhost:8000/api/health   # -> {"status":"ok"}
 ```
+
+## API (Phase 2 — content loop)
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/events` | Events the picker can offer. |
+| `POST /api/scenario` | Generate an original DECA-format scenario for an event. Body: `{event_code, level, area?, pi_ids?, seed?}`. Returns the selected PIs + scenario text. |
+| `POST /api/score-content` | Score a typed response. Body: `{scenario, pi_ids, response}`. Returns PI-by-PI coverage, structure feedback, and one judge follow-up. |
+
+Module map (all under `app/`): `selection.py` picks the PIs, `prompts.py`
+builds the §7 prompts, `llm.py` wraps Anthropic + defensive JSON parsing,
+`config.py` holds the model choice (`ANTHROPIC_MODEL`, default `claude-sonnet-4-6`),
+`ratelimit.py` is the per-IP guard. Keys never leave the backend.
+
+Without `ANTHROPIC_API_KEY` set, the two LLM endpoints return a friendly 503;
+everything else (events, data, tests) works offline.
 
 ## Phase 1 data lookup (acceptance check)
 
