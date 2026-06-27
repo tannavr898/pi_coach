@@ -35,6 +35,11 @@ builds the §7 prompts, `llm.py` wraps Anthropic + defensive JSON parsing,
 Without `ANTHROPIC_API_KEY` set, the two LLM endpoints return a friendly 503;
 everything else (events, data, tests) works offline.
 
+On networks that do TLS inspection (corporate proxy / AV), the Anthropic SDK
+would otherwise fail with a connection error because Python's bundled certs
+don't trust the intercepting CA. `config.py` injects the OS trust store
+(`truststore`) at startup to fix this automatically — no flag needed.
+
 ## Phase 1 data lookup (acceptance check)
 
 ```bash
