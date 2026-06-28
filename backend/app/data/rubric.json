@@ -1,0 +1,73 @@
+{
+  "version": "2026-district",
+  "total_points": 100,
+  "levels": ["novice", "developing", "proficient", "exemplary"],
+  "level_labels": {
+    "novice": "Novice",
+    "developing": "Developing",
+    "proficient": "Proficient",
+    "exemplary": "Exemplary"
+  },
+  "level_descriptions": {
+    "novice": "Limited or inaccurate grasp of the concepts; indicators are named but not applied; ideas are unclear or unsupported. Would need significant guidance on the job.",
+    "developing": "Basic grasp of the concepts; defines the indicators but does not connect them to solve the situation; ideas are present but have gaps in reasoning or evidence.",
+    "proficient": "Solid grasp; explains and connects the indicators to solve the situation; ideas are logical, well developed, and supported with appropriate evidence.",
+    "exemplary": "Comprehensive grasp applied effectively, even in more complex contexts; strategically connects the indicators; ideas are logical, well supported with business reasoning, practical, and clearly relevant to the real world."
+  },
+  "performance_indicator": {
+    "category": "performance_indicator",
+    "category_label": "Performance Indicators",
+    "max_points": 12,
+    "bands": {
+      "novice": [0, 3],
+      "developing": [4, 7],
+      "proficient": [8, 11],
+      "exemplary": [12, 12]
+    }
+  },
+  "solution": {
+    "category": "solution",
+    "category_label": "Solution",
+    "max_points": 8,
+    "bands": {
+      "novice": [0, 2],
+      "developing": [3, 5],
+      "proficient": [6, 7],
+      "exemplary": [8, 8]
+    },
+    "items": [
+      { "key": "unique", "label": "Unique", "desc": "Original thinking, fresh perspective, and an insightful approach." },
+      { "key": "practical", "label": "Practical", "desc": "An actionable, viable solution that works in a real-world context." },
+      { "key": "effective", "label": "Effective", "desc": "A solution that achieves relevant outcomes." }
+    ]
+  },
+  "career_competency": {
+    "category": "career_competency",
+    "category_label": "Career Competencies",
+    "max_points": 6,
+    "bands": {
+      "novice": [0, 1],
+      "developing": [2, 3],
+      "proficient": [4, 5],
+      "exemplary": [6, 6]
+    },
+    "items": [
+      { "key": "critical_thinking", "label": "Critical Thinking", "desc": "Think critically to understand and solve problems." },
+      { "key": "communication", "label": "Communication", "desc": "Communicate clearly, effectively, and with reason." },
+      { "key": "decision_making", "label": "Decision Making", "desc": "Consider the impacts of decisions." }
+    ]
+  },
+  "overall_impression": {
+    "category": "overall_impression",
+    "category_label": "Overall Impression",
+    "label": "Overall Impression",
+    "desc": "Overall career readiness through professionalism, poise, and confidence.",
+    "max_points": 10,
+    "bands": {
+      "novice": [0, 3],
+      "developing": [4, 6],
+      "proficient": [7, 9],
+      "exemplary": [10, 10]
+    }
+  }
+}

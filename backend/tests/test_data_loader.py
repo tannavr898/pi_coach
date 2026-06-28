@@ -27,9 +27,10 @@ def test_unknown_event_raises():
 
 
 def test_instructional_areas_match_event():
+    # Principles events are core-only: the 13 Business Administration Core areas.
     area_ids = [a["id"] for a in get_instructional_areas("PMK")]
-    assert area_ids == get_event("PMK")["instructional_areas"]
     assert "MK" in area_ids
+    assert len(area_ids) == 13
 
 
 def test_pi_pool_is_flat_and_tagged():
@@ -37,6 +38,19 @@ def test_pi_pool_is_flat_and_tagged():
     assert len(pool) > 0
     for pi in pool:
         assert set(pi.keys()) == {"id", "text", "area"}
-    # Every PI's area is one of the event's instructional areas.
-    valid_areas = set(get_event("PMK")["instructional_areas"])
+    # Every PI's area appears among the event's instructional areas.
+    valid_areas = {a["id"] for a in get_instructional_areas("PMK")}
     assert {pi["area"] for pi in pool} <= valid_areas
+
+
+def test_individual_series_pool_is_wider_than_core():
+    # An individual-series event draws the BA Core PLUS its cluster/pathway PIs.
+    core = get_pi_pool("PMK")
+    rms = get_pi_pool("RMS")  # Retail Merchandising (marketing / Merchandising pathway)
+    assert len(rms) > len(core)
+    assert any(pi["area"] == "SE" for pi in rms)  # Selling is a marketing-cluster area
+
+
+def test_principles_stays_core_only():
+    # Cluster-only areas (e.g. Selling) must never leak into a Principles pool.
+    assert not any(pi["area"] == "SE" for pi in get_pi_pool("PMK"))
