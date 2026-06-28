@@ -1,5 +1,8 @@
 // Typed client for the backend. The SPA only ever talks to /api/* (Vite proxies
-// it to FastAPI in dev); keys live on the backend, never here.
+// it to FastAPI in dev); keys live on the backend, never here. The judge's
+// instructions never cross this boundary — only participant-facing content does.
+
+export type Level = "district" | "state" | "icdc";
 
 export type EventSummary = {
   code: string;
@@ -17,32 +20,53 @@ export type PI = {
   definition: string;
 };
 
-export type Level = "district" | "state" | "icdc";
+export type RubricCriterion = {
+  key: string;
+  label: string;
+  desc: string;
+  max_points: number;
+};
 
 export type ScenarioResponse = {
   event: EventSummary;
   level: Level;
+  instructional_area: string;
   performance_indicators: PI[];
-  scenario: string;
+  solution_criteria: RubricCriterion[];
+  career_competencies: RubricCriterion[];
+  procedures: string[];
+  situation: string;
+  followup_questions: string[];
 };
 
-export type Coverage = "hit" | "partial" | "missed";
+export type RubricLevel = "novice" | "developing" | "proficient" | "exemplary";
 
-export type PIResult = {
-  id: string;
-  text: string;
-  coverage: Coverage;
-  evidence: string;
-  improvement: string;
+export type RubricCategory =
+  | "performance_indicator"
+  | "solution"
+  | "career_competency"
+  | "overall_impression";
+
+export type RubricScore = {
+  key: string;
+  category: RubricCategory;
+  label: string;
+  pi_id?: string | null;
+  level: RubricLevel;
+  points: number;
+  max_points: number;
+  feedback: string;
+  evidence: string[];
 };
 
 export type ScoreResponse = {
-  pi_results: PIResult[];
-  structure_feedback: string;
-  addressed_task: boolean;
-  overall_notes: string;
-  pi_coverage_summary: { hit: number; partial: number; missed: number };
-  followup_question: string;
+  scores: RubricScore[];
+  total_points: number;
+  max_points: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  followup_feedback: string;
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -79,9 +103,12 @@ export function postScenario(body: {
 }
 
 export function postScore(body: {
+  event_code: string;
   scenario: string;
   pi_ids: string[];
   response: string;
+  followup_questions: string[];
+  followup_answer: string;
 }): Promise<ScoreResponse> {
   return request<ScoreResponse>("/api/score-content", {
     method: "POST",

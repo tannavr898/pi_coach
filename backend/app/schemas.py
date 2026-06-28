@@ -1,4 +1,4 @@
-"""Request/response models for the Phase 2 content loop."""
+"""Request/response models for the content loop (rubric-based, 2026 District)."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 Level = Literal["district", "state", "icdc"]
+RubricLevel = Literal["novice", "developing", "proficient", "exemplary"]
 
 
 # --- shared ---------------------------------------------------------------
@@ -28,6 +29,16 @@ class EventSummary(BaseModel):
     pi_count: int
 
 
+class RubricCriterion(BaseModel):
+    """A scored criterion shown to the participant before they start (the cover
+    sheet) and echoed in feedback."""
+
+    key: str
+    label: str
+    desc: str = ""
+    max_points: int
+
+
 # --- POST /api/scenario ---------------------------------------------------
 
 
@@ -42,37 +53,50 @@ class ScenarioRequest(BaseModel):
 class ScenarioResponse(BaseModel):
     event: EventSummary
     level: Level
+    instructional_area: str
     performance_indicators: list[PI]
-    scenario: str
+    solution_criteria: list[RubricCriterion]
+    career_competencies: list[RubricCriterion]
+    procedures: list[str]
+    # Participant-facing event situation ONLY — never the judge instructions.
+    situation: str
+    # The judge's set follow-up questions. Surfaced to the participant only AFTER
+    # they submit their main response (mirrors a real role-play), then graded.
+    followup_questions: list[str]
 
 
 # --- POST /api/score-content ----------------------------------------------
 
 
 class ScoreRequest(BaseModel):
-    scenario: str
+    event_code: str
+    scenario: str = Field(description="The event situation the participant responded to.")
     pi_ids: list[str]
     response: str = Field(min_length=1)
+    followup_questions: list[str] = []
+    followup_answer: str = ""
 
 
-class PIResult(BaseModel):
-    id: str
-    text: str
-    coverage: Literal["hit", "partial", "missed"]
-    evidence: str = ""
-    improvement: str = ""
-
-
-class CoverageSummary(BaseModel):
-    hit: int = 0
-    partial: int = 0
-    missed: int = 0
+class RubricScore(BaseModel):
+    key: str  # e.g. "pi:EN:044", "solution:unique", "competency:critical_thinking", "overall"
+    category: Literal[
+        "performance_indicator", "solution", "career_competency", "overall_impression"
+    ]
+    label: str
+    pi_id: str | None = None
+    level: RubricLevel
+    points: int
+    max_points: int
+    feedback: str = ""
+    # Verbatim quotes from the participant's response/follow-up, for highlighting.
+    evidence: list[str] = []
 
 
 class ScoreResponse(BaseModel):
-    pi_results: list[PIResult]
-    structure_feedback: str = ""
-    addressed_task: bool = True
-    overall_notes: str = ""
-    pi_coverage_summary: CoverageSummary = CoverageSummary()
-    followup_question: str = ""
+    scores: list[RubricScore]
+    total_points: int
+    max_points: int = 100
+    summary: str = ""
+    strengths: list[str] = []
+    improvements: list[str] = []
+    followup_feedback: str = ""

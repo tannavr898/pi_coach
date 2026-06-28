@@ -1,26 +1,30 @@
-"""FastAPI application — Phase 2 content loop.
+"""FastAPI application — content loop (rubric-based, DECA 2026 District format).
 
 Endpoints:
 - GET  /api/health         liveness
 - GET  /api/events         events the UI can offer
-- POST /api/scenario       generate an original scenario for an event
-- POST /api/score-content  score a typed response against the assigned PIs
+- GET  /api/rubric         the rubric structure (levels, criteria, point bands)
+- POST /api/scenario       generate an original scenario (participant-facing only)
+- POST /api/score-content  grade a typed response + follow-up against the rubric
 
 The Vite dev server proxies /api/* here, so no CORS in development. Provider
 keys stay server-side (roadmap §5/§9); the frontend only ever talks to /api/*.
+The judge's instructions are never returned to the client — only the
+participant-facing situation and (after the response) the follow-up questions.
 """
 
 from __future__ import annotations
 
 from fastapi import Depends, FastAPI, HTTPException
 
-from . import llm, prompts
+from . import llm, prompts, rubric
 from .data_loader import EventNotFoundError, get_event, load_events
 from .ratelimit import rate_limit
 from .schemas import (
     EventSummary,
     PI,
-    PIResult,
+    RubricCriterion,
+    RubricScore,
     ScenarioRequest,
     ScenarioResponse,
     ScoreRequest,
@@ -28,7 +32,15 @@ from .schemas import (
 )
 from .selection import select_pis
 
-app = FastAPI(title="DECA Roleplay Trainer", version="0.2.0")
+app = FastAPI(title="DECA Roleplay Trainer", version="0.3.0")
+
+# Standard participant-facing procedures (our own wording — not DECA copyright).
+PROCEDURES = [
+    "You have up to 10 minutes to review the situation and prepare. You may make notes to use during your presentation.",
+    "You then have up to 10 minutes to present to the judge.",
+    "You are evaluated on your solution, how you incorporate the performance indicators, and how you demonstrate the career competencies.",
+    "The judge will ask you follow-up questions after your presentation.",
+]
 
 
 @app.get("/api/health")
@@ -46,6 +58,22 @@ def events() -> list[EventSummary]:
     ]
 
 
+@app.get("/api/rubric")
+def get_rubric() -> dict:
+    """The rubric structure (levels, criteria, point bands) for the UI to render."""
+    return rubric.load_rubric()
+
+
+def _solution_criteria() -> list[RubricCriterion]:
+    mx = rubric.max_points("solution")
+    return [RubricCriterion(key=i["key"], label=i["label"], desc=i["desc"], max_points=mx) for i in rubric.solution_items()]
+
+
+def _competency_criteria() -> list[RubricCriterion]:
+    mx = rubric.max_points("career_competency")
+    return [RubricCriterion(key=i["key"], label=i["label"], desc=i["desc"], max_points=mx) for i in rubric.competency_items()]
+
+
 def _event_or_404(code: str) -> dict:
     try:
         return get_event(code)
@@ -55,74 +83,112 @@ def _event_or_404(code: str) -> dict:
 
 @app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit)])
 def scenario(req: ScenarioRequest) -> ScenarioResponse:
-    """Generate an original DECA-format scenario for an event."""
+    """Generate an original DECA-format scenario (participant-facing only)."""
     event = _event_or_404(req.event_code)
     pis = select_pis(event["code"], area=req.area, pi_ids=req.pi_ids, seed=req.seed)
     if not pis:
         raise HTTPException(status_code=400, detail="No performance indicators matched this request.")
+    area_name = pis[0].get("area_name", "")
 
-    system, user = prompts.build_scenario_prompt(event, req.level, pis)
+    system, user = prompts.build_scenario_prompt(event, req.level, area_name, pis)
     try:
-        text = llm.complete(system, user, max_tokens=2048)
-    except llm.LLMNotConfigured as e:
-        raise HTTPException(status_code=503, detail=str(e))
-    except llm.LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
-    if not text:
-        raise HTTPException(status_code=502, detail="The model returned an empty scenario.")
-
-    return ScenarioResponse(
-        event=EventSummary(code=event["code"], name=event["name"], level=event["level"], pi_count=event["pi_count"]),
-        level=req.level,
-        performance_indicators=[PI(**pi) for pi in pis],
-        scenario=text,
-    )
-
-
-@app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit)])
-def score_content(req: ScoreRequest) -> ScoreResponse:
-    """Score a typed response against the assigned PIs (PI coverage + structure)."""
-    # Resolve PI text from our authoritative data — never trust the client for it.
-    # pi_ids belong to the same Principles core regardless of event, so PMK covers all.
-    pis = select_pis("PMK", pi_ids=req.pi_ids)
-    if not pis:
-        raise HTTPException(status_code=400, detail="Unknown performance indicators.")
-    pi_text = {pi["id"]: pi["text"] for pi in pis}
-
-    system, user = prompts.build_scoring_prompt(req.scenario, pis, req.response)
-    try:
-        raw = llm.complete(system, user, max_tokens=3072)
+        raw = llm.complete(system, user, max_tokens=1500)
         data = llm.parse_json_object(raw)
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     except llm.LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    # Pin each result's PI text back to our official wording (credibility).
-    results: list[PIResult] = []
-    for r in data.get("pi_results", []):
-        pid = r.get("id", "")
-        try:
-            results.append(
-                PIResult(
-                    id=pid,
-                    text=pi_text.get(pid, r.get("text", "")),
-                    coverage=r.get("coverage", "missed"),
-                    evidence=r.get("evidence", ""),
-                    improvement=r.get("improvement", ""),
-                )
-            )
-        except Exception:  # skip a malformed entry rather than fail the whole score
-            continue
+    situation = str(data.get("situation", "")).strip()
+    if not situation:
+        raise HTTPException(status_code=502, detail="The model returned an empty scenario.")
+    followups = [str(q).strip() for q in data.get("followup_questions", []) if str(q).strip()]
 
+    return ScenarioResponse(
+        event=EventSummary(code=event["code"], name=event["name"], level=event["level"], pi_count=event["pi_count"]),
+        level=req.level,
+        instructional_area=area_name,
+        performance_indicators=[PI(**pi) for pi in pis],
+        solution_criteria=_solution_criteria(),
+        career_competencies=_competency_criteria(),
+        procedures=PROCEDURES,
+        situation=situation,
+        followup_questions=followups,
+    )
+
+
+def _score_one(category: str, key: str, label: str, raw: dict, *, pi_id: str | None = None) -> RubricScore:
+    """Build one validated RubricScore from a model entry, clamping to the band."""
+    level, points = rubric.clamp_points(category, str(raw.get("level", "novice")), raw.get("points", 0))
+    evidence = [str(q) for q in raw.get("evidence", []) if str(q).strip()]
+    return RubricScore(
+        key=key,
+        category=category,  # type: ignore[arg-type]
+        label=label,
+        pi_id=pi_id,
+        level=level,  # type: ignore[arg-type]
+        points=points,
+        max_points=rubric.max_points(category),
+        feedback=str(raw.get("feedback", "")).strip(),
+        evidence=evidence,
+    )
+
+
+@app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit)])
+def score_content(req: ScoreRequest) -> ScoreResponse:
+    """Grade a typed response + follow-up against the full DECA rubric."""
+    # Resolve PI text from our authoritative data — never trust the client for it.
+    pis = select_pis(req.event_code, pi_ids=req.pi_ids)
+    if not pis:
+        # All Principles events share one core, so fall back to PMK's pool.
+        pis = select_pis("PMK", pi_ids=req.pi_ids)
+    if not pis:
+        raise HTTPException(status_code=400, detail="Unknown performance indicators.")
+    pi_text = {pi["id"]: pi["text"] for pi in pis}
+
+    system, user = prompts.build_scoring_prompt(
+        req.scenario, pis, req.response, req.followup_questions, req.followup_answer
+    )
     try:
-        return ScoreResponse(
-            pi_results=results,
-            structure_feedback=data.get("structure_feedback", ""),
-            addressed_task=bool(data.get("addressed_task", True)),
-            overall_notes=data.get("overall_notes", ""),
-            pi_coverage_summary=data.get("pi_coverage_summary", {}) or {},
-            followup_question=data.get("followup_question", ""),
+        raw = llm.complete(system, user, max_tokens=4096)
+        data = llm.parse_json_object(raw)
+    except llm.LLMNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except llm.LLMError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    scores: list[RubricScore] = []
+
+    # 1) Performance Indicators (in assigned order), text pinned to our wording.
+    pi_entries = {str(e.get("pi_id", "")): e for e in data.get("performance_indicators", [])}
+    for pi in pis:
+        entry = pi_entries.get(pi["id"], {})
+        scores.append(
+            _score_one("performance_indicator", f"pi:{pi['id']}", pi_text[pi["id"]], entry, pi_id=pi["id"])
         )
-    except Exception as e:  # pydantic validation of the assembled object
-        raise HTTPException(status_code=502, detail=f"Malformed score from model: {e}")
+
+    # 2) Solution criteria, 3) Career competencies (fixed order from the rubric).
+    sol = data.get("solution", {}) or {}
+    for item in rubric.solution_items():
+        scores.append(_score_one("solution", f"solution:{item['key']}", item["label"], sol.get(item["key"], {})))
+    comp = data.get("career_competencies", {}) or {}
+    for item in rubric.competency_items():
+        scores.append(
+            _score_one("career_competency", f"competency:{item['key']}", item["label"], comp.get(item["key"], {}))
+        )
+
+    # 4) Overall impression.
+    scores.append(
+        _score_one("overall_impression", "overall", "Overall Impression", data.get("overall_impression", {}) or {})
+    )
+
+    total = sum(s.points for s in scores)
+    return ScoreResponse(
+        scores=scores,
+        total_points=total,
+        max_points=rubric.total_max(),
+        summary=str(data.get("summary", "")).strip(),
+        strengths=[str(x) for x in data.get("strengths", []) if str(x).strip()],
+        improvements=[str(x) for x in data.get("improvements", []) if str(x).strip()],
+        followup_feedback=str(data.get("followup_feedback", "")).strip(),
+    )

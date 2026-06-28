@@ -9,6 +9,10 @@ __pycache__/
 .env
 .env.local
 
+# DECA copyrighted sample role-plays — local calibration reference only.
+# Never commit or ship these (roadmap §9). Our scenarios stay clean-room.
+backend/reference/
+
 # Node
 node_modules/
 dist/

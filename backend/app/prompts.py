@@ -1,16 +1,22 @@
 """Prompt construction — per the roadmap, this *is* the product.
 
-Two prompts: §7.1 scenario generation and §7.2 content scoring. Each returns a
-(system, user) pair. PI text is always pasted verbatim from our official data;
-the plain-language `definition` rides along only as authoring/judging context so
-the model understands a terse indicator, never as a replacement for the PI text.
+Two prompts: §7.1 scenario generation and §7.2 rubric scoring. Each returns a
+(system, user) pair and asks for JSON we parse defensively.
+
+Both target DECA's current (2026 District) format: a SHORT, concrete event
+situation the participant must solve, graded on the official rubric (four
+Performance Indicators, three Solution criteria, three Career Competencies, and
+an Overall Impression — 100 points across Novice/Developing/Proficient/Exemplary).
 
 Guardrails baked in (roadmap §2): original clean-room scenarios in DECA's style
-(never DECA branding/codes/copyright), and scoring labelled PI coverage — never
-a judge score.
+(never DECA branding/codes/copyright), and feedback labelled practice coaching —
+never an official competition score. The judge instructions are generated for
+grading only and are NEVER part of the participant-facing scenario.
 """
 
 from __future__ import annotations
+
+from . import rubric
 
 
 def _format_pis(pis: list[dict]) -> str:
@@ -22,88 +28,158 @@ def _format_pis(pis: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# Level-scaled length/complexity. Real district scenarios are short and concrete;
+# state and ICDC add stakeholders, constraints, and ambiguity.
+_LEVEL_GUIDE = {
+    "district": "120-170 words. One clear ask, a single stakeholder, concrete and approachable.",
+    "state": "170-240 words. A bit more nuance — a constraint or trade-off to weigh.",
+    "icdc": "240-330 words. More complex: competing priorities or multiple stakeholders, still solvable in the time.",
+}
+
+
 # ---------------------------------------------------------------------------
 # §7.1 Scenario generation
 # ---------------------------------------------------------------------------
 
 SCENARIO_SYSTEM = (
-    "You are an expert DECA roleplay author who has written and judged hundreds "
-    "of events. You write ORIGINAL practice scenarios in DECA's official format. "
+    "You are an expert DECA role-play author who has written and judged hundreds "
+    "of events. You write ORIGINAL practice scenarios in DECA's current format. "
     "You never copy published scenarios and never reproduce DECA's branding, "
     "event codes, copyright lines, or logos — these are original practice "
     "materials in DECA's style.\n\n"
-    "Output ONLY the participant scenario sheet — no preamble, no markdown code "
-    "fences, and no notes about how you wrote it."
+    "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
 
-def build_scenario_prompt(event: dict, level: str, pis: list[dict]) -> tuple[str, str]:
+def build_scenario_prompt(
+    event: dict, level: str, instructional_area: str, pis: list[dict]
+) -> tuple[str, str]:
     """Build the (system, user) messages for one original scenario."""
-    user = f"""EVENT: {event['name']}   LEVEL: {level}   EVENT TYPE: principles
-PERFORMANCE INDICATORS (verbatim; the scenario must give a natural reason to
-address every one):
+    guide = _LEVEL_GUIDE.get(level, _LEVEL_GUIDE["district"])
+    user = f"""EVENT: {event['name']}
+COMPETITION LEVEL: {level}   ({guide})
+INSTRUCTIONAL AREA: {instructional_area}
+
+PERFORMANCE INDICATORS the participant must get a natural reason to demonstrate
+(verbatim; do not reword):
 {_format_pis(pis)}
 
-Write the participant sheet in this structure:
-[Header: Career Cluster / Instructional Area]
-{event['name'].upper()} — PARTICIPANT INSTRUCTIONS
-PROCEDURES (standard 10-min prep / 10-min role-play / evaluated on the PIs / turn in notes)
-PERFORMANCE INDICATORS (verbatim, exactly as listed above)
-EVENT SITUATION   // use "INTERVIEW SITUATION" ONLY if the scenario is literally a job interview
-   - realistic, current, specific company + business context (no placeholder names)
-   - the specific challenge/decision; the participant's exact role and task
-   - the task must naturally require every performance indicator above
-   - how the meeting begins; that the judge asks follow-ups
-JUDGE INSTRUCTIONS / JUDGE ROLE-PLAY CHARACTERIZATION
-   - mirror the situation from the judge's point of view
-   - exactly TWO specific questions the judge asks every participant
-   - standard closing (thank the participant; no other comments)
+Write an original role-play. The participant takes a specific role at a specific,
+realistic (invented) company and must work through a concrete business situation
+that calls for a SOLUTION and naturally requires every performance indicator
+above. Keep it grounded and current; no placeholder names.
 
-Constraints: solvable in 10 min prep + ~10 min presentation; difficulty matched
-to the LEVEL; every PI genuinely relevant (adjust the scenario if any feels
-forced). Output ONLY the scenario sheet."""
+Return a JSON object with EXACTLY these keys:
+{{
+  "situation": "The participant-facing EVENT SITUATION only. {guide} OPEN by
+     establishing, in the first sentence or two, the participant's specific role
+     AND a one-line description of the company (its name and what it does) so the
+     participant has the context to reason about — never reference company facts
+     you didn't state here. Then give the specific challenge/decision and note
+     they will meet a judge who plays a named counterpart and will ask follow-up
+     questions. Plain prose, 2-3 short paragraphs. Do NOT include procedures, the
+     PI list, or anything addressed to the judge.",
+  "followup_questions": ["Two questions the judge asks AFTER the presentation.
+     Make them probe depth on the indicators or a trade-off in the situation —
+     specific to this scenario, not generic.", "second question"]
+}}
+
+CRITICAL: never put judge instructions, judge characterization, or the answers
+inside "situation" — that text is shown to the participant. Output ONLY the JSON."""
     return SCENARIO_SYSTEM, user
 
 
 # ---------------------------------------------------------------------------
-# §7.2 Content scoring (PI coverage + structure)
+# §7.2 Rubric scoring (2026 District evaluation form)
 # ---------------------------------------------------------------------------
 
+
+def _rubric_brief() -> str:
+    r = rubric.load_rubric()
+    ld = r["level_descriptions"]
+    sol = ", ".join(f"{i['label']} ({i['desc']})" for i in rubric.solution_items())
+    comp = ", ".join(f"{i['label']} ({i['desc']})" for i in rubric.competency_items())
+    return f"""LEVELS (pick ONE per criterion, then a score inside its point band):
+- Novice — {ld['novice']}
+- Developing — {ld['developing']}
+- Proficient — {ld['proficient']}
+- Exemplary — {ld['exemplary']}
+
+CRITERIA AND POINT BANDS:
+- Each Performance Indicator (4): novice 0-3, developing 4-7, proficient 8-11, exemplary 12.
+- Solution (3) — {sol}: novice 0-2, developing 3-5, proficient 6-7, exemplary 8.
+- Career Competencies (3) — {comp}: novice 0-1, developing 2-3, proficient 4-5, exemplary 6.
+- Overall Impression (career readiness: professionalism, poise, confidence): novice 0-3, developing 4-6, proficient 7-9, exemplary 10.
+Total is out of 100."""
+
+
 SCORING_SYSTEM = (
-    "You are an experienced DECA judge and coach. You evaluate a participant's "
-    "response strictly against the assigned performance indicators and on general "
-    "response quality. You are specific and honest, cite evidence from their "
-    "response, and never inflate. Assess only what the words show — content, "
-    "structure, PI coverage — NOT delivery, confidence, or presence (those are "
-    "scored separately).\n\n"
-    "Return ONLY valid JSON (no markdown, no code fences, no commentary) with "
-    "exactly this shape:\n"
-    '{"pi_results":[{"id":"","text":"","coverage":"hit|partial|missed",'
-    '"evidence":"","improvement":""}],"structure_feedback":"",'
-    '"addressed_task":true,"overall_notes":"",'
-    '"pi_coverage_summary":{"hit":0,"partial":0,"missed":0},'
-    '"followup_question":""}'
+    "You are an experienced, fair DECA judge and coach grading a typed practice "
+    "response against the official 2026 District rubric. Judge ONLY what the words "
+    "show — content, reasoning, structure, and how well each criterion is met — "
+    "NOT delivery, voice, confidence, or presence (those are coached separately). "
+    "Be specific and honest; cite verbatim quotes from the response as evidence; "
+    "never inflate. A typed practice answer that merely mentions an indicator is "
+    "usually Developing, not Proficient.\n\n"
+    "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
 
-def build_scoring_prompt(scenario: str, pis: list[dict], response: str) -> tuple[str, str]:
-    """Build the (system, user) messages for scoring a typed response."""
-    user = f"""SCENARIO:
+def build_scoring_prompt(
+    scenario: str,
+    pis: list[dict],
+    response: str,
+    followup_questions: list[str],
+    followup_answer: str,
+) -> tuple[str, str]:
+    """Build the (system, user) messages for rubric scoring."""
+    pi_block = "\n".join(f'- {pi["id"]}: {pi["text"]}' for pi in pis)
+    fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
+    user = f"""{_rubric_brief()}
+
+EVENT SITUATION the participant responded to:
 {scenario}
 
 ASSIGNED PERFORMANCE INDICATORS:
-{_format_pis(pis)}
+{pi_block}
 
-PARTICIPANT RESPONSE (transcript):
+PARTICIPANT'S MAIN RESPONSE (transcript):
 {response}
 
-For EACH assigned PI: set coverage to "hit", "partial", or "missed"; quote or
-paraphrase the evidence from their response; give one concrete improvement. Use
-the exact PI id and verbatim PI text in each pi_results entry.
-Then assess: structure/organization; whether they addressed the task; and
-specificity / business reasoning (overall_notes). Fill pi_coverage_summary with
-the counts. Finally, write ONE realistic judge follow-up question targeting the
-weakest-covered PI or an obvious gap.
+JUDGE'S FOLLOW-UP QUESTIONS:
+{fq}
 
-Return ONLY the JSON object described in the system message."""
+PARTICIPANT'S ANSWER TO THE FOLLOW-UP:
+{followup_answer or "(the participant did not answer)"}
+
+Grade every criterion. For "evidence", quote EXACT substrings from the
+participant's text (main response or follow-up) so each quote can be found and
+highlighted — never paraphrase inside evidence. Give concrete, criterion-specific
+feedback that names what was present and what would raise the level.
+
+Return a JSON object with EXACTLY this shape:
+{{
+  "performance_indicators": [
+    {{"pi_id": "<id>", "level": "novice|developing|proficient|exemplary",
+      "points": <int in band>, "feedback": "<specific>", "evidence": ["<verbatim quote>"]}}
+    // one object per assigned PI, same order
+  ],
+  "solution": {{
+    "unique": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
+    "practical": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
+    "effective": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}}
+  }},
+  "career_competencies": {{
+    "critical_thinking": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
+    "communication": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
+    "decision_making": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}}
+  }},
+  "overall_impression": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
+  "summary": "<2-3 sentence overall read>",
+  "strengths": ["<short>", "..."],
+  "improvements": ["<short, actionable>", "..."],
+  "followup_feedback": "<how well they handled the judge's follow-up questions>"
+}}
+
+Output ONLY the JSON object."""
     return SCORING_SYSTEM, user
