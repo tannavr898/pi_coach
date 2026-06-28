@@ -18,9 +18,16 @@ from __future__ import annotations
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
 from . import delivery, llm, prompts, rubric, transcription
-from .data_loader import EventNotFoundError, get_event, load_events
+from .data_loader import (
+    EventNotFoundError,
+    get_event,
+    get_instructional_areas,
+    get_pis_by_ids,
+    load_events,
+)
 from .ratelimit import rate_limit
 from .schemas import (
+    AreaSummary,
     DeliveryMetrics,
     DeliveryResponse,
     EventSummary,
@@ -51,12 +58,29 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+def _event_summary(e: dict) -> EventSummary:
+    return EventSummary(
+        code=e["code"],
+        name=e["name"],
+        level=e["level"],
+        pi_count=e["pi_count"],
+        cluster_label=e.get("cluster_label", ""),
+    )
+
+
 @app.get("/api/events", response_model=list[EventSummary])
 def events() -> list[EventSummary]:
     """Events the picker can offer."""
+    return [_event_summary(e) for e in load_events()]
+
+
+@app.get("/api/events/{code}/areas", response_model=list[AreaSummary])
+def event_areas(code: str) -> list[AreaSummary]:
+    """Instructional areas the picker can offer for one event (with PI counts)."""
+    _event_or_404(code)
     return [
-        EventSummary(code=e["code"], name=e["name"], level=e["level"], pi_count=e["pi_count"])
-        for e in load_events()
+        AreaSummary(id=a["id"], name=a["name"], pi_count=len(a["performance_indicators"]))
+        for a in get_instructional_areas(code)
     ]
 
 
@@ -107,7 +131,7 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
     followups = [str(q).strip() for q in data.get("followup_questions", []) if str(q).strip()]
 
     return ScenarioResponse(
-        event=EventSummary(code=event["code"], name=event["name"], level=event["level"], pi_count=event["pi_count"]),
+        event=_event_summary(event),
         level=req.level,
         instructional_area=area_name,
         performance_indicators=[PI(**pi) for pi in pis],
@@ -144,8 +168,8 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     # Resolve PI text from our authoritative data — never trust the client for it.
     pis = select_pis(req.event_code, pi_ids=req.pi_ids)
     if not pis:
-        # All Principles events share one core, so fall back to PMK's pool.
-        pis = select_pis("PMK", pi_ids=req.pi_ids)
+        # Fall back to the full catalog so any valid PI id still resolves.
+        pis = get_pis_by_ids(req.pi_ids)
     if not pis:
         raise HTTPException(status_code=400, detail="Unknown performance indicators.")
     pi_text = {pi["id"]: pi["text"] for pi in pis}

@@ -27,6 +27,15 @@ class EventSummary(BaseModel):
     name: str
     level: str
     pi_count: int
+    cluster_label: str = ""
+
+
+class AreaSummary(BaseModel):
+    """An instructional area the picker can offer for an event."""
+
+    id: str
+    name: str
+    pi_count: int
 
 
 class RubricCriterion(BaseModel):

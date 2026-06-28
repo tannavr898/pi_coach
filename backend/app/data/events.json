@@ -1,45 +1,26 @@
 {
-  "_note": "Principles (Tier 1) events. Per the official Business Administration Core, role-play PIs for all five Principles events are selected from the full BA Core (all 13 instructional areas). pi_count is how many PIs a single role-play surfaces (~4).",
+  "_note": "DECA role-play events. Each event's PI pool is derived from PI membership tags in pis.json: every event includes the Business Administration Core; individual-series events also include their career-cluster core (cluster:<id>) and career pathway (pathway:<id>:<name>). Quantitative events (Accounting Applications, Business Finance, Personal Financial Literacy) are intentionally deferred. cluster=null marks Principles (core-only). pi_count is how many PIs one role-play surfaces.",
   "events": [
-    {
-      "code": "PMK",
-      "name": "Principles of Marketing",
-      "level": "principles",
-      "type": "principles",
-      "pi_count": 4,
-      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
-    },
-    {
-      "code": "PBM",
-      "name": "Principles of Business Management and Administration",
-      "level": "principles",
-      "type": "principles",
-      "pi_count": 4,
-      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
-    },
-    {
-      "code": "PEN",
-      "name": "Principles of Entrepreneurship",
-      "level": "principles",
-      "type": "principles",
-      "pi_count": 4,
-      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
-    },
-    {
-      "code": "PFN",
-      "name": "Principles of Finance",
-      "level": "principles",
-      "type": "principles",
-      "pi_count": 4,
-      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
-    },
-    {
-      "code": "PHT",
-      "name": "Principles of Hospitality and Tourism",
-      "level": "principles",
-      "type": "principles",
-      "pi_count": 4,
-      "instructional_areas": ["BL", "CO", "CR", "EC", "EI", "EN", "FI", "HR", "MK", "NF", "OP", "PD", "SM"]
-    }
+    {"code": "PMK", "name": "Principles of Marketing", "level": "principles", "type": "principles", "cluster": null, "pathway": null, "cluster_label": "Principles", "pi_count": 4},
+    {"code": "PBM", "name": "Principles of Business Management and Administration", "level": "principles", "type": "principles", "cluster": null, "pathway": null, "cluster_label": "Principles", "pi_count": 4},
+    {"code": "PEN", "name": "Principles of Entrepreneurship", "level": "principles", "type": "principles", "cluster": null, "pathway": null, "cluster_label": "Principles", "pi_count": 4},
+    {"code": "PFN", "name": "Principles of Finance", "level": "principles", "type": "principles", "cluster": null, "pathway": null, "cluster_label": "Principles", "pi_count": 4},
+    {"code": "PHT", "name": "Principles of Hospitality and Tourism", "level": "principles", "type": "principles", "cluster": null, "pathway": null, "cluster_label": "Principles", "pi_count": 4},
+
+    {"code": "AAM", "name": "Apparel and Accessories Marketing Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Merchandising", "cluster_label": "Marketing", "pi_count": 5},
+    {"code": "ASM", "name": "Automotive Services Marketing Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Marketing Management", "cluster_label": "Marketing", "pi_count": 5},
+    {"code": "BSM", "name": "Business Services Marketing Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Marketing Management", "cluster_label": "Marketing", "pi_count": 5},
+    {"code": "FMS", "name": "Food Marketing Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Marketing Management", "cluster_label": "Marketing", "pi_count": 5},
+    {"code": "MCS", "name": "Marketing Communications Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Marketing Communications", "cluster_label": "Marketing", "pi_count": 5},
+    {"code": "RMS", "name": "Retail Merchandising Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Merchandising", "cluster_label": "Marketing", "pi_count": 5},
+    {"code": "SEM", "name": "Sports and Entertainment Marketing Series", "level": "individual", "type": "individual", "cluster": "marketing", "pathway": "Marketing Management", "cluster_label": "Marketing", "pi_count": 5},
+
+    {"code": "HLM", "name": "Hotel and Lodging Management Series", "level": "individual", "type": "individual", "cluster": "hospitality", "pathway": "Lodging", "cluster_label": "Hospitality & Tourism", "pi_count": 5},
+    {"code": "QSRM", "name": "Quick Serve Restaurant Management Series", "level": "individual", "type": "individual", "cluster": "hospitality", "pathway": "Restaurant Management", "cluster_label": "Hospitality & Tourism", "pi_count": 5},
+    {"code": "RFSM", "name": "Restaurant and Food Service Management Series", "level": "individual", "type": "individual", "cluster": "hospitality", "pathway": "Restaurant Management", "cluster_label": "Hospitality & Tourism", "pi_count": 5},
+
+    {"code": "ENT", "name": "Entrepreneurship Series", "level": "individual", "type": "individual", "cluster": "entrepreneurship", "pathway": null, "cluster_label": "Entrepreneurship", "pi_count": 5},
+
+    {"code": "HRM", "name": "Human Resources Management Series", "level": "individual", "type": "individual", "cluster": "business_management", "pathway": "Human Resource Management", "cluster_label": "Business Management & Administration", "pi_count": 5}
   ]
 }
