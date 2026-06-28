@@ -9,6 +9,13 @@ export type EventSummary = {
   name: string;
   level: string;
   pi_count: number;
+  cluster_label: string;
+};
+
+export type AreaSummary = {
+  id: string;
+  name: string;
+  pi_count: number;
 };
 
 export type PI = {
@@ -122,6 +129,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function getEvents(): Promise<EventSummary[]> {
   return request<EventSummary[]>("/api/events");
+}
+
+export function getEventAreas(code: string): Promise<AreaSummary[]> {
+  return request<AreaSummary[]>(`/api/events/${encodeURIComponent(code)}/areas`);
 }
 
 export function postScenario(body: {
