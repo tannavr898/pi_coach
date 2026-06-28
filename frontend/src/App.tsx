@@ -346,6 +346,15 @@ function FollowupScreen(props: {
   );
 }
 
+type FeedbackTab = "overview" | "transcript" | RubricScore["category"];
+
+const CATEGORIES: { key: RubricScore["category"]; label: string; tab: string }[] = [
+  { key: "performance_indicator", label: "Performance Indicators", tab: "Indicators" },
+  { key: "solution", label: "Solution", tab: "Solution" },
+  { key: "career_competency", label: "Career Competencies", tab: "Competencies" },
+  { key: "overall_impression", label: "Overall Impression", tab: "Overall" },
+];
+
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
   score: ScoreResponse;
@@ -356,6 +365,14 @@ function FeedbackScreen(props: {
   const { score } = props;
   const marks = buildMarks(score.scores);
   const pct = Math.round((score.total_points / score.max_points) * 100);
+  const [tab, setTab] = useState<FeedbackTab>("overview");
+  const [activeMark, setActiveMark] = useState<string | null>(null);
+
+  const tabs = [
+    { key: "overview", label: "Overview" },
+    { key: "transcript", label: "Transcript" },
+    ...CATEGORIES.map((c) => ({ key: c.key, label: c.tab, badge: subtotalStr(score.scores, c.key) })),
+  ];
 
   return (
     <div className="space-y-4">
@@ -375,9 +392,97 @@ function FeedbackScreen(props: {
             <div className="text-xs text-slate-500">{pct}%</div>
           </div>
         </div>
-        {score.summary && <p className="mt-3 text-sm text-slate-700">{score.summary}</p>}
       </Card>
 
+      <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />
+
+      {tab === "overview" && <OverviewTab score={score} />}
+      {tab === "transcript" && (
+        <TranscriptTab
+          response={props.response}
+          followupAnswer={props.followupAnswer}
+          marks={marks}
+          active={activeMark}
+          onSelect={setActiveMark}
+          followupFeedback={score.followup_feedback}
+        />
+      )}
+      {CATEGORIES.some((c) => c.key === tab) && (
+        <CategoryTab category={tab as RubricScore["category"]} scores={score.scores} />
+      )}
+
+      <div className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-xs text-slate-500">
+        Typed practice measures <strong>content</strong> only. Delivery — pace, filler words, pauses — is
+        measured from your voice in the spoken loop (coming next), not here.
+      </div>
+
+      <button
+        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+        onClick={props.onRestart}
+      >
+        Practice again
+      </button>
+    </div>
+  );
+}
+
+// --- feedback tabs ---------------------------------------------------------
+
+function subtotal(scores: RubricScore[], cat: RubricScore["category"]): [number, number] {
+  const rows = scores.filter((s) => s.category === cat);
+  return [rows.reduce((a, r) => a + r.points, 0), rows.reduce((a, r) => a + r.max_points, 0)];
+}
+
+function subtotalStr(scores: RubricScore[], cat: RubricScore["category"]): string {
+  const [p, m] = subtotal(scores, cat);
+  return `${p}/${m}`;
+}
+
+function TabBar(props: {
+  tabs: { key: string; label: string; badge?: string }[];
+  active: string;
+  onChange: (k: string) => void;
+}) {
+  return (
+    <div className="flex gap-1.5 overflow-x-auto pb-1">
+      {props.tabs.map((t) => {
+        const on = t.key === props.active;
+        return (
+          <button
+            key={t.key}
+            onClick={() => props.onChange(t.key)}
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+              on
+                ? "border-slate-900 bg-slate-900 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {t.label}
+            {t.badge && (
+              <span
+                className={`rounded px-1.5 py-0.5 text-xs tabular-nums ${
+                  on ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {t.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function OverviewTab({ score }: { score: ScoreResponse }) {
+  return (
+    <div className="space-y-4">
+      {score.summary && (
+        <Card>
+          <h3 className="text-sm font-semibold">Summary</h3>
+          <p className="mt-1 text-sm text-slate-700">{score.summary}</p>
+        </Card>
+      )}
       {(score.strengths.length > 0 || score.improvements.length > 0) && (
         <div className="grid gap-4 sm:grid-cols-2">
           {score.strengths.length > 0 && (
@@ -402,70 +507,26 @@ function FeedbackScreen(props: {
           )}
         </div>
       )}
-
-      <Transcript title="Your presentation" text={props.response} marks={marks} />
-      {props.followupAnswer.trim() && (
-        <Transcript title="Your follow-up answer" text={props.followupAnswer} marks={marks} />
-      )}
-      {score.followup_feedback && (
-        <Card className="border-slate-300">
-          <h3 className="text-sm font-semibold">On your follow-up</h3>
-          <p className="mt-1 text-sm text-slate-700">{score.followup_feedback}</p>
-        </Card>
-      )}
-
-      <RubricBreakdown scores={score.scores} />
-
-      <div className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-xs text-slate-500">
-        Typed practice measures <strong>content</strong> only. Delivery — pace, filler words, pauses — is
-        measured from your voice in the spoken loop (coming next), not here.
-      </div>
-
-      <button
-        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-        onClick={props.onRestart}
-      >
-        Practice again
-      </button>
     </div>
   );
 }
 
-// --- rubric feedback bits --------------------------------------------------
-
-const CATEGORY_ORDER: { key: RubricScore["category"]; label: string }[] = [
-  { key: "performance_indicator", label: "Performance Indicators" },
-  { key: "solution", label: "Solution" },
-  { key: "career_competency", label: "Career Competencies" },
-  { key: "overall_impression", label: "Overall Impression" },
-];
-
-function RubricBreakdown({ scores }: { scores: RubricScore[] }) {
+function CategoryTab({ category, scores }: { category: RubricScore["category"]; scores: RubricScore[] }) {
+  const meta = CATEGORIES.find((c) => c.key === category)!;
+  const rows = scores.filter((s) => s.category === category);
+  const [p, m] = subtotal(scores, category);
   return (
     <Card>
-      <h3 className="text-sm font-semibold">Score breakdown</h3>
-      <div className="mt-3 space-y-5">
-        {CATEGORY_ORDER.map((cat) => {
-          const rows = scores.filter((s) => s.category === cat.key);
-          if (rows.length === 0) return null;
-          const pts = rows.reduce((a, r) => a + r.points, 0);
-          const max = rows.reduce((a, r) => a + r.max_points, 0);
-          return (
-            <div key={cat.key}>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-1">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">{cat.label}</h4>
-                <span className="text-xs font-medium tabular-nums text-slate-500">
-                  {pts}/{max}
-                </span>
-              </div>
-              <div className="mt-2 space-y-2.5">
-                {rows.map((r) => (
-                  <CriterionRow key={r.key} r={r} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 className="text-sm font-semibold">{meta.label}</h3>
+        <span className="text-sm font-semibold tabular-nums text-slate-500">
+          {p}/{m}
+        </span>
+      </div>
+      <div className="mt-3 space-y-2.5">
+        {rows.map((r) => (
+          <CriterionRow key={r.key} r={r} />
+        ))}
       </div>
     </Card>
   );
@@ -503,29 +564,104 @@ function CriterionRow({ r }: { r: RubricScore }) {
 
 // --- transcript highlighting ----------------------------------------------
 
-type Mark = { quote: string; level: RubricLevel; label: string };
+type Mark = {
+  id: string;
+  quote: string;
+  level: RubricLevel;
+  label: string;
+  feedback: string;
+  points: number;
+  maxPoints: number;
+};
 
 function buildMarks(scores: RubricScore[]): Mark[] {
   const marks: Mark[] = [];
   for (const s of scores) {
-    for (const q of s.evidence) {
-      if (q && q.trim().length > 3) marks.push({ quote: q.trim(), level: s.level, label: `${s.label} · ${LEVEL_TONE[s.level].label}` });
-    }
+    s.evidence.forEach((q, i) => {
+      if (q && q.trim().length > 3) {
+        marks.push({
+          id: `${s.key}#${i}`,
+          quote: q.trim(),
+          level: s.level,
+          label: s.label,
+          feedback: s.feedback,
+          points: s.points,
+          maxPoints: s.max_points,
+        });
+      }
+    });
   }
   return marks;
 }
 
-function Transcript({ title, text, marks }: { title: string; text: string; marks: Mark[] }) {
+function TranscriptTab(props: {
+  response: string;
+  followupAnswer: string;
+  marks: Mark[];
+  active: string | null;
+  onSelect: (id: string | null) => void;
+  followupFeedback: string;
+}) {
+  const activeMark = props.marks.find((m) => m.id === props.active) ?? null;
+  const tone = activeMark ? LEVEL_TONE[activeMark.level] : null;
   return (
-    <Card>
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-1 text-xs text-slate-400">Highlights show where each criterion saw evidence — color reflects the level reached.</p>
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">{highlight(text, marks)}</p>
-    </Card>
+    <div className="space-y-4">
+      <Card>
+        <h3 className="text-sm font-semibold">Annotation</h3>
+        {activeMark && tone ? (
+          <div className={`mt-2 rounded-lg border ${tone.border} ${tone.bg} px-3 py-2.5`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-slate-800">{activeMark.label}</span>
+              <span className="flex items-center gap-2">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
+                <span className="text-xs font-semibold tabular-nums text-slate-600">
+                  {activeMark.points}/{activeMark.maxPoints}
+                </span>
+              </span>
+            </div>
+            <p className="mt-1 text-sm italic text-slate-500">“{activeMark.quote}”</p>
+            {activeMark.feedback && <p className="mt-1.5 text-sm text-slate-600">{activeMark.feedback}</p>}
+          </div>
+        ) : (
+          <p className="mt-1 text-xs text-slate-400">
+            Tap any highlighted phrase below to see which criterion it counted toward, the level it reached, and why.
+          </p>
+        )}
+      </Card>
+
+      <Card>
+        <h3 className="text-sm font-semibold">Your presentation</h3>
+        <p className="mt-1 text-xs text-slate-400">
+          Color reflects the level each criterion reached. Tap a highlight for details.
+        </p>
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
+          {highlight(props.response, props.marks, props.active, props.onSelect)}
+        </p>
+      </Card>
+
+      {props.followupAnswer.trim() && (
+        <Card>
+          <h3 className="text-sm font-semibold">Your follow-up answer</h3>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
+            {highlight(props.followupAnswer, props.marks, props.active, props.onSelect)}
+          </p>
+          {props.followupFeedback && (
+            <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">
+              <span className="font-medium text-slate-700">On your follow-up:</span> {props.followupFeedback}
+            </p>
+          )}
+        </Card>
+      )}
+    </div>
   );
 }
 
-function highlight(text: string, marks: Mark[]): ReactNode {
+function highlight(
+  text: string,
+  marks: Mark[],
+  active: string | null,
+  onSelect: (id: string | null) => void,
+): ReactNode {
   if (!text) return text;
   const lower = text.toLowerCase();
   const found: { start: number; end: number; mark: Mark }[] = [];
@@ -552,8 +688,16 @@ function highlight(text: string, marks: Mark[]): ReactNode {
   let cursor = 0;
   found.forEach((f, i) => {
     if (f.start > cursor) nodes.push(<span key={`t${i}`}>{text.slice(cursor, f.start)}</span>);
+    const on = f.mark.id === active;
     nodes.push(
-      <mark key={`m${i}`} title={f.mark.label} className={`rounded px-0.5 ${LEVEL_TONE[f.mark.level].mark}`}>
+      <mark
+        key={`m${i}`}
+        onClick={() => onSelect(on ? null : f.mark.id)}
+        title={`${f.mark.label} · ${LEVEL_TONE[f.mark.level].label}`}
+        className={`cursor-pointer rounded px-0.5 underline decoration-dotted underline-offset-2 ${
+          LEVEL_TONE[f.mark.level].mark
+        } ${on ? "ring-2 ring-slate-900/40" : ""}`}
+      >
         {text.slice(f.start, f.end)}
       </mark>,
     );
