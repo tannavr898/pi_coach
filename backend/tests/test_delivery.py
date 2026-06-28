@@ -70,9 +70,11 @@ def test_long_pause_detected():
 
 
 def test_time_flags():
+    # aim is ~7-8 min of speaking; under 6:00 is short, over 8:30 is long.
     assert delivery.compute_delivery(words_evenly(20, 30_000), 30.0)["time_flag"] == "short"
-    assert delivery.compute_delivery(words_evenly(200, 240_000), 240.0)["time_flag"] == "good"
-    assert delivery.compute_delivery(words_evenly(900, 590_000), 590.0)["time_flag"] == "long"
+    assert delivery.compute_delivery(words_evenly(300, 240_000), 240.0)["time_flag"] == "short"  # 4 min
+    assert delivery.compute_delivery(words_evenly(700, 420_000), 420.0)["time_flag"] == "good"  # 7 min
+    assert delivery.compute_delivery(words_evenly(900, 540_000), 540.0)["time_flag"] == "long"  # 9 min
 
 
 def test_reading_signal_on_very_even_pacing():

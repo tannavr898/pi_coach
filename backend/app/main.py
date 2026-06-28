@@ -131,6 +131,7 @@ def _score_one(category: str, key: str, label: str, raw: dict, *, pi_id: str | N
         level=level,  # type: ignore[arg-type]
         points=points,
         max_points=rubric.max_points(category),
+        headline=str(raw.get("headline", "")).strip(),
         feedback=str(raw.get("feedback", "")).strip(),
         evidence=evidence,
     )

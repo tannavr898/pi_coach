@@ -157,24 +157,30 @@ participant's text (main response or follow-up) so each quote can be found and
 highlighted — never paraphrase inside evidence. Give concrete, criterion-specific
 feedback that names what was present and what would raise the level.
 
+For EVERY criterion provide BOTH:
+- "headline": a punchy one-line verdict, at most 8 words (e.g. "Named the PI but never applied it"). This is shown first; the reader expands to see the full feedback.
+- "feedback": 1-2 sentences of specific detail. Wrap the 1-2 most important
+  phrases — the key thing to fix or the thing done well — in **double asterisks**
+  so they stand out when scanned. Do not bold whole sentences.
+
 Return a JSON object with EXACTLY this shape:
 {{
   "performance_indicators": [
     {{"pi_id": "<id>", "level": "novice|developing|proficient|exemplary",
-      "points": <int in band>, "feedback": "<specific>", "evidence": ["<verbatim quote>"]}}
+      "points": <int in band>, "headline": "<<=8 words>", "feedback": "<specific, with **key phrase** bolded>", "evidence": ["<verbatim quote>"]}}
     // one object per assigned PI, same order
   ],
   "solution": {{
-    "unique": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
-    "practical": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
-    "effective": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}}
+    "unique": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}},
+    "practical": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}},
+    "effective": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}}
   }},
   "career_competencies": {{
-    "critical_thinking": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
-    "communication": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
-    "decision_making": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}}
+    "critical_thinking": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}},
+    "communication": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}},
+    "decision_making": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}}
   }},
-  "overall_impression": {{"level": "...", "points": <int>, "feedback": "...", "evidence": ["..."]}},
+  "overall_impression": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."]}},
   "summary": "<2-3 sentence overall read>",
   "strengths": ["<short>", "..."],
   "improvements": ["<short, actionable>", "..."],

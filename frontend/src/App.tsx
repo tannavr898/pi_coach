@@ -18,8 +18,11 @@ type ResponseMode = "type" | "speak";
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 
 const PREP_SECONDS = 10 * 60;
-const RESPONSE_SECONDS = 10 * 60;
-const FOLLOWUP_SECONDS = 3 * 60;
+// The presentation window is ONE 10-minute budget shared by the response and the
+// judge's questions. The response clock counts it down; whatever's left rolls
+// into the follow-up. Aim to wrap the pitch by ~7-8 min, leaving time for Q&A.
+const PRESENTATION_SECONDS = 10 * 60;
+const RECOMMENDED_SPEAK_SECONDS = 450; // 7:30 — what delivery time is graded against
 
 type Stage = "pick" | "loading" | "ready" | "prep" | "respond" | "followup" | "scoring" | "feedback";
 
@@ -32,7 +35,10 @@ export default function App() {
   const [mode, setMode] = useState<ResponseMode>("type");
   const [responseText, setResponseText] = useState("");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [presentationEndsAt, setPresentationEndsAt] = useState<number | null>(null);
+  const [followupMode, setFollowupMode] = useState<ResponseMode>("type");
   const [followupAnswer, setFollowupAnswer] = useState("");
+  const [followupAudio, setFollowupAudio] = useState<Blob | null>(null);
   const [score, setScore] = useState<ScoreResponse | null>(null);
   const [delivery, setDelivery] = useState<DeliveryMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +60,9 @@ export default function App() {
       setScenario(s);
       setResponseText("");
       setAudioBlob(null);
+      setPresentationEndsAt(null);
       setFollowupAnswer("");
+      setFollowupAudio(null);
       setScore(null);
       setDelivery(null);
       setStage("ready");
@@ -79,7 +87,7 @@ export default function App() {
           setStage("respond");
           return;
         }
-        const d = await postDelivery(audioBlob);
+        const d = await postDelivery(audioBlob, RECOMMENDED_SPEAK_SECONDS);
         responseForScoring = d.transcript;
         deliveryMetrics = d.metrics;
         setResponseText(d.transcript); // so the Transcript tab can highlight it
@@ -91,13 +99,21 @@ export default function App() {
         return;
       }
 
+      // Spoken follow-up: transcribe it too (content only — its delivery isn't graded).
+      let followupForScoring = followupAnswer;
+      if (followupMode === "speak" && followupAudio) {
+        const fd = await postDelivery(followupAudio, RECOMMENDED_SPEAK_SECONDS);
+        followupForScoring = fd.transcript;
+        setFollowupAnswer(fd.transcript); // so the Transcript tab can show it
+      }
+
       const result = await postScore({
         event_code: scenario.event.code,
         scenario: scenario.situation,
         pi_ids: scenario.performance_indicators.map((p) => p.id),
         response: responseForScoring,
         followup_questions: scenario.followup_questions,
-        followup_answer: followupAnswer,
+        followup_answer: followupForScoring,
       });
       setDelivery(deliveryMetrics);
       setScore(result);
@@ -114,7 +130,9 @@ export default function App() {
     setDelivery(null);
     setResponseText("");
     setAudioBlob(null);
+    setPresentationEndsAt(null);
     setFollowupAnswer("");
+    setFollowupAudio(null);
     setError(null);
     setStage("pick");
   }
@@ -153,12 +171,19 @@ export default function App() {
         )}
 
         {stage === "prep" && scenario && (
-          <PrepScreen scenario={scenario} onStart={() => setStage("respond")} />
+          <PrepScreen
+            scenario={scenario}
+            onStart={() => {
+              setPresentationEndsAt(Date.now() + PRESENTATION_SECONDS * 1000);
+              setStage("respond");
+            }}
+          />
         )}
 
         {stage === "respond" && scenario && (
           <RespondScreen
             scenario={scenario}
+            endsAt={presentationEndsAt}
             mode={mode}
             onMode={setMode}
             value={responseText}
@@ -172,8 +197,13 @@ export default function App() {
         {stage === "followup" && scenario && (
           <FollowupScreen
             scenario={scenario}
+            endsAt={presentationEndsAt}
+            mode={followupMode}
+            onMode={setFollowupMode}
             value={followupAnswer}
             onChange={setFollowupAnswer}
+            audioBlob={followupAudio}
+            onRecorded={setFollowupAudio}
             onSubmit={submit}
           />
         )}
@@ -267,9 +297,9 @@ function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void })
         <h3 className="mt-5 text-sm font-semibold text-slate-700">Before you start</h3>
         <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
           <li>✏️ Grab a pen and paper (or open notes) — you'll outline your plan during prep.</li>
-          <li>⏱️ You get <strong>10 minutes</strong> to read the situation and plan, then up to 10 to present.</li>
-          <li>🗣️ Find a quiet spot and present <strong>out loud</strong> — typing here is the stand-in for speaking.</li>
-          <li>🎯 Plan an intro, address all 4 performance indicators, propose a clear solution, and close.</li>
+          <li>⏱️ You get <strong>10 minutes</strong> to read and plan, then <strong>10 minutes to present</strong> — and that window includes the judge's questions.</li>
+          <li>🎯 Aim to wrap your pitch in about <strong>7–8 minutes</strong>, leaving 1–2 for the follow-up.</li>
+          <li>🗣️ Find a quiet spot and present <strong>out loud</strong> — type or use 🎙️ Speak.</li>
           <li>❓ At the end the judge asks <strong>two follow-up questions</strong> — you'll answer those too.</li>
         </ul>
 
@@ -304,6 +334,7 @@ function PrepScreen(props: { scenario: ScenarioResponse; onStart: () => void }) 
 
 function RespondScreen(props: {
   scenario: ScenarioResponse;
+  endsAt: number | null;
   mode: ResponseMode;
   onMode: (m: ResponseMode) => void;
   value: string;
@@ -312,16 +343,19 @@ function RespondScreen(props: {
   onRecorded: (b: Blob | null) => void;
   onContinue: () => void;
 }) {
-  const left = useCountdown(RESPONSE_SECONDS, true);
+  const left = useDeadline(props.endsAt);
   const words = wordCount(props.value);
   const canContinue = props.mode === "type" ? !!props.value.trim() : !!props.audioBlob;
+  // Once under ~2:30 left, nudge them to wrap and save time for the judge's questions.
+  const wrapUp = left > 0 && left <= 150;
+  const label = left === 0
+    ? "Presentation time — time's up (you can still continue)"
+    : wrapUp
+      ? "Presentation time — wrap up soon, leave time for the questions"
+      : "Presentation time (shared with the judge's questions)";
   return (
     <div className="space-y-4">
-      <TimerBar
-        label={`Response time${left === 0 ? " — time's up (you can still continue)" : ""}`}
-        left={left}
-        tone={left === 0 ? "red" : "slate"}
-      />
+      <TimerBar label={label} left={left} tone={left === 0 ? "red" : wrapUp ? "amber" : "slate"} />
       <details className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
         <summary className="cursor-pointer font-medium text-slate-700">Show scenario &amp; what you're graded on</summary>
         <div className="mt-3 space-y-3">
@@ -471,17 +505,45 @@ function VoiceRecorder({ audioBlob, onRecorded }: { audioBlob: Blob | null; onRe
 
 function FollowupScreen(props: {
   scenario: ScenarioResponse;
+  endsAt: number | null;
+  mode: ResponseMode;
+  onMode: (m: ResponseMode) => void;
   value: string;
   onChange: (v: string) => void;
+  audioBlob: Blob | null;
+  onRecorded: (b: Blob | null) => void;
   onSubmit: () => void;
 }) {
-  const left = useCountdown(FOLLOWUP_SECONDS, true);
+  const left = useDeadline(props.endsAt);
   const qs = props.scenario.followup_questions;
+  const canSubmit = props.mode === "type" ? !!props.value.trim() : !!props.audioBlob;
   return (
     <div className="space-y-4">
-      <TimerBar label="The judge follows up" left={left} tone={left === 0 ? "red" : "slate"} />
+      <TimerBar
+        label={left === 0 ? "Time's up — you can still answer" : "The judge follows up (same 10-min window)"}
+        left={left}
+        tone={left === 0 ? "red" : left <= 60 ? "amber" : "slate"}
+      />
       <Card>
-        <h2 className="text-base font-semibold">The judge asks you:</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">The judge asks you:</h2>
+          {CAN_RECORD && (
+            <div className="flex rounded-lg border border-slate-200 p-0.5 text-xs font-medium">
+              <button
+                className={`rounded-md px-2.5 py-1 ${props.mode === "type" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+                onClick={() => props.onMode("type")}
+              >
+                ✍️ Type
+              </button>
+              <button
+                className={`rounded-md px-2.5 py-1 ${props.mode === "speak" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+                onClick={() => props.onMode("speak")}
+              >
+                🎙️ Speak
+              </button>
+            </div>
+          )}
+        </div>
         <ol className="mt-3 space-y-2">
           {qs.map((q, i) => (
             <li key={i} className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-800">
@@ -490,18 +552,35 @@ function FollowupScreen(props: {
           ))}
           {qs.length === 0 && <li className="text-sm text-slate-500">No follow-up questions for this scenario.</li>}
         </ol>
-        <label className="mt-4 block text-sm font-medium text-slate-700">Your answer</label>
-        <textarea
-          className="mt-2 h-40 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm leading-relaxed"
-          placeholder="Answer the judge's questions directly. This is graded as part of your overall impression."
-          value={props.value}
-          onChange={(e) => props.onChange(e.target.value)}
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-slate-400">{wordCount(props.value)} words</span>
+
+        {props.mode === "type" ? (
+          <>
+            <label className="mt-4 block text-sm font-medium text-slate-700">Your answer</label>
+            <textarea
+              className="mt-2 h-40 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm leading-relaxed"
+              placeholder="Answer the judge's questions directly. This is graded as part of your overall impression."
+              value={props.value}
+              onChange={(e) => props.onChange(e.target.value)}
+            />
+            <div className="mt-2 text-xs text-slate-400">{wordCount(props.value)} words</div>
+          </>
+        ) : (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-slate-700">Answer out loud</label>
+            <div className="mt-2">
+              <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} />
+            </div>
+            <p className="mt-2 text-xs text-slate-400">
+              We transcribe your answer for grading. Delivery isn't scored on the follow-up — only your content.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-3 flex justify-end">
           <button
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
             onClick={props.onSubmit}
+            disabled={!canSubmit}
           >
             Submit for feedback
           </button>
@@ -559,6 +638,9 @@ function FeedbackScreen(props: {
             </div>
             <div className="text-xs text-slate-500">{pct}%</div>
           </div>
+        </div>
+        <div className="mt-3 border-t border-slate-100 pt-3">
+          <LevelLegend />
         </div>
       </Card>
 
@@ -804,29 +886,45 @@ function Chip({ children }: { children: ReactNode }) {
 }
 
 function CriterionRow({ r }: { r: RubricScore }) {
+  const [open, setOpen] = useState(false);
   const tone = LEVEL_TONE[r.level];
+  const headline = r.headline || truncate(r.feedback.replace(/\*\*/g, ""), 90);
+  const hasDetail = !!r.feedback || r.evidence.length > 0;
   return (
-    <div className={`rounded-lg border ${tone.border} ${tone.bg} px-3 py-2.5`}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-medium text-slate-800">
-          {r.label}
-          {r.pi_id && <span className="ml-1 text-xs font-normal text-slate-400">({r.pi_id})</span>}
-        </p>
+    <div className={`rounded-lg border ${tone.border} ${tone.bg}`}>
+      <button
+        type="button"
+        onClick={() => hasDetail && setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left ${hasDetail ? "cursor-pointer" : "cursor-default"}`}
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-800">
+            {r.label}
+            {r.pi_id && <span className="ml-1 text-xs font-normal text-slate-400">({r.pi_id})</span>}
+          </p>
+          {headline && <p className="mt-0.5 text-xs text-slate-600">{headline}</p>}
+        </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
           <span className="text-xs font-semibold tabular-nums text-slate-600">
             {r.points}/{r.max_points}
           </span>
+          {hasDetail && <span className="text-xs text-slate-400">{open ? "▾" : "▸"}</span>}
         </div>
-      </div>
-      {r.feedback && <p className="mt-1.5 text-sm text-slate-600">{r.feedback}</p>}
-      {r.evidence.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {r.evidence.map((q, i) => (
-            <span key={i} className="rounded bg-white/70 px-1.5 py-0.5 text-xs italic text-slate-500 ring-1 ring-slate-200">
-              “{truncate(q, 80)}”
-            </span>
-          ))}
+      </button>
+      {open && hasDetail && (
+        <div className="border-t border-white/70 px-3 pb-2.5 pt-2">
+          {r.feedback && <p className="text-sm text-slate-700">{richText(r.feedback)}</p>}
+          {r.evidence.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {r.evidence.map((q, i) => (
+                <span key={i} className="rounded bg-white/70 px-1.5 py-0.5 text-xs italic text-slate-500 ring-1 ring-slate-200">
+                  “{truncate(q, 80)}”
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -876,53 +974,71 @@ function TranscriptTab(props: {
   const activeMark = props.marks.find((m) => m.id === props.active) ?? null;
   const tone = activeMark ? LEVEL_TONE[activeMark.level] : null;
   return (
-    <div className="space-y-4">
-      <Card>
-        <h3 className="text-sm font-semibold">Annotation</h3>
-        {activeMark && tone ? (
-          <div className={`mt-2 rounded-lg border ${tone.border} ${tone.bg} px-3 py-2.5`}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium text-slate-800">{activeMark.label}</span>
-              <span className="flex items-center gap-2">
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
-                <span className="text-xs font-semibold tabular-nums text-slate-600">
-                  {activeMark.points}/{activeMark.maxPoints}
-                </span>
-              </span>
-            </div>
-            <p className="mt-1 text-sm italic text-slate-500">“{activeMark.quote}”</p>
-            {activeMark.feedback && <p className="mt-1.5 text-sm text-slate-600">{activeMark.feedback}</p>}
-          </div>
-        ) : (
-          <p className="mt-1 text-xs text-slate-400">
-            Tap any highlighted phrase below to see which criterion it counted toward, the level it reached, and why.
-          </p>
-        )}
-      </Card>
-
-      <Card>
-        <h3 className="text-sm font-semibold">Your presentation</h3>
-        <p className="mt-1 text-xs text-slate-400">
-          Color reflects the level each criterion reached. Tap a highlight for details.
-        </p>
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
-          {highlight(props.response, props.marks, props.active, props.onSelect)}
-        </p>
-      </Card>
-
-      {props.followupAnswer.trim() && (
+    <div className="grid gap-4 lg:grid-cols-[1fr_19rem]">
+      {/* Transcript column */}
+      <div className="order-2 space-y-4 lg:order-1">
         <Card>
-          <h3 className="text-sm font-semibold">Your follow-up answer</h3>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
-            {highlight(props.followupAnswer, props.marks, props.active, props.onSelect)}
+          <h3 className="text-sm font-semibold">Your presentation</h3>
+          <p className="mt-1 text-xs text-slate-400">
+            Highlights mark where each criterion found credit; color is the level it reached. Tap one for the note.
           </p>
-          {props.followupFeedback && (
-            <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">
-              <span className="font-medium text-slate-700">On your follow-up:</span> {props.followupFeedback}
-            </p>
-          )}
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
+            {highlight(props.response, props.marks, props.active, props.onSelect)}
+          </p>
         </Card>
-      )}
+
+        {props.followupAnswer.trim() && (
+          <Card>
+            <h3 className="text-sm font-semibold">Your follow-up answer</h3>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
+              {highlight(props.followupAnswer, props.marks, props.active, props.onSelect)}
+            </p>
+            {props.followupFeedback && (
+              <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">On your follow-up:</span> {props.followupFeedback}
+              </p>
+            )}
+          </Card>
+        )}
+      </div>
+
+      {/* Annotation side panel (sticky beside the transcript) */}
+      <div className="order-1 lg:order-2">
+        <div className="space-y-3 lg:sticky lg:top-4">
+          <Card>
+            <h3 className="text-sm font-semibold">Annotation</h3>
+            {activeMark && tone ? (
+              <div className={`mt-2 rounded-lg border ${tone.border} ${tone.bg} px-3 py-2.5`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-slate-800">{activeMark.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
+                    <span className="text-xs font-semibold tabular-nums text-slate-600">
+                      {activeMark.points}/{activeMark.maxPoints}
+                    </span>
+                  </span>
+                </div>
+                <p className="mt-1.5 text-sm italic text-slate-500">“{activeMark.quote}”</p>
+                {activeMark.feedback && <p className="mt-1.5 text-sm text-slate-700">{richText(activeMark.feedback)}</p>}
+                <button
+                  className="mt-2 text-xs font-medium text-slate-400 underline"
+                  onClick={() => props.onSelect(null)}
+                >
+                  Clear
+                </button>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-slate-400">
+                Tap any highlighted phrase in your transcript to see which criterion it counted toward, the level it
+                reached, and why.
+              </p>
+            )}
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <LevelLegend />
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1087,13 +1203,49 @@ function Centered({ children }: { children: ReactNode }) {
   );
 }
 
-// Level → colors (badge, card bg/border, transcript highlight).
+// Level → colors (badge, card bg/border, transcript highlight). The scale reads
+// worst→best: red → amber → blue → green, so only the TOP level (Exemplary) is
+// green. Proficient is the second band (~70-85%), not full marks — coloring it
+// blue keeps "all green" from looking like a perfect score when it isn't.
 const LEVEL_TONE: Record<RubricLevel, { label: string; badge: string; bg: string; border: string; mark: string }> = {
   novice: { label: "Novice", badge: "bg-red-100 text-red-800", bg: "bg-red-50/40", border: "border-red-200", mark: "bg-red-100" },
   developing: { label: "Developing", badge: "bg-amber-100 text-amber-800", bg: "bg-amber-50/40", border: "border-amber-200", mark: "bg-amber-100" },
-  proficient: { label: "Proficient", badge: "bg-emerald-100 text-emerald-800", bg: "bg-emerald-50/40", border: "border-emerald-200", mark: "bg-emerald-100" },
-  exemplary: { label: "Exemplary", badge: "bg-sky-100 text-sky-800", bg: "bg-sky-50/40", border: "border-sky-200", mark: "bg-sky-100" },
+  proficient: { label: "Proficient", badge: "bg-sky-100 text-sky-800", bg: "bg-sky-50/40", border: "border-sky-200", mark: "bg-sky-100" },
+  exemplary: { label: "Exemplary", badge: "bg-emerald-100 text-emerald-800", bg: "bg-emerald-50/40", border: "border-emerald-200", mark: "bg-emerald-100" },
 };
+
+const LEVEL_ORDER: RubricLevel[] = ["novice", "developing", "proficient", "exemplary"];
+
+// Renders **bold** spans from the grader's feedback; everything else is plain.
+function richText(s: string): ReactNode {
+  if (!s) return s;
+  return s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      <strong key={i} className="font-semibold text-slate-900">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
+function LevelLegend() {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+      {LEVEL_ORDER.map((lv) => {
+        const t = LEVEL_TONE[lv];
+        return (
+          <span key={lv} className="inline-flex items-center gap-1.5">
+            <span className={`h-3 w-3 rounded-sm ${t.mark} ring-1 ring-inset ring-slate-300`} />
+            {t.label}
+          </span>
+        );
+      })}
+      <span className="text-slate-400">· green = top band, not a perfect score</span>
+    </div>
+  );
+}
 
 // --- timer -----------------------------------------------------------------
 
@@ -1121,6 +1273,21 @@ function useCountdown(seconds: number, running: boolean, onElapsed?: () => void)
     return () => clearInterval(id);
   }, [running]);
 
+  return left;
+}
+
+// Counts down to a wall-clock deadline (ms epoch). Survives stage changes, so the
+// presentation budget keeps running as the user moves from response to questions.
+function useDeadline(endsAt: number | null): number {
+  const calc = () => (endsAt ? Math.max(0, Math.round((endsAt - Date.now()) / 1000)) : 0);
+  const [left, setLeft] = useState(calc);
+  useEffect(() => {
+    if (!endsAt) return;
+    setLeft(calc);
+    const id = setInterval(() => setLeft(Math.max(0, Math.round((endsAt - Date.now()) / 1000))), 250);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endsAt]);
   return left;
 }
 

@@ -22,8 +22,12 @@ PACE_FAST = 180
 NOTICEABLE_PAUSE = 0.75
 LONG_PAUSE = 3.0
 
-# Time window: a Principles role-play is up to ~10 minutes.
-DEFAULT_TARGET_SECONDS = 600
+# Presentation window: a Principles role-play presentation is up to ~10 minutes,
+# and that INCLUDES the judge's follow-up questions. So the spoken pitch itself
+# should land around 7-8 minutes, leaving 1-2 minutes for the questions.
+DEFAULT_TARGET_SECONDS = 450  # ~7:30 recommended speaking time
+SPEAK_MIN_SECONDS = 360  # under 6:00 — room to develop each point more
+SPEAK_MAX_SECONDS = 510  # over 8:30 — leave time for the judge's questions
 
 # "um"/"uh" family — almost always disfluencies, safe to count as fillers.
 HARD_FILLERS = {"um", "umm", "uhm", "uh", "uhh", "er", "erm", "err", "hmm", "hm", "mm", "mhm", "uh-huh"}
@@ -116,10 +120,10 @@ def compute_delivery(
             long_pauses.append({"at_seconds": round(words[i].end_ms / 1000.0, 1), "length_seconds": round(gap, 1)})
     longest_pause = round(max(gaps_s), 1) if gaps_s else 0.0
 
-    # --- time management ---
-    if duration_s < 90:
+    # --- time management (aim ~7-8 min of speaking; questions fill the rest) ---
+    if duration_s < SPEAK_MIN_SECONDS:
         time_flag = "short"
-    elif duration_s > 0.95 * target_seconds:
+    elif duration_s > SPEAK_MAX_SECONDS:
         time_flag = "long"
     else:
         time_flag = "good"
@@ -183,11 +187,11 @@ def _notes(pace, pace_flag, filler_total, filler_per_min, crutch_counts, long_pa
         notes.append(f"{len(long_pauses)} long pause(s) over 3s — the longest was {worst['length_seconds']}s at {_fmt_time(worst['at_seconds'])}. Short stalls are fine; long ones lose the room.")
 
     if time_flag == "short":
-        notes.append(f"You spoke for {_fmt_time(duration_s)} — quite short. Most strong responses use more of the window to develop each point.")
+        notes.append(f"You spoke for {_fmt_time(duration_s)} — short of the 7-8 minute target. Develop each point further to use the window.")
     elif time_flag == "long":
-        notes.append(f"You spoke for {_fmt_time(duration_s)} — near the limit. Make sure you leave room for the judge's questions.")
+        notes.append(f"You spoke for {_fmt_time(duration_s)} — long. The 10-minute window includes the judge's two questions, so aim to wrap your pitch by ~8 minutes.")
     else:
-        notes.append(f"You spoke for {_fmt_time(duration_s)} — a sensible use of the window.")
+        notes.append(f"You spoke for {_fmt_time(duration_s)} — right around the 7-8 minute target, leaving room for the judge's questions.")
 
     if reading_signal:
         notes.append("Soft signal: your pacing was very even with almost no natural pauses, which can sound read rather than presented. (Advisory only.)")

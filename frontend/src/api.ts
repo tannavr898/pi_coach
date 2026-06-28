@@ -55,6 +55,7 @@ export type RubricScore = {
   level: RubricLevel;
   points: number;
   max_points: number;
+  headline: string;
   feedback: string;
   evidence: string[];
 };
@@ -149,7 +150,7 @@ export function postScore(body: {
 
 // Upload a recording for transcription + delivery metrics. FormData sets its own
 // multipart Content-Type (with boundary), so we don't pass headers here.
-export async function postDelivery(audio: Blob, targetSeconds = 600): Promise<DeliveryResponse> {
+export async function postDelivery(audio: Blob, targetSeconds = 450): Promise<DeliveryResponse> {
   const ext = audio.type.includes("webm") ? "webm" : audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "dat";
   const fd = new FormData();
   fd.append("audio", audio, `take.${ext}`);

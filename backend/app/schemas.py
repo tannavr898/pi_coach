@@ -87,6 +87,8 @@ class RubricScore(BaseModel):
     level: RubricLevel
     points: int
     max_points: int
+    # One-line headline (shown collapsed); feedback is the full detail (expandable).
+    headline: str = ""
     feedback: str = ""
     # Verbatim quotes from the participant's response/follow-up, for highlighting.
     evidence: list[str] = []
