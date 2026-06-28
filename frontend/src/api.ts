@@ -69,21 +69,52 @@ export type ScoreResponse = {
   followup_feedback: string;
 };
 
+export type FillerCount = { word: string; count: number };
+export type CrutchCount = { phrase: string; count: number };
+export type LongPause = { at_seconds: number; length_seconds: number };
+
+export type DeliveryMetrics = {
+  duration_seconds: number;
+  word_count: number;
+  pace_wpm: number;
+  pace_flag: "slow" | "good" | "fast";
+  filler_count: number;
+  filler_per_min: number;
+  fillers: FillerCount[];
+  crutch_phrases: CrutchCount[];
+  pause_count: number;
+  long_pauses: LongPause[];
+  longest_pause_seconds: number;
+  time_used_seconds: number;
+  time_target_seconds: number;
+  time_flag: "short" | "good" | "long";
+  reading_signal: boolean;
+  notes: string[];
+};
+
+export type DeliveryResponse = {
+  transcript: string;
+  metrics: DeliveryMetrics;
+};
+
+async function throwIfError(res: Response): Promise<void> {
+  if (res.ok) return;
+  let detail = `HTTP ${res.status}`;
+  try {
+    const body = await res.json();
+    if (body?.detail) detail = String(body.detail);
+  } catch {
+    /* non-JSON error body */
+  }
+  throw new Error(detail);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
-  if (!res.ok) {
-    let detail = `HTTP ${res.status}`;
-    try {
-      const body = await res.json();
-      if (body?.detail) detail = String(body.detail);
-    } catch {
-      /* non-JSON error body */
-    }
-    throw new Error(detail);
-  }
+  await throwIfError(res);
   return res.json() as Promise<T>;
 }
 
@@ -114,4 +145,16 @@ export function postScore(body: {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+// Upload a recording for transcription + delivery metrics. FormData sets its own
+// multipart Content-Type (with boundary), so we don't pass headers here.
+export async function postDelivery(audio: Blob, targetSeconds = 600): Promise<DeliveryResponse> {
+  const ext = audio.type.includes("webm") ? "webm" : audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "dat";
+  const fd = new FormData();
+  fd.append("audio", audio, `take.${ext}`);
+  fd.append("target_seconds", String(targetSeconds));
+  const res = await fetch("/api/score-delivery", { method: "POST", body: fd });
+  await throwIfError(res);
+  return res.json() as Promise<DeliveryResponse>;
 }

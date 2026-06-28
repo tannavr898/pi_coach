@@ -16,13 +16,21 @@ backend/   FastAPI (Python, uv) — data, prompts, Anthropic calls, provider key
 frontend/  Vite + React + TS + Tailwind SPA — talks only to /api/*
 ```
 
-## Current status: Phase 2 — Content loop (rubric-based, typed)
+## Current status: Phase 3 — Voice (delivery metrics)
 
-The full typed loop works: pick an event → generate an original DECA-format
-scenario → **ready screen** with prep tips → 10-min prep timer → type a
-presentation → answer the judge's **two follow-up questions** → **rubric
-feedback** (score out of 100, per-criterion levels + comments, and your
-transcript highlighted where each criterion saw evidence).
+The full loop works typed **or spoken**: pick an event → generate an original
+DECA-format scenario → **ready screen** with prep tips → 10-min prep timer →
+**type or 🎙️ speak** your presentation → answer the judge's **two follow-up
+questions** → tabbed **feedback** (score out of 100, per-criterion levels +
+comments, transcript highlighted where each criterion saw evidence, and — for
+spoken takes — a **Delivery** tab with pace, fillers, pauses, time use, and
+playback).
+
+- **Voice (Phase 3):** record with the browser, transcribe via AssemblyAI, and
+  compute delivery metrics (pace WPM, filler rate, long pauses, time use,
+  reading signal) deterministically from word timestamps. Audio is processed and
+  discarded; the browser keeps the take for playback. Delivery measures timing
+  only — never tone or confidence (roadmap §2).
 
 - **Data (Phase 1):** the full official DECA **Business Administration Core** —
   13 instructional areas, 367 PIs (verbatim text + level), behind all five
@@ -33,9 +41,10 @@ transcript highlighted where each criterion saw evidence).
   levels (Novice / Developing / Proficient / Exemplary). Structure stored in
   `backend/app/data/rubric.json`.
 - **Endpoints:** `POST /api/scenario` (participant-facing only — judge
-  instructions never leave the backend), `POST /api/score-content`, plus
-  `GET /api/events` and `GET /api/rubric`. Backed by the Anthropic API (Sonnet
-  4.6 by default).
+  instructions never leave the backend), `POST /api/score-content`,
+  `POST /api/score-delivery` (voice), plus `GET /api/events` and
+  `GET /api/rubric`. Backed by the Anthropic API (Sonnet 4.6 by default) and a
+  transcription provider (AssemblyAI) for voice.
 - **Guardrails:** keys stay server-side; per-IP rate limit on the paid
   endpoints; original clean-room scenarios; output labelled practice coaching,
   never an official competition score.

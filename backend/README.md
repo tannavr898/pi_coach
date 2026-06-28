@@ -27,6 +27,7 @@ curl localhost:8000/api/health   # -> {"status":"ok"}
 | `GET /api/rubric` | The DECA 2026 District rubric (levels, criteria, point bands). |
 | `POST /api/scenario` | Generate an original scenario. Body: `{event_code, level, area?, pi_ids?, seed?}`. Returns the PIs, solution criteria, career competencies, procedures, the **participant-facing situation** (no judge text), and the judge's follow-up questions. |
 | `POST /api/score-content` | Grade a response against the rubric. Body: `{event_code, scenario, pi_ids, response, followup_questions, followup_answer}`. Returns per-criterion `scores` (level + points + feedback + verbatim evidence quotes), the 100-point total, strengths/improvements, and follow-up feedback. |
+| `POST /api/score-delivery` | Transcribe a spoken response and return deterministic delivery metrics. Multipart `audio` upload (+ optional `target_seconds`). Returns the `transcript` plus `metrics` (pace WPM, fillers, pauses, time use, reading signal, coaching notes). Audio is processed and discarded; only the transcript + numbers are returned. |
 
 The judge's instructions are generated for grading only and are **never**
 returned to the client — `/api/scenario` returns just the participant-facing
@@ -34,10 +35,17 @@ situation plus the follow-up questions (surfaced after the response).
 
 Module map (all under `app/`): `selection.py` picks the PIs, `rubric.py` loads
 `data/rubric.json` and clamps scores into their level bands, `prompts.py` builds
-the §7 prompts, `llm.py` wraps Anthropic + defensive JSON parsing, `config.py`
-holds the model choice (`ANTHROPIC_MODEL`, default `claude-sonnet-4-6`) and
-injects the OS trust store, `ratelimit.py` is the per-IP guard. Keys never leave
-the backend.
+the §7 prompts, `llm.py` wraps Anthropic + defensive JSON parsing, `transcription.py`
+calls the transcription provider (AssemblyAI) for word timestamps + fillers,
+`delivery.py` computes the §8 delivery metrics deterministically from those
+timestamps, `config.py` holds the model choice (`ANTHROPIC_MODEL`, default
+`claude-sonnet-4-6`) and injects the OS trust store, `ratelimit.py` is the per-IP
+guard. Keys never leave the backend.
+
+Voice needs `TRANSCRIPTION_API_KEY` (AssemblyAI). Set a provider spend cap first
+(roadmap §9). Without it, typed practice works and `/api/score-delivery` returns
+a friendly 503. Delivery metrics are pure arithmetic on word timestamps — pace,
+fillers, pauses, time use — never tone/confidence (roadmap §2).
 
 `reference/` holds DECA's official sample role-plays used to calibrate the
 rubric and prompts. It is **gitignored** (copyright) — local reference only.

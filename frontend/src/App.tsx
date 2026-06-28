@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  type DeliveryMetrics,
   type EventSummary,
   type Level,
   type RubricCriterion,
@@ -8,9 +9,13 @@ import {
   type ScenarioResponse,
   type ScoreResponse,
   getEvents,
+  postDelivery,
   postScenario,
   postScore,
 } from "./api";
+
+type ResponseMode = "type" | "speak";
+const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 
 const PREP_SECONDS = 10 * 60;
 const RESPONSE_SECONDS = 10 * 60;
@@ -24,9 +29,12 @@ export default function App() {
   const [eventCode, setEventCode] = useState("");
   const [level, setLevel] = useState<Level>("district");
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
+  const [mode, setMode] = useState<ResponseMode>("type");
   const [responseText, setResponseText] = useState("");
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [followupAnswer, setFollowupAnswer] = useState("");
   const [score, setScore] = useState<ScoreResponse | null>(null);
+  const [delivery, setDelivery] = useState<DeliveryMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,8 +53,10 @@ export default function App() {
       const s = await postScenario({ event_code: eventCode, level });
       setScenario(s);
       setResponseText("");
+      setAudioBlob(null);
       setFollowupAnswer("");
       setScore(null);
+      setDelivery(null);
       setStage("ready");
     } catch (e) {
       setError(errMsg(e));
@@ -55,18 +65,41 @@ export default function App() {
   }
 
   async function submit() {
-    if (!scenario || !responseText.trim()) return;
+    if (!scenario) return;
     setError(null);
     setStage("scoring");
     try {
+      let responseForScoring = responseText;
+      let deliveryMetrics: DeliveryMetrics | null = null;
+
+      // Spoken path: transcribe first, then score the transcript.
+      if (mode === "speak") {
+        if (!audioBlob) {
+          setError("No recording found — record your response first.");
+          setStage("respond");
+          return;
+        }
+        const d = await postDelivery(audioBlob);
+        responseForScoring = d.transcript;
+        deliveryMetrics = d.metrics;
+        setResponseText(d.transcript); // so the Transcript tab can highlight it
+      }
+
+      if (!responseForScoring.trim()) {
+        setError("Your response came back empty — try again.");
+        setStage("respond");
+        return;
+      }
+
       const result = await postScore({
         event_code: scenario.event.code,
         scenario: scenario.situation,
         pi_ids: scenario.performance_indicators.map((p) => p.id),
-        response: responseText,
+        response: responseForScoring,
         followup_questions: scenario.followup_questions,
         followup_answer: followupAnswer,
       });
+      setDelivery(deliveryMetrics);
       setScore(result);
       setStage("feedback");
     } catch (e) {
@@ -78,7 +111,9 @@ export default function App() {
   function restart() {
     setScenario(null);
     setScore(null);
+    setDelivery(null);
     setResponseText("");
+    setAudioBlob(null);
     setFollowupAnswer("");
     setError(null);
     setStage("pick");
@@ -124,8 +159,12 @@ export default function App() {
         {stage === "respond" && scenario && (
           <RespondScreen
             scenario={scenario}
+            mode={mode}
+            onMode={setMode}
             value={responseText}
             onChange={setResponseText}
+            audioBlob={audioBlob}
+            onRecorded={setAudioBlob}
             onContinue={() => setStage("followup")}
           />
         )}
@@ -139,7 +178,9 @@ export default function App() {
           />
         )}
 
-        {stage === "scoring" && <Centered>Grading your response against the rubric…</Centered>}
+        {stage === "scoring" && (
+          <Centered>{mode === "speak" ? "Transcribing and grading your delivery…" : "Grading your response against the rubric…"}</Centered>
+        )}
 
         {stage === "feedback" && score && scenario && (
           <FeedbackScreen
@@ -147,6 +188,8 @@ export default function App() {
             score={score}
             response={responseText}
             followupAnswer={followupAnswer}
+            delivery={delivery}
+            audioBlob={audioBlob}
             onRestart={restart}
           />
         )}
@@ -261,12 +304,17 @@ function PrepScreen(props: { scenario: ScenarioResponse; onStart: () => void }) 
 
 function RespondScreen(props: {
   scenario: ScenarioResponse;
+  mode: ResponseMode;
+  onMode: (m: ResponseMode) => void;
   value: string;
   onChange: (v: string) => void;
+  audioBlob: Blob | null;
+  onRecorded: (b: Blob | null) => void;
   onContinue: () => void;
 }) {
   const left = useCountdown(RESPONSE_SECONDS, true);
   const words = wordCount(props.value);
+  const canContinue = props.mode === "type" ? !!props.value.trim() : !!props.audioBlob;
   return (
     <div className="space-y-4">
       <TimerBar
@@ -281,25 +329,142 @@ function RespondScreen(props: {
           <CoverSheet scenario={props.scenario} embedded />
         </div>
       </details>
+
       <Card>
-        <label className="text-sm font-medium text-slate-700">Your presentation</label>
-        <textarea
-          className="mt-2 h-64 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm leading-relaxed"
-          placeholder="Open with a greeting, address the situation and every performance indicator, propose your solution, and close. Speak it out loud as you type — that's the rep."
-          value={props.value}
-          onChange={(e) => props.onChange(e.target.value)}
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-slate-400">{words} words</span>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-slate-700">Your presentation</label>
+          {CAN_RECORD && (
+            <div className="flex rounded-lg border border-slate-200 p-0.5 text-xs font-medium">
+              <button
+                className={`rounded-md px-2.5 py-1 ${props.mode === "type" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+                onClick={() => props.onMode("type")}
+              >
+                ✍️ Type
+              </button>
+              <button
+                className={`rounded-md px-2.5 py-1 ${props.mode === "speak" ? "bg-slate-900 text-white" : "text-slate-600"}`}
+                onClick={() => props.onMode("speak")}
+              >
+                🎙️ Speak
+              </button>
+            </div>
+          )}
+        </div>
+
+        {props.mode === "type" ? (
+          <>
+            <textarea
+              className="mt-2 h-64 w-full resize-y rounded-lg border border-slate-300 p-3 text-sm leading-relaxed"
+              placeholder="Open with a greeting, address the situation and every performance indicator, propose your solution, and close. Speak it out loud as you type — that's the rep."
+              value={props.value}
+              onChange={(e) => props.onChange(e.target.value)}
+            />
+            <div className="mt-2 text-xs text-slate-400">{words} words</div>
+          </>
+        ) : (
+          <div className="mt-3">
+            <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} />
+            <p className="mt-3 text-xs text-slate-400">
+              Present out loud as if the judge is in front of you. We transcribe the audio and measure delivery —
+              pace, fillers, pauses, time — alongside the content score. Delivery covers timing only, not tone or
+              confidence. Your recording stays on your device unless you keep it.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-3 flex justify-end">
           <button
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
             onClick={props.onContinue}
-            disabled={!props.value.trim()}
+            disabled={!canContinue}
           >
             Continue to the judge's questions →
           </button>
         </div>
       </Card>
+    </div>
+  );
+}
+
+function VoiceRecorder({ audioBlob, onRecorded }: { audioBlob: Blob | null; onRecorded: (b: Blob | null) => void }) {
+  const [state, setState] = useState<"idle" | "recording" | "recorded">(audioBlob ? "recorded" : "idle");
+  const [elapsed, setElapsed] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<number | undefined>(undefined);
+
+  const previewUrl = useMemo(() => (audioBlob ? URL.createObjectURL(audioBlob) : null), [audioBlob]);
+  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    },
+    [],
+  );
+
+  async function start() {
+    setErr(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        onRecorded(blob);
+        setState("recorded");
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      mr.start();
+      recorderRef.current = mr;
+      setElapsed(0);
+      setState("recording");
+      timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    } catch {
+      setErr("Microphone access was blocked. Allow mic permission in your browser and try again.");
+    }
+  }
+
+  function stop() {
+    recorderRef.current?.stop();
+    if (timerRef.current) clearInterval(timerRef.current);
+  }
+
+  function reset() {
+    onRecorded(null);
+    setState("idle");
+    setElapsed(0);
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-4">
+      {err && <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{err}</div>}
+      {state === "idle" && (
+        <button onClick={start} className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+          <span className="h-2.5 w-2.5 rounded-full bg-white" /> Start recording
+        </button>
+      )}
+      {state === "recording" && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium text-red-700">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" /> Recording {fmt(elapsed)}
+          </div>
+          <button onClick={stop} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+            Stop
+          </button>
+        </div>
+      )}
+      {state === "recorded" && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">✓ Recorded — listen back below.</div>
+          {previewUrl && <audio controls src={previewUrl} className="w-full" />}
+          <button onClick={reset} className="text-xs font-medium text-slate-500 underline">Re-record</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -346,7 +511,7 @@ function FollowupScreen(props: {
   );
 }
 
-type FeedbackTab = "overview" | "transcript" | RubricScore["category"];
+type FeedbackTab = "overview" | "transcript" | "delivery" | RubricScore["category"];
 
 const CATEGORIES: { key: RubricScore["category"]; label: string; tab: string }[] = [
   { key: "performance_indicator", label: "Performance Indicators", tab: "Indicators" },
@@ -360,6 +525,8 @@ function FeedbackScreen(props: {
   score: ScoreResponse;
   response: string;
   followupAnswer: string;
+  delivery: DeliveryMetrics | null;
+  audioBlob: Blob | null;
   onRestart: () => void;
 }) {
   const { score } = props;
@@ -371,6 +538,7 @@ function FeedbackScreen(props: {
   const tabs = [
     { key: "overview", label: "Overview" },
     { key: "transcript", label: "Transcript" },
+    ...(props.delivery ? [{ key: "delivery", label: "Delivery" }] : []),
     ...CATEGORIES.map((c) => ({ key: c.key, label: c.tab, badge: subtotalStr(score.scores, c.key) })),
   ];
 
@@ -407,13 +575,23 @@ function FeedbackScreen(props: {
           followupFeedback={score.followup_feedback}
         />
       )}
+      {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
       {CATEGORIES.some((c) => c.key === tab) && (
         <CategoryTab category={tab as RubricScore["category"]} scores={score.scores} />
       )}
 
       <div className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-xs text-slate-500">
-        Typed practice measures <strong>content</strong> only. Delivery — pace, filler words, pauses — is
-        measured from your voice in the spoken loop (coming next), not here.
+        {props.delivery ? (
+          <>
+            <strong>Content</strong> is the rubric score; <strong>Delivery</strong> measures pace, fillers, pauses,
+            and time only — not tone, confidence, or charisma.
+          </>
+        ) : (
+          <>
+            Typed practice measures <strong>content</strong> only. Switch to <strong>🎙️ Speak</strong> on the
+            response step to also get delivery feedback (pace, fillers, pauses, time) from your voice.
+          </>
+        )}
       </div>
 
       <button
@@ -530,6 +708,99 @@ function CategoryTab({ category, scores }: { category: RubricScore["category"]; 
       </div>
     </Card>
   );
+}
+
+function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audioBlob: Blob | null }) {
+  const url = useMemo(() => (audioBlob ? URL.createObjectURL(audioBlob) : null), [audioBlob]);
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+
+  return (
+    <div className="space-y-4">
+      {url && (
+        <Card>
+          <h3 className="text-sm font-semibold">Listen back</h3>
+          <audio controls src={url} className="mt-2 w-full" />
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Pace" value={String(m.pace_wpm)} unit="WPM" ok={m.pace_flag === "good"} />
+        <Stat label="Fillers" value={String(m.filler_count)} unit={`${m.filler_per_min}/min`} ok={m.filler_count === 0} />
+        <Stat
+          label="Long pauses"
+          value={String(m.long_pauses.length)}
+          unit={m.longest_pause_seconds ? `max ${m.longest_pause_seconds}s` : "none"}
+          ok={m.long_pauses.length === 0}
+        />
+        <Stat label="Time" value={fmt(Math.round(m.time_used_seconds))} unit={TIME_HINT[m.time_flag]} ok={m.time_flag === "good"} />
+      </div>
+
+      <Card>
+        <h3 className="text-sm font-semibold">Coaching notes</h3>
+        <ul className="mt-2 space-y-1.5 text-sm text-slate-700">
+          {m.notes.map((n, i) => (
+            <li key={i}>• {n}</li>
+          ))}
+        </ul>
+      </Card>
+
+      {(m.fillers.length > 0 || m.crutch_phrases.length > 0) && (
+        <Card>
+          <h3 className="text-sm font-semibold">Words to trim</h3>
+          {m.fillers.length > 0 && (
+            <div className="mt-2">
+              <span className="text-xs font-medium text-slate-500">Fillers</span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {m.fillers.map((f) => (
+                  <Chip key={f.word}>
+                    {f.word} ×{f.count}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          )}
+          {m.crutch_phrases.length > 0 && (
+            <div className="mt-3">
+              <span className="text-xs font-medium text-slate-500">Crutch phrases (advisory)</span>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {m.crutch_phrases.map((f) => (
+                  <Chip key={f.phrase}>
+                    {f.phrase} ×{f.count}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+        Delivery is deterministic timing measured from your audio — accurate and honest. It does not judge tone,
+        confidence, or accent.
+      </div>
+    </div>
+  );
+}
+
+const TIME_HINT: Record<DeliveryMetrics["time_flag"], string> = {
+  short: "quite short",
+  good: "on target",
+  long: "near limit",
+};
+
+function Stat({ label, value, unit, ok }: { label: string; value: string; unit?: string; ok: boolean }) {
+  const tone = ok ? "border-emerald-200 bg-emerald-50/40" : "border-amber-200 bg-amber-50/40";
+  return (
+    <div className={`rounded-lg border ${tone} px-3 py-2.5`}>
+      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="mt-0.5 text-xl font-bold tabular-nums text-slate-900">{value}</div>
+      {unit && <div className="text-xs text-slate-500">{unit}</div>}
+    </div>
+  );
+}
+
+function Chip({ children }: { children: ReactNode }) {
+  return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{children}</span>;
 }
 
 function CriterionRow({ r }: { r: RubricScore }) {

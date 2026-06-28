@@ -100,3 +100,45 @@ class ScoreResponse(BaseModel):
     strengths: list[str] = []
     improvements: list[str] = []
     followup_feedback: str = ""
+
+
+# --- POST /api/score-delivery (voice, Phase 3) ----------------------------
+
+
+class FillerCount(BaseModel):
+    word: str
+    count: int
+
+
+class CrutchCount(BaseModel):
+    phrase: str
+    count: int
+
+
+class LongPause(BaseModel):
+    at_seconds: float
+    length_seconds: float
+
+
+class DeliveryMetrics(BaseModel):
+    duration_seconds: float
+    word_count: int
+    pace_wpm: int
+    pace_flag: Literal["slow", "good", "fast"]
+    filler_count: int
+    filler_per_min: float
+    fillers: list[FillerCount] = []
+    crutch_phrases: list[CrutchCount] = []
+    pause_count: int
+    long_pauses: list[LongPause] = []
+    longest_pause_seconds: float
+    time_used_seconds: float
+    time_target_seconds: int
+    time_flag: Literal["short", "good", "long"]
+    reading_signal: bool
+    notes: list[str] = []
+
+
+class DeliveryResponse(BaseModel):
+    transcript: str
+    metrics: DeliveryMetrics

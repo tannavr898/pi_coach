@@ -15,12 +15,14 @@ participant-facing situation and (after the response) the follow-up questions.
 
 from __future__ import annotations
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import llm, prompts, rubric
+from . import delivery, llm, prompts, rubric, transcription
 from .data_loader import EventNotFoundError, get_event, load_events
 from .ratelimit import rate_limit
 from .schemas import (
+    DeliveryMetrics,
+    DeliveryResponse,
     EventSummary,
     PI,
     RubricCriterion,
@@ -192,3 +194,26 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
         improvements=[str(x) for x in data.get("improvements", []) if str(x).strip()],
         followup_feedback=str(data.get("followup_feedback", "")).strip(),
     )
+
+
+@app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit)])
+def score_delivery(
+    audio: UploadFile = File(...),
+    target_seconds: int = Form(delivery.DEFAULT_TARGET_SECONDS),
+) -> DeliveryResponse:
+    """Transcribe a spoken response and compute deterministic delivery metrics.
+
+    Audio is processed and discarded here — we keep only the transcript + numbers
+    (roadmap §2 minors' data minimization; the browser holds the recording for
+    playback, deleting it unless the user opts to keep it).
+    """
+    raw = audio.file.read()
+    try:
+        result = transcription.transcribe(raw)
+    except transcription.TranscriptionNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except transcription.TranscriptionError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    metrics = delivery.compute_delivery(result.words, result.audio_duration_s, target_seconds=target_seconds)
+    return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics))
