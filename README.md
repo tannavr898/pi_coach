@@ -1,10 +1,10 @@
-# DECA Roleplay Trainer
+# PI Coach
 
-An AI trainer that lets a DECA competitor practice a roleplay end to end:
+An AI trainer that lets a DECA competitor practice a role-play end to end:
 generate an original scenario in DECA's format, prep against a real timer,
-respond, and get honest feedback on **content** (PI coverage + structure) and,
-later, **delivery** (pace, fillers, pauses — from your actual voice). Output is
-always labeled "PI coverage + delivery feedback," never a judge score.
+respond (typed or spoken), and get honest feedback on **content** (PI coverage +
+structure) and **delivery** (pace, fillers, pauses — from your actual voice).
+Output is always labeled "PI coverage + delivery feedback," never a judge score.
 
 See [`roadmap.txt`](./roadmap.txt) for the full plan and the reasoning behind
 every decision.
@@ -18,13 +18,23 @@ frontend/  Vite + React + TS + Tailwind SPA — talks only to /api/*
 
 ## Current status: Phase 3 — Voice (delivery metrics)
 
-The full loop works typed **or spoken**: pick an event → generate an original
-DECA-format scenario → **ready screen** with prep tips → 10-min prep timer →
-**type or 🎙️ speak** your presentation → answer the judge's **two follow-up
-questions** → tabbed **feedback** (score out of 100, per-criterion levels +
-comments, transcript highlighted where each criterion saw evidence, and — for
-spoken takes — a **Delivery** tab with pace, fillers, pauses, time use, and
-playback).
+The full loop works typed **or spoken**: pick an event (and optionally a focus
+instructional area) → generate an original DECA-format scenario → **ready
+screen** with prep tips → 10-min prep timer → **type or 🎙️ speak** your
+presentation → answer the judge's **two follow-up questions** (typed or spoken)
+→ tabbed **feedback** (score out of 100, per-criterion level + one-line headline
+that expands to detail, a **What was missing** list, transcript highlighted
+where each criterion saw evidence, and — for spoken takes — a **Delivery** tab
+with pace, fillers, pauses, time use, and playback).
+
+- **Events (all qualitative individual series):** 17 events across Principles,
+  Marketing (AAM, ASM, BSM, FMS, MCS, RMS, SEM), Hospitality & Tourism (HLM,
+  QSRM, RFSM), Entrepreneurship (ENT), and Human Resources Management (HRM).
+  Each PI is tagged `core` / `cluster:<id>` / `pathway:<id>:<name>`, so an
+  event's pool is the Business Administration Core plus its career-cluster core
+  and pathway (1806 PIs across 25 instructional areas). Principles events stay
+  strictly core-only. Quantitative events (Accounting, Business Finance, PFL)
+  are deferred.
 
 - **Voice (Phase 3):** record with the browser, transcribe via AssemblyAI, and
   compute delivery metrics (pace WPM, filler rate, long pauses, time use,
@@ -32,9 +42,10 @@ playback).
   discarded; the browser keeps the take for playback. Delivery measures timing
   only — never tone or confidence (roadmap §2).
 
-- **Data (Phase 1):** the full official DECA **Business Administration Core** —
-  13 instructional areas, 367 PIs (verbatim text + level), behind all five
-  Principles events (PMK, PBM, PEN, PFN, PHT).
+- **Data:** the official DECA **Business Administration Core** (13 areas, 367
+  PIs) plus the Marketing, Hospitality & Tourism, Business Management &
+  Administration, and Entrepreneurship career-cluster PIs, parsed from DECA's
+  published Performance Indicator PDFs — 1806 PIs across 25 instructional areas.
 - **Rubric:** scoring mirrors DECA's **2026 District** evaluation form — four
   Performance Indicators (0–12 each), three Solution criteria (0–8), three
   Career Competencies (0–6), and Overall Impression (0–10) = 100 points, on four
@@ -42,9 +53,10 @@ playback).
   `backend/app/data/rubric.json`.
 - **Endpoints:** `POST /api/scenario` (participant-facing only — judge
   instructions never leave the backend), `POST /api/score-content`,
-  `POST /api/score-delivery` (voice), plus `GET /api/events` and
-  `GET /api/rubric`. Backed by the Anthropic API (Sonnet 4.6 by default) and a
-  transcription provider (AssemblyAI) for voice.
+  `POST /api/score-delivery` (voice), plus `GET /api/events`,
+  `GET /api/events/{code}/areas` (the focus-area picker), and `GET /api/rubric`.
+  Backed by the Anthropic API (Sonnet 4.6 by default) and a transcription
+  provider (AssemblyAI) for voice.
 - **Guardrails:** keys stay server-side; per-IP rate limit on the paid
   endpoints; original clean-room scenarios; output labelled practice coaching,
   never an official competition score.

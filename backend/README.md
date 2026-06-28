@@ -1,4 +1,4 @@
-# DECA Roleplay Trainer — Backend
+# PI Coach — Backend
 
 FastAPI service. Holds the PI/event data, prompt construction (Phase 2), and
 provider API keys. The frontend talks only to `/api/*`; keys never leave here.
@@ -23,7 +23,8 @@ curl localhost:8000/api/health   # -> {"status":"ok"}
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /api/events` | Events the picker can offer. |
+| `GET /api/events` | Events the picker can offer (with `cluster_label` for grouping). |
+| `GET /api/events/{code}/areas` | Instructional areas in that event's PI pool, for the focus-area picker. |
 | `GET /api/rubric` | The DECA 2026 District rubric (levels, criteria, point bands). |
 | `POST /api/scenario` | Generate an original scenario. Body: `{event_code, level, area?, pi_ids?, seed?}`. Returns the PIs, solution criteria, career competencies, procedures, the **participant-facing situation** (no judge text), and the judge's follow-up questions. |
 | `POST /api/score-content` | Grade a response against the rubric. Body: `{event_code, scenario, pi_ids, response, followup_questions, followup_answer}`. Returns per-criterion `scores` (level + points + feedback + verbatim evidence quotes), the 100-point total, strengths/improvements, and follow-up feedback. |
@@ -47,8 +48,10 @@ Voice needs `TRANSCRIPTION_API_KEY` (AssemblyAI). Set a provider spend cap first
 a friendly 503. Delivery metrics are pure arithmetic on word timestamps — pace,
 fillers, pauses, time use — never tone/confidence (roadmap §2).
 
-`reference/` holds DECA's official sample role-plays used to calibrate the
-rubric and prompts. It is **gitignored** (copyright) — local reference only.
+`reference/` holds DECA's official career-cluster Performance Indicator PDFs
+(`reference/pis/`, the source for the cluster/pathway PIs) and per-event sample
+role-plays (`reference/samples/`, used to calibrate scenario style and the
+rubric). It is **gitignored** (copyright) — local reference only, never shipped.
 
 Without `ANTHROPIC_API_KEY` set, the two LLM endpoints return a friendly 503;
 everything else (events, data, tests) works offline.
@@ -74,13 +77,16 @@ uv run pytest
 
 ## Data
 
-- `app/data/events.json` — events → instructional-area ids.
-- `app/data/pis.json` — the 13 official DECA **Business Administration Core**
-  (Tier 1) instructional areas → performance indicators (367 in total). Each PI
-  carries its official `id` (e.g. `BL:163`), verbatim `text`, `level`
-  (PQ/CS/SP), `performance_element` (the official grouping it sits under), and a
-  plain-language `definition`. Definitions are study-aid glosses (not official
-  wording): ~138 sourced from a community study list, the rest authored to fit
-  each PI's instructional area and performance element.
-- `app/data_loader.py` — `get_event`, `get_instructional_areas`, `get_pi_pool`.
-  Reuse these everywhere; don't re-read the JSON elsewhere.
+- `app/data/events.json` — the 17 role-play events. Each carries `cluster`
+  (career-cluster id, `null` for Principles), `pathway`, `cluster_label`, and
+  `pi_count`. An event's PI pool is derived from PI membership tags, not a
+  hardcoded area list.
+- `app/data/pis.json` — 25 instructional areas → 1806 performance indicators.
+  Each PI carries its official `id` (e.g. `BL:163`), verbatim `text`, `level`
+  (PQ/CS/SP/MN), an optional `definition` (study-aid gloss), and a `membership`
+  list of tags: `core` (Business Administration Core), `cluster:<id>` (a career
+  cluster core), and `pathway:<id>:<name>` (a career pathway). Cluster/pathway
+  PIs were parsed from DECA's official Performance Indicator PDFs.
+- `app/data_loader.py` — `get_event`, `get_instructional_areas` (filters PIs by
+  the event's `allowed_tokens`), `get_pi_pool`, `get_pis_by_ids`. Reuse these
+  everywhere; don't re-read the JSON elsewhere.
