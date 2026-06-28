@@ -92,6 +92,9 @@ class RubricScore(BaseModel):
     feedback: str = ""
     # Verbatim quotes from the participant's response/follow-up, for highlighting.
     evidence: list[str] = []
+    # Concrete things that were missing/too weak and would raise the level. These
+    # are ABSENT from the response, so they can't be highlighted — listed instead.
+    gaps: list[str] = []
 
 
 class ScoreResponse(BaseModel):

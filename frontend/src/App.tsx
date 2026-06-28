@@ -652,6 +652,7 @@ function FeedbackScreen(props: {
           response={props.response}
           followupAnswer={props.followupAnswer}
           marks={marks}
+          scores={score.scores}
           active={activeMark}
           onSelect={setActiveMark}
           followupFeedback={score.followup_feedback}
@@ -889,7 +890,7 @@ function CriterionRow({ r }: { r: RubricScore }) {
   const [open, setOpen] = useState(false);
   const tone = LEVEL_TONE[r.level];
   const headline = r.headline || truncate(r.feedback.replace(/\*\*/g, ""), 90);
-  const hasDetail = !!r.feedback || r.evidence.length > 0;
+  const hasDetail = !!r.feedback || r.evidence.length > 0 || r.gaps.length > 0;
   return (
     <div className={`rounded-lg border ${tone.border} ${tone.bg}`}>
       <button
@@ -925,9 +926,61 @@ function CriterionRow({ r }: { r: RubricScore }) {
               ))}
             </div>
           )}
+          {r.gaps.length > 0 && <GapList gaps={r.gaps} />}
         </div>
       )}
     </div>
+  );
+}
+
+// Per-criterion "what to add" list (shown inside an expanded criterion row).
+function GapList({ gaps }: { gaps: string[] }) {
+  return (
+    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50/60 px-2.5 py-2">
+      <p className="text-xs font-semibold text-amber-800">To raise the level, add:</p>
+      <ul className="mt-1 space-y-1">
+        {gaps.map((g, i) => (
+          <li key={i} className="flex gap-1.5 text-xs text-amber-900">
+            <span className="text-amber-500">+</span>
+            <span>{g}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Aggregated "what was missing" — gaps that cost points across every criterion
+// that fell short. These are absent from the response, so they can't be
+// highlighted in the transcript; we list them beside it instead.
+function MissingCard({ scores }: { scores: RubricScore[] }) {
+  const rows = scores.filter((s) => s.gaps.length > 0 && s.level !== "exemplary");
+  if (rows.length === 0) return null;
+  return (
+    <Card className="border-amber-200">
+      <h3 className="text-sm font-semibold text-amber-900">What was missing</h3>
+      <p className="mt-1 text-xs text-slate-500">
+        Gaps that cost points — these weren't in your response, so they can't be highlighted. Add them next time.
+      </p>
+      <div className="mt-3 space-y-3">
+        {rows.map((s) => (
+          <div key={s.key}>
+            <p className="text-xs font-medium text-slate-700">
+              {s.label}
+              {s.pi_id && <span className="ml-1 text-slate-400">({s.pi_id})</span>}
+            </p>
+            <ul className="mt-1 space-y-1">
+              {s.gaps.map((g, i) => (
+                <li key={i} className="flex gap-1.5 text-xs text-slate-600">
+                  <span className="text-amber-500">+</span>
+                  <span>{g}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 
@@ -967,6 +1020,7 @@ function TranscriptTab(props: {
   response: string;
   followupAnswer: string;
   marks: Mark[];
+  scores: RubricScore[];
   active: string | null;
   onSelect: (id: string | null) => void;
   followupFeedback: string;
@@ -1002,9 +1056,9 @@ function TranscriptTab(props: {
         )}
       </div>
 
-      {/* Annotation side panel (sticky beside the transcript) */}
-      <div className="order-1 lg:order-2">
-        <div className="space-y-3 lg:sticky lg:top-4">
+      {/* Annotation + gaps side panel (beside the transcript) */}
+      <div className="order-1 space-y-3 lg:order-2">
+        <div className="lg:sticky lg:top-4">
           <Card>
             <h3 className="text-sm font-semibold">Annotation</h3>
             {activeMark && tone ? (
@@ -1038,6 +1092,7 @@ function TranscriptTab(props: {
             </div>
           </Card>
         </div>
+        <MissingCard scores={props.scores} />
       </div>
     </div>
   );

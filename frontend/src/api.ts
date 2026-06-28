@@ -58,6 +58,7 @@ export type RubricScore = {
   headline: string;
   feedback: string;
   evidence: string[];
+  gaps: string[];
 };
 
 export type ScoreResponse = {

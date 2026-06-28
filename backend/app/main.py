@@ -134,6 +134,7 @@ def _score_one(category: str, key: str, label: str, raw: dict, *, pi_id: str | N
         headline=str(raw.get("headline", "")).strip(),
         feedback=str(raw.get("feedback", "")).strip(),
         evidence=evidence,
+        gaps=[str(g).strip() for g in raw.get("gaps", []) if str(g).strip()],
     )
 
 
