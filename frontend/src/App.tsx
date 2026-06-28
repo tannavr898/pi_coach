@@ -238,7 +238,26 @@ export default function App() {
           />
         )}
       </main>
+      <SiteFooter />
     </div>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="border-t border-slate-200/80 bg-white/50">
+      <div className="mx-auto max-w-5xl px-5 py-6 text-xs leading-relaxed text-slate-400">
+        <p>
+          <span className="font-medium text-slate-500">PI Coach</span> generates original practice scenarios in
+          DECA's style — not official DECA materials, and not affiliated with DECA Inc. Feedback is practice
+          coaching, never an official competition score.
+        </p>
+        <p className="mt-1.5">
+          Recordings are transcribed to measure delivery, then discarded on our servers — your audio stays on your
+          device unless you keep it. Delivery covers timing only (pace, fillers, pauses), never tone or confidence.
+        </p>
+      </div>
+    </footer>
   );
 }
 

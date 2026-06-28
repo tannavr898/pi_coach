@@ -1,0 +1,16 @@
+# Keep the build context small and never bake secrets/copyright into the image.
+.git
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+*.log
+*.tsbuildinfo
+
+# Secrets — keys are injected as runtime env vars, never copied in.
+backend/.env
+backend/.env.*
+
+# Copyrighted DECA reference material (PI PDFs + sample role-plays) — local only.
+backend/reference

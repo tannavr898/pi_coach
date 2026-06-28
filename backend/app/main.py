@@ -25,7 +25,7 @@ from .data_loader import (
     get_pis_by_ids,
     load_events,
 )
-from .ratelimit import rate_limit
+from .ratelimit import daily_cap, rate_limit
 from .schemas import (
     AreaSummary,
     DeliveryMetrics,
@@ -41,7 +41,7 @@ from .schemas import (
 )
 from .selection import select_pis
 
-app = FastAPI(title="DECA Roleplay Trainer", version="0.3.0")
+app = FastAPI(title="PI Coach", version="0.4.0")
 
 # Standard participant-facing procedures (our own wording — not DECA copyright).
 PROCEDURES = [
@@ -107,7 +107,7 @@ def _event_or_404(code: str) -> dict:
         raise HTTPException(status_code=404, detail=f"Unknown event code: {code!r}")
 
 
-@app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit)])
+@app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def scenario(req: ScenarioRequest) -> ScenarioResponse:
     """Generate an original DECA-format scenario (participant-facing only)."""
     event = _event_or_404(req.event_code)
@@ -162,7 +162,7 @@ def _score_one(category: str, key: str, label: str, raw: dict, *, pi_id: str | N
     )
 
 
-@app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit)])
+@app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def score_content(req: ScoreRequest) -> ScoreResponse:
     """Grade a typed response + follow-up against the full DECA rubric."""
     # Resolve PI text from our authoritative data — never trust the client for it.
@@ -222,7 +222,7 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     )
 
 
-@app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit)])
+@app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def score_delivery(
     audio: UploadFile = File(...),
     target_seconds: int = Form(delivery.DEFAULT_TARGET_SECONDS),
@@ -243,3 +243,18 @@ def score_delivery(
 
     metrics = delivery.compute_delivery(result.words, result.audio_duration_s, target_seconds=target_seconds)
     return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics))
+
+
+# --- serve the built SPA (production) --------------------------------------
+# In dev, Vite serves the frontend and proxies /api here. In production we ship
+# one service: the built SPA is mounted at "/" (after all /api routes, so they
+# win), giving a single origin — no CORS, keys in one place. Skipped when the
+# build isn't present (local dev, tests), so this stays a no-op there.
+import os  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+_DIST = os.getenv("FRONTEND_DIST", str(Path(__file__).resolve().parents[2] / "frontend" / "dist"))
+if Path(_DIST).is_dir():
+    app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")
