@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import urllib.error
 import urllib.request
 
 from . import config
@@ -61,5 +62,12 @@ def send_feedback_email(rating: int | None, email: str, page: str, message: str)
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status >= 300:
                 log.warning("feedback email: Resend returned HTTP %s", resp.status)
+    except urllib.error.HTTPError as exc:  # surface Resend's reason (e.g. 403 body)
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8", "replace")
+        except Exception:
+            pass
+        log.warning("feedback email failed: HTTP %s %s — %s", exc.code, exc.reason, detail)
     except Exception as exc:  # best-effort; never break the request
         log.warning("feedback email failed: %s", exc)
