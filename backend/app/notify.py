@@ -55,6 +55,11 @@ def send_feedback_email(rating: int | None, email: str, page: str, message: str)
         headers={
             "Authorization": f"Bearer {config.RESEND_API_KEY}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            # Resend's API is behind Cloudflare, whose bot filter 403s (error
+            # 1010) the default "Python-urllib/x" User-Agent. Identify ourselves
+            # with a normal UA so the request isn't flagged as a banned bot.
+            "User-Agent": "pi-coach/1.0 (+https://trypicoach.com)",
         },
         method="POST",
     )
