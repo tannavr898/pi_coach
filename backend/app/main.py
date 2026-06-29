@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import config, delivery, llm, prompts, rubric, transcription
+from . import config, delivery, llm, notify, prompts, rubric, transcription
 from .data_loader import (
     EventNotFoundError,
     get_event,
@@ -72,12 +72,17 @@ def public_config() -> PublicConfig:
 
 
 @app.post("/api/feedback", dependencies=[Depends(rate_limit)])
-def feedback(req: FeedbackRequest) -> dict[str, str]:
-    """Record a piece of user feedback. No account needed; logged server-side
-    (and mirrored to analytics from the client)."""
+def feedback(req: FeedbackRequest, background: BackgroundTasks) -> dict[str, str]:
+    """Record a piece of user feedback. No account needed; logged server-side,
+    mirrored to analytics from the client, and (if configured) emailed to the
+    operator via a best-effort background task."""
     log.info(
         "FEEDBACK rating=%s email=%s page=%s message=%r",
         req.rating, req.email or "-", req.page or "-", req.message,
+    )
+    background.add_task(
+        notify.send_feedback_email,
+        req.rating, req.email, req.page, req.message,
     )
     return {"status": "ok"}
 

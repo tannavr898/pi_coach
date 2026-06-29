@@ -24,3 +24,7 @@ services:
         sync: false # public PostHog project key; optional, served via /api/config
       - key: POSTHOG_HOST
         value: https://us.i.posthog.com
+      - key: RESEND_API_KEY
+        sync: false # secret; enables emailing each feedback submission
+      - key: FEEDBACK_EMAIL_TO
+        value: tannavr898@gmail.com
