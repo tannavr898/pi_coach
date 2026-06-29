@@ -1,0 +1,22 @@
+name: keep-alive
+
+# Pings the Render health endpoint so the free instance doesn't sleep (it would
+# otherwise nap after ~15 min idle, making the next visitor wait for a cold
+# start). /api/health is free — no AI calls, no rate-limit/budget impact.
+#
+# NOTE: scheduled workflows only run from the default branch, and GitHub may
+# delay scheduled runs under load — so this is "good enough" to avoid most cold
+# starts. For exact timing, an external pinger (cron-job.org / UptimeRobot) is
+# more reliable.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every ~10 minutes (UTC)
+  workflow_dispatch: {} # lets you run it manually from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: curl -fsS --max-time 60 https://pi-coach.onrender.com/api/health
