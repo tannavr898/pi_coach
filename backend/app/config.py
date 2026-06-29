@@ -30,6 +30,12 @@ MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 # simplest REST integration with word timestamps + filler/disfluency detection.
 TRANSCRIPTION_PROVIDER = os.getenv("TRANSCRIPTION_PROVIDER", "assemblyai")
 
+# Analytics (PostHog). The project key is a *public*, write-only ingest key meant
+# to live client-side, so we serve it to the SPA via /api/config (not baked into
+# the bundle at build time). Empty = analytics disabled (the frontend no-ops).
+POSTHOG_KEY = os.getenv("POSTHOG_KEY", "")
+POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://us.i.posthog.com")
+
 
 def has_api_key() -> bool:
     """True if an Anthropic key is configured (used for friendly 503s)."""

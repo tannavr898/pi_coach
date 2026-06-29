@@ -12,9 +12,11 @@ import {
   getEventAreas,
   getEvents,
   postDelivery,
+  postFeedback,
   postScenario,
   postScore,
 } from "./api";
+import { track } from "./analytics";
 
 type ResponseMode = "type" | "speak";
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
@@ -73,6 +75,7 @@ export default function App() {
     setStage("loading");
     try {
       const s = await postScenario({ event_code: eventCode, level, area: area || undefined });
+      track("scenario_generated", { event_code: eventCode, level, focus_area: area || "auto" });
       setScenario(s);
       setResponseText("");
       setAudioBlob(null);
@@ -133,6 +136,13 @@ export default function App() {
       });
       setDelivery(deliveryMetrics);
       setScore(result);
+      track("scored", {
+        event_code: scenario.event.code,
+        total_points: result.total_points,
+        pct: Math.round((result.total_points / result.max_points) * 100),
+        mode,
+        has_delivery: !!deliveryMetrics,
+      });
       setStage("feedback");
     } catch (e) {
       setError(errMsg(e));
@@ -247,10 +257,13 @@ function SiteFooter() {
   return (
     <footer className="border-t border-slate-200/80 bg-white/50">
       <div className="mx-auto max-w-5xl px-5 py-6 text-xs leading-relaxed text-slate-400">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="font-display text-sm font-semibold text-slate-600">PI Coach</span>
+          <FeedbackButton />
+        </div>
         <p>
-          <span className="font-medium text-slate-500">PI Coach</span> generates original practice scenarios in
-          DECA's style — not official DECA materials, and not affiliated with DECA Inc. Feedback is practice
-          coaching, never an official competition score.
+          Generates original practice scenarios in DECA's style — not official DECA materials, and not affiliated
+          with DECA Inc. Feedback is practice coaching, never an official competition score.
         </p>
         <p className="mt-1.5">
           Recordings are transcribed to measure delivery, then discarded on our servers — your audio stays on your
@@ -258,6 +271,113 @@ function SiteFooter() {
         </p>
       </div>
     </footer>
+  );
+}
+
+function FeedbackButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+      >
+        💬 Send feedback
+      </button>
+      {open && <FeedbackModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function FeedbackModal({ onClose }: { onClose: () => void }) {
+  const [rating, setRating] = useState<number | null>(null);
+  const [message, setMessage] = useState("");
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"editing" | "sending" | "done" | "error">("editing");
+
+  async function send() {
+    if (!message.trim()) return;
+    setState("sending");
+    try {
+      await postFeedback({ message: message.trim(), rating, email: email.trim(), page: "app" });
+      track("feedback_submitted", { rating, has_email: !!email.trim() });
+      setState("done");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        {state === "done" ? (
+          <div className="py-4 text-center">
+            <p className="font-display text-lg font-semibold text-slate-900">Thanks! 🙌</p>
+            <p className="mt-1 text-sm text-slate-600">Your feedback helps make PI Coach better.</p>
+            <button className={`mt-4 ${BTN_PRIMARY}`} onClick={onClose}>Close</button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-base font-semibold text-slate-900">Send feedback</h3>
+              <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="Close">✕</button>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Bugs, ideas, what felt off — all welcome. No account needed.</p>
+
+            <div className="mt-4">
+              <span className="text-sm font-medium text-slate-700">How's it working for you?</span>
+              <div className="mt-1.5 flex gap-1.5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setRating(n)}
+                    className={`h-9 w-9 rounded-lg border text-sm transition ${
+                      rating !== null && n <= rating
+                        ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                        : "border-slate-200 text-slate-400 hover:bg-slate-50"
+                    }`}
+                    aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              className={`mt-4 h-28 ${TEXTAREA_CLS}`}
+              placeholder="What's on your mind?"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+            <input
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              placeholder="Email (optional — only if you want a reply)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            {state === "error" && (
+              <p className="mt-2 text-xs text-red-600">Couldn't send — check your connection and try again.</p>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700">
+                Cancel
+              </button>
+              <button className={BTN_PRIMARY} onClick={send} disabled={!message.trim() || state === "sending"}>
+                {state === "sending" ? "Sending…" : "Send feedback"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

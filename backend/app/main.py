@@ -15,9 +15,11 @@ participant-facing situation and (after the response) the follow-up questions.
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import delivery, llm, prompts, rubric, transcription
+from . import config, delivery, llm, prompts, rubric, transcription
 from .data_loader import (
     EventNotFoundError,
     get_event,
@@ -31,7 +33,9 @@ from .schemas import (
     DeliveryMetrics,
     DeliveryResponse,
     EventSummary,
+    FeedbackRequest,
     PI,
+    PublicConfig,
     RubricCriterion,
     RubricScore,
     ScenarioRequest,
@@ -52,9 +56,29 @@ PROCEDURES = [
 ]
 
 
+log = logging.getLogger("picoach")
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     """Liveness check used by the frontend to prove the wire works."""
+    return {"status": "ok"}
+
+
+@app.get("/api/config", response_model=PublicConfig)
+def public_config() -> PublicConfig:
+    """Client-safe runtime config (the public PostHog key, if configured)."""
+    return PublicConfig(posthog_key=config.POSTHOG_KEY, posthog_host=config.POSTHOG_HOST)
+
+
+@app.post("/api/feedback", dependencies=[Depends(rate_limit)])
+def feedback(req: FeedbackRequest) -> dict[str, str]:
+    """Record a piece of user feedback. No account needed; logged server-side
+    (and mirrored to analytics from the client)."""
+    log.info(
+        "FEEDBACK rating=%s email=%s page=%s message=%r",
+        req.rating, req.email or "-", req.page or "-", req.message,
+    )
     return {"status": "ok"}
 
 

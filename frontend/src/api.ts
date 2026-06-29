@@ -135,6 +135,18 @@ export function getEventAreas(code: string): Promise<AreaSummary[]> {
   return request<AreaSummary[]>(`/api/events/${encodeURIComponent(code)}/areas`);
 }
 
+export function postFeedback(body: {
+  message: string;
+  rating?: number | null;
+  email?: string;
+  page?: string;
+}): Promise<{ status: string }> {
+  return request<{ status: string }>("/api/feedback", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
 export function postScenario(body: {
   event_code: string;
   level: Level;

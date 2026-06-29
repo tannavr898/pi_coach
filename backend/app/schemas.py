@@ -38,6 +38,22 @@ class AreaSummary(BaseModel):
     pi_count: int
 
 
+class PublicConfig(BaseModel):
+    """Client-safe runtime config served to the SPA (no secrets)."""
+
+    posthog_key: str = ""
+    posthog_host: str = "https://us.i.posthog.com"
+
+
+class FeedbackRequest(BaseModel):
+    """A piece of user feedback (no account required)."""
+
+    message: str = Field(min_length=1, max_length=4000)
+    rating: int | None = Field(default=None, ge=1, le=5)
+    email: str = Field(default="", max_length=200)
+    page: str = Field(default="", max_length=80)
+
+
 class RubricCriterion(BaseModel):
     """A scored criterion shown to the participant before they start (the cover
     sheet) and echoed in feedback."""

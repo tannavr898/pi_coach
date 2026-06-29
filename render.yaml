@@ -20,3 +20,7 @@ services:
         value: "500" # app-level wallet guard; tune to your provider spend caps
       - key: RATE_LIMIT_PER_MIN
         value: "20"
+      - key: POSTHOG_KEY
+        sync: false # public PostHog project key; optional, served via /api/config
+      - key: POSTHOG_HOST
+        value: https://us.i.posthog.com
