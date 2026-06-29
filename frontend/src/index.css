@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: toggled by adding `.dark` to <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", sans-serif;
@@ -13,14 +16,56 @@
   }
   body {
     font-family: var(--font-sans);
-    /* Soft slate canvas with a faint indigo wash at the top — the brand color
-       present but quiet, so cards and the rubric levels stay legible. */
+    /* Soft slate canvas with a faint indigo wash at the top. */
     background:
       radial-gradient(120% 55% at 50% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
       #f6f7fb;
     color: #0f172a;
     min-height: 100vh;
   }
+  .dark body {
+    background:
+      radial-gradient(120% 55% at 50% -12%, rgba(99, 102, 241, 0.2), transparent 60%),
+      #0a0f1f;
+    color: #e2e8f0;
+  }
+  /* Native form controls + the audio player follow the theme. */
+  .dark select option {
+    background-color: #0f172a;
+    color: #e2e8f0;
+  }
+  .dark audio {
+    color-scheme: dark;
+  }
+}
+
+/* Loader: concentric "radar" rings pulsing out from the target logo. */
+@keyframes pic-radar {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.65;
+  }
+  80% {
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.3);
+    opacity: 0;
+  }
+}
+@keyframes pic-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.pic-radar-ring {
+  animation: pic-radar 1.8s ease-out infinite;
+}
+.pic-bob {
+  animation: pic-bob 1.8s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -28,6 +73,7 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
 }
