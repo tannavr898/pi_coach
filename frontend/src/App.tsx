@@ -604,10 +604,10 @@ function PickScreen(props: {
             />
           </Field>
 
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <HonestyNote />
             <button
-              className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700`}
+              className={`${BTN_PRIMARY} w-full whitespace-nowrap bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`}
               onClick={props.onGenerate}
               disabled={!props.eventCode}
             >
@@ -761,7 +761,7 @@ function RespondScreen(props: {
         )}
 
         <div className="mt-4 flex justify-end">
-          <button className={BTN_PRIMARY} onClick={props.onContinue} disabled={!canContinue}>
+          <button className={`${BTN_PRIMARY} w-full sm:w-auto`} onClick={props.onContinue} disabled={!canContinue}>
             Continue to the judge's questions →
           </button>
         </div>
@@ -929,7 +929,7 @@ function FollowupScreen(props: {
         )}
 
         <div className="mt-4 flex justify-end">
-          <button className={BTN_PRIMARY} onClick={props.onSubmit} disabled={!canSubmit}>
+          <button className={`${BTN_PRIMARY} w-full sm:w-auto`} onClick={props.onSubmit} disabled={!canSubmit}>
             Submit for feedback →
           </button>
         </div>
