@@ -165,12 +165,12 @@ export default function App() {
     setStage("pick");
   }
 
-  const wide = stage === "feedback";
+  const wide = stage === "feedback" || view === "tips";
 
   return (
     <div className="min-h-screen">
       <SiteHeader view={view} onView={setView} theme={theme} onToggleTheme={toggleTheme} />
-      <main className={`mx-auto px-5 pb-20 pt-8 ${wide ? "max-w-5xl" : "max-w-3xl"}`}>
+      <main className={`mx-auto px-5 pb-20 pt-8 ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -629,7 +629,7 @@ function ProcessStrip() {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {steps.map((s) => (
-        <div key={s.n} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-800/60 px-4 py-3">
+        <div key={s.n} className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3 transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-900/60">
           <div className="flex items-baseline gap-2">
             <span className="font-mono text-sm font-medium text-indigo-500">{s.n}</span>
             <span className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{s.label}</span>
@@ -973,68 +973,67 @@ function FeedbackScreen(props: {
   ];
 
   return (
-    <div className="space-y-5">
-      <Card>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <Eyebrow>Rubric feedback</Eyebrow>
-            <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-              {props.scenario.event.name}
-            </h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Graded on the DECA 2026 District rubric. Practice coaching, not an official competition score.
-            </p>
+    <div className="lg:grid lg:grid-cols-[300px_1fr] lg:items-start lg:gap-6">
+      {/* Score rail — sticks alongside the detail on wide screens. */}
+      <div className="lg:sticky lg:top-24">
+        <Card>
+          <Eyebrow>Rubric feedback</Eyebrow>
+          <h2 className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100">
+            {props.scenario.event.name}
+          </h2>
+          <div className="mt-5 flex items-end gap-1.5">
+            <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{score.total_points}</span>
+            <span className="mb-1 font-mono text-lg font-medium text-slate-300 dark:text-slate-600">/ {score.max_points}</span>
+            <span className="mb-1 ml-auto font-mono text-sm text-slate-500 dark:text-slate-400">{pct}%</span>
           </div>
-          <div className="text-right">
-            <div className="font-mono text-4xl font-bold leading-none text-slate-900 dark:text-slate-100">
-              {score.total_points}
-              <span className="text-xl font-medium text-slate-300">/{score.max_points}</span>
-            </div>
-            <div className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">{pct}%</div>
-            {overall && <div className="mt-2 flex justify-end"><LevelMeter level={overall.level} /></div>}
+          {overall && <div className="mt-3"><LevelMeter level={overall.level} /></div>}
+          <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            Graded on the DECA 2026 District rubric. Practice coaching, not an official competition score.
+          </p>
+          <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+            <LevelLegend />
           </div>
-        </div>
-        <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
-          <LevelLegend />
-        </div>
-      </Card>
-
-      <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />
-
-      {tab === "overview" && <OverviewTab score={score} />}
-      {tab === "transcript" && (
-        <TranscriptTab
-          response={props.response}
-          followupAnswer={props.followupAnswer}
-          marks={marks}
-          scores={score.scores}
-          active={activeMark}
-          onSelect={setActiveMark}
-          followupFeedback={score.followup_feedback}
-        />
-      )}
-      {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
-      {CATEGORIES.some((c) => c.key === tab) && <CategoryTab category={tab as RubricScore["category"]} scores={score.scores} />}
-
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
-        {props.delivery ? (
-          <>
-            <strong className="font-semibold text-slate-700 dark:text-slate-200">Content</strong> is the rubric score;{" "}
-            <strong className="font-semibold text-slate-700 dark:text-slate-200">Delivery</strong> measures pace, fillers, pauses, and
-            time only — not tone, confidence, or charisma.
-          </>
-        ) : (
-          <>
-            Typed practice measures <strong className="font-semibold text-slate-700 dark:text-slate-200">content</strong> only. Switch to{" "}
-            <strong className="font-semibold text-slate-700 dark:text-slate-200">🎙️ Speak</strong> on the response step to also get
-            delivery feedback from your voice.
-          </>
-        )}
+        </Card>
       </div>
 
-      <button className={BTN_PRIMARY} onClick={props.onRestart}>
-        Practice again →
-      </button>
+      <div className="mt-5 space-y-5 lg:mt-0">
+        <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />
+
+        {tab === "overview" && <OverviewTab score={score} />}
+        {tab === "transcript" && (
+          <TranscriptTab
+            response={props.response}
+            followupAnswer={props.followupAnswer}
+            marks={marks}
+            scores={score.scores}
+            active={activeMark}
+            onSelect={setActiveMark}
+            followupFeedback={score.followup_feedback}
+          />
+        )}
+        {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
+        {CATEGORIES.some((c) => c.key === tab) && <CategoryTab category={tab as RubricScore["category"]} scores={score.scores} />}
+
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+          {props.delivery ? (
+            <>
+              <strong className="font-semibold text-slate-700 dark:text-slate-200">Content</strong> is the rubric score;{" "}
+              <strong className="font-semibold text-slate-700 dark:text-slate-200">Delivery</strong> measures pace, fillers, pauses, and
+              time only — not tone, confidence, or charisma.
+            </>
+          ) : (
+            <>
+              Typed practice measures <strong className="font-semibold text-slate-700 dark:text-slate-200">content</strong> only. Switch to{" "}
+              <strong className="font-semibold text-slate-700 dark:text-slate-200">🎙️ Speak</strong> on the response step to also get
+              delivery feedback from your voice.
+            </>
+          )}
+        </div>
+
+        <button className={BTN_PRIMARY} onClick={props.onRestart}>
+          Practice again →
+        </button>
+      </div>
     </div>
   );
 }
@@ -1584,7 +1583,7 @@ function TimerBar({ label, left, total, tone }: { label: string; left: number; t
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-2xl border bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.04)] dark:bg-slate-900 dark:shadow-none ${className || "border-slate-200 dark:border-slate-800"}`}
+      className={`rounded-2xl border bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.04)] transition-shadow duration-200 hover:shadow-[0_6px_24px_rgba(15,23,42,0.08)] dark:bg-slate-900 dark:shadow-none dark:hover:shadow-none ${className || "border-slate-200 dark:border-slate-800"}`}
     >
       {children}
     </div>
@@ -1622,119 +1621,106 @@ function LoadingScreen({ label }: { label: string }) {
 
 function TipsPage({ onStart }: { onStart: () => void }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-14">
+      {/* Hero */}
       <section className="pt-2">
         <Eyebrow>Competition tips</Eyebrow>
-        <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Elevate your role-plays
+        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
+          Don't just mention the PI.<br />
+          <span className="text-indigo-600 dark:text-indigo-400">Own it.</span>
         </h1>
-        <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          The competitors who place don't just <em>mention</em> their performance indicators — they show the judge
-          they own them. Here's the toolkit, from defining a PI the right way to using visuals that make your
-          solution stick.
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+          The competitors who place run every performance indicator through the same four beats — and back it with a
+          visual the judge can't forget. Here's the method, with a worked example you can copy.
         </p>
       </section>
 
-      <Card>
-        <Eyebrow>The core skill</Eyebrow>
-        <h2 className="mt-2 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">
-          Define → Explain → Apply: the PI method
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Every performance indicator is a skill the judge is checking off. Mentioning the term is Novice-level.
-          To reach the top band, hit all three beats for each PI:
-        </p>
-        <div className="mt-4 space-y-3">
-          <MethodStep n="1" title="Define it" accent="indigo">
-            Briefly say what the indicator means in plain business language. "Channel management is how a product
-            gets from us to the customer." This proves you actually know the concept.
-          </MethodStep>
-          <MethodStep n="2" title="Explain why it matters here" accent="violet">
-            Connect it to <em>this</em> company and <em>this</em> problem. Why does this indicator move the needle for
-            the scenario in front of you? This is the step most competitors skip.
-          </MethodStep>
-          <MethodStep n="3" title="Apply it with a concrete action" accent="fuchsia">
-            Make a specific, realistic recommendation that demonstrates the indicator in action — with a number, a
-            timeline, or a name where you can. Vague = forgettable.
-          </MethodStep>
+      {/* The DECA method */}
+      <section>
+        <SectionHead eyebrow="The core skill" title="The DECA method for nailing a PI">
+          One running example — <strong className="font-semibold text-slate-700 dark:text-slate-200">channel management</strong> for
+          BrightBean, a small coffee roaster — carried through all four beats.
+        </SectionHead>
+        <div className="mt-7 grid gap-4 md:grid-cols-2">
+          <MethodCard
+            n="1" accent="indigo" title="Define"
+            todo="Clearly and confidently define the PI or any key terms right away. Skip the textbook jargon — keep it simple and conversational so the judge knows you grasp the core concept."
+            example={<>“Channel management is just <em>how our product gets from us into the customer's hands</em> — the path it travels to reach them.”</>}
+          />
+          <MethodCard
+            n="2" accent="violet" title="Explain"
+            todo="Elaborate on why this PI matters to a business — its broader impact, what it does, and why a company has to pay attention to it in the real world."
+            example={<>“Get the mix right and you control both your <em>margins</em> and how many customers you can reach. Lean on one channel and you're exposed; spread too thin and you lose focus.”</>}
+          />
+          <MethodCard
+            n="3" accent="fuchsia" title="Connect" highlight="Earns the most points"
+            todo="Directly apply the PI to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy — that's the systems thinking judges reward."
+            example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar — it captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
+          />
+          <MethodCard
+            n="4" accent="amber" title="Above & Beyond"
+            todo="Differentiate yourself. Add a creative element beyond the prompt: a quick chart, a real-world statistic, a famous brand case, or a niche business term."
+            example={<>“Quick math — 200 regulars at $20/mo is <em>~$48K/yr recurring</em>, about what a second wholesale account brings but at double the margin. (then I'd sketch a bar comparing the two.)”</>}
+          />
         </div>
-        <p className="mt-4 rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200">
-          <strong className="font-semibold">Rule of thumb:</strong> if you could say your sentence about the PI for
-          <em> any</em> company, you've only defined it. Tie it to the scenario to actually score the points.
+        <p className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3.5 text-sm leading-relaxed text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
+          <span className="mt-0.5 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-indigo-500">Tip</span>
+          <span>If your sentence about the PI could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong> — tie it to the scenario in front of you.</span>
         </p>
-      </Card>
+      </section>
 
-      <Card>
-        <Eyebrow>Make it concrete</Eyebrow>
-        <h2 className="mt-2 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">
-          Use visuals to your advantage
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          You get pen and paper during prep — most competitors only write notes. Sketch one clean visual and turn it
-          toward the judge as you present. It signals organization and makes your solution tangible.
+      {/* Visuals */}
+      <section>
+        <SectionHead eyebrow="Make it stick" title="Use visuals to your advantage">
+          You get pen and paper in prep — most competitors only scribble notes. Draw <em>one</em> clean visual, turn it
+          toward the judge, and reference it out loud. Here's what to reach for and when.
+        </SectionHead>
+        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <VisualCard chart={<ChartBars />} title="Bar chart" when="Comparing 2–3 options on cost, margin, or risk to justify your pick." />
+          <VisualCard chart={<ChartLine />} title="Trend line" when="Anchoring the problem in data — a sales dip, a target, a before/after." />
+          <VisualCard chart={<ChartMatrix />} title="2×2 matrix" when="Positioning choices on two axes (effort vs impact) to defend priorities." />
+          <VisualCard chart={<ChartTimeline />} title="Timeline" when="Laying a rollout over weeks or quarters so the judge sees execution." />
+        </div>
+        <p className="mt-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          Keep it large and labeled, and <strong className="font-semibold text-slate-900 dark:text-slate-100">say it out loud</strong> as you point
+          (“as you can see on my timeline…”). One confident visual beats a page of cramped notes.
         </p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-          <VisualIdea title="A simple table" desc="Compare 2–3 options on cost, speed, and risk to justify your pick." />
-          <VisualIdea title="A timeline" desc="Lay your plan over weeks or quarters so the judge sees a real rollout." />
-          <VisualIdea title="A quick chart" desc="Sketch a trend or a before/after to anchor the problem in data." />
-          <VisualIdea title="An org / flow diagram" desc="Show who does what, or how a product/service moves to the customer." />
-        </ul>
-        <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Keep it large and legible, label it, and <strong className="font-semibold text-slate-900 dark:text-slate-100">reference it out loud</strong> ("as you can see on my timeline…"). One strong visual beats a page of cramped notes.
-        </p>
-      </Card>
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <Eyebrow>Structure</Eyebrow>
-          <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">A shape judges reward</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li><strong className="font-semibold text-slate-900 dark:text-slate-100">Open:</strong> greet the judge, confirm your role, and preview what you'll cover.</li>
-            <li><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk your solution, hitting every PI with Define → Explain → Apply.</li>
-            <li><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> summarize the recommendation and invite questions.</li>
-          </ul>
-        </Card>
-        <Card>
-          <Eyebrow>Prep time</Eyebrow>
-          <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Own your 10 minutes</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li>Read the situation twice; underline the actual ask.</li>
-            <li>Map each of the 5 PIs to a moment in your plan.</li>
-            <li>Draft your visual early — don't leave it for the last minute.</li>
-            <li>Outline your open and close so you start and finish strong.</li>
-          </ul>
-        </Card>
-      </div>
+      {/* Before & during */}
+      <section>
+        <SectionHead eyebrow="The playbook" title="Before & during the role-play" />
+        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <TipCard eyebrow="Prep time" title="Own your 10 minutes" items={[
+            "Read the situation twice; underline the actual ask.",
+            "Map each of the 5 PIs to a moment in your plan.",
+            "Draft your visual early — not at the last minute.",
+            "Outline your open and close so you bookend strong.",
+          ]} />
+          <TipCard eyebrow="Structure" title="A shape judges reward" items={[
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Open:</strong> greet, confirm your role, preview.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk the solution, hit every PI through all four beats.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> restate the recommendation, invite questions.</>,
+          ]} />
+          <TipCard eyebrow="Follow-up" title="Handle the questions" items={[
+            "Take a beat — a short pause beats rambling.",
+            "Answer directly, then tie back to your recommendation.",
+            "If unsure, reason out loud; judges reward sound thinking.",
+          ]} />
+          <TipCard eyebrow="Delivery" title="Sound like a pro" items={[
+            "Steady pace (~130–160 wpm); trade “um” for a pause.",
+            "Make eye contact and use the judge's name.",
+            "Use the time, but leave room for the questions.",
+          ]} />
+        </div>
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <Eyebrow>Follow-up</Eyebrow>
-          <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Handle the judge's questions</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li>Take a beat — a short pause beats rambling.</li>
-            <li>Answer directly, then tie back to your recommendation.</li>
-            <li>If unsure, reason out loud; judges reward sound thinking.</li>
-          </ul>
-        </Card>
-        <Card>
-          <Eyebrow>Delivery</Eyebrow>
-          <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Sound like a pro</h3>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-            <li>Steady pace (~130–160 wpm), and trade "um" for a brief pause.</li>
-            <li>Make eye contact and use the judge's name.</li>
-            <li>Use the time, but leave room for the questions.</li>
-          </ul>
-          <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
-            PI Coach's Delivery tab measures the timing parts (pace, fillers, pauses) from your voice — practice with 🎙️ Speak.
-          </p>
-        </Card>
-      </div>
-
+      {/* CTA */}
       <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Ready to put it into reps?</h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Generate a scenario and try the PI method live.</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Generate a scenario and run the four beats live.</p>
           </div>
           <button className={BTN_PRIMARY} onClick={onStart}>Start practicing →</button>
         </div>
@@ -1743,25 +1729,119 @@ function TipsPage({ onStart }: { onStart: () => void }) {
   );
 }
 
-function MethodStep({ n, title, accent, children }: { n: string; title: string; accent: "indigo" | "violet" | "fuchsia"; children: ReactNode }) {
-  const ring = { indigo: "bg-indigo-600", violet: "bg-violet-600", fuchsia: "bg-fuchsia-600" }[accent];
+function SectionHead({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-slate-200 bg-white/60 p-3.5 dark:border-slate-800 dark:bg-slate-900/40">
-      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold text-white ${ring}`}>{n}</span>
-      <div>
-        <p className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
-        <p className="mt-0.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{children}</p>
+    <div className="max-w-2xl">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">{title}</h2>
+      {children && <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{children}</p>}
+    </div>
+  );
+}
+
+const METHOD_ACCENT = {
+  indigo: { badge: "bg-indigo-600", rule: "border-l-indigo-400 dark:border-l-indigo-500", tag: "text-indigo-500" },
+  violet: { badge: "bg-violet-600", rule: "border-l-violet-400 dark:border-l-violet-500", tag: "text-violet-500" },
+  fuchsia: { badge: "bg-fuchsia-600", rule: "border-l-fuchsia-400 dark:border-l-fuchsia-500", tag: "text-fuchsia-500" },
+  amber: { badge: "bg-amber-500", rule: "border-l-amber-400 dark:border-l-amber-500", tag: "text-amber-600 dark:text-amber-500" },
+} as const;
+
+function MethodCard({ n, title, accent, todo, example, highlight }: {
+  n: string; title: string; accent: keyof typeof METHOD_ACCENT; todo: ReactNode; example: ReactNode; highlight?: string;
+}) {
+  const a = METHOD_ACCENT[accent];
+  return (
+    <div className={`group flex h-full flex-col rounded-2xl border bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${highlight ? "border-fuchsia-300 dark:border-fuchsia-800/70" : "border-slate-200 dark:border-slate-800"}`}>
+      <div className="flex items-center gap-3">
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold text-white ${a.badge}`}>{n}</span>
+        <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h3>
+        {highlight && (
+          <span className="ml-auto rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700 dark:bg-fuchsia-950/60 dark:text-fuchsia-300">{highlight}</span>
+        )}
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{todo}</p>
+      <div className={`mt-4 rounded-r-lg border-l-2 bg-slate-50 px-3.5 py-2.5 dark:bg-slate-800/40 ${a.rule}`}>
+        <span className={`font-mono text-[10px] font-semibold uppercase tracking-[0.15em] ${a.tag}`}>Example</span>
+        <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{example}</p>
       </div>
     </div>
   );
 }
 
-function VisualIdea({ title, desc }: { title: string; desc: string }) {
+function VisualCard({ chart, title, when }: { chart: ReactNode; title: string; when: string }) {
   return (
-    <li className="rounded-xl border border-slate-200 bg-white/60 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-900/40">
-      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
-      <p className="mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{desc}</p>
-    </li>
+    <div className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
+      <div className="grid h-24 place-items-center rounded-xl bg-slate-50 dark:bg-slate-800/40">{chart}</div>
+      <p className="mt-3 font-display text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
+      <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{when}</p>
+    </div>
+  );
+}
+
+function TipCard({ eyebrow, title, items }: { eyebrow: string; title: string; items: ReactNode[] }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        {items.map((it, i) => (
+          <li key={i} className="flex gap-2"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-indigo-400" />{it}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Hand-drawn-feel mini charts for the visuals section (inline SVG, theme-aware).
+function ChartBars() {
+  const bars = [10, 20, 14, 28];
+  return (
+    <svg viewBox="0 0 120 64" className="h-16 w-28" aria-hidden>
+      <line x1="8" y1="56" x2="116" y2="56" className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="1.5" />
+      {bars.map((h, i) => (
+        <rect key={i} x={16 + i * 26} y={56 - h * 1.6} width="16" height={h * 1.6} rx="2"
+          className={i === bars.length - 1 ? "fill-indigo-500" : "fill-indigo-300 dark:fill-indigo-500/50"} />
+      ))}
+    </svg>
+  );
+}
+
+function ChartLine() {
+  return (
+    <svg viewBox="0 0 120 64" className="h-16 w-28" aria-hidden>
+      <line x1="8" y1="56" x2="116" y2="56" className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="1.5" />
+      <polyline points="12,48 40,38 64,42 88,22 112,12" fill="none" className="stroke-indigo-500" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {[[12,48],[40,38],[64,42],[88,22],[112,12]].map(([x,y],i) => (
+        <circle key={i} cx={x} cy={y} r="2.5" className="fill-indigo-500" />
+      ))}
+    </svg>
+  );
+}
+
+function ChartMatrix() {
+  return (
+    <svg viewBox="0 0 120 64" className="h-16 w-28" aria-hidden>
+      <line x1="60" y1="6" x2="60" y2="58" className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="1.5" />
+      <line x1="14" y1="32" x2="106" y2="32" className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="1.5" />
+      <circle cx="84" cy="18" r="6" className="fill-indigo-500" />
+      <circle cx="38" cy="22" r="3.5" className="fill-indigo-300 dark:fill-indigo-500/50" />
+      <circle cx="44" cy="46" r="3.5" className="fill-indigo-300 dark:fill-indigo-500/50" />
+      <circle cx="86" cy="46" r="3.5" className="fill-indigo-300 dark:fill-indigo-500/50" />
+    </svg>
+  );
+}
+
+function ChartTimeline() {
+  return (
+    <svg viewBox="0 0 120 64" className="h-16 w-28" aria-hidden>
+      <line x1="12" y1="32" x2="108" y2="32" className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="2" />
+      {[12, 44, 76, 108].map((x, i) => (
+        <g key={i}>
+          <circle cx={x} cy="32" r={i === 1 ? 5 : 4} className={i === 1 ? "fill-indigo-500" : "fill-indigo-300 dark:fill-indigo-500/60"} />
+          <line x1={x} y1="32" x2={x} y2={i % 2 ? 16 : 48} className="stroke-slate-300 dark:stroke-slate-600" strokeWidth="1.5" />
+        </g>
+      ))}
+    </svg>
   );
 }
 
