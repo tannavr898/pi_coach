@@ -56,7 +56,10 @@ PROCEDURES = [
 ]
 
 
-log = logging.getLogger("picoach")
+# Use uvicorn's configured logger so our INFO lines (e.g. FEEDBACK ...) actually
+# reach the Render log stream. A bare getLogger("picoach") falls through to the
+# root logger, which only emits WARNING+ by default, hiding INFO entirely.
+log = logging.getLogger("uvicorn.error")
 
 
 @app.get("/api/health")
