@@ -15,9 +15,11 @@ participant-facing situation and (after the response) the follow-up questions.
 
 from __future__ import annotations
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+import logging
 
-from . import delivery, llm, prompts, rubric, transcription
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
+
+from . import config, delivery, llm, notify, prompts, rubric, transcription
 from .data_loader import (
     EventNotFoundError,
     get_event,
@@ -31,7 +33,9 @@ from .schemas import (
     DeliveryMetrics,
     DeliveryResponse,
     EventSummary,
+    FeedbackRequest,
     PI,
+    PublicConfig,
     RubricCriterion,
     RubricScore,
     ScenarioRequest,
@@ -52,9 +56,37 @@ PROCEDURES = [
 ]
 
 
+# Use uvicorn's configured logger so our INFO lines (e.g. FEEDBACK ...) actually
+# reach the Render log stream. A bare getLogger("picoach") falls through to the
+# root logger, which only emits WARNING+ by default, hiding INFO entirely.
+log = logging.getLogger("uvicorn.error")
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     """Liveness check used by the frontend to prove the wire works."""
+    return {"status": "ok"}
+
+
+@app.get("/api/config", response_model=PublicConfig)
+def public_config() -> PublicConfig:
+    """Client-safe runtime config (the public PostHog key, if configured)."""
+    return PublicConfig(posthog_key=config.POSTHOG_KEY, posthog_host=config.POSTHOG_HOST)
+
+
+@app.post("/api/feedback", dependencies=[Depends(rate_limit)])
+def feedback(req: FeedbackRequest, background: BackgroundTasks) -> dict[str, str]:
+    """Record a piece of user feedback. No account needed; logged server-side,
+    mirrored to analytics from the client, and (if configured) emailed to the
+    operator via a best-effort background task."""
+    log.info(
+        "FEEDBACK rating=%s email=%s page=%s message=%r",
+        req.rating, req.email or "-", req.page or "-", req.message,
+    )
+    background.add_task(
+        notify.send_feedback_email,
+        req.rating, req.email, req.page, req.message,
+    )
     return {"status": "ok"}
 
 
@@ -255,6 +287,17 @@ from pathlib import Path  # noqa: E402
 
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
+from fastapi.responses import FileResponse  # noqa: E402
+
 _DIST = os.getenv("FRONTEND_DIST", str(Path(__file__).resolve().parents[2] / "frontend" / "dist"))
 if Path(_DIST).is_dir():
+    _INDEX = str(Path(_DIST) / "index.html")
+
+    # Clean URL for the marketing demo. StaticFiles(html=True) only serves
+    # index.html at directory roots, so this client route needs an explicit
+    # fallback to the SPA shell; React then renders the demo from the path.
+    @app.get("/demo", include_in_schema=False)
+    def _demo() -> FileResponse:
+        return FileResponse(_INDEX)
+
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")

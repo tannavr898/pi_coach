@@ -80,8 +80,14 @@ Return a JSON object with EXACTLY these keys:
      questions. Plain prose, 2-3 short paragraphs. Do NOT include procedures, the
      PI list, or anything addressed to the judge.",
   "followup_questions": ["Two questions the judge asks AFTER the presentation.
-     Make them probe depth on the indicators or a trade-off in the situation —
-     specific to this scenario, not generic.", "second question"]
+     Ground them in THIS scenario and the performance indicators above (a
+     trade-off, a risk, how they'd measure success, an alternative they should
+     have weighed). CRITICAL: these are written before the participant speaks,
+     so you do NOT know what they said — NEVER reference, quote, paraphrase, or
+     assume anything the participant said. Forbidden openers: 'You mentioned',
+     'You said', 'Earlier you', 'As you noted', 'Since you suggested'. Ask about
+     the situation itself, not about their answer. Specific to this scenario,
+     not generic.", "second question"]
 }}
 
 CRITICAL: never put judge instructions, judge characterization, or the answers
