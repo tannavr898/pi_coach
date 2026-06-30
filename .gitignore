@@ -30,3 +30,6 @@ Thumbs.db
 # Editors
 .vscode/
 .idea/
+
+# Marketing screenshots (regenerated on demand, not source)
+marketing/screens/

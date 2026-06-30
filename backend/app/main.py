@@ -287,6 +287,17 @@ from pathlib import Path  # noqa: E402
 
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
+from fastapi.responses import FileResponse  # noqa: E402
+
 _DIST = os.getenv("FRONTEND_DIST", str(Path(__file__).resolve().parents[2] / "frontend" / "dist"))
 if Path(_DIST).is_dir():
+    _INDEX = str(Path(_DIST) / "index.html")
+
+    # Clean URL for the marketing demo. StaticFiles(html=True) only serves
+    # index.html at directory roots, so this client route needs an explicit
+    # fallback to the SPA shell; React then renders the demo from the path.
+    @app.get("/demo", include_in_schema=False)
+    def _demo() -> FileResponse:
+        return FileResponse(_INDEX)
+
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")

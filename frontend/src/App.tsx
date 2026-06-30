@@ -17,6 +17,7 @@ import {
   postScore,
 } from "./api";
 import { track } from "./analytics";
+import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
 
 type ResponseMode = "type" | "speak";
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
@@ -259,6 +260,152 @@ export default function App() {
       </main>
       <SiteFooter />
       <FloatingFeedback />
+    </div>
+  );
+}
+
+// --- marketing demo (/demo) ------------------------------------------------
+// A no-API walkthrough of a finished session: the scenario + a sample response,
+// then the full graded feedback (every tab live and clickable). Reuses the real
+// screens with canned data so what visitors see is exactly what the app produces.
+export function DemoApp() {
+  const { theme, toggleTheme } = useTheme();
+  const [step, setStep] = useState<"scenario" | "feedback">("scenario");
+  const exit = () => {
+    window.location.href = "/";
+  };
+  useEffect(() => {
+    if (step === "feedback") window.scrollTo({ top: 0 });
+  }, [step]);
+
+  return (
+    <div className="min-h-screen">
+      <SiteHeader view="practice" onView={exit} theme={theme} onToggleTheme={toggleTheme} />
+      <DemoRibbon onExit={exit} />
+      <main className={`mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
+        {step === "scenario" ? (
+          <DemoScenarioStep onNext={() => setStep("feedback")} />
+        ) : (
+          <div className="space-y-5">
+            <DemoStepHeader
+              step={2}
+              title="The graded feedback"
+              blurb="Scored on the DECA rubric, per indicator. Open any tab — the Transcript even highlights the exact phrases that earned credit."
+              backLabel="Back to the scenario"
+              onBack={() => setStep("scenario")}
+            />
+            <FeedbackScreen
+              scenario={DEMO_SCENARIO}
+              score={DEMO_SCORE}
+              response={DEMO_RESPONSE}
+              followupAnswer={DEMO_FOLLOWUP}
+              delivery={DEMO_DELIVERY}
+              audioBlob={null}
+              onRestart={exit}
+            />
+          </div>
+        )}
+      </main>
+      <SiteFooter />
+      <FloatingFeedback />
+    </div>
+  );
+}
+
+function DemoRibbon({ onExit }: { onExit: () => void }) {
+  return (
+    <div className="border-b border-indigo-100 bg-indigo-50/80 backdrop-blur-sm dark:border-indigo-900/50 dark:bg-indigo-950/40">
+      <div className="mx-auto flex max-w-6xl flex-col items-start gap-2 px-5 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-indigo-900 dark:text-indigo-200">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-indigo-500">Demo</span>
+          <span className="ml-2">A sample session — example scenario and feedback, no account needed.</span>
+        </p>
+        <button
+          onClick={onExit}
+          className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
+        >
+          Try it for real →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DemoStepHeader({ step, title, blurb, backLabel, onBack }: {
+  step: number; title: string; blurb: string; backLabel?: string; onBack?: () => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-500">Step {step} of 2</span>
+        {onBack && (
+          <button onClick={onBack} className="font-mono text-[11px] font-medium uppercase tracking-wider text-slate-400 underline-offset-2 hover:text-slate-600 hover:underline dark:text-slate-500 dark:hover:text-slate-300">
+            ← {backLabel}
+          </button>
+        )}
+      </div>
+      <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">{title}</h1>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">{blurb}</p>
+    </div>
+  );
+}
+
+function DemoScenarioStep({ onNext }: { onNext: () => void }) {
+  const s = DEMO_SCENARIO;
+  return (
+    <div className="space-y-5">
+      <DemoStepHeader
+        step={1}
+        title="The scenario — and a sample response"
+        blurb="PI Coach writes an original scenario in DECA's format, then the competitor presents. Here's an example prompt with a strong (not perfect) typed response, the way a real session looks before grading."
+      />
+      <Card>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{s.event.name}</h2>
+          <span className="font-mono text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">District · {s.event.code}</span>
+        </div>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{s.instructional_area}</p>
+        <div className="mt-4">
+          <SituationSheet text={s.situation} embedded />
+        </div>
+      </Card>
+
+      <details className="group rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">Show what's graded (performance indicators & rubric)</summary>
+        <div className="mt-4">
+          <CoverSheet scenario={s} embedded />
+        </div>
+      </details>
+
+      <Card>
+        <Eyebrow>The competitor's response</Eyebrow>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">{DEMO_RESPONSE}</p>
+      </Card>
+
+      <Card>
+        <h3 className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">The judge follows up</h3>
+        <ol className="mt-3 space-y-2">
+          {s.followup_questions.map((q, i) => (
+            <li key={i} className="flex gap-2 rounded-xl bg-indigo-50/60 px-3 py-2.5 text-sm text-slate-800 dark:bg-indigo-950/40 dark:text-slate-100">
+              <span className="font-mono text-xs font-semibold text-indigo-500">Q{i + 1}</span>
+              <span>{q}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-3 whitespace-pre-wrap border-t border-slate-100 pt-3 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:text-slate-200">
+          <span className="font-medium text-slate-800 dark:text-slate-100">Their answer: </span>
+          {DEMO_FOLLOWUP}
+        </p>
+      </Card>
+
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+          Now see how PI Coach grades it — out of 100, indicator by indicator.
+        </p>
+        <button className={`${BTN_PRIMARY} w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`} onClick={onNext}>
+          See the graded feedback →
+        </button>
+      </div>
     </div>
   );
 }
