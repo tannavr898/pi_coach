@@ -1,10 +1,17 @@
 # PI Coach
 
-An AI trainer that lets a DECA competitor practice a role-play end to end:
-generate an original scenario in DECA's format, prep against a real timer,
-respond (typed or spoken), and get honest feedback on **content** (PI coverage +
-structure) and **delivery** (pace, fillers, pauses — from your actual voice).
-Output is always labeled "PI coverage + delivery feedback," never a judge score.
+An AI trainer that lets a DECA competitor practice a role-play end to end: say
+what you want to work on, get an original scenario built around it, prep against a
+real timer, respond (typed or spoken), and get honest feedback on **content**
+(the business skills you demonstrate + structure) and **delivery** (pace, fillers,
+pauses — from your actual voice). Output is always practice coaching, never a
+judge score.
+
+The app trains the substance DECA judges reward using our **own independent
+evaluation framework** (`backend/app/data/framework.json`) — authored from
+public-domain business concepts, not DECA's licensed performance-indicator list.
+See [`backend/app/data/framework-notes.md`](./backend/app/data/framework-notes.md)
+for how the framework was built and why it is independent.
 
 See [`roadmap.txt`](./roadmap.txt) for the full plan and the reasoning behind
 every decision.
@@ -16,48 +23,51 @@ backend/   FastAPI (Python, uv) — data, prompts, Anthropic calls, provider key
 frontend/  Vite + React + TS + Tailwind SPA — talks only to /api/*
 ```
 
-## Current status: Phase 3 — Voice (delivery metrics)
+## How the loop works
 
-The full loop works typed **or spoken**: pick an event (and optionally a focus
-instructional area) → generate an original DECA-format scenario → **ready
-screen** with prep tips → 10-min prep timer → **type or 🎙️ speak** your
-presentation → answer the judge's **two follow-up questions** (typed or spoken)
-→ tabbed **feedback** (score out of 100, per-criterion level + one-line headline
-that expands to detail, a **What was missing** list, transcript highlighted
-where each criterion saw evidence, and — for spoken takes — a **Delivery** tab
-with pace, fillers, pauses, time use, and playback).
+The full loop works typed **or spoken**: type a free-text practice request
+("marketing for a restaurant") and pick a **mode** (Competition or Learn) →
+we interpret it, select the fitting framework criteria, and generate an original
+scenario built to require them → **ready screen** with prep tips → 10-min prep
+timer → **type or 🎙️ speak** your presentation → answer the judge's **two
+follow-up questions** (typed or spoken) → tabbed **feedback** (overall percentage,
+per-criterion level + one-line headline that expands to detail, a **What was
+missing** list, transcript highlighted where each criterion saw evidence, and —
+for spoken takes — a **Delivery** tab with pace, fillers, pauses, time use, and
+playback).
 
-- **Events (all qualitative individual series):** 17 events across Principles,
-  Marketing (AAM, ASM, BSM, FMS, MCS, RMS, SEM), Hospitality & Tourism (HLM,
-  QSRM, RFSM), Entrepreneurship (ENT), and Human Resources Management (HRM).
-  Each PI is tagged `core` / `cluster:<id>` / `pathway:<id>:<name>`, so an
-  event's pool is the Business Administration Core plus its career-cluster core
-  and pathway (1806 PIs across 25 instructional areas). Principles events stay
-  strictly core-only. Quantitative events (Accounting, Business Finance, PFL)
-  are deferred.
+- **Free-text request + modes:** no event/area dropdowns — you describe what to
+  practice. **Competition mode** shows only the names of the skills assessed
+  (like a real role-play sheet); **Learn mode** also shows each skill's coaching
+  question and what a strong answer looks like, and gives more tutorial feedback.
+  Both use the same scenario, criteria, and scoring engine — mode only changes
+  what's revealed.
 
-- **Voice (Phase 3):** record with the browser, transcribe via AssemblyAI, and
-  compute delivery metrics (pace WPM, filler rate, long pauses, time use,
-  reading signal) deterministically from word timestamps. Audio is processed and
-  discarded; the browser keeps the take for playback. Delivery measures timing
-  only — never tone or confidence (roadmap §2).
+- **The evaluation framework:** `backend/app/data/framework.json` — **282
+  independently authored criteria** across 13 business domains, at a grain a
+  student can explain in their allotted time. A role-play draws 4–6, so the ideas
+  that come up feel like a real competition's while remaining our own IP.
+  Generation and scoring share the exact same criteria set. See
+  `framework-notes.md` for the domain map, grain logic, and independence audit.
 
-- **Data:** the official DECA **Business Administration Core** (13 areas, 367
-  PIs) plus the Marketing, Hospitality & Tourism, Business Management &
-  Administration, and Entrepreneurship career-cluster PIs, parsed from DECA's
-  published Performance Indicator PDFs — 1806 PIs across 25 instructional areas.
-- **Rubric:** scoring mirrors DECA's **2026 District** evaluation form — four
-  Performance Indicators (0–12 each), three Solution criteria (0–8), three
-  Career Competencies (0–6), and Overall Impression (0–10) = 100 points, on four
-  levels (Novice / Developing / Proficient / Exemplary). Structure stored in
-  `backend/app/data/rubric.json`.
-- **Endpoints:** `POST /api/scenario` (participant-facing only — judge
-  instructions never leave the backend), `POST /api/score-content`,
-  `POST /api/score-delivery` (voice), plus `GET /api/events`,
-  `GET /api/events/{code}/areas` (the focus-area picker), and `GET /api/rubric`.
-  Backed by the Anthropic API (Sonnet 4.6 by default) and a transcription
-  provider (AssemblyAI) for voice.
-- **Guardrails:** keys stay server-side; per-IP rate limit on the paid
+- **Voice:** record with the browser, transcribe via AssemblyAI, and compute
+  delivery metrics (pace WPM, filler rate, long pauses, time use, reading signal)
+  deterministically from word timestamps. Audio is processed and discarded; the
+  browser keeps the take for playback. Delivery measures timing only — never tone
+  or confidence.
+
+- **Scoring scale:** each selected criterion is graded Novice / Developing /
+  Proficient / Exemplary against its own strong/weak bar on a 0–10 band; the
+  overall result is shown as a percentage. Generic quality levels — not any
+  organization's proprietary rubric. Structure in `backend/app/data/rubric.json`.
+- **Endpoints:** `POST /api/scenario` (interpret + select + generate;
+  participant-facing only — judge instructions never leave the backend),
+  `POST /api/score-content` (grade against the selected framework criteria),
+  `POST /api/score-delivery` (voice), plus `GET /api/framework` (our domains) and
+  `GET /api/rubric` (scoring levels). Backed by the Anthropic API and a
+  transcription provider (AssemblyAI) for voice.
+- **Guardrails:** contains **zero** DECA performance-indicator text, codes, or
+  event-to-PI mapping; keys stay server-side; per-IP rate limit on the paid
   endpoints; original clean-room scenarios; output labelled practice coaching,
   never an official competition score.
 

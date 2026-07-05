@@ -1,4 +1,4 @@
-"""Request/response models for the content loop (rubric-based, 2026 District)."""
+"""Request/response models for the content loop (independent framework)."""
 
 from __future__ import annotations
 
@@ -7,35 +7,37 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 Level = Literal["district", "state", "icdc"]
+Mode = Literal["learn", "competition"]
 RubricLevel = Literal["novice", "developing", "proficient", "exemplary"]
 
 
 # --- shared ---------------------------------------------------------------
 
 
-class PI(BaseModel):
+class Criterion(BaseModel):
+    """One evaluation criterion, as shown to the participant on the cover sheet.
+
+    In Competition mode the teaching fields (definition / strong_looks_like /
+    weak_looks_like) are blanked server-side so the participant sees only the
+    names — the criteria are still graded by id from the framework. In Learn mode
+    they are populated so the UI can teach what "good" looks like.
+    """
+
     id: str
-    text: str
-    area: str
-    area_name: str = ""
-    level: str = ""
+    domain: str = ""
+    topic: str = ""
+    name: str
     definition: str = ""
+    strong_looks_like: str = ""
+    weak_looks_like: str = ""
+    coaches: str = ""
 
 
-class EventSummary(BaseModel):
-    code: str
-    name: str
-    level: str
-    pi_count: int
-    cluster_label: str = ""
-
-
-class AreaSummary(BaseModel):
-    """An instructional area the picker can offer for an event."""
-
+class DomainSummary(BaseModel):
     id: str
     name: str
-    pi_count: int
+    blurb: str = ""
+    criteria_count: int = 0
 
 
 class PublicConfig(BaseModel):
@@ -54,38 +56,30 @@ class FeedbackRequest(BaseModel):
     page: str = Field(default="", max_length=80)
 
 
-class RubricCriterion(BaseModel):
-    """A scored criterion shown to the participant before they start (the cover
-    sheet) and echoed in feedback."""
-
-    key: str
-    label: str
-    desc: str = ""
-    max_points: int
-
-
 # --- POST /api/scenario ---------------------------------------------------
 
 
 class ScenarioRequest(BaseModel):
-    event_code: str
+    # The user's free-text description of what they want to practice.
+    request: str = Field(min_length=1, max_length=400)
     level: Level = "district"
-    area: str | None = Field(default=None, description="Focus all PIs in one instructional area.")
-    pi_ids: list[str] | None = Field(default=None, description="Use these exact PIs (reproducibility).")
-    seed: int | None = None
+    mode: Mode = "competition"
 
 
 class ScenarioResponse(BaseModel):
-    event: EventSummary
+    # What we understood from the free-text request.
+    topic: str
+    industry: str = ""
+    domain_focus: list[str] = []
     level: Level
-    instructional_area: str
-    performance_indicators: list[PI]
-    solution_criteria: list[RubricCriterion]
-    career_competencies: list[RubricCriterion]
+    mode: Mode
+    # The criteria this role-play is generated against AND will be scored against.
+    # (Teaching fields are populated only in Learn mode.)
+    criteria: list[Criterion]
     procedures: list[str]
-    # Participant-facing event situation ONLY — never the judge instructions.
+    # Participant-facing situation ONLY — never the judge instructions.
     situation: str
-    # The judge's set follow-up questions. Surfaced to the participant only AFTER
+    # The judge's set follow-up questions, surfaced to the participant only AFTER
     # they submit their main response (mirrors a real role-play), then graded.
     followup_questions: list[str]
 
@@ -94,21 +88,18 @@ class ScenarioResponse(BaseModel):
 
 
 class ScoreRequest(BaseModel):
-    event_code: str
-    scenario: str = Field(description="The event situation the participant responded to.")
-    pi_ids: list[str]
+    scenario: str = Field(description="The situation the participant responded to.")
+    criteria_ids: list[str] = Field(min_length=1)
     response: str = Field(min_length=1)
     followup_questions: list[str] = []
     followup_answer: str = ""
 
 
-class RubricScore(BaseModel):
-    key: str  # e.g. "pi:EN:044", "solution:unique", "competency:critical_thinking", "overall"
-    category: Literal[
-        "performance_indicator", "solution", "career_competency", "overall_impression"
-    ]
-    label: str
-    pi_id: str | None = None
+class CriterionScore(BaseModel):
+    criterion_id: str
+    name: str
+    domain: str = ""
+    topic: str = ""
     level: RubricLevel
     points: int
     max_points: int
@@ -123,16 +114,18 @@ class RubricScore(BaseModel):
 
 
 class ScoreResponse(BaseModel):
-    scores: list[RubricScore]
+    scores: list[CriterionScore]
     total_points: int
-    max_points: int = 100
+    max_points: int
+    overall_percent: int
+    overall_level: RubricLevel
     summary: str = ""
     strengths: list[str] = []
     improvements: list[str] = []
     followup_feedback: str = ""
 
 
-# --- POST /api/score-delivery (voice, Phase 3) ----------------------------
+# --- POST /api/score-delivery (voice) -------------------------------------
 
 
 class FillerCount(BaseModel):

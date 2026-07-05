@@ -1,16 +1,23 @@
-"""FastAPI application — content loop (rubric-based, DECA 2026 District format).
+"""FastAPI application — content loop (independent evaluation framework).
 
 Endpoints:
 - GET  /api/health         liveness
-- GET  /api/events         events the UI can offer
-- GET  /api/rubric         the rubric structure (levels, criteria, point bands)
-- POST /api/scenario       generate an original scenario (participant-facing only)
-- POST /api/score-content  grade a typed response + follow-up against the rubric
+- GET  /api/config         client-safe runtime config
+- GET  /api/framework      our business domains (for UI hints)
+- GET  /api/rubric         the scoring levels (labels + descriptions) for the UI
+- POST /api/feedback       record a piece of user feedback
+- POST /api/scenario       interpret a free-text request, select framework
+                           criteria, and generate an original scenario
+- POST /api/score-content  grade a response against the selected criteria
+- POST /api/score-delivery transcribe audio + compute deterministic delivery metrics
 
-The Vite dev server proxies /api/* here, so no CORS in development. Provider
-keys stay server-side (roadmap §5/§9); the frontend only ever talks to /api/*.
-The judge's instructions are never returned to the client — only the
-participant-facing situation and (after the response) the follow-up questions.
+The Vite dev server proxies /api/* here, so no CORS in development. Provider keys
+stay server-side; the frontend only ever talks to /api/*. The judge's instructions
+are never returned to the client — only the participant-facing situation and (after
+the response) the follow-up questions.
+
+The evaluation layer references OUR framework (framework.json) only: no DECA
+performance-indicator text, codes, or event-to-PI mapping exists anywhere here.
 """
 
 from __future__ import annotations
@@ -19,46 +26,35 @@ import logging
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import config, delivery, llm, notify, prompts, rubric, transcription
-from .data_loader import (
-    EventNotFoundError,
-    get_event,
-    get_instructional_areas,
-    get_pis_by_ids,
-    load_events,
-)
+from . import config, delivery, framework, interpret, llm, notify, prompts, rubric, transcription
 from .ratelimit import daily_cap, rate_limit
 from .schemas import (
-    AreaSummary,
+    Criterion,
+    CriterionScore,
     DeliveryMetrics,
     DeliveryResponse,
-    EventSummary,
+    DomainSummary,
     FeedbackRequest,
-    PI,
+    Mode,
     PublicConfig,
-    RubricCriterion,
-    RubricScore,
     ScenarioRequest,
     ScenarioResponse,
     ScoreRequest,
     ScoreResponse,
 )
-from .selection import select_pis
 
-app = FastAPI(title="PI Coach", version="0.4.0")
+app = FastAPI(title="PI Coach", version="1.0.0")
 
-# Standard participant-facing procedures (our own wording — not DECA copyright).
+# Standard participant-facing procedures (our own wording — original material).
 PROCEDURES = [
     "You have up to 10 minutes to review the situation and prepare. You may make notes to use during your presentation.",
     "You then have up to 10 minutes to present to the judge.",
-    "You are evaluated on your solution, how you incorporate the performance indicators, and how you demonstrate the career competencies.",
+    "You are evaluated on your solution and how well you demonstrate the business skills listed for this role-play.",
     "The judge will ask you follow-up questions after your presentation.",
 ]
 
 
-# Use uvicorn's configured logger so our INFO lines (e.g. FEEDBACK ...) actually
-# reach the Render log stream. A bare getLogger("picoach") falls through to the
-# root logger, which only emits WARNING+ by default, hiding INFO entirely.
+# Use uvicorn's configured logger so our INFO lines actually reach the log stream.
 log = logging.getLogger("uvicorn.error")
 
 
@@ -72,6 +68,24 @@ def health() -> dict[str, str]:
 def public_config() -> PublicConfig:
     """Client-safe runtime config (the public PostHog key, if configured)."""
     return PublicConfig(posthog_key=config.POSTHOG_KEY, posthog_host=config.POSTHOG_HOST)
+
+
+@app.get("/api/framework", response_model=list[DomainSummary])
+def get_domains() -> list[DomainSummary]:
+    """Our business domains (with criterion counts) — for UI hints/examples."""
+    return [DomainSummary(**d) for d in framework.domain_summaries()]
+
+
+@app.get("/api/rubric")
+def get_rubric() -> dict:
+    """The scoring levels (labels, descriptions, band) for the UI to render."""
+    r = rubric.load_rubric()
+    return {
+        "levels": r["levels"],
+        "level_labels": r["level_labels"],
+        "level_descriptions": r["level_descriptions"],
+        "criterion_max_points": r["criterion_max_points"],
+    }
 
 
 @app.post("/api/feedback", dependencies=[Depends(rate_limit)])
@@ -90,67 +104,38 @@ def feedback(req: FeedbackRequest, background: BackgroundTasks) -> dict[str, str
     return {"status": "ok"}
 
 
-def _event_summary(e: dict) -> EventSummary:
-    return EventSummary(
-        code=e["code"],
-        name=e["name"],
-        level=e["level"],
-        pi_count=e["pi_count"],
-        cluster_label=e.get("cluster_label", ""),
-    )
-
-
-@app.get("/api/events", response_model=list[EventSummary])
-def events() -> list[EventSummary]:
-    """Events the picker can offer."""
-    return [_event_summary(e) for e in load_events()]
-
-
-@app.get("/api/events/{code}/areas", response_model=list[AreaSummary])
-def event_areas(code: str) -> list[AreaSummary]:
-    """Instructional areas the picker can offer for one event (with PI counts)."""
-    _event_or_404(code)
-    return [
-        AreaSummary(id=a["id"], name=a["name"], pi_count=len(a["performance_indicators"]))
-        for a in get_instructional_areas(code)
-    ]
-
-
-@app.get("/api/rubric")
-def get_rubric() -> dict:
-    """The rubric structure (levels, criteria, point bands) for the UI to render."""
-    return rubric.load_rubric()
-
-
-def _solution_criteria() -> list[RubricCriterion]:
-    mx = rubric.max_points("solution")
-    return [RubricCriterion(key=i["key"], label=i["label"], desc=i["desc"], max_points=mx) for i in rubric.solution_items()]
-
-
-def _competency_criteria() -> list[RubricCriterion]:
-    mx = rubric.max_points("career_competency")
-    return [RubricCriterion(key=i["key"], label=i["label"], desc=i["desc"], max_points=mx) for i in rubric.competency_items()]
-
-
-def _event_or_404(code: str) -> dict:
-    try:
-        return get_event(code)
-    except EventNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Unknown event code: {code!r}")
+def _criterion_view(c: dict, mode: Mode) -> Criterion:
+    """Shape a framework criterion for the client. Learn mode reveals the teaching
+    fields; Competition mode sends only the name (+ domain/topic), so the participant
+    sees what's assessed but not the answer key."""
+    if mode == "learn":
+        return Criterion(**{k: c.get(k, "") for k in (
+            "id", "domain", "topic", "name", "definition",
+            "strong_looks_like", "weak_looks_like", "coaches",
+        )})
+    return Criterion(id=c["id"], domain=c["domain"], topic=c["topic"], name=c["name"])
 
 
 @app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def scenario(req: ScenarioRequest) -> ScenarioResponse:
-    """Generate an original DECA-format scenario (participant-facing only)."""
-    event = _event_or_404(req.event_code)
-    pis = select_pis(event["code"], area=req.area, pi_ids=req.pi_ids, seed=req.seed)
-    if not pis:
-        raise HTTPException(status_code=400, detail="No performance indicators matched this request.")
-    area_name = pis[0].get("area_name", "")
-
-    system, user = prompts.build_scenario_prompt(event, req.level, area_name, pis)
+    """Interpret the free-text request, select framework criteria, and generate an
+    original scenario built to require exactly those criteria."""
+    # 1) Interpret the free text -> domains + industry (or a friendly redirect).
     try:
-        raw = llm.complete(system, user, max_tokens=1500)
+        interp = interpret.interpret_request(req.request)
+    except interpret.OutOfScope as e:
+        raise HTTPException(status_code=422, detail=e.message)
+    except llm.LLMNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except llm.LLMError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    pool = interpret.candidate_pool(interp["domain_ids"])
+
+    # 2) Generate: the model selects the criteria from the pool AND writes the scenario.
+    system, user = prompts.build_scenario_prompt(interp["topic"], interp["industry"], req.level, pool)
+    try:
+        raw = llm.complete(system, user, max_tokens=1600)
         data = llm.parse_json_object(raw)
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -160,54 +145,56 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
     situation = str(data.get("situation", "")).strip()
     if not situation:
         raise HTTPException(status_code=502, detail="The model returned an empty scenario.")
+
+    # The criteria selected here are the EXACT criteria scoring will grade against.
+    criteria = interpret.resolve_selection([str(i) for i in data.get("criteria_ids", [])], pool)
+    if not criteria:
+        raise HTTPException(status_code=502, detail="No evaluation criteria were selected for this scenario.")
+
     followups = [str(q).strip() for q in data.get("followup_questions", []) if str(q).strip()]
+    domain_focus = sorted({c["domain"] for c in criteria})
 
     return ScenarioResponse(
-        event=_event_summary(event),
+        topic=interp["topic"],
+        industry=interp["industry"],
+        domain_focus=domain_focus,
         level=req.level,
-        instructional_area=area_name,
-        performance_indicators=[PI(**pi) for pi in pis],
-        solution_criteria=_solution_criteria(),
-        career_competencies=_competency_criteria(),
+        mode=req.mode,
+        criteria=[_criterion_view(c, req.mode) for c in criteria],
         procedures=PROCEDURES,
         situation=situation,
         followup_questions=followups,
     )
 
 
-def _score_one(category: str, key: str, label: str, raw: dict, *, pi_id: str | None = None) -> RubricScore:
-    """Build one validated RubricScore from a model entry, clamping to the band."""
-    level, points = rubric.clamp_points(category, str(raw.get("level", "novice")), raw.get("points", 0))
-    evidence = [str(q) for q in raw.get("evidence", []) if str(q).strip()]
-    return RubricScore(
-        key=key,
-        category=category,  # type: ignore[arg-type]
-        label=label,
-        pi_id=pi_id,
+def _score_one(c: dict, raw: dict) -> CriterionScore:
+    """Build one validated CriterionScore from a model entry, clamping to the band."""
+    level, points = rubric.clamp_points(str(raw.get("level", "novice")), raw.get("points", 0))
+    return CriterionScore(
+        criterion_id=c["id"],
+        name=c["name"],
+        domain=c["domain"],
+        topic=c["topic"],
         level=level,  # type: ignore[arg-type]
         points=points,
-        max_points=rubric.max_points(category),
+        max_points=rubric.criterion_max(),
         headline=str(raw.get("headline", "")).strip(),
         feedback=str(raw.get("feedback", "")).strip(),
-        evidence=evidence,
+        evidence=[str(q) for q in raw.get("evidence", []) if str(q).strip()],
         gaps=[str(g).strip() for g in raw.get("gaps", []) if str(g).strip()],
     )
 
 
 @app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def score_content(req: ScoreRequest) -> ScoreResponse:
-    """Grade a typed response + follow-up against the full DECA rubric."""
-    # Resolve PI text from our authoritative data — never trust the client for it.
-    pis = select_pis(req.event_code, pi_ids=req.pi_ids)
-    if not pis:
-        # Fall back to the full catalog so any valid PI id still resolves.
-        pis = get_pis_by_ids(req.pi_ids)
-    if not pis:
-        raise HTTPException(status_code=400, detail="Unknown performance indicators.")
-    pi_text = {pi["id"]: pi["text"] for pi in pis}
+    """Grade a typed response against the selected framework criteria."""
+    # Resolve criteria from our framework — never trust the client for their text.
+    criteria = framework.get_criteria(req.criteria_ids)
+    if not criteria:
+        raise HTTPException(status_code=400, detail="Unknown evaluation criteria.")
 
     system, user = prompts.build_scoring_prompt(
-        req.scenario, pis, req.response, req.followup_questions, req.followup_answer
+        req.scenario, criteria, req.response, req.followup_questions, req.followup_answer
     )
     try:
         raw = llm.complete(system, user, max_tokens=4096)
@@ -217,36 +204,18 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     except llm.LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    scores: list[RubricScore] = []
-
-    # 1) Performance Indicators (in assigned order), text pinned to our wording.
-    pi_entries = {str(e.get("pi_id", "")): e for e in data.get("performance_indicators", [])}
-    for pi in pis:
-        entry = pi_entries.get(pi["id"], {})
-        scores.append(
-            _score_one("performance_indicator", f"pi:{pi['id']}", pi_text[pi["id"]], entry, pi_id=pi["id"])
-        )
-
-    # 2) Solution criteria, 3) Career competencies (fixed order from the rubric).
-    sol = data.get("solution", {}) or {}
-    for item in rubric.solution_items():
-        scores.append(_score_one("solution", f"solution:{item['key']}", item["label"], sol.get(item["key"], {})))
-    comp = data.get("career_competencies", {}) or {}
-    for item in rubric.competency_items():
-        scores.append(
-            _score_one("career_competency", f"competency:{item['key']}", item["label"], comp.get(item["key"], {}))
-        )
-
-    # 4) Overall impression.
-    scores.append(
-        _score_one("overall_impression", "overall", "Overall Impression", data.get("overall_impression", {}) or {})
-    )
+    entries = {str(e.get("criterion_id", "")): e for e in data.get("criteria", [])}
+    scores = [_score_one(c, entries.get(c["id"], {})) for c in criteria]
 
     total = sum(s.points for s in scores)
+    max_points = sum(s.max_points for s in scores)
+    percent = round((total / max_points) * 100) if max_points else 0
     return ScoreResponse(
         scores=scores,
         total_points=total,
-        max_points=rubric.total_max(),
+        max_points=max_points,
+        overall_percent=percent,
+        overall_level=rubric.overall_level(percent),  # type: ignore[arg-type]
         summary=str(data.get("summary", "")).strip(),
         strengths=[str(x) for x in data.get("strengths", []) if str(x).strip()],
         improvements=[str(x) for x in data.get("improvements", []) if str(x).strip()],
@@ -262,8 +231,8 @@ def score_delivery(
     """Transcribe a spoken response and compute deterministic delivery metrics.
 
     Audio is processed and discarded here — we keep only the transcript + numbers
-    (roadmap §2 minors' data minimization; the browser holds the recording for
-    playback, deleting it unless the user opts to keep it).
+    (minors' data minimization; the browser holds the recording for playback,
+    deleting it unless the user opts to keep it).
     """
     raw = audio.file.read()
     try:

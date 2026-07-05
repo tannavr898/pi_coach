@@ -1,17 +1,23 @@
-"""Prompt construction — per the roadmap, this *is* the product.
+"""Prompt construction — this *is* the product.
 
-Two prompts: §7.1 scenario generation and §7.2 rubric scoring. Each returns a
-(system, user) pair and asks for JSON we parse defensively.
+Three prompts, each returning a (system, user) pair and asking for JSON we parse
+defensively:
 
-Both target DECA's current (2026 District) format: a SHORT, concrete event
-situation the participant must solve, graded on the official rubric (four
-Performance Indicators, three Solution criteria, three Career Competencies, and
-an Overall Impression — 100 points across Novice/Developing/Proficient/Exemplary).
+1. Interpretation — read the user's free-text practice request and map it to our
+   business domains + an industry/context (and catch out-of-scope input).
+2. Scenario generation — pick the framework criteria that fit the topic and write
+   an ORIGINAL role-play that naturally requires all of them.
+3. Scoring — grade the response against those exact criteria, using each
+   criterion's strong/weak bar so scoring stays honest, not keyword-inflated.
 
-Guardrails baked in (roadmap §2): original clean-room scenarios in DECA's style
-(never DECA branding/codes/copyright), and feedback labelled practice coaching —
-never an official competition score. The judge instructions are generated for
-grading only and are NEVER part of the participant-facing scenario.
+Guardrails baked in: original clean-room scenarios (never any real organization's
+branding, codes, or copyright), and feedback labelled practice coaching — never an
+official or predicted competition score. The judge's follow-up questions are
+generated for grading and are the only judge-side text ever returned to the
+client; nothing addressed to the judge appears in the participant situation.
+
+Everything here references OUR framework (framework.json) only. No DECA
+performance-indicator text, codes, or event-to-PI mapping appears in any prompt.
 """
 
 from __future__ import annotations
@@ -19,17 +25,8 @@ from __future__ import annotations
 from . import rubric
 
 
-def _format_pis(pis: list[dict]) -> str:
-    lines: list[str] = []
-    for pi in pis:
-        lines.append(f"- {pi['text']} ({pi['id']})")
-        if pi.get("definition"):
-            lines.append(f"    context (not part of the PI): {pi['definition']}")
-    return "\n".join(lines)
-
-
-# Level-scaled length/complexity. Real district scenarios are short and concrete;
-# state and ICDC add stakeholders, constraints, and ambiguity.
+# Level-scaled length/complexity. Shorter and more concrete at the entry tier;
+# more stakeholders, constraints, and ambiguity as it goes up.
 _LEVEL_GUIDE = {
     "district": "120-170 words. One clear ask, a single stakeholder, concrete and approachable.",
     "state": "170-240 words. A bit more nuance — a constraint or trade-off to weigh.",
@@ -38,116 +35,175 @@ _LEVEL_GUIDE = {
 
 
 # ---------------------------------------------------------------------------
-# §7.1 Scenario generation
+# 1. Interpret the free-text request
 # ---------------------------------------------------------------------------
 
-SCENARIO_SYSTEM = (
-    "You are an expert DECA role-play author who has written and judged hundreds "
-    "of events. You write ORIGINAL practice scenarios in DECA's current format. "
-    "You never copy published scenarios and never reproduce DECA's branding, "
-    "event codes, copyright lines, or logos — these are original practice "
-    "materials in DECA's style.\n\n"
+INTERPRET_SYSTEM = (
+    "You interpret a student's free-text request for a business role-play "
+    "practice session and map it onto a fixed list of business domains. You are "
+    "precise and permissive: almost any business, marketing, management, finance, "
+    "or entrepreneurship topic is in scope. Only genuinely non-business requests "
+    "(e.g. 'write me a poem', 'help with my chemistry homework') are out of scope.\n\n"
     "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
 
+def build_interpretation_prompt(request: str, domains: list[dict]) -> tuple[str, str]:
+    """Map a free-text request to domains + an industry/context."""
+    domain_lines = "\n".join(f"- {d['id']}: {d['name']} — {d['blurb']}" for d in domains)
+    user = f"""The student typed this practice request:
+"{request.strip()}"
+
+BUSINESS DOMAINS (choose from these ids only):
+{domain_lines}
+
+Decide what the student wants to practice and return a JSON object with EXACTLY these keys:
+{{
+  "in_scope": true or false,   // false ONLY if this is not a business/management/marketing/finance topic at all
+  "redirect_message": "If out of scope, one friendly sentence steering them to a business topic (e.g. 'Try something like \\"marketing for a coffee shop\\" or \\"a staffing problem in retail.\\"'). Empty string if in scope.",
+  "topic": "A short, specific restatement of the business challenge to practice (your words).",
+  "industry": "The industry/context in a couple of words (e.g. 'food service', 'retail', 'tech startup', 'healthcare'). Use 'general business' if none is implied.",
+  "domain_ids": ["1-3 domain ids from the list above that best fit the request, most relevant first"]
+}}
+
+If the request is vague (e.g. just 'marketing' or 'business'), still pick a sensible, coherent set of domains and a reasonable default industry — never refuse a vague-but-business request. Output ONLY the JSON."""
+    return INTERPRET_SYSTEM, user
+
+
+# ---------------------------------------------------------------------------
+# 2. Scenario generation (selects criteria + writes the role-play)
+# ---------------------------------------------------------------------------
+
+SCENARIO_SYSTEM = (
+    "You are an expert business role-play author who has written and judged "
+    "hundreds of practice events. You write ORIGINAL practice scenarios in the "
+    "style of a competitive business role-play. You never copy published "
+    "scenarios and never reproduce any real organization's branding, event "
+    "codes, copyright lines, or logos — these are original practice materials.\n\n"
+    "You are given a set of evaluation criteria (our own framework) and must (a) "
+    "choose the ones that genuinely fit the requested topic and can all be "
+    "demonstrated together in a single ~10-minute role-play, and (b) write a "
+    "scenario whose task naturally requires every criterion you chose — woven "
+    "into one coherent business situation, never as a visible checklist.\n\n"
+    "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
+)
+
+
+def _format_candidates(criteria: list[dict]) -> str:
+    lines: list[str] = []
+    for c in criteria:
+        lines.append(f"- {c['id']} [{c['domain']} · {c['topic']}] {c['name']}: {c['definition']}")
+    return "\n".join(lines)
+
+
 def build_scenario_prompt(
-    event: dict, level: str, instructional_area: str, pis: list[dict]
+    topic: str,
+    industry: str,
+    level: str,
+    candidates: list[dict],
 ) -> tuple[str, str]:
-    """Build the (system, user) messages for one original scenario."""
+    """Build the (system, user) messages: select 4-6 criteria and write the scenario."""
     guide = _LEVEL_GUIDE.get(level, _LEVEL_GUIDE["district"])
-    user = f"""EVENT: {event['name']}
-COMPETITION LEVEL: {level}   ({guide})
-INSTRUCTIONAL AREA: {instructional_area}
+    user = f"""REQUESTED TOPIC: {topic}
+INDUSTRY / CONTEXT: {industry}
+COMPLEXITY: {level}   ({guide})
 
-PERFORMANCE INDICATORS the participant must get a natural reason to demonstrate
-(verbatim; do not reword):
-{_format_pis(pis)}
+CANDIDATE EVALUATION CRITERIA (choose from these ids only):
+{_format_candidates(candidates)}
 
-Write an original role-play. The participant takes a specific role at a specific,
-realistic (invented) company and must work through a concrete business situation
-that calls for a SOLUTION and naturally requires every performance indicator
-above. Keep it grounded and current; no placeholder names.
+STEP 1 — SELECT the criteria to assess. Pick a coherent set of 4 to 6 criteria
+from the list above that are genuinely relevant to the topic AND can all be
+demonstrated together in one ~10-minute role-play. Prefer a focused, complementary
+set over a scattered one. Use ONLY ids from the list.
+
+STEP 2 — WRITE an original role-play whose task naturally gives the participant a
+reason to demonstrate EVERY criterion you selected. The participant takes a
+specific role at a specific, realistic (invented) company in the stated industry
+and must work through a concrete business situation that calls for a solution.
+Keep it grounded and current; no placeholder names; invent specific, believable
+details.
 
 Return a JSON object with EXACTLY these keys:
 {{
-  "situation": "The participant-facing EVENT SITUATION only. {guide} OPEN by
-     establishing, in the first sentence or two, the participant's specific role
-     AND a one-line description of the company (its name and what it does) so the
-     participant has the context to reason about — never reference company facts
-     you didn't state here. Then give the specific challenge/decision and note
-     they will meet a judge who plays a named counterpart and will ask follow-up
-     questions. Plain prose, 2-3 short paragraphs. Do NOT include procedures, the
-     PI list, or anything addressed to the judge.",
+  "criteria_ids": ["the 4-6 ids you selected in step 1"],
+  "situation": "The participant-facing situation ONLY. {guide} OPEN by establishing,
+     in the first sentence or two, the participant's specific role AND a one-line
+     description of the company (its name and what it does) so the participant has
+     the context to reason about — never reference company facts you didn't state
+     here. Then give the specific challenge/decision and note they will meet a judge
+     who plays a named counterpart and will ask follow-up questions. Plain prose,
+     2-3 short paragraphs. Do NOT include the criteria list, procedures, or anything
+     addressed to the judge.",
   "followup_questions": ["Two questions the judge asks AFTER the presentation.
-     Ground them in THIS scenario and the performance indicators above (a
-     trade-off, a risk, how they'd measure success, an alternative they should
-     have weighed). CRITICAL: these are written before the participant speaks,
-     so you do NOT know what they said — NEVER reference, quote, paraphrase, or
-     assume anything the participant said. Forbidden openers: 'You mentioned',
-     'You said', 'Earlier you', 'As you noted', 'Since you suggested'. Ask about
-     the situation itself, not about their answer. Specific to this scenario,
-     not generic.", "second question"]
+     Ground them in THIS scenario and the selected criteria (a trade-off, a risk,
+     how they'd measure success, an alternative they should have weighed). CRITICAL:
+     these are written before the participant speaks, so you do NOT know what they
+     said — NEVER reference, quote, paraphrase, or assume anything the participant
+     said. Forbidden openers: 'You mentioned', 'You said', 'Earlier you', 'As you
+     noted', 'Since you suggested'. Ask about the situation itself, not their answer.",
+     "second question"]
 }}
 
-CRITICAL: never put judge instructions, judge characterization, or the answers
-inside "situation" — that text is shown to the participant. Output ONLY the JSON."""
+CRITICAL: never put judge instructions, judge characterization, or answers inside
+"situation" — that text is shown to the participant. Output ONLY the JSON."""
     return SCENARIO_SYSTEM, user
 
 
 # ---------------------------------------------------------------------------
-# §7.2 Rubric scoring (2026 District evaluation form)
+# 3. Scoring against the selected framework criteria
 # ---------------------------------------------------------------------------
 
-
-def _rubric_brief() -> str:
-    r = rubric.load_rubric()
-    ld = r["level_descriptions"]
-    sol = ", ".join(f"{i['label']} ({i['desc']})" for i in rubric.solution_items())
-    comp = ", ".join(f"{i['label']} ({i['desc']})" for i in rubric.competency_items())
-    return f"""LEVELS (pick ONE per criterion, then a score inside its point band):
-- Novice — {ld['novice']}
-- Developing — {ld['developing']}
-- Proficient — {ld['proficient']}
-- Exemplary — {ld['exemplary']}
-
-CRITERIA AND POINT BANDS:
-- Each Performance Indicator (4): novice 0-3, developing 4-7, proficient 8-11, exemplary 12.
-- Solution (3) — {sol}: novice 0-2, developing 3-5, proficient 6-7, exemplary 8.
-- Career Competencies (3) — {comp}: novice 0-1, developing 2-3, proficient 4-5, exemplary 6.
-- Overall Impression (career readiness: professionalism, poise, confidence): novice 0-3, developing 4-6, proficient 7-9, exemplary 10.
-Total is out of 100."""
-
-
 SCORING_SYSTEM = (
-    "You are an experienced, fair DECA judge and coach grading a typed practice "
-    "response against the official 2026 District rubric. Judge ONLY what the words "
-    "show — content, reasoning, structure, and how well each criterion is met — "
-    "NOT delivery, voice, confidence, or presence (those are coached separately). "
-    "Be specific and honest; cite verbatim quotes from the response as evidence; "
-    "never inflate. A typed practice answer that merely mentions an indicator is "
-    "usually Developing, not Proficient.\n\n"
+    "You are an experienced, fair judge and coach grading a typed practice "
+    "response against a set of business evaluation criteria. Judge ONLY what the "
+    "words show — content, reasoning, structure, and how well each criterion is "
+    "met — NOT delivery, voice, confidence, or presence (those are coached "
+    "separately). Score each criterion against its own 'strong' and 'weak' bar: "
+    "a response that merely mentions or name-drops the idea is usually Developing, "
+    "not Proficient. Be specific and honest; cite verbatim quotes from the response "
+    "as evidence; never inflate; never invent criteria beyond the ones given.\n\n"
     "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
 
+def _levels_brief() -> str:
+    ld = rubric.level_descriptions()
+    mx = rubric.criterion_max()
+    return f"""LEVELS (pick ONE per criterion, then a score inside its 0-{mx} band):
+- Novice (0-3) — {ld['novice']}
+- Developing (4-6) — {ld['developing']}
+- Proficient (7-8) — {ld['proficient']}
+- Exemplary (9-10) — {ld['exemplary']}"""
+
+
+def _criteria_block(criteria: list[dict]) -> str:
+    out: list[str] = []
+    for c in criteria:
+        out.append(
+            f"- {c['id']} — {c['name']} ({c['domain']} · {c['topic']})\n"
+            f"    what it asks: {c['definition']}\n"
+            f"    strong looks like: {c['strong_looks_like']}\n"
+            f"    weak looks like: {c['weak_looks_like']}"
+        )
+    return "\n".join(out)
+
+
 def build_scoring_prompt(
     scenario: str,
-    pis: list[dict],
+    criteria: list[dict],
     response: str,
     followup_questions: list[str],
     followup_answer: str,
 ) -> tuple[str, str]:
-    """Build the (system, user) messages for rubric scoring."""
-    pi_block = "\n".join(f'- {pi["id"]}: {pi["text"]}' for pi in pis)
+    """Build the (system, user) messages for framework scoring."""
     fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
-    user = f"""{_rubric_brief()}
+    user = f"""{_levels_brief()}
 
-EVENT SITUATION the participant responded to:
+THE EVALUATION CRITERIA for this role-play (grade against these and ONLY these):
+{_criteria_block(criteria)}
+
+BUSINESS SITUATION the participant responded to:
 {scenario}
-
-ASSIGNED PERFORMANCE INDICATORS:
-{pi_block}
 
 PARTICIPANT'S MAIN RESPONSE (transcript):
 {response}
@@ -158,41 +214,29 @@ JUDGE'S FOLLOW-UP QUESTIONS:
 PARTICIPANT'S ANSWER TO THE FOLLOW-UP:
 {followup_answer or "(the participant did not answer)"}
 
-Grade every criterion. For "evidence", quote EXACT substrings from the
-participant's text (main response or follow-up) so each quote can be found and
-highlighted — never paraphrase inside evidence. Give concrete, criterion-specific
-feedback that names what was present and what would raise the level.
+Grade every criterion against its own strong/weak bar. For "evidence", quote EXACT
+substrings from the participant's text (main response or follow-up) so each quote
+can be found and highlighted — never paraphrase inside evidence. Give concrete,
+criterion-specific feedback that names what was present and what would raise the level.
 
 For EVERY criterion provide:
-- "headline": a punchy one-line verdict, at most 8 words (e.g. "Named the PI but never applied it"). This is shown first; the reader expands to see the full feedback.
-- "feedback": 1-2 sentences of specific detail. Wrap the 1-2 most important
-  phrases — the key thing to fix or the thing done well — in **double asterisks**
-  so they stand out when scanned. Do not bold whole sentences.
+- "headline": a punchy one-line verdict, at most 8 words (e.g. "Named the idea but never applied it"). Shown first; the reader expands for the full feedback.
+- "feedback": 1-2 sentences of specific detail. Wrap the 1-2 most important phrases
+  — the key thing to fix or the thing done well — in **double asterisks** so they
+  stand out. Do not bold whole sentences.
 - "gaps": 1-3 SHORT, concrete things that were MISSING or too weak and would have
-  raised the level (e.g. "Didn't quantify the discount", "No success metric named",
-  "Never explained WHY relations matter"). Phrase each as a brief missing item, not
-  a full sentence — these tell the participant exactly what to add next time. Use an
-  empty list [] ONLY if the criterion was genuinely Exemplary with nothing to add.
+  raised the level (e.g. "Didn't quantify the discount", "No success metric named").
+  Phrase each as a brief missing item, not a full sentence. Use an empty list [] ONLY
+  if the criterion was genuinely Exemplary with nothing to add.
 
 Return a JSON object with EXACTLY this shape:
 {{
-  "performance_indicators": [
-    {{"pi_id": "<id>", "level": "novice|developing|proficient|exemplary",
+  "criteria": [
+    {{"criterion_id": "<id>", "level": "novice|developing|proficient|exemplary",
       "points": <int in band>, "headline": "<<=8 words>", "feedback": "<specific, with **key phrase** bolded>", "evidence": ["<verbatim quote>"], "gaps": ["<short missing item>"]}}
-    // one object per assigned PI, same order
+    // one object per criterion above, same order
   ],
-  "solution": {{
-    "unique": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}},
-    "practical": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}},
-    "effective": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}}
-  }},
-  "career_competencies": {{
-    "critical_thinking": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}},
-    "communication": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}},
-    "decision_making": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}}
-  }},
-  "overall_impression": {{"level": "...", "points": <int>, "headline": "...", "feedback": "...", "evidence": ["..."], "gaps": ["..."]}},
-  "summary": "<2-3 sentence overall read>",
+  "summary": "<2-3 sentence overall read of the response>",
   "strengths": ["<short>", "..."],
   "improvements": ["<short, actionable>", "..."],
   "followup_feedback": "<how well they handled the judge's follow-up questions>"

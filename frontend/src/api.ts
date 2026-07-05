@@ -3,44 +3,34 @@
 // instructions never cross this boundary — only participant-facing content does.
 
 export type Level = "district" | "state" | "icdc";
+export type Mode = "learn" | "competition";
 
-export type EventSummary = {
-  code: string;
-  name: string;
-  level: string;
-  pi_count: number;
-  cluster_label: string;
-};
-
-export type AreaSummary = {
+export type Criterion = {
   id: string;
+  domain: string;
+  topic: string;
   name: string;
-  pi_count: number;
-};
-
-export type PI = {
-  id: string;
-  text: string;
-  area: string;
-  area_name: string;
-  level: string;
+  // Teaching fields — populated in Learn mode, empty in Competition mode.
   definition: string;
+  strong_looks_like: string;
+  weak_looks_like: string;
+  coaches: string;
 };
 
-export type RubricCriterion = {
-  key: string;
-  label: string;
-  desc: string;
-  max_points: number;
+export type DomainSummary = {
+  id: string;
+  name: string;
+  blurb: string;
+  criteria_count: number;
 };
 
 export type ScenarioResponse = {
-  event: EventSummary;
+  topic: string;
+  industry: string;
+  domain_focus: string[];
   level: Level;
-  instructional_area: string;
-  performance_indicators: PI[];
-  solution_criteria: RubricCriterion[];
-  career_competencies: RubricCriterion[];
+  mode: Mode;
+  criteria: Criterion[];
   procedures: string[];
   situation: string;
   followup_questions: string[];
@@ -48,17 +38,11 @@ export type ScenarioResponse = {
 
 export type RubricLevel = "novice" | "developing" | "proficient" | "exemplary";
 
-export type RubricCategory =
-  | "performance_indicator"
-  | "solution"
-  | "career_competency"
-  | "overall_impression";
-
-export type RubricScore = {
-  key: string;
-  category: RubricCategory;
-  label: string;
-  pi_id?: string | null;
+export type CriterionScore = {
+  criterion_id: string;
+  name: string;
+  domain: string;
+  topic: string;
   level: RubricLevel;
   points: number;
   max_points: number;
@@ -69,9 +53,11 @@ export type RubricScore = {
 };
 
 export type ScoreResponse = {
-  scores: RubricScore[];
+  scores: CriterionScore[];
   total_points: number;
   max_points: number;
+  overall_percent: number;
+  overall_level: RubricLevel;
   summary: string;
   strengths: string[];
   improvements: string[];
@@ -127,12 +113,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function getEvents(): Promise<EventSummary[]> {
-  return request<EventSummary[]>("/api/events");
-}
-
-export function getEventAreas(code: string): Promise<AreaSummary[]> {
-  return request<AreaSummary[]>(`/api/events/${encodeURIComponent(code)}/areas`);
+export function getDomains(): Promise<DomainSummary[]> {
+  return request<DomainSummary[]>("/api/framework");
 }
 
 export function postFeedback(body: {
@@ -148,9 +130,9 @@ export function postFeedback(body: {
 }
 
 export function postScenario(body: {
-  event_code: string;
+  request: string;
   level: Level;
-  area?: string | null;
+  mode: Mode;
 }): Promise<ScenarioResponse> {
   return request<ScenarioResponse>("/api/scenario", {
     method: "POST",
@@ -159,9 +141,8 @@ export function postScenario(body: {
 }
 
 export function postScore(body: {
-  event_code: string;
   scenario: string;
-  pi_ids: string[];
+  criteria_ids: string[];
   response: string;
   followup_questions: string[];
   followup_answer: string;

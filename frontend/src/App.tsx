@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  type AreaSummary,
+  type Criterion,
+  type CriterionScore,
   type DeliveryMetrics,
-  type EventSummary,
   type Level,
-  type RubricCriterion,
+  type Mode,
   type RubricLevel,
-  type RubricScore,
   type ScenarioResponse,
   type ScoreResponse,
-  getEventAreas,
-  getEvents,
   postDelivery,
   postFeedback,
   postScenario,
@@ -32,10 +29,8 @@ type Stage = "pick" | "loading" | "ready" | "prep" | "respond" | "followup" | "s
 
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
-  const [events, setEvents] = useState<EventSummary[]>([]);
-  const [eventCode, setEventCode] = useState("");
-  const [areas, setAreas] = useState<AreaSummary[]>([]);
-  const [area, setArea] = useState(""); // "" = let it choose
+  const [request, setRequest] = useState(""); // free-text practice request
+  const [practiceMode, setPracticeMode] = useState<Mode>("competition");
   const [level, setLevel] = useState<Level>("district");
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
   const [mode, setMode] = useState<ResponseMode>("type");
@@ -51,34 +46,13 @@ export default function App() {
   const [view, setView] = useState<"practice" | "tips">("practice");
   const { theme, toggleTheme } = useTheme();
 
-  useEffect(() => {
-    getEvents()
-      .then((evs) => {
-        setEvents(evs);
-        if (evs[0]) setEventCode(evs[0].code);
-      })
-      .catch((e) => setError(errMsg(e)));
-  }, []);
-
-  // Load the selected event's instructional areas for the focus picker.
-  useEffect(() => {
-    if (!eventCode) return;
-    setArea("");
-    let live = true;
-    getEventAreas(eventCode)
-      .then((a) => live && setAreas(a))
-      .catch(() => live && setAreas([]));
-    return () => {
-      live = false;
-    };
-  }, [eventCode]);
-
   async function generate() {
+    if (!request.trim()) return;
     setError(null);
     setStage("loading");
     try {
-      const s = await postScenario({ event_code: eventCode, level, area: area || undefined });
-      track("scenario_generated", { event_code: eventCode, level, focus_area: area || "auto" });
+      const s = await postScenario({ request: request.trim(), level, mode: practiceMode });
+      track("scenario_generated", { level, mode: practiceMode, domains: s.domain_focus.join(",") });
       setScenario(s);
       setResponseText("");
       setAudioBlob(null);
@@ -130,9 +104,8 @@ export default function App() {
       }
 
       const result = await postScore({
-        event_code: scenario.event.code,
         scenario: scenario.situation,
-        pi_ids: scenario.performance_indicators.map((p) => p.id),
+        criteria_ids: scenario.criteria.map((c) => c.id),
         response: responseForScoring,
         followup_questions: scenario.followup_questions,
         followup_answer: followupForScoring,
@@ -140,10 +113,10 @@ export default function App() {
       setDelivery(deliveryMetrics);
       setScore(result);
       track("scored", {
-        event_code: scenario.event.code,
         total_points: result.total_points,
-        pct: Math.round((result.total_points / result.max_points) * 100),
+        pct: result.overall_percent,
         mode,
+        practice_mode: scenario.mode,
         has_delivery: !!deliveryMetrics,
       });
       setStage("feedback");
@@ -185,13 +158,11 @@ export default function App() {
           <>
             {stage === "pick" && (
               <PickScreen
-                events={events}
-                eventCode={eventCode}
-                areas={areas}
-                area={area}
+                request={request}
+                practiceMode={practiceMode}
                 level={level}
-                onEvent={setEventCode}
-                onArea={setArea}
+                onRequest={setRequest}
+                onPracticeMode={setPracticeMode}
                 onLevel={setLevel}
                 onGenerate={generate}
                 onTips={() => setView("tips")}
@@ -241,7 +212,7 @@ export default function App() {
             )}
 
             {stage === "scoring" && (
-              <LoadingScreen label={mode === "speak" ? "Transcribing and grading your delivery…" : "Grading your response against the rubric…"} />
+              <LoadingScreen label={mode === "speak" ? "Transcribing and grading your delivery…" : "Grading your response against the criteria…"} />
             )}
 
             {stage === "feedback" && score && scenario && (
@@ -290,7 +261,7 @@ export function DemoApp() {
             <DemoStepHeader
               step={2}
               title="The graded feedback"
-              blurb="Scored on the DECA rubric, per indicator. Open any tab — the Transcript even highlights the exact phrases that earned credit."
+              blurb="Scored criterion by criterion against the framework. Open any tab — the Transcript even highlights the exact phrases that earned credit."
               backLabel="Back to the scenario"
               onBack={() => setStep("scenario")}
             />
@@ -357,21 +328,21 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
       <DemoStepHeader
         step={1}
         title="The scenario — and a sample response"
-        blurb="PI Coach writes an original scenario in DECA's format, then the competitor presents. Here's an example prompt with a strong (not perfect) typed response, the way a real session looks before grading."
+        blurb="PI Coach writes an original scenario built around the skills you want to practice, then the competitor presents. Here's an example prompt with a strong (not perfect) typed response, the way a real session looks before grading."
       />
       <Card>
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{s.event.name}</h2>
-          <span className="font-mono text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">District · {s.event.code}</span>
+          <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{s.topic}</h2>
+          <span className="font-mono text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">District · Learn mode</span>
         </div>
-        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{s.instructional_area}</p>
+        <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{scenarioSubtitle(s)}</p>
         <div className="mt-4">
           <SituationSheet text={s.situation} embedded />
         </div>
       </Card>
 
       <details className="group rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">Show what's graded (performance indicators & rubric)</summary>
+        <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">Show what's graded (the evaluation criteria)</summary>
         <div className="mt-4">
           <CoverSheet scenario={s} embedded />
         </div>
@@ -400,7 +371,7 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
 
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-          Now see how PI Coach grades it — out of 100, indicator by indicator.
+          Now see how PI Coach grades it — as a percentage, skill by skill.
         </p>
         <button className={`${BTN_PRIMARY} w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`} onClick={onNext}>
           See the graded feedback →
@@ -435,8 +406,9 @@ function SiteFooter() {
           <span className="font-display text-sm font-semibold text-slate-600 dark:text-slate-300">PI Coach</span>
         </div>
         <p>
-          Generates original practice scenarios in DECA's style — not official DECA materials, and not affiliated
-          with DECA Inc. Feedback is practice coaching, never an official competition score.
+          Trains the business skills and delivery that win DECA role-plays, using original practice scenarios and
+          our own independent evaluation framework — not official DECA materials, and not affiliated with DECA Inc.
+          Feedback is practice coaching, never an official competition score.
         </p>
         <p className="mt-1.5">
           Recordings are transcribed to measure delivery, then discarded on our servers — your audio stays on your
@@ -558,7 +530,7 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
 // --- brand / shell ---------------------------------------------------------
 
 function BrandMark({ size = 30 }: { size?: number }) {
-  // Concentric target = "performance indicator / hit the mark".
+  // Concentric target = "hit the mark" — practice until you nail it.
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden className="shrink-0">
       <circle cx="16" cy="16" r="14.5" fill="none" stroke="#c7d2fe" strokeWidth="2.5" />
@@ -650,33 +622,25 @@ const BTN_PRIMARY =
 
 // --- screens ---------------------------------------------------------------
 
+const REQUEST_EXAMPLES = [
+  "marketing for a restaurant",
+  "a staffing problem in retail",
+  "a financial decision for a startup",
+  "a customer service issue at a hotel",
+  "pricing a new product",
+  "a business law dispute",
+];
+
 function PickScreen(props: {
-  events: EventSummary[];
-  eventCode: string;
-  areas: AreaSummary[];
-  area: string;
+  request: string;
+  practiceMode: Mode;
   level: Level;
-  onEvent: (c: string) => void;
-  onArea: (a: string) => void;
+  onRequest: (v: string) => void;
+  onPracticeMode: (m: Mode) => void;
   onLevel: (l: Level) => void;
   onGenerate: () => void;
   onTips: () => void;
 }) {
-  // Group events by cluster_label, preserving first-seen order.
-  const groups = useMemo(() => {
-    const order: string[] = [];
-    const byGroup: Record<string, EventSummary[]> = {};
-    for (const e of props.events) {
-      const g = e.cluster_label || "Other";
-      if (!byGroup[g]) {
-        byGroup[g] = [];
-        order.push(g);
-      }
-      byGroup[g].push(e);
-    }
-    return order.map((g) => ({ label: g, events: byGroup[g] }));
-  }, [props.events]);
-
   return (
     <div className="space-y-8">
       <section className="pt-4">
@@ -689,8 +653,8 @@ function PickScreen(props: {
           </span>
         </h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Generate an original scenario in DECA's format, prep against a real timer, present out loud, and get
-          honest, per-indicator feedback — content <em>and</em> delivery.
+          Say what you want to work on, get an original role-play built around it, prep against a real timer,
+          present out loud, and get honest, per-criterion feedback — content <em>and</em> delivery.
         </p>
         <button
           onClick={props.onTips}
@@ -707,35 +671,47 @@ function PickScreen(props: {
           <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Set up a role-play</h2>
         </div>
         <div className="space-y-5 px-6 py-5">
-          <Field label="Event" hint={`${props.events.length} events`}>
-            <select
-              className={SELECT_CLS}
-              value={props.eventCode}
-              onChange={(e) => props.onEvent(e.target.value)}
-            >
-              {groups.map((g) => (
-                <optgroup key={g.label} label={g.label}>
-                  {g.events.map((e) => (
-                    <option key={e.code} value={e.code}>
-                      {e.name} ({e.code})
-                    </option>
-                  ))}
-                </optgroup>
+          <Field label="What do you want to practice?">
+            <textarea
+              className={`h-20 ${TEXTAREA_CLS}`}
+              placeholder='e.g. "marketing for a restaurant" or "a staffing problem in retail"'
+              value={props.request}
+              onChange={(e) => props.onRequest(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) props.onGenerate();
+              }}
+              maxLength={400}
+            />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {REQUEST_EXAMPLES.map((ex) => (
+                <button
+                  key={ex}
+                  type="button"
+                  onClick={() => props.onRequest(ex)}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-indigo-800"
+                >
+                  {ex}
+                </button>
               ))}
-            </select>
+            </div>
+            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+              Any business topic works — a field, an industry, or a specific challenge. We pick the skills that fit.
+            </p>
           </Field>
 
-          <Field label="Focus area" hint="optional">
-            <select className={SELECT_CLS} value={props.area} onChange={(e) => props.onArea(e.target.value)}>
-              <option value="">Any — let it choose</option>
-              {props.areas.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.id}) · {a.pi_count} PIs
-                </option>
-              ))}
-            </select>
+          <Field label="Mode">
+            <Segmented
+              value={props.practiceMode}
+              onChange={(v) => props.onPracticeMode(v as Mode)}
+              options={[
+                { value: "competition", label: "Competition" },
+                { value: "learn", label: "Learn" },
+              ]}
+            />
             <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
-              Pin the scenario to one instructional area, or let PI Coach pick a coherent set.
+              {props.practiceMode === "competition"
+                ? "Like the real room: you see the skill names being assessed, but not the answer key."
+                : "Teaches as you go: see each skill, what “good” looks like, and coaching in your feedback."}
             </p>
           </Field>
 
@@ -756,7 +732,7 @@ function PickScreen(props: {
             <button
               className={`${BTN_PRIMARY} w-full whitespace-nowrap bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`}
               onClick={props.onGenerate}
-              disabled={!props.eventCode}
+              disabled={!props.request.trim()}
             >
               Generate scenario →
             </button>
@@ -767,11 +743,16 @@ function PickScreen(props: {
   );
 }
 
+// A short subtitle for a scenario: industry + the domains it exercises.
+function scenarioSubtitle(s: ScenarioResponse): string {
+  return [s.industry, s.domain_focus.join(" · ")].filter(Boolean).join(" — ");
+}
+
 function ProcessStrip() {
   const steps = [
     { n: "01", label: "Prep", desc: "10-min timer, notes allowed" },
     { n: "02", label: "Present", desc: "Type or speak it out loud" },
-    { n: "03", label: "Feedback", desc: "Per-indicator score + fixes" },
+    { n: "03", label: "Feedback", desc: "Per-criterion score + fixes" },
   ];
   return (
     <div className="grid gap-3 sm:grid-cols-3">
@@ -795,9 +776,9 @@ function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void })
       <Card>
         <Eyebrow>Ready when you are</Eyebrow>
         <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {s.event.name}
+          {s.topic}
         </h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{s.instructional_area}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{scenarioSubtitle(s)}</p>
         <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
           Your scenario is written. Take a breath — the prep clock only starts when you press the button.
         </p>
@@ -890,7 +871,7 @@ function RespondScreen(props: {
           <>
             <textarea
               className={`mt-3 h-64 ${TEXTAREA_CLS}`}
-              placeholder="Open with a greeting, address the situation and every performance indicator, propose your solution, and close. Speak it out loud as you type — that's the rep."
+              placeholder="Open with a greeting, address the situation and every skill you're assessed on, propose your solution, and close. Speak it out loud as you type — that's the rep."
               value={props.value}
               onChange={(e) => props.onChange(e.target.value)}
             />
@@ -1057,7 +1038,7 @@ function FollowupScreen(props: {
             <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Your answer</label>
             <textarea
               className={`mt-2 h-40 ${TEXTAREA_CLS}`}
-              placeholder="Answer the judge's questions directly. This is graded as part of your overall impression."
+              placeholder="Answer the judge's questions directly. This is graded as part of your response."
               value={props.value}
               onChange={(e) => props.onChange(e.target.value)}
             />
@@ -1087,14 +1068,7 @@ function FollowupScreen(props: {
 
 // --- feedback --------------------------------------------------------------
 
-type FeedbackTab = "overview" | "transcript" | "delivery" | RubricScore["category"];
-
-const CATEGORIES: { key: RubricScore["category"]; label: string; tab: string }[] = [
-  { key: "performance_indicator", label: "Performance Indicators", tab: "Indicators" },
-  { key: "solution", label: "Solution", tab: "Solution" },
-  { key: "career_competency", label: "Career Competencies", tab: "Competencies" },
-  { key: "overall_impression", label: "Overall Impression", tab: "Overall" },
-];
+type FeedbackTab = "overview" | "transcript" | "delivery" | "criteria";
 
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
@@ -1107,8 +1081,7 @@ function FeedbackScreen(props: {
 }) {
   const { score } = props;
   const marks = buildMarks(score.scores);
-  const pct = Math.round((score.total_points / score.max_points) * 100);
-  const overall = score.scores.find((s) => s.category === "overall_impression");
+  const pct = score.overall_percent;
   const [tab, setTab] = useState<FeedbackTab>("overview");
   const [activeMark, setActiveMark] = useState<string | null>(null);
 
@@ -1116,7 +1089,7 @@ function FeedbackScreen(props: {
     { key: "overview", label: "Overview" },
     { key: "transcript", label: "Transcript" },
     ...(props.delivery ? [{ key: "delivery", label: "Delivery" }] : []),
-    ...CATEGORIES.map((c) => ({ key: c.key, label: c.tab, badge: subtotalStr(score.scores, c.key) })),
+    { key: "criteria", label: "Criteria", badge: `${score.total_points}/${score.max_points}` },
   ];
 
   return (
@@ -1124,18 +1097,19 @@ function FeedbackScreen(props: {
       {/* Score rail — sticks alongside the detail on wide screens. */}
       <div className="lg:sticky lg:top-24">
         <Card>
-          <Eyebrow>Rubric feedback</Eyebrow>
+          <Eyebrow>Framework feedback</Eyebrow>
           <h2 className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100">
-            {props.scenario.event.name}
+            {props.scenario.topic}
           </h2>
           <div className="mt-5 flex items-end gap-1.5">
-            <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{score.total_points}</span>
-            <span className="mb-1 font-mono text-lg font-medium text-slate-300 dark:text-slate-600">/ {score.max_points}</span>
-            <span className="mb-1 ml-auto font-mono text-sm text-slate-500 dark:text-slate-400">{pct}%</span>
+            <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{pct}</span>
+            <span className="mb-1 font-mono text-lg font-medium text-slate-300 dark:text-slate-600">%</span>
+            <span className="mb-1 ml-auto font-mono text-sm text-slate-500 dark:text-slate-400">{score.total_points}/{score.max_points} pts</span>
           </div>
-          {overall && <div className="mt-3"><LevelMeter level={overall.level} /></div>}
+          <div className="mt-3"><LevelMeter level={score.overall_level} /></div>
           <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            Graded on the DECA 2026 District rubric. Practice coaching, not an official competition score.
+            Graded on {score.scores.length} business skills against our evaluation framework. Practice coaching,
+            not an official competition score.
           </p>
           <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
             <LevelLegend />
@@ -1159,7 +1133,7 @@ function FeedbackScreen(props: {
           />
         )}
         {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
-        {CATEGORIES.some((c) => c.key === tab) && <CategoryTab category={tab as RubricScore["category"]} scores={score.scores} />}
+        {tab === "criteria" && <CriteriaTab scores={score.scores} />}
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
           {props.delivery ? (
@@ -1185,14 +1159,19 @@ function FeedbackScreen(props: {
   );
 }
 
-function subtotal(scores: RubricScore[], cat: RubricScore["category"]): [number, number] {
-  const rows = scores.filter((s) => s.category === cat);
-  return [rows.reduce((a, r) => a + r.points, 0), rows.reduce((a, r) => a + r.max_points, 0)];
-}
-
-function subtotalStr(scores: RubricScore[], cat: RubricScore["category"]): string {
-  const [p, m] = subtotal(scores, cat);
-  return `${p}/${m}`;
+// Group criterion scores by our business domain, preserving first-seen order.
+function groupByDomain(scores: CriterionScore[]): { domain: string; rows: CriterionScore[] }[] {
+  const order: string[] = [];
+  const by: Record<string, CriterionScore[]> = {};
+  for (const s of scores) {
+    const d = s.domain || "Other";
+    if (!by[d]) {
+      by[d] = [];
+      order.push(d);
+    }
+    by[d].push(s);
+  }
+  return order.map((d) => ({ domain: d, rows: by[d] }));
 }
 
 function TabBar(props: {
@@ -1262,22 +1241,28 @@ function OverviewTab({ score }: { score: ScoreResponse }) {
   );
 }
 
-function CategoryTab({ category, scores }: { category: RubricScore["category"]; scores: RubricScore[] }) {
-  const meta = CATEGORIES.find((c) => c.key === category)!;
-  const rows = scores.filter((s) => s.category === category);
-  const [p, m] = subtotal(scores, category);
+function CriteriaTab({ scores }: { scores: CriterionScore[] }) {
+  const groups = groupByDomain(scores);
   return (
-    <Card>
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-        <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{meta.label}</h3>
-        <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{p}/{m}</span>
-      </div>
-      <div className="mt-3 space-y-2.5">
-        {rows.map((r) => (
-          <CriterionRow key={r.key} r={r} />
-        ))}
-      </div>
-    </Card>
+    <div className="space-y-4">
+      {groups.map((g) => {
+        const p = g.rows.reduce((a, r) => a + r.points, 0);
+        const m = g.rows.reduce((a, r) => a + r.max_points, 0);
+        return (
+          <Card key={g.domain}>
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+              <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{g.domain}</h3>
+              <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{p}/{m}</span>
+            </div>
+            <div className="mt-3 space-y-2.5">
+              {g.rows.map((r) => (
+                <CriterionRow key={r.criterion_id} r={r} />
+              ))}
+            </div>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1363,7 +1348,7 @@ function Chip({ children }: { children: ReactNode }) {
   return <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 font-mono text-xs font-medium text-slate-600 dark:text-slate-300">{children}</span>;
 }
 
-function CriterionRow({ r }: { r: RubricScore }) {
+function CriterionRow({ r }: { r: CriterionScore }) {
   const [open, setOpen] = useState(false);
   const tone = LEVEL_TONE[r.level];
   const headline = r.headline || truncate(r.feedback.replace(/\*\*/g, ""), 90);
@@ -1378,8 +1363,8 @@ function CriterionRow({ r }: { r: RubricScore }) {
       >
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
-            {r.label}
-            {r.pi_id && <span className="ml-1 font-mono text-xs font-normal text-slate-400 dark:text-slate-500">({r.pi_id})</span>}
+            {r.name}
+            {r.topic && <span className="ml-1 font-mono text-xs font-normal text-slate-400 dark:text-slate-500">· {r.topic}</span>}
           </p>
           {headline && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{headline}</p>}
         </div>
@@ -1421,7 +1406,7 @@ function GapList({ gaps }: { gaps: string[] }) {
   );
 }
 
-function MissingCard({ scores }: { scores: RubricScore[] }) {
+function MissingCard({ scores }: { scores: CriterionScore[] }) {
   const rows = scores.filter((s) => s.gaps.length > 0 && s.level !== "exemplary");
   if (rows.length === 0) return null;
   return (
@@ -1432,10 +1417,10 @@ function MissingCard({ scores }: { scores: RubricScore[] }) {
       </p>
       <div className="mt-3 space-y-3">
         {rows.map((s) => (
-          <div key={s.key}>
+          <div key={s.criterion_id}>
             <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
-              {s.label}
-              {s.pi_id && <span className="ml-1 font-mono text-slate-400 dark:text-slate-500">({s.pi_id})</span>}
+              {s.name}
+              {s.topic && <span className="ml-1 font-mono text-slate-400 dark:text-slate-500">· {s.topic}</span>}
             </p>
             <ul className="mt-1 space-y-1">
               {s.gaps.map((g, i) => (
@@ -1461,12 +1446,12 @@ type Mark = {
   maxPoints: number;
 };
 
-function buildMarks(scores: RubricScore[]): Mark[] {
+function buildMarks(scores: CriterionScore[]): Mark[] {
   const marks: Mark[] = [];
   for (const s of scores) {
     s.evidence.forEach((q, i) => {
       if (q && q.trim().length > 3) {
-        marks.push({ id: `${s.key}#${i}`, quote: q.trim(), level: s.level, label: s.label, feedback: s.feedback, points: s.points, maxPoints: s.max_points });
+        marks.push({ id: `${s.criterion_id}#${i}`, quote: q.trim(), level: s.level, label: s.name, feedback: s.feedback, points: s.points, maxPoints: s.max_points });
       }
     });
   }
@@ -1477,7 +1462,7 @@ function TranscriptTab(props: {
   response: string;
   followupAnswer: string;
   marks: Mark[];
-  scores: RubricScore[];
+  scores: CriterionScore[];
   active: string | null;
   onSelect: (id: string | null) => void;
   followupFeedback: string;
@@ -1605,8 +1590,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-const SELECT_CLS =
-  "w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm text-slate-800 dark:text-slate-100 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
 const TEXTAREA_CLS =
   "w-full resize-y rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 p-3.5 text-sm leading-relaxed shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
 
@@ -1631,23 +1614,29 @@ function Segmented<T extends string>(props: { value: T; onChange: (v: T) => void
 
 function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedded?: boolean }) {
   const s = scenario;
+  const learn = s.mode === "learn";
   const body = (
     <div className="space-y-4">
       <div>
-        <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">
-          Performance indicators ({s.performance_indicators.length})
-        </h3>
-        <ul className="mt-2 space-y-1.5">
-          {s.performance_indicators.map((p) => (
-            <li key={p.id} className="text-sm text-slate-700 dark:text-slate-200">
-              <span className="mr-1.5 font-mono text-xs text-indigo-400">{p.id}</span>
-              {p.text}
-            </li>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">
+            What you're evaluated on ({s.criteria.length})
+          </h3>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">
+            {learn ? "Learn mode" : "Competition mode"}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+          {learn
+            ? "The business skills this role-play assesses — with what a strong answer looks like, so you can aim for it."
+            : "The business skills this role-play assesses, by name — just like a real role-play sheet. You supply the substance."}
+        </p>
+        <ul className="mt-3 space-y-2.5">
+          {s.criteria.map((c) => (
+            <CriterionBrief key={c.id} c={c} learn={learn} />
           ))}
         </ul>
       </div>
-      <CriteriaList title="Solution" items={s.solution_criteria} />
-      <CriteriaList title="Career competencies" items={s.career_competencies} />
       <div>
         <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Procedures</h3>
         <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
@@ -1661,18 +1650,28 @@ function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedd
   return embedded ? body : <Card>{body}</Card>;
 }
 
-function CriteriaList({ title, items }: { title: string; items: RubricCriterion[] }) {
+// One criterion on the cover sheet. Competition mode shows just the name +
+// domain; Learn mode expands with the coaching question and what "good" looks
+// like (the teaching layer).
+function CriterionBrief({ c, learn }: { c: Criterion; learn: boolean }) {
   return (
-    <div>
-      <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
-      <ul className="mt-2 space-y-1 text-sm text-slate-700 dark:text-slate-200">
-        {items.map((c) => (
-          <li key={c.key}>
-            <span className="font-medium">{c.label}</span> — <span className="text-slate-600 dark:text-slate-300">{c.desc}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <li className="rounded-xl border border-slate-200 bg-white/60 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900/50">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{c.name}</span>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          {c.domain}{c.topic ? ` · ${c.topic}` : ""}
+        </span>
+      </div>
+      {learn && c.definition && (
+        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{c.definition}</p>
+      )}
+      {learn && c.strong_looks_like && (
+        <p className="mt-1.5 flex gap-1.5 text-xs leading-relaxed text-emerald-800 dark:text-emerald-300">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-500">Strong</span>
+          <span>{c.strong_looks_like}</span>
+        </p>
+      )}
+    </li>
   );
 }
 
@@ -1690,9 +1689,9 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
   return (
     <Card className="border-slate-200 bg-white/60 dark:border-slate-800 dark:bg-slate-900/60">
       <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-        You'll be graded out of 100 on the DECA 2026 District rubric: 4 performance indicators (12 pts each), a
-        solution ({scenario.solution_criteria.map((c) => c.label.toLowerCase()).join(", ")}), three career
-        competencies, and overall impression. Original practice material — not an official DECA document.
+        You'll be graded on {scenario.criteria.length} business skills for this role-play, each scored
+        Novice → Exemplary with specific feedback and the exact phrases that earned credit. Practice coaching
+        against our own evaluation framework — not an official competition score.
       </p>
     </Card>
   );
@@ -1701,7 +1700,7 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
 function HonestyNote() {
   return (
     <p className="max-w-xs text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-      Original practice scenarios in DECA's style — not official DECA documents.
+      Original practice scenarios that train the skills DECA role-plays reward — not official DECA materials.
     </p>
   );
 }
@@ -1773,35 +1772,35 @@ function TipsPage({ onStart }: { onStart: () => void }) {
       <section className="pt-2">
         <Eyebrow>Competition tips</Eyebrow>
         <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
-          Don't just mention the PI.<br />
+          Don't just mention the skill.<br />
           <span className="text-indigo-600 dark:text-indigo-400">Own it.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-          The competitors who place run every performance indicator through the same four beats — and back it with a
+          The competitors who place run every skill they're assessed on through the same four beats — and back it with a
           visual the judge can't forget. Here's the method, with a worked example you can copy.
         </p>
       </section>
 
       {/* The DECA method */}
       <section>
-        <SectionHead eyebrow="The core skill" title="The DECA method for nailing a PI">
-          One running example — <strong className="font-semibold text-slate-700 dark:text-slate-200">channel management</strong> for
+        <SectionHead eyebrow="The core skill" title="The method for nailing a skill">
+          One running example — <strong className="font-semibold text-slate-700 dark:text-slate-200">channel strategy</strong> for
           BrightBean, a small coffee roaster — carried through all four beats.
         </SectionHead>
         <div className="mt-7 grid gap-4 md:grid-cols-2">
           <MethodCard
             n="1" accent="indigo" title="Define"
-            todo="Clearly and confidently define the PI or any key terms right away. Skip the textbook jargon — keep it simple and conversational so the judge knows you grasp the core concept."
-            example={<>“Channel management is just <em>how our product gets from us into the customer's hands</em> — the path it travels to reach them.”</>}
+            todo="Clearly and confidently define the skill or any key terms right away. Skip the textbook jargon — keep it simple and conversational so the judge knows you grasp the core concept."
+            example={<>“Channel strategy is just <em>how our product gets from us into the customer's hands</em> — the path it travels to reach them.”</>}
           />
           <MethodCard
             n="2" accent="violet" title="Explain"
-            todo="Elaborate on why this PI matters to a business — its broader impact, what it does, and why a company has to pay attention to it in the real world."
+            todo="Elaborate on why this skill matters to a business — its broader impact, what it does, and why a company has to pay attention to it in the real world."
             example={<>“Get the mix right and you control both your <em>margins</em> and how many customers you can reach. Lean on one channel and you're exposed; spread too thin and you lose focus.”</>}
           />
           <MethodCard
             n="3" accent="fuchsia" title="Connect" highlight="Earns the most points"
-            todo="Directly apply the PI to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy — that's the systems thinking judges reward."
+            todo="Directly apply the skill to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy — that's the systems thinking judges reward."
             example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar — it captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
           />
           <MethodCard
@@ -1812,7 +1811,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
         </div>
         <p className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3.5 text-sm leading-relaxed text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
           <span className="mt-0.5 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-indigo-500">Tip</span>
-          <span>If your sentence about the PI could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong> — tie it to the scenario in front of you.</span>
+          <span>If your sentence about the skill could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong> — tie it to the scenario in front of you.</span>
         </p>
       </section>
 
@@ -1840,13 +1839,13 @@ function TipsPage({ onStart }: { onStart: () => void }) {
         <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <TipCard eyebrow="Prep time" title="Own your 10 minutes" items={[
             "Read the situation twice; underline the actual ask.",
-            "Map each of the 5 PIs to a moment in your plan.",
+            "Map each assessed skill to a moment in your plan.",
             "Draft your visual early — not at the last minute.",
             "Outline your open and close so you bookend strong.",
           ]} />
           <TipCard eyebrow="Structure" title="A shape judges reward" items={[
             <><strong className="font-semibold text-slate-900 dark:text-slate-100">Open:</strong> greet, confirm your role, preview.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk the solution, hit every PI through all four beats.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk the solution, hit every assessed skill through all four beats.</>,
             <><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> restate the recommendation, invite questions.</>,
           ]} />
           <TipCard eyebrow="Follow-up" title="Handle the questions" items={[
