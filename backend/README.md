@@ -24,10 +24,11 @@ curl localhost:8000/api/health   # -> {"status":"ok"}
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /api/framework` | Our business domains (id, name, blurb, criterion count) — for UI hints/examples. |
+| `GET /api/events` | The role-play events students pick from (our own catalog), each with its cluster, `kind` (principles/individual/team), a `quantitative` flag, and original focus suggestions. |
 | `GET /api/rubric` | The scoring levels (labels, descriptions, per-criterion band). |
-| `POST /api/scenario` | Interpret a free-text request, select the fitting framework criteria, and generate an original scenario built to require them. Body: `{request, level, mode}` (`mode` = `learn` \| `competition`). Returns the interpreted `topic`/`industry`/`domain_focus`, the selected `criteria` (teaching fields populated in Learn mode, names-only in Competition mode), `procedures`, the **participant-facing situation** (no judge text), and the judge's follow-up questions. Out-of-scope (non-business) requests return a friendly `422`. |
-| `POST /api/score-content` | Grade a response against the selected framework criteria. Body: `{scenario, criteria_ids, response, followup_questions, followup_answer}`. Returns per-criterion `scores` (level + points/10 + feedback + verbatim evidence quotes + gaps), the total, the overall percentage/level, strengths/improvements, and follow-up feedback. |
-| `POST /api/score-delivery` | Transcribe a spoken response and return deterministic delivery metrics. Multipart `audio` upload (+ optional `target_seconds`). Returns the `transcript` plus `metrics` (pace WPM, fillers, pauses, time use, reading signal, coaching notes). Audio is processed and discarded; only the transcript + numbers are returned. |
+| `POST /api/scenario` | Plan a session from the chosen `event` (+ optional free-text `request` focus), select the fitting framework criteria, and generate an original scenario built to require them. Body: `{event, request, level, mode}` (`mode` = `learn` \| `competition`; `request` optional — blank ⇒ a random scenario within the event's scope). The event drives which framework **domains** feed generation; the focus only refines `topic`/`industry`. Returns the `event`/`topic`/`industry`/`domain_focus`, the event's `timing` (team events get a longer prep/present window), `quantitative`/`team` flags, the selected `criteria` (teaching fields populated in Learn mode, names-only in Competition mode), `procedures`, the **participant-facing situation** (no judge text), and the judge's follow-up questions. Quantitative events are told to state raw figures only (never pre-computed results). Unknown event ⇒ `400`; a non-business free-text focus with no event ⇒ friendly `422`. |
+| `POST /api/score-content` | Grade a response against the selected framework criteria. Body: `{scenario, criteria_ids, response, followup_questions, followup_answer, event}`. Returns per-criterion `scores` (level + points/10 + feedback + verbatim evidence quotes + gaps), the total, the overall percentage/level, strengths/improvements, and follow-up feedback. For **quantitative events** (`event` resolves to a `quantitative` catalog entry) it also returns `math_checks`: every calculation the model flagged, **recomputed deterministically by the backend** (`mathcheck.py`) — Python's result is authoritative, so the app never trusts the model's arithmetic. |
+| `POST /api/score-delivery` | Transcribe a spoken response and return deterministic delivery metrics. Multipart `audio` upload (+ optional `target_seconds`, `diarize`). Returns the `transcript` plus `metrics` (pace WPM, fillers, pauses, time use, reading signal, coaching notes). For **team events** (`diarize=true`) it also returns a per-speaker breakdown (`metrics.speakers`, `dominated_by`, `balance_note`) and the transcript split into speaker `utterances`. Audio is processed and discarded; only the transcript + numbers are returned. |
 
 The judge's instructions are generated for grading only and are **never** returned
 to the client — `/api/scenario` returns just the participant-facing situation plus
@@ -39,10 +40,14 @@ passes their ids back, and their text is re-pinned from the framework server-sid
 (the client is never trusted for criterion wording).
 
 Module map (all under `app/`): `framework.py` loads `data/framework.json` (our
-criteria) and exposes lookups, `interpret.py` maps a free-text request to domains
-+ an industry and resolves the model's criteria selection, `rubric.py` loads
-`data/rubric.json` and clamps scores into their level bands, `prompts.py` builds
-the interpret / generate / score prompts, `llm.py` wraps Anthropic + defensive
+criteria) and exposes lookups, `events.py` loads `data/events.json` (our role-play
+event catalog) and maps each event to our framework domains, `interpret.py` plans a
+session from the chosen event + optional focus (domains from the event, topic/industry
+from the focus) and resolves the model's criteria selection, `rubric.py` loads
+`data/rubric.json` and clamps scores into their level bands, `mathcheck.py` is a
+tiny safe arithmetic evaluator that recomputes quantitative calculations
+deterministically (the model sets up the formula, Python does the math),
+`prompts.py` builds the interpret / generate / score prompts, `llm.py` wraps Anthropic + defensive
 JSON parsing, `transcription.py` calls the transcription provider (AssemblyAI) for
 word timestamps + fillers, `delivery.py` computes delivery metrics deterministically
 from those timestamps, `config.py` holds the model choice (`ANTHROPIC_MODEL`,
@@ -77,6 +82,17 @@ uv run pytest
   Authored from public-domain business concepts in our own wording, structure, and
   id scheme — see `app/data/framework-notes.md` for the domain map, grain logic,
   and independence audit.
+- `app/data/events.json` — our own catalog of the role-play **events** students
+  practice for. Each event carries its cluster, a short blurb, original focus
+  suggestions, and a list of our framework `domain_ids`. That event→domain mapping
+  is the obvious business-discipline mapping any educator would make (a marketing
+  event exercises the Marketing domain); it is **not** DECA's licensed
+  event-to-performance-indicator blueprint, contains no PI text or codes, and only
+  selects which of our domains feed generation. Event names are used descriptively
+  so students can pick what they compete in. A `kind` (principles/individual/team)
+  drives the presentation clock (team events get a longer prep/present window,
+  `events.timing_for`), and a `quantitative` flag turns on deterministic math
+  verification and speaker diarization is enabled for team events.
 - `app/data/rubric.json` — the scoring scale: four generic quality levels
   (Novice / Developing / Proficient / Exemplary) and a 0–10 band per criterion.
 - `reference/pis-core-reference.json` — DECA's Business Administration Core PI list,

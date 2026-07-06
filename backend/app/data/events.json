@@ -1,0 +1,411 @@
+{
+  "version": "1.0-independent",
+  "note": "Our own catalog of the role-play events students practice for, mapped to OUR framework domains (framework.json). The mapping is the obvious business-discipline mapping any educator would make (a marketing event exercises the Marketing domain) — it is NOT DECA's licensed event-to-performance-indicator blueprint, contains no PI text or codes, and drives only which of our domains feed scenario generation. Focus suggestions are original prompts written by us.",
+  "clusters": [
+    "Marketing",
+    "Finance",
+    "Hospitality & Tourism",
+    "Business Management & Administration",
+    "Entrepreneurship"
+  ],
+  "events": [
+    {
+      "id": "principles-marketing",
+      "name": "Principles of Marketing",
+      "cluster": "Marketing",
+      "kind": "principles",
+      "blurb": "Introductory marketing role-play — one participant, one scenario.",
+      "domain_ids": ["marketing", "customer_relations", "communication", "economics"],
+      "suggestions": [
+        "reaching a new group of customers",
+        "a promotion that isn't converting",
+        "choosing the right price for a new item",
+        "building a brand that stands out"
+      ]
+    },
+    {
+      "id": "apparel-accessories-marketing",
+      "name": "Apparel & Accessories Marketing",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Marketing role-play set in fashion, clothing, and accessories retail.",
+      "domain_ids": ["marketing", "customer_relations", "operations", "financial_analysis"],
+      "suggestions": [
+        "moving through end-of-season inventory",
+        "a store display that isn't pulling people in",
+        "launching a new clothing line",
+        "responding to a fast-fashion competitor"
+      ]
+    },
+    {
+      "id": "automotive-services-marketing",
+      "name": "Automotive Services Marketing",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Marketing role-play in the automotive sales and service industry.",
+      "domain_ids": ["marketing", "customer_relations", "operations", "communication"],
+      "suggestions": [
+        "winning back customers who left for a competitor",
+        "promoting a new service package",
+        "handling a wave of negative reviews",
+        "building repeat business at a service center"
+      ]
+    },
+    {
+      "id": "business-services-marketing",
+      "name": "Business Services Marketing",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Marketing role-play for companies that sell services to other businesses.",
+      "domain_ids": ["marketing", "customer_relations", "communication", "strategic_management"],
+      "suggestions": [
+        "landing a large business client",
+        "explaining the value of an intangible service",
+        "renewing a contract that's up for review",
+        "differentiating from a cheaper competitor"
+      ]
+    },
+    {
+      "id": "food-marketing",
+      "name": "Food Marketing",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Marketing role-play in grocery, food retail, and food products.",
+      "domain_ids": ["marketing", "operations", "customer_relations", "financial_analysis"],
+      "suggestions": [
+        "launching a new product on the shelf",
+        "a seasonal promotion for a grocery aisle",
+        "reducing waste on perishable goods",
+        "responding to a private-label competitor"
+      ]
+    },
+    {
+      "id": "marketing-communications",
+      "name": "Marketing Communications",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Role-play focused on advertising, promotion, and brand messaging.",
+      "domain_ids": ["marketing", "communication", "information_management", "customer_relations"],
+      "suggestions": [
+        "planning a social media campaign",
+        "measuring whether an ad actually worked",
+        "refreshing a brand that feels dated",
+        "coordinating a product launch announcement"
+      ]
+    },
+    {
+      "id": "retail-merchandising",
+      "name": "Retail Merchandising",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Role-play in store operations, merchandising, and retail selling.",
+      "domain_ids": ["marketing", "operations", "customer_relations", "financial_analysis"],
+      "suggestions": [
+        "improving a store's layout and flow",
+        "reducing shrinkage and stockouts",
+        "a slow-selling department that needs a lift",
+        "training staff to upsell at the register"
+      ]
+    },
+    {
+      "id": "sports-entertainment-marketing",
+      "name": "Sports & Entertainment Marketing",
+      "cluster": "Marketing",
+      "kind": "individual",
+      "blurb": "Marketing role-play in sports, events, and entertainment.",
+      "domain_ids": ["marketing", "communication", "customer_relations", "strategic_management"],
+      "suggestions": [
+        "selling more tickets to a slow event",
+        "landing a sponsorship deal",
+        "growing a team's fan engagement",
+        "promoting a new season or tour"
+      ]
+    },
+    {
+      "id": "buying-merchandising-team",
+      "name": "Buying & Merchandising (Team)",
+      "cluster": "Marketing",
+      "kind": "team",
+      "quantitative": true,
+      "blurb": "Team role-play on purchasing, assortment, and merchandising decisions.",
+      "domain_ids": ["marketing", "operations", "financial_analysis", "strategic_management"],
+      "suggestions": [
+        "choosing which products to stock next season",
+        "negotiating better terms with a supplier",
+        "planning a markdown strategy",
+        "balancing bestsellers against fresh variety"
+      ]
+    },
+    {
+      "id": "marketing-management-team",
+      "name": "Marketing Management (Team)",
+      "cluster": "Marketing",
+      "kind": "team",
+      "blurb": "Team role-play on higher-level marketing strategy decisions.",
+      "domain_ids": ["marketing", "strategic_management", "financial_analysis", "communication"],
+      "suggestions": [
+        "entering a new market segment",
+        "setting the marketing budget for the year",
+        "repositioning against a rising competitor",
+        "deciding which product line to grow"
+      ]
+    },
+    {
+      "id": "sports-entertainment-marketing-team",
+      "name": "Sports & Entertainment Marketing (Team)",
+      "cluster": "Marketing",
+      "kind": "team",
+      "blurb": "Team role-play on strategy in sports and entertainment marketing.",
+      "domain_ids": ["marketing", "strategic_management", "communication", "customer_relations"],
+      "suggestions": [
+        "building a multi-year sponsorship strategy",
+        "growing attendance across a whole season",
+        "launching a fan loyalty program",
+        "handling a public-image setback"
+      ]
+    },
+    {
+      "id": "principles-finance",
+      "name": "Principles of Finance",
+      "cluster": "Finance",
+      "kind": "principles",
+      "quantitative": true,
+      "blurb": "Introductory finance role-play — one participant, one scenario.",
+      "domain_ids": ["financial_analysis", "economics", "customer_relations", "communication"],
+      "suggestions": [
+        "advising a customer on a big purchase",
+        "explaining a budget to someone new to it",
+        "weighing a loan against saving up",
+        "reading what the numbers say about a business"
+      ]
+    },
+    {
+      "id": "accounting-applications",
+      "name": "Accounting Applications",
+      "cluster": "Finance",
+      "kind": "individual",
+      "quantitative": true,
+      "blurb": "Role-play on accounting, records, and financial reporting.",
+      "domain_ids": ["financial_analysis", "information_management", "business_law", "professional_development"],
+      "suggestions": [
+        "explaining a financial statement to a manager",
+        "spotting an error in the books",
+        "tightening up expense tracking",
+        "handling a client who wants to cut a corner"
+      ]
+    },
+    {
+      "id": "business-finance",
+      "name": "Business Finance",
+      "cluster": "Finance",
+      "kind": "individual",
+      "quantitative": true,
+      "blurb": "Role-play on corporate finance and money decisions inside a business.",
+      "domain_ids": ["financial_analysis", "economics", "strategic_management", "communication"],
+      "suggestions": [
+        "deciding whether to fund a new project",
+        "improving cash flow in a tight quarter",
+        "pricing to hit a profit target",
+        "making the case for a capital investment"
+      ]
+    },
+    {
+      "id": "financial-services-team",
+      "name": "Financial Services (Team)",
+      "cluster": "Finance",
+      "kind": "team",
+      "quantitative": true,
+      "blurb": "Team role-play in banking and financial services.",
+      "domain_ids": ["financial_analysis", "customer_relations", "communication", "business_law"],
+      "suggestions": [
+        "recommending the right account for a client",
+        "rebuilding trust after a service mistake",
+        "explaining fees and risk clearly",
+        "growing accounts among younger customers"
+      ]
+    },
+    {
+      "id": "personal-financial-literacy",
+      "name": "Personal Financial Literacy",
+      "cluster": "Finance",
+      "kind": "individual",
+      "quantitative": true,
+      "blurb": "Role-play on personal money management and financial decisions.",
+      "domain_ids": ["financial_analysis", "economics", "professional_development", "emotional_intelligence"],
+      "suggestions": [
+        "helping someone build their first budget",
+        "weighing paying down debt vs. saving",
+        "explaining credit and interest simply",
+        "planning for a big upcoming expense"
+      ]
+    },
+    {
+      "id": "principles-hospitality-tourism",
+      "name": "Principles of Hospitality & Tourism",
+      "cluster": "Hospitality & Tourism",
+      "kind": "principles",
+      "blurb": "Introductory hospitality and tourism role-play.",
+      "domain_ids": ["customer_relations", "marketing", "operations", "communication"],
+      "suggestions": [
+        "turning around an unhappy guest",
+        "promoting a slow travel season",
+        "improving the check-in experience",
+        "handling a booking mix-up"
+      ]
+    },
+    {
+      "id": "hotel-lodging-management",
+      "name": "Hotel & Lodging Management",
+      "cluster": "Hospitality & Tourism",
+      "kind": "individual",
+      "blurb": "Role-play on running a hotel or lodging operation.",
+      "domain_ids": ["operations", "customer_relations", "human_resources", "marketing"],
+      "suggestions": [
+        "recovering from a bad guest review",
+        "filling rooms in the off-season",
+        "handling an overbooked night",
+        "motivating front-desk staff"
+      ]
+    },
+    {
+      "id": "quick-serve-restaurant-management",
+      "name": "Quick Serve Restaurant Management",
+      "cluster": "Hospitality & Tourism",
+      "kind": "individual",
+      "blurb": "Role-play on managing a fast-service restaurant.",
+      "domain_ids": ["operations", "customer_relations", "human_resources", "financial_analysis"],
+      "suggestions": [
+        "speeding up service at the rush",
+        "cutting food waste without cutting quality",
+        "handling a staffing shortage",
+        "launching a limited-time menu item"
+      ]
+    },
+    {
+      "id": "restaurant-food-service-management",
+      "name": "Restaurant & Food Service Management",
+      "cluster": "Hospitality & Tourism",
+      "kind": "individual",
+      "blurb": "Role-play on managing a full-service restaurant.",
+      "domain_ids": ["operations", "customer_relations", "human_resources", "marketing"],
+      "suggestions": [
+        "bringing back slow weeknight traffic",
+        "responding to a health-code concern",
+        "training servers on the new menu",
+        "handling a table that had a bad night"
+      ]
+    },
+    {
+      "id": "hospitality-services-team",
+      "name": "Hospitality Services (Team)",
+      "cluster": "Hospitality & Tourism",
+      "kind": "team",
+      "blurb": "Team role-play on hospitality strategy and guest experience.",
+      "domain_ids": ["customer_relations", "operations", "marketing", "strategic_management"],
+      "suggestions": [
+        "designing a guest loyalty program",
+        "expanding into events and catering",
+        "raising the whole guest experience",
+        "competing with a new resort nearby"
+      ]
+    },
+    {
+      "id": "travel-tourism-team",
+      "name": "Travel & Tourism (Team)",
+      "cluster": "Hospitality & Tourism",
+      "kind": "team",
+      "blurb": "Team role-play on marketing destinations and travel experiences.",
+      "domain_ids": ["marketing", "customer_relations", "communication", "strategic_management"],
+      "suggestions": [
+        "promoting a destination to a new audience",
+        "building a travel package that sells",
+        "recovering bookings after a slow year",
+        "partnering with local businesses"
+      ]
+    },
+    {
+      "id": "principles-business-management",
+      "name": "Principles of Business Management & Administration",
+      "cluster": "Business Management & Administration",
+      "kind": "principles",
+      "blurb": "Introductory business management and administration role-play.",
+      "domain_ids": ["strategic_management", "operations", "communication", "human_resources"],
+      "suggestions": [
+        "organizing a team to hit a deadline",
+        "improving a process that keeps breaking",
+        "handling conflict between coworkers",
+        "rolling out a new company policy"
+      ]
+    },
+    {
+      "id": "human-resources-management",
+      "name": "Human Resources Management",
+      "cluster": "Business Management & Administration",
+      "kind": "individual",
+      "blurb": "Role-play on hiring, developing, and managing people.",
+      "domain_ids": ["human_resources", "communication", "emotional_intelligence", "business_law"],
+      "suggestions": [
+        "coaching an underperforming employee",
+        "reducing turnover on a team",
+        "handling a workplace complaint fairly",
+        "redesigning how new hires are onboarded"
+      ]
+    },
+    {
+      "id": "business-law-ethics-team",
+      "name": "Business Law & Ethics (Team)",
+      "cluster": "Business Management & Administration",
+      "kind": "team",
+      "blurb": "Team role-play on legal and ethical business dilemmas.",
+      "domain_ids": ["business_law", "emotional_intelligence", "communication", "strategic_management"],
+      "suggestions": [
+        "handling a possible contract breach",
+        "responding to an ethical gray area",
+        "protecting the company's intellectual property",
+        "advising on a compliance risk"
+      ]
+    },
+    {
+      "id": "principles-entrepreneurship",
+      "name": "Principles of Entrepreneurship",
+      "cluster": "Entrepreneurship",
+      "kind": "principles",
+      "blurb": "Introductory entrepreneurship role-play.",
+      "domain_ids": ["entrepreneurship", "marketing", "financial_analysis", "strategic_management"],
+      "suggestions": [
+        "shaping an idea into a real business",
+        "finding the first paying customers",
+        "figuring out if the numbers work",
+        "standing out from an established rival"
+      ]
+    },
+    {
+      "id": "entrepreneurship-individual",
+      "name": "Entrepreneurship",
+      "cluster": "Entrepreneurship",
+      "kind": "individual",
+      "blurb": "Role-play on starting and growing your own venture.",
+      "domain_ids": ["entrepreneurship", "marketing", "financial_analysis", "operations"],
+      "suggestions": [
+        "pitching to win over an investor",
+        "deciding how to grow without overreaching",
+        "fixing a business model that isn't profitable",
+        "handling a supplier or cash-flow crunch"
+      ]
+    },
+    {
+      "id": "entrepreneurship-team",
+      "name": "Entrepreneurship (Team)",
+      "cluster": "Entrepreneurship",
+      "kind": "team",
+      "blurb": "Team role-play on entrepreneurial strategy and growth.",
+      "domain_ids": ["entrepreneurship", "strategic_management", "financial_analysis", "marketing"],
+      "suggestions": [
+        "planning the next stage of growth",
+        "deciding whether to add a new product",
+        "splitting focus between two opportunities",
+        "making the case to a potential partner"
+      ]
+    }
+  ]
+}

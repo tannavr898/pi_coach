@@ -101,11 +101,31 @@ def build_scenario_prompt(
     industry: str,
     level: str,
     candidates: list[dict],
+    event: dict | None = None,
 ) -> tuple[str, str]:
     """Build the (system, user) messages: select 4-6 criteria and write the scenario."""
     guide = _LEVEL_GUIDE.get(level, _LEVEL_GUIDE["district"])
-    user = f"""REQUESTED TOPIC: {topic}
-INDUSTRY / CONTEXT: {industry}
+    industry_line = industry.strip() or "not specified — choose one that fits the event and topic"
+    event_line = ""
+    quant_line = ""
+    if event is not None:
+        kind = {"team": "a two-person team presents", "principles": "an introductory-level single participant", "individual": "a single participant"}.get(event.get("kind", ""), "a single participant")
+        window = "~15-minute" if event.get("kind") == "team" else "~10-minute"
+        event_line = (
+            f"EVENT: {event['name']} ({kind}). Set the scenario in a business and role that "
+            f"fits this event's world; keep the challenge solvable in one {window} role-play.\n"
+        )
+        if event.get("quantitative"):
+            quant_line = (
+                "QUANTITATIVE EVENT: give the participant the raw numbers they need to work with "
+                "(prices, costs, units, rates, balances, dates) as clear inputs, and ask them to "
+                "compute/interpret the result themselves. Do NOT state any DERIVED figure (margin, "
+                "break-even, ROI, totals, ratios) as a fact in the situation — that is the "
+                "participant's work to show. Make sure the raw inputs you give are internally "
+                "consistent and realistic.\n"
+            )
+    user = f"""{event_line}{quant_line}REQUESTED TOPIC: {topic}
+INDUSTRY / CONTEXT: {industry_line}
 COMPLEXITY: {level}   ({guide})
 
 CANDIDATE EVALUATION CRITERIA (choose from these ids only):
@@ -188,16 +208,36 @@ def _criteria_block(criteria: list[dict]) -> str:
     return "\n".join(out)
 
 
+_MATH_BLOCK = """
+THIS IS A QUANTITATIVE EVENT — DO NOT DO ARITHMETIC IN YOUR HEAD. For every number
+the participant calculated or asserted (margins, break-even, ROI, totals, ratios,
+interest, price changes, etc.), add an entry to "math_checks" giving the raw
+arithmetic as an EXPRESSION we will compute ourselves, plus the value the
+participant claimed. Use ONLY numbers and + - * / % ** and parentheses in
+"expression" (no words, no units, no $ or , — write 50000 not $50,000). Our backend
+evaluates the expression; that result — NOT your mental math — is authoritative and
+is what feedback shows. When judging whether the participant's numbers were right,
+defer to these checks: do not call a calculation wrong in your feedback unless its
+check shows a mismatch, and do not bless a number you did not put in a check.
+Each entry: {"label": "gross margin %", "expression": "(50000-30000)/50000*100", "claimed": 40, "unit": "%"}.
+Omit "claimed" only if the participant clearly should have computed it but didn't.
+"""
+
+
 def build_scoring_prompt(
     scenario: str,
     criteria: list[dict],
     response: str,
     followup_questions: list[str],
     followup_answer: str,
+    quantitative: bool = False,
 ) -> tuple[str, str]:
     """Build the (system, user) messages for framework scoring."""
     fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
+    math_instructions = _MATH_BLOCK if quantitative else ""
+    math_key = '\n  "math_checks": [{"label": "...", "expression": "...", "claimed": <number or omit>, "unit": "..."}],' if quantitative else ""
     user = f"""{_levels_brief()}
+{math_instructions}
 
 THE EVALUATION CRITERIA for this role-play (grade against these and ONLY these):
 {_criteria_block(criteria)}
@@ -239,7 +279,7 @@ Return a JSON object with EXACTLY this shape:
   "summary": "<2-3 sentence overall read of the response>",
   "strengths": ["<short>", "..."],
   "improvements": ["<short, actionable>", "..."],
-  "followup_feedback": "<how well they handled the judge's follow-up questions>"
+  "followup_feedback": "<how well they handled the judge's follow-up questions>",{math_key}
 }}
 
 Output ONLY the JSON object."""

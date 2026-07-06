@@ -30,6 +30,11 @@ export const DEMO_FOLLOWUP = `Great question. The biggest risk is reward costs e
 export const DEMO_SCENARIO: ScenarioResponse = {
   topic: "Marketing plan to grow repeat visits at a smoothie chain",
   industry: "food service",
+  event: "Food Marketing",
+  event_kind: "individual",
+  quantitative: false,
+  team: false,
+  timing: { prep_seconds: 600, present_seconds: 600, target_seconds: 450 },
   domain_focus: ["Customer Relations", "Marketing"],
   level: "district",
   mode: "learn",
@@ -132,6 +137,7 @@ export const DEMO_SCORE: ScoreResponse = {
   ],
   followup_feedback:
     "Handled the margin question well — capping rewards at paid visits and modeling breakeven shows real business judgment, and the fallback to lengthen the earn cycle is a thoughtful contingency.",
+  math_checks: [],
   scores: [
     {
       criterion_id: "FW-041",
@@ -231,4 +237,7 @@ export const DEMO_DELIVERY: DeliveryMetrics = {
     "Only 6 fillers across nearly 8 minutes; the one 4-second pause came right before your channel point, which actually read as a deliberate beat.",
     "You used 7:52 of the window, leaving room for the follow-up — well managed.",
   ],
+  speakers: [],
+  dominated_by: "",
+  balance_note: "",
 };

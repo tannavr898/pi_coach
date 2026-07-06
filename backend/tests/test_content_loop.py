@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.llm as llm
-from app import framework, rubric
+from app import events, framework, rubric
 from app.main import app
 
 client = TestClient(app)
@@ -87,6 +87,53 @@ def test_scenario_learn_mode_reveals_teaching_fields(monkeypatch, crit_ids):
         assert c["strong_looks_like"]
 
 
+def test_events_catalog_is_sound():
+    r = client.get("/api/events")
+    assert r.status_code == 200
+    evs = r.json()
+    assert len(evs) > 10
+    ids = [e["id"] for e in evs]
+    assert len(ids) == len(set(ids))  # unique event ids
+    valid = framework.domain_ids()
+    for e in events.all_events():
+        # every event maps ONLY to real framework domains (our own mapping)
+        assert e["domain_ids"] and all(d in valid for d in e["domain_ids"])
+        assert e["cluster"] and e["kind"] and e.get("suggestions")
+
+
+def test_scenario_from_event_without_focus(monkeypatch):
+    """Event chosen, no focus text: a random scenario in the event's scope, and
+    the interpret LLM call is skipped (only generation runs)."""
+    ev = events.get_event("principles-marketing")
+    cids = [c["id"] for c in framework.criteria_for_domains(ev["domain_ids"])[:5]]
+    calls: list[str] = []
+
+    def fake(system, user, **kw):
+        calls.append(user)
+        assert "BUSINESS DOMAINS" not in user  # no free-text interpretation happened
+        return json.dumps({
+            "criteria_ids": cids,
+            "situation": "You are a marketing lead at BrightPath Co. ...",
+            "followup_questions": ["Why that channel?", "What would you measure?"],
+        })
+
+    monkeypatch.setattr(llm, "complete", fake)
+    r = client.post("/api/scenario", json={"event": "principles-marketing", "level": "district", "mode": "competition"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["event"] == "Principles of Marketing"
+    assert 4 <= len(d["criteria"]) <= 6
+    assert len(calls) == 1  # generation only — interpretation was skipped
+
+
+def test_scenario_unknown_event_rejected(monkeypatch):
+    def boom(system, user, **kw):
+        raise AssertionError("should not reach the model for an unknown event")
+    monkeypatch.setattr(llm, "complete", boom)
+    r = client.post("/api/scenario", json={"event": "not-a-real-event", "level": "district", "mode": "competition"})
+    assert r.status_code == 400
+
+
 def test_scenario_out_of_scope_redirects(monkeypatch):
     def fake(system, user, **kw):
         return json.dumps({"in_scope": False, "redirect_message": "Try a business topic instead.", "topic": "", "industry": "", "domain_ids": []})
@@ -126,6 +173,54 @@ def test_score_assembles_and_totals(monkeypatch, crit_ids):
     # criterion name is pinned from our framework, not trusted from the client
     first = s["scores"][0]
     assert first["name"] and first["criterion_id"] == crit_ids[0]
+
+
+def test_score_runs_math_checks_for_quantitative_event(monkeypatch, crit_ids):
+    """A quantitative event: the model's arithmetic is recomputed server-side and
+    a wrong claim is caught deterministically (computed value wins)."""
+    def fake(system, user, **kw):
+        assert "QUANTITATIVE EVENT" in user  # the math block was included
+        return json.dumps({
+            "criteria": [
+                {"criterion_id": cid, "level": "developing", "points": 5,
+                 "headline": "h", "feedback": "fb", "evidence": [], "gaps": []}
+                for cid in crit_ids
+            ],
+            "summary": "ok", "strengths": [], "improvements": [], "followup_feedback": "",
+            "math_checks": [
+                {"label": "gross margin", "expression": "(50000-30000)/50000*100", "claimed": 45, "unit": "%"},
+                {"label": "markup", "expression": "not-real-math", "claimed": 10, "unit": "%"},
+            ],
+        })
+    monkeypatch.setattr(llm, "complete", fake)
+    r = client.post(
+        "/api/score-content",
+        json={"scenario": "...", "criteria_ids": crit_ids, "response": "margin is 45%",
+              "event": "business-finance"},
+    )
+    assert r.status_code == 200
+    checks = r.json()["math_checks"]
+    assert len(checks) == 2
+    # first: claimed 45 but the real answer is 40 -> flagged wrong, computed authoritative
+    assert checks[0]["computed"] == 40.0 and checks[0]["ok"] is False
+    # second: unparseable expression degrades gracefully
+    assert checks[1]["computed"] is None and checks[1]["ok"] is None
+
+
+def test_score_skips_math_checks_for_nonquant_event(monkeypatch, crit_ids):
+    def fake(system, user, **kw):
+        assert "QUANTITATIVE EVENT" not in user
+        return json.dumps({
+            "criteria": [{"criterion_id": cid, "level": "developing", "points": 5} for cid in crit_ids],
+            "summary": "", "strengths": [], "improvements": [], "followup_feedback": "",
+        })
+    monkeypatch.setattr(llm, "complete", fake)
+    r = client.post(
+        "/api/score-content",
+        json={"scenario": "x", "criteria_ids": crit_ids, "response": "hi", "event": "principles-marketing"},
+    )
+    assert r.status_code == 200
+    assert r.json()["math_checks"] == []
 
 
 def test_score_rejects_unknown_criteria(monkeypatch):

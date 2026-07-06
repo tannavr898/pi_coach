@@ -24,9 +24,32 @@ export type DomainSummary = {
   criteria_count: number;
 };
 
+export type EventKind = "principles" | "individual" | "team";
+
+export type EventSummary = {
+  id: string;
+  name: string;
+  cluster: string;
+  kind: EventKind;
+  quantitative: boolean;
+  blurb: string;
+  suggestions: string[];
+};
+
+export type Timing = {
+  prep_seconds: number;
+  present_seconds: number;
+  target_seconds: number;
+};
+
 export type ScenarioResponse = {
   topic: string;
   industry: string;
+  event: string;
+  event_kind: string;
+  quantitative: boolean;
+  team: boolean;
+  timing: Timing;
   domain_focus: string[];
   level: Level;
   mode: Mode;
@@ -52,6 +75,16 @@ export type CriterionScore = {
   gaps: string[];
 };
 
+export type MathCheck = {
+  label: string;
+  expression: string;
+  unit: string;
+  claimed: number | null;
+  computed: number | null;
+  ok: boolean | null;
+  note: string;
+};
+
 export type ScoreResponse = {
   scores: CriterionScore[];
   total_points: number;
@@ -62,11 +95,28 @@ export type ScoreResponse = {
   strengths: string[];
   improvements: string[];
   followup_feedback: string;
+  math_checks: MathCheck[];
 };
 
 export type FillerCount = { word: string; count: number };
 export type CrutchCount = { phrase: string; count: number };
 export type LongPause = { at_seconds: number; length_seconds: number };
+
+export type SpeakerStat = {
+  speaker: string;
+  talk_seconds: number;
+  talk_share: number;
+  word_count: number;
+  filler_count: number;
+  pace_wpm: number;
+};
+
+export type Utterance = {
+  speaker: string;
+  text: string;
+  start_seconds: number;
+  end_seconds: number;
+};
 
 export type DeliveryMetrics = {
   duration_seconds: number;
@@ -85,11 +135,15 @@ export type DeliveryMetrics = {
   time_flag: "short" | "good" | "long";
   reading_signal: boolean;
   notes: string[];
+  speakers: SpeakerStat[];
+  dominated_by: string;
+  balance_note: string;
 };
 
 export type DeliveryResponse = {
   transcript: string;
   metrics: DeliveryMetrics;
+  utterances: Utterance[];
 };
 
 async function throwIfError(res: Response): Promise<void> {
@@ -117,6 +171,10 @@ export function getDomains(): Promise<DomainSummary[]> {
   return request<DomainSummary[]>("/api/framework");
 }
 
+export function getEvents(): Promise<EventSummary[]> {
+  return request<EventSummary[]>("/api/events");
+}
+
 export function postFeedback(body: {
   message: string;
   rating?: number | null;
@@ -130,7 +188,8 @@ export function postFeedback(body: {
 }
 
 export function postScenario(body: {
-  request: string;
+  event: string;
+  request?: string;
   level: Level;
   mode: Mode;
 }): Promise<ScenarioResponse> {
@@ -146,6 +205,7 @@ export function postScore(body: {
   response: string;
   followup_questions: string[];
   followup_answer: string;
+  event?: string;
 }): Promise<ScoreResponse> {
   return request<ScoreResponse>("/api/score-content", {
     method: "POST",
@@ -155,11 +215,12 @@ export function postScore(body: {
 
 // Upload a recording for transcription + delivery metrics. FormData sets its own
 // multipart Content-Type (with boundary), so we don't pass headers here.
-export async function postDelivery(audio: Blob, targetSeconds = 450): Promise<DeliveryResponse> {
+export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = false): Promise<DeliveryResponse> {
   const ext = audio.type.includes("webm") ? "webm" : audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "dat";
   const fd = new FormData();
   fd.append("audio", audio, `take.${ext}`);
   fd.append("target_seconds", String(targetSeconds));
+  fd.append("diarize", String(diarize));
   const res = await fetch("/api/score-delivery", { method: "POST", body: fd });
   await throwIfError(res);
   return res.json() as Promise<DeliveryResponse>;

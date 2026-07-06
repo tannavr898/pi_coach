@@ -157,6 +157,56 @@ def compute_delivery(
     }
 
 
+# A single voice doing this share (or more) of the talking reads as dominating.
+DOMINATION_SHARE = 0.65
+
+
+def compute_speakers(words: Sequence[_Word]) -> dict:
+    """Per-speaker talk breakdown for team events. Deterministic, from timestamps.
+
+    Returns {"speakers": [...], "dominated_by": "A"|"", "balance_note": "..."}.
+    Talk time is summed voiced word durations (gaps excluded), so it reflects who
+    actually held the floor. Empty when there aren't at least two labeled speakers.
+    """
+    by: dict[str, list] = {}
+    for w in words:
+        spk = getattr(w, "speaker", "") or ""
+        if spk:
+            by.setdefault(spk, []).append(w)
+    if len(by) < 2:
+        return {"speakers": [], "dominated_by": "", "balance_note": ""}
+
+    rows: list[dict] = []
+    for spk in sorted(by):
+        ws = by[spk]
+        talk_s = sum(max(w.end_ms - w.start_ms, 0) for w in ws) / 1000.0
+        fillers = sum(1 for w in ws if _norm(w.text) in HARD_FILLERS)
+        pace = round(len(ws) / (talk_s / 60.0)) if talk_s > 0 else 0
+        rows.append({
+            "speaker": spk,
+            "talk_seconds": round(talk_s, 1),
+            "word_count": len(ws),
+            "filler_count": fillers,
+            "pace_wpm": pace,
+        })
+
+    total = sum(r["talk_seconds"] for r in rows) or 1.0
+    for r in rows:
+        r["talk_share"] = round(r["talk_seconds"] / total, 3)
+
+    top = max(rows, key=lambda r: r["talk_share"])
+    dominated_by = top["speaker"] if top["talk_share"] >= DOMINATION_SHARE else ""
+    shares = ", ".join(f"{r['speaker']} {round(r['talk_share'] * 100)}%" for r in rows)
+    if dominated_by:
+        balance_note = (
+            f"Speaker {dominated_by} did {round(top['talk_share'] * 100)}% of the talking ({shares}). "
+            "In a team event judges want to see both partners contribute — aim for a more even split."
+        )
+    else:
+        balance_note = f"Fairly balanced split ({shares}) — both partners held the floor."
+    return {"speakers": rows, "dominated_by": dominated_by, "balance_note": balance_note}
+
+
 def _fmt_time(seconds: float) -> str:
     m, s = divmod(int(round(seconds)), 60)
     return f"{m}:{s:02d}"

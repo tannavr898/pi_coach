@@ -36,6 +36,41 @@ class OutOfScope(Exception):
         self.message = message
 
 
+def plan_session(event: dict | None, focus: str) -> dict:
+    """Decide the {topic, industry, domain_ids} for a role-play.
+
+    The chosen event (if any) is authoritative for the domains — that is OUR
+    event->domain mapping, and it is the pool generation draws criteria from.
+    The optional free-text focus only refines the topic/industry:
+
+    - event + no focus  -> a random scenario within the event's scope (no LLM call).
+    - event + focus      -> interpret the focus for topic/industry; if the focus
+                            isn't a business topic, quietly ignore it and fall back
+                            to a general scenario for the event (never error here —
+                            they already picked a valid event).
+    - no event + focus   -> the plain free-text path (topic, industry, AND domains
+                            all come from interpreting the text).
+    - no event + no focus-> nothing to work with; raise OutOfScope with a nudge.
+    """
+    focus = (focus or "").strip()
+
+    if event is not None:
+        valid = framework.domain_ids()
+        domains = [d for d in event.get("domain_ids", []) if d in valid] or _DEFAULT_DOMAINS
+        if not focus:
+            return {"topic": event["name"], "industry": "", "domain_ids": domains}
+        try:
+            interp = interpret_request(focus)
+            topic, industry = interp["topic"], interp["industry"]
+        except OutOfScope:
+            topic, industry = event["name"], ""
+        return {"topic": topic, "industry": industry, "domain_ids": domains}
+
+    if not focus:
+        raise OutOfScope("Pick your event, or tell us what you'd like to practice.")
+    return interpret_request(focus)
+
+
 def interpret_request(request: str) -> dict:
     """Interpret free text into {topic, industry, domain_ids}. Raises OutOfScope
     (with a friendly message) for clearly non-business requests. Defensive: any

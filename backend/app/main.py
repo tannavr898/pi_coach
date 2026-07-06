@@ -26,7 +26,7 @@ import logging
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import config, delivery, framework, interpret, llm, notify, prompts, rubric, transcription
+from . import config, delivery, events, framework, interpret, llm, notify, prompts, rubric, transcription
 from .ratelimit import daily_cap, rate_limit
 from .schemas import (
     Criterion,
@@ -34,6 +34,7 @@ from .schemas import (
     DeliveryMetrics,
     DeliveryResponse,
     DomainSummary,
+    EventSummary,
     FeedbackRequest,
     Mode,
     PublicConfig,
@@ -41,7 +42,10 @@ from .schemas import (
     ScenarioResponse,
     ScoreRequest,
     ScoreResponse,
+    Timing,
+    Utterance,
 )
+from . import mathcheck
 
 app = FastAPI(title="PI Coach", version="1.0.0")
 
@@ -74,6 +78,13 @@ def public_config() -> PublicConfig:
 def get_domains() -> list[DomainSummary]:
     """Our business domains (with criterion counts) — for UI hints/examples."""
     return [DomainSummary(**d) for d in framework.domain_summaries()]
+
+
+@app.get("/api/events", response_model=list[EventSummary])
+def get_events() -> list[EventSummary]:
+    """The role-play events students pick from (our own catalog), in file order.
+    Each carries its cluster (for grouping) and original focus suggestions."""
+    return [EventSummary(**e) for e in events.event_summaries()]
 
 
 @app.get("/api/rubric")
@@ -118,11 +129,16 @@ def _criterion_view(c: dict, mode: Mode) -> Criterion:
 
 @app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def scenario(req: ScenarioRequest) -> ScenarioResponse:
-    """Interpret the free-text request, select framework criteria, and generate an
-    original scenario built to require exactly those criteria."""
-    # 1) Interpret the free text -> domains + industry (or a friendly redirect).
+    """Plan the session from the chosen event (+ optional focus), select framework
+    criteria, and generate an original scenario built to require exactly those."""
+    # 0) Resolve the chosen event (if any) from our catalog.
+    event = events.get_event(req.event) if req.event else None
+    if req.event and event is None:
+        raise HTTPException(status_code=400, detail="Unknown event.")
+
+    # 1) Plan -> topic + industry + the domain pool (event drives the domains).
     try:
-        interp = interpret.interpret_request(req.request)
+        interp = interpret.plan_session(event, req.request)
     except interpret.OutOfScope as e:
         raise HTTPException(status_code=422, detail=e.message)
     except llm.LLMNotConfigured as e:
@@ -133,7 +149,7 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
     pool = interpret.candidate_pool(interp["domain_ids"])
 
     # 2) Generate: the model selects the criteria from the pool AND writes the scenario.
-    system, user = prompts.build_scenario_prompt(interp["topic"], interp["industry"], req.level, pool)
+    system, user = prompts.build_scenario_prompt(interp["topic"], interp["industry"], req.level, pool, event)
     try:
         raw = llm.complete(system, user, max_tokens=1600)
         data = llm.parse_json_object(raw)
@@ -157,6 +173,11 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
     return ScenarioResponse(
         topic=interp["topic"],
         industry=interp["industry"],
+        event=event["name"] if event else "",
+        event_kind=event["kind"] if event else "",
+        quantitative=events.is_quantitative(event),
+        team=events.is_team(event),
+        timing=Timing(**events.timing_for(event)),
         domain_focus=domain_focus,
         level=req.level,
         mode=req.mode,
@@ -193,8 +214,11 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     if not criteria:
         raise HTTPException(status_code=400, detail="Unknown evaluation criteria.")
 
+    # Re-derive server-side whether this event needs deterministic math checks.
+    quantitative = events.is_quantitative(events.get_event(req.event)) if req.event else False
+
     system, user = prompts.build_scoring_prompt(
-        req.scenario, criteria, req.response, req.followup_questions, req.followup_answer
+        req.scenario, criteria, req.response, req.followup_questions, req.followup_answer, quantitative
     )
     try:
         raw = llm.complete(system, user, max_tokens=4096)
@@ -210,6 +234,11 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     total = sum(s.points for s in scores)
     max_points = sum(s.max_points for s in scores)
     percent = round((total / max_points) * 100) if max_points else 0
+
+    # Deterministically recompute every calculation the model flagged. Python's
+    # result is authoritative — the model is never trusted for arithmetic.
+    math_checks = mathcheck.verify_all(data.get("math_checks", [])) if quantitative else []
+
     return ScoreResponse(
         scores=scores,
         total_points=total,
@@ -220,6 +249,7 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
         strengths=[str(x) for x in data.get("strengths", []) if str(x).strip()],
         improvements=[str(x) for x in data.get("improvements", []) if str(x).strip()],
         followup_feedback=str(data.get("followup_feedback", "")).strip(),
+        math_checks=math_checks,  # type: ignore[arg-type]
     )
 
 
@@ -227,23 +257,37 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
 def score_delivery(
     audio: UploadFile = File(...),
     target_seconds: int = Form(delivery.DEFAULT_TARGET_SECONDS),
+    diarize: bool = Form(False),
 ) -> DeliveryResponse:
     """Transcribe a spoken response and compute deterministic delivery metrics.
 
-    Audio is processed and discarded here — we keep only the transcript + numbers
-    (minors' data minimization; the browser holds the recording for playback,
-    deleting it unless the user opts to keep it).
+    For team events (`diarize=true`) we also request speaker labels and add a
+    per-speaker talk breakdown + turn-by-turn transcript, so the app can show who
+    dominated and attribute each turn. Audio is processed and discarded here — we
+    keep only the transcript + numbers (minors' data minimization; the browser
+    holds the recording for playback, deleting it unless the user opts to keep it).
     """
     raw = audio.file.read()
     try:
-        result = transcription.transcribe(raw)
+        result = transcription.transcribe(raw, diarize=diarize)
     except transcription.TranscriptionNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     except transcription.TranscriptionError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
     metrics = delivery.compute_delivery(result.words, result.audio_duration_s, target_seconds=target_seconds)
-    return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics))
+    utterances: list[Utterance] = []
+    if diarize:
+        spk = delivery.compute_speakers(result.words)
+        metrics["speakers"] = spk["speakers"]
+        metrics["dominated_by"] = spk["dominated_by"]
+        metrics["balance_note"] = spk["balance_note"]
+        utterances = [
+            Utterance(speaker=u.speaker, text=u.text,
+                      start_seconds=round(u.start_ms / 1000, 1), end_seconds=round(u.end_ms / 1000, 1))
+            for u in result.utterances if u.text
+        ]
+    return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics), utterances=utterances)
 
 
 # --- serve the built SPA (production) --------------------------------------

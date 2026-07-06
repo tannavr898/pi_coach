@@ -40,6 +40,27 @@ class DomainSummary(BaseModel):
     criteria_count: int = 0
 
 
+class EventSummary(BaseModel):
+    """One role-play event in the picker (our own catalog — events.json)."""
+
+    id: str
+    name: str
+    cluster: str = ""
+    kind: str = ""  # principles | individual | team
+    quantitative: bool = False  # math-heavy events get deterministic math checks
+    blurb: str = ""
+    # Original example prompts that pre-fill the "what to focus on" box.
+    suggestions: list[str] = []
+
+
+class Timing(BaseModel):
+    """Presentation clock for a role-play (seconds). Team events get more time."""
+
+    prep_seconds: int = 600
+    present_seconds: int = 600
+    target_seconds: int = 450  # recommended *speaking* time (delivery is graded on this)
+
+
 class PublicConfig(BaseModel):
     """Client-safe runtime config served to the SPA (no secrets)."""
 
@@ -60,16 +81,27 @@ class FeedbackRequest(BaseModel):
 
 
 class ScenarioRequest(BaseModel):
-    # The user's free-text description of what they want to practice.
-    request: str = Field(min_length=1, max_length=400)
+    # The event the student is practicing for (id from events.json). Drives which
+    # framework domains feed generation. Optional so the plain free-text path
+    # still works, but the UI always sends one.
+    event: str = Field(default="", max_length=80)
+    # Optional free-text focus ("a promotion that isn't converting"). If empty, we
+    # generate a random scenario within the event's scope.
+    request: str = Field(default="", max_length=400)
     level: Level = "district"
     mode: Mode = "competition"
 
 
 class ScenarioResponse(BaseModel):
-    # What we understood from the free-text request.
+    # What we understood from the request.
     topic: str
     industry: str = ""
+    # The event this was generated for (display name), if one was chosen.
+    event: str = ""
+    event_kind: str = ""  # principles | individual | team
+    quantitative: bool = False  # calculations will be math-checked
+    team: bool = False  # two-person event: enables speaker diarization
+    timing: Timing = Field(default_factory=Timing)
     domain_focus: list[str] = []
     level: Level
     mode: Mode
@@ -93,6 +125,22 @@ class ScoreRequest(BaseModel):
     response: str = Field(min_length=1)
     followup_questions: list[str] = []
     followup_answer: str = ""
+    # The event id, so scoring can re-derive (server-side) whether this is a
+    # quantitative event and should run deterministic math verification.
+    event: str = ""
+
+
+class MathCheck(BaseModel):
+    """One calculation, recomputed deterministically by the backend. `computed`
+    is authoritative; `claimed` is what the student's response asserted (if any)."""
+
+    label: str = ""
+    expression: str = ""
+    unit: str = ""
+    claimed: float | None = None
+    computed: float | None = None
+    ok: bool | None = None  # True/False when comparable, None when nothing to compare
+    note: str = ""
 
 
 class CriterionScore(BaseModel):
@@ -123,6 +171,8 @@ class ScoreResponse(BaseModel):
     strengths: list[str] = []
     improvements: list[str] = []
     followup_feedback: str = ""
+    # Deterministically recomputed calculations (quantitative events only).
+    math_checks: list[MathCheck] = []
 
 
 # --- POST /api/score-delivery (voice) -------------------------------------
@@ -143,6 +193,26 @@ class LongPause(BaseModel):
     length_seconds: float
 
 
+class SpeakerStat(BaseModel):
+    """Per-speaker delivery breakdown for team events (from diarization)."""
+
+    speaker: str  # "A", "B", …
+    talk_seconds: float
+    talk_share: float  # 0..1 fraction of total speaking time
+    word_count: int
+    filler_count: int
+    pace_wpm: int
+
+
+class Utterance(BaseModel):
+    """One continuous turn by a single speaker (team transcript view)."""
+
+    speaker: str
+    text: str
+    start_seconds: float
+    end_seconds: float
+
+
 class DeliveryMetrics(BaseModel):
     duration_seconds: float
     word_count: int
@@ -160,8 +230,14 @@ class DeliveryMetrics(BaseModel):
     time_flag: Literal["short", "good", "long"]
     reading_signal: bool
     notes: list[str] = []
+    # Team events only: who spoke how much, and a plain-language balance note.
+    speakers: list[SpeakerStat] = []
+    dominated_by: str = ""  # speaker label if one voice dominated, else ""
+    balance_note: str = ""
 
 
 class DeliveryResponse(BaseModel):
     transcript: str
     metrics: DeliveryMetrics
+    # Team events only: the transcript split into speaker turns.
+    utterances: list[Utterance] = []

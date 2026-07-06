@@ -38,6 +38,27 @@ To keep zero licensed IP in the deployed artifact, that reference file lives at
 docker-ignored**, so it stays available locally for authoring but never enters
 the repo or ships in the image. The framework does not depend on it.
 
+## The event catalog (events.json)
+
+Students pick the **event** they compete in before practicing. `events.json` is our
+own catalog of those events. For each event we store its cluster, a blurb, original
+focus suggestions, and a list of our framework `domain_ids`.
+
+- **Event names are used descriptively**, so a student can pick what they compete in
+  (the app is already, openly, DECA role-play practice and unaffiliated). We do not
+  reproduce event *codes*, logos, or branding.
+- **The event→domain mapping is ours, from general knowledge** — a marketing event
+  exercises the Marketing domain, an HR event the Human Resources domain, and so on.
+  It is the obvious mapping any business educator would make. It is **not** DECA's
+  licensed event-to-performance-indicator blueprint: no PI text, no PI codes, and no
+  "this event = these performance indicators" list appears anywhere. The mapping only
+  decides which of *our* domains feed scenario generation.
+- **Focus suggestions are original** practice prompts we wrote, not lifted from any
+  published materials.
+
+The same two hard rules apply here as to the PI reference: no runtime code reads
+DECA's PI list to build this catalog, and no PI text is reproduced in it.
+
 ## The legal principle we authored under
 
 There is a hard line between:

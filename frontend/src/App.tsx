@@ -3,11 +3,15 @@ import {
   type Criterion,
   type CriterionScore,
   type DeliveryMetrics,
+  type EventSummary,
   type Level,
+  type MathCheck,
   type Mode,
   type RubricLevel,
   type ScenarioResponse,
   type ScoreResponse,
+  type Utterance,
+  getEvents,
   postDelivery,
   postFeedback,
   postScenario,
@@ -17,19 +21,21 @@ import { track } from "./analytics";
 import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
 
 type ResponseMode = "type" | "speak";
+type View = "practice" | "tips" | "faq";
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 
-const PREP_SECONDS = 10 * 60;
-// One 10-minute presentation budget shared by the response and the judge's
-// questions. The response clock counts it down; the follow-up inherits the rest.
-const PRESENTATION_SECONDS = 10 * 60;
-const RECOMMENDED_SPEAK_SECONDS = 450; // 7:30 — what delivery time is graded against
+// Presentation timing now comes per-event from scenario.timing (team events get a
+// longer prep/present window). The presentation budget is shared by the response
+// and the judge's questions: the response clock counts it down, the follow-up
+// inherits the rest.
 
 type Stage = "pick" | "loading" | "ready" | "prep" | "respond" | "followup" | "scoring" | "feedback";
 
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
-  const [request, setRequest] = useState(""); // free-text practice request
+  const [events, setEvents] = useState<EventSummary[]>([]);
+  const [eventId, setEventId] = useState(""); // the chosen role-play event
+  const [request, setRequest] = useState(""); // optional free-text focus
   const [practiceMode, setPracticeMode] = useState<Mode>("competition");
   const [level, setLevel] = useState<Level>("district");
   const [scenario, setScenario] = useState<ScenarioResponse | null>(null);
@@ -42,17 +48,24 @@ export default function App() {
   const [followupAudio, setFollowupAudio] = useState<Blob | null>(null);
   const [score, setScore] = useState<ScoreResponse | null>(null);
   const [delivery, setDelivery] = useState<DeliveryMetrics | null>(null);
+  const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"practice" | "tips">("practice");
+  const [view, setView] = useState<View>("practice");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
+  // Load the event catalog once, so the picker is ready on the first screen.
+  useEffect(() => {
+    getEvents().then(setEvents).catch(() => setEvents([]));
+  }, []);
+
   async function generate() {
-    if (!request.trim()) return;
+    if (!eventId) return;
     setError(null);
     setStage("loading");
     try {
-      const s = await postScenario({ request: request.trim(), level, mode: practiceMode });
-      track("scenario_generated", { level, mode: practiceMode, domains: s.domain_focus.join(",") });
+      const s = await postScenario({ event: eventId, request: request.trim(), level, mode: practiceMode });
+      track("scenario_generated", { level, mode: practiceMode, event: eventId, focused: !!request.trim() });
       setScenario(s);
       setResponseText("");
       setAudioBlob(null);
@@ -61,6 +74,7 @@ export default function App() {
       setFollowupAudio(null);
       setScore(null);
       setDelivery(null);
+      setUtterances([]);
       setStage("ready");
     } catch (e) {
       setError(errMsg(e));
@@ -83,9 +97,10 @@ export default function App() {
           setStage("respond");
           return;
         }
-        const d = await postDelivery(audioBlob, RECOMMENDED_SPEAK_SECONDS);
+        const d = await postDelivery(audioBlob, scenario.timing.target_seconds, scenario.team);
         responseForScoring = d.transcript;
         deliveryMetrics = d.metrics;
+        setUtterances(d.utterances); // team: speaker-labeled turns for the transcript
         setResponseText(d.transcript); // so the Transcript tab can highlight it
       }
 
@@ -98,7 +113,7 @@ export default function App() {
       // Spoken follow-up: transcribe it too (content only — its delivery isn't graded).
       let followupForScoring = followupAnswer;
       if (followupMode === "speak" && followupAudio) {
-        const fd = await postDelivery(followupAudio, RECOMMENDED_SPEAK_SECONDS);
+        const fd = await postDelivery(followupAudio, scenario.timing.target_seconds);
         followupForScoring = fd.transcript;
         setFollowupAnswer(fd.transcript);
       }
@@ -109,6 +124,7 @@ export default function App() {
         response: responseForScoring,
         followup_questions: scenario.followup_questions,
         followup_answer: followupForScoring,
+        event: eventId, // lets the backend run math checks for quantitative events
       });
       setDelivery(deliveryMetrics);
       setScore(result);
@@ -130,6 +146,7 @@ export default function App() {
     setScenario(null);
     setScore(null);
     setDelivery(null);
+    setUtterances([]);
     setResponseText("");
     setAudioBlob(null);
     setPresentationEndsAt(null);
@@ -139,12 +156,12 @@ export default function App() {
     setStage("pick");
   }
 
-  const wide = stage === "feedback" || view === "tips";
+  const wide = (view === "practice" && stage === "feedback") || view === "tips";
 
   return (
-    <div className="min-h-screen">
-      <SiteHeader view={view} onView={setView} theme={theme} onToggleTheme={toggleTheme} />
-      <main className={`mx-auto px-5 pb-20 pt-8 ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader view={view} onView={setView} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -154,13 +171,18 @@ export default function App() {
 
         {view === "tips" ? (
           <TipsPage onStart={() => setView("practice")} />
+        ) : view === "faq" ? (
+          <FAQPage onStart={() => setView("practice")} />
         ) : (
           <>
             {stage === "pick" && (
               <PickScreen
+                events={events}
+                eventId={eventId}
                 request={request}
                 practiceMode={practiceMode}
                 level={level}
+                onEvent={setEventId}
                 onRequest={setRequest}
                 onPracticeMode={setPracticeMode}
                 onLevel={setLevel}
@@ -177,7 +199,7 @@ export default function App() {
               <PrepScreen
                 scenario={scenario}
                 onStart={() => {
-                  setPresentationEndsAt(Date.now() + PRESENTATION_SECONDS * 1000);
+                  setPresentationEndsAt(Date.now() + scenario.timing.present_seconds * 1000);
                   setStage("respond");
                 }}
               />
@@ -222,6 +244,7 @@ export default function App() {
                 response={responseText}
                 followupAnswer={followupAnswer}
                 delivery={delivery}
+                utterances={utterances}
                 audioBlob={audioBlob}
                 onRestart={restart}
               />
@@ -230,7 +253,7 @@ export default function App() {
         )}
       </main>
       <SiteFooter />
-      <FloatingFeedback />
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }
@@ -242,6 +265,7 @@ export default function App() {
 export function DemoApp() {
   const { theme, toggleTheme } = useTheme();
   const [step, setStep] = useState<"scenario" | "feedback">("scenario");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const exit = () => {
     window.location.href = "/";
   };
@@ -250,10 +274,10 @@ export function DemoApp() {
   }, [step]);
 
   return (
-    <div className="min-h-screen">
-      <SiteHeader view="practice" onView={exit} theme={theme} onToggleTheme={toggleTheme} />
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader view="practice" onView={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
-      <main className={`mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
         {step === "scenario" ? (
           <DemoScenarioStep onNext={() => setStep("feedback")} />
         ) : (
@@ -271,6 +295,7 @@ export function DemoApp() {
               response={DEMO_RESPONSE}
               followupAnswer={DEMO_FOLLOWUP}
               delivery={DEMO_DELIVERY}
+              utterances={[]}
               audioBlob={null}
               onRestart={exit}
             />
@@ -278,7 +303,7 @@ export function DemoApp() {
         )}
       </main>
       <SiteFooter />
-      <FloatingFeedback />
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }
@@ -419,22 +444,6 @@ function SiteFooter() {
   );
 }
 
-function FloatingFeedback() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition hover:bg-indigo-700 hover:shadow-indigo-600/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-      >
-        <span className="text-base leading-none">💬</span>
-        <span className="hidden sm:inline">Feedback</span>
-      </button>
-      {open && <FeedbackModal onClose={() => setOpen(false)} />}
-    </>
-  );
-}
-
 function FeedbackModal({ onClose }: { onClose: () => void }) {
   const [rating, setRating] = useState<number | null>(null);
   const [message, setMessage] = useState("");
@@ -540,11 +549,12 @@ function BrandMark({ size = 30 }: { size?: number }) {
   );
 }
 
-function SiteHeader({ view, onView, theme, onToggleTheme }: {
-  view: "practice" | "tips";
-  onView: (v: "practice" | "tips") => void;
+function SiteHeader({ view, onView, theme, onToggleTheme, onFeedback }: {
+  view: View;
+  onView: (v: View) => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
+  onFeedback: () => void;
 }) {
   return (
     <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md dark:bg-slate-950/60">
@@ -556,9 +566,18 @@ function SiteHeader({ view, onView, theme, onToggleTheme }: {
             <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">DECA role-play practice</div>
           </div>
         </button>
-        <nav className="flex items-center gap-5 sm:gap-6">
+        <nav className="flex items-center gap-4 sm:gap-5">
           <NavLink active={view === "practice"} onClick={() => onView("practice")}>Practice</NavLink>
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips</NavLink>
+          <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ</NavLink>
+          <button
+            onClick={onFeedback}
+            aria-label="Send feedback"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-indigo-800 sm:px-2.5"
+          >
+            <span className="text-sm leading-none">💬</span>
+            <span className="hidden sm:inline">Feedback</span>
+          </button>
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </nav>
       </div>
@@ -622,25 +641,27 @@ const BTN_PRIMARY =
 
 // --- screens ---------------------------------------------------------------
 
-const REQUEST_EXAMPLES = [
-  "marketing for a restaurant",
-  "a staffing problem in retail",
-  "a financial decision for a startup",
-  "a customer service issue at a hotel",
-  "pricing a new product",
-  "a business law dispute",
-];
-
 function PickScreen(props: {
+  events: EventSummary[];
+  eventId: string;
   request: string;
   practiceMode: Mode;
   level: Level;
+  onEvent: (id: string) => void;
   onRequest: (v: string) => void;
   onPracticeMode: (m: Mode) => void;
   onLevel: (l: Level) => void;
   onGenerate: () => void;
   onTips: () => void;
 }) {
+  // Ordered, de-duplicated cluster names (events arrive grouped by cluster).
+  const clusters = useMemo(
+    () => [...new Set(props.events.map((e) => e.cluster))],
+    [props.events],
+  );
+  const selected = props.events.find((e) => e.id === props.eventId) || null;
+  const suggestions = selected?.suggestions ?? [];
+
   return (
     <div className="space-y-8">
       <section className="pt-4">
@@ -653,7 +674,7 @@ function PickScreen(props: {
           </span>
         </h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Say what you want to work on, get an original role-play built around it, prep against a real timer,
+          Pick your event, get an original role-play built around it, prep against a real timer,
           present out loud, and get honest, per-criterion feedback — content <em>and</em> delivery.
         </p>
         <button
@@ -671,31 +692,79 @@ function PickScreen(props: {
           <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Set up a role-play</h2>
         </div>
         <div className="space-y-5 px-6 py-5">
-          <Field label="What do you want to practice?">
+          <Field label="Which event are you practicing for?">
+            <div className="relative">
+              <select
+                className={SELECT_CLS}
+                value={props.eventId}
+                onChange={(e) => props.onEvent(e.target.value)}
+              >
+                <option value="">Choose your event…</option>
+                {clusters.map((cluster) => (
+                  <optgroup key={cluster} label={cluster}>
+                    {props.events
+                      .filter((e) => e.cluster === cluster)
+                      .map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">▾</span>
+            </div>
+            {selected ? (
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="mr-1.5 inline-block rounded-full bg-indigo-50 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
+                  {selected.kind}
+                </span>
+                {selected.quantitative && (
+                  <span className="mr-1.5 inline-block rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    🧮 math-checked
+                  </span>
+                )}
+                {selected.blurb}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                {props.events.length ? "Grouped by cluster — pick the one you compete in." : "Loading events…"}
+              </p>
+            )}
+          </Field>
+
+          <Field label="Anything specific you want to focus on? (optional)">
             <textarea
               className={`h-20 ${TEXTAREA_CLS}`}
-              placeholder='e.g. "marketing for a restaurant" or "a staffing problem in retail"'
+              placeholder={
+                selected
+                  ? `e.g. "${suggestions[0] ?? "a challenge you want to practice"}" — or leave blank for a surprise scenario`
+                  : "Pick your event above first"
+              }
               value={props.request}
               onChange={(e) => props.onRequest(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) props.onGenerate();
               }}
               maxLength={400}
+              disabled={!selected}
             />
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {REQUEST_EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  type="button"
-                  onClick={() => props.onRequest(ex)}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-indigo-800"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
+            {suggestions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {suggestions.map((ex) => (
+                  <button
+                    key={ex}
+                    type="button"
+                    onClick={() => props.onRequest(ex)}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-indigo-800"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+            )}
             <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-              Any business topic works — a field, an industry, or a specific challenge. We pick the skills that fit.
+              Leave it blank and we'll write a realistic scenario for your event. Add a focus to steer it.
             </p>
           </Field>
 
@@ -732,7 +801,7 @@ function PickScreen(props: {
             <button
               className={`${BTN_PRIMARY} w-full whitespace-nowrap bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`}
               onClick={props.onGenerate}
-              disabled={!props.request.trim()}
+              disabled={!props.eventId}
             >
               Generate scenario →
             </button>
@@ -743,9 +812,14 @@ function PickScreen(props: {
   );
 }
 
-// A short subtitle for a scenario: industry + the domains it exercises.
+// A short subtitle for a scenario: the event (when it isn't already the heading),
+// the industry, and the domains it exercises.
 function scenarioSubtitle(s: ScenarioResponse): string {
-  return [s.industry, s.domain_focus.join(" · ")].filter(Boolean).join(" — ");
+  const parts: string[] = [];
+  if (s.event && s.event !== s.topic) parts.push(s.event);
+  if (s.industry) parts.push(s.industry);
+  if (s.domain_focus.length) parts.push(s.domain_focus.join(" · "));
+  return parts.join(" — ");
 }
 
 function ProcessStrip() {
@@ -771,6 +845,9 @@ function ProcessStrip() {
 
 function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void }) {
   const s = props.scenario;
+  const prepMin = Math.round(s.timing.prep_seconds / 60);
+  const presentMin = Math.round(s.timing.present_seconds / 60);
+  const targetMin = Math.round(s.timing.target_seconds / 60);
   return (
     <div className="space-y-4">
       <Card>
@@ -782,23 +859,35 @@ function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void })
         <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
           Your scenario is written. Take a breath — the prep clock only starts when you press the button.
         </p>
+        {s.team && (
+          <p className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200">
+            <strong className="font-semibold">Team event:</strong> you get more time — {prepMin} minutes to prep and {presentMin} to present.
+            If you record, we'll pick up both partners' voices and show how the talking was split.
+          </p>
+        )}
+        {s.quantitative && (
+          <p className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <strong className="font-semibold">🧮 Numbers matter here:</strong> show your calculations. Any math you do is
+            recomputed on our server — exactly — so your figures get checked, not guessed at.
+          </p>
+        )}
 
         <h3 className="mt-6 font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Before you start</h3>
         <ul className="mt-2 space-y-2 text-sm text-slate-700 dark:text-slate-200">
           <Tip icon="✏️">Grab a pen and paper (or open notes) — you'll outline your plan during prep.</Tip>
           <Tip icon="⏱️">
-            <strong className="font-semibold">10 minutes</strong> to read and plan, then{" "}
-            <strong className="font-semibold">10 to present</strong> — that window includes the judge's questions.
+            <strong className="font-semibold">{prepMin} minutes</strong> to read and plan, then{" "}
+            <strong className="font-semibold">{presentMin} to present</strong> — that window includes the judge's questions.
           </Tip>
           <Tip icon="🎯">
-            Aim to wrap your pitch in about <strong className="font-semibold">7–8 minutes</strong>, leaving 1–2 for the follow-up.
+            Aim to wrap your pitch in about <strong className="font-semibold">{targetMin} minutes</strong>, leaving the rest for the follow-up.
           </Tip>
           <Tip icon="🗣️">Find a quiet spot and present out loud — type or use 🎙️ Speak.</Tip>
           <Tip icon="❓">At the end the judge asks two follow-up questions — you'll answer those too.</Tip>
         </ul>
 
         <button className={`mt-6 ${BTN_PRIMARY}`} onClick={props.onStart}>
-          I'm ready — start prep (10:00) →
+          I'm ready — start prep ({fmt(s.timing.prep_seconds)}) →
         </button>
       </Card>
       <RubricNote scenario={s} />
@@ -816,10 +905,11 @@ function Tip({ icon, children }: { icon: string; children: ReactNode }) {
 }
 
 function PrepScreen(props: { scenario: ScenarioResponse; onStart: () => void }) {
-  const left = useCountdown(PREP_SECONDS, true, props.onStart);
+  const prep = props.scenario.timing.prep_seconds;
+  const left = useCountdown(prep, true, props.onStart);
   return (
     <div className="space-y-4">
-      <TimerBar label="Prep time" left={left} total={PREP_SECONDS} tone="indigo" />
+      <TimerBar label="Prep time" left={left} total={prep} tone="indigo" />
       <CoverSheet scenario={props.scenario} />
       <SituationSheet text={props.scenario.situation} />
       <button className={BTN_PRIMARY} onClick={props.onStart}>
@@ -851,7 +941,7 @@ function RespondScreen(props: {
       : "Presentation time (shared with the judge's questions)";
   return (
     <div className="space-y-4">
-      <TimerBar label={label} left={left} total={PRESENTATION_SECONDS} tone={left === 0 ? "red" : wrapUp ? "amber" : "slate"} />
+      <TimerBar label={label} left={left} total={props.scenario.timing.present_seconds} tone={left === 0 ? "red" : wrapUp ? "amber" : "slate"} />
 
       <details className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Show scenario &amp; what you're graded on</summary>
@@ -1013,9 +1103,9 @@ function FollowupScreen(props: {
   return (
     <div className="space-y-4">
       <TimerBar
-        label={left === 0 ? "Time's up — you can still answer" : "The judge follows up (same 10-min window)"}
+        label={left === 0 ? "Time's up — you can still answer" : "The judge follows up (same presentation window)"}
         left={left}
-        total={PRESENTATION_SECONDS}
+        total={props.scenario.timing.present_seconds}
         tone={left === 0 ? "red" : left <= 60 ? "amber" : "slate"}
       />
       <Card>
@@ -1076,6 +1166,7 @@ function FeedbackScreen(props: {
   response: string;
   followupAnswer: string;
   delivery: DeliveryMetrics | null;
+  utterances: Utterance[];
   audioBlob: Blob | null;
   onRestart: () => void;
 }) {
@@ -1130,6 +1221,7 @@ function FeedbackScreen(props: {
             active={activeMark}
             onSelect={setActiveMark}
             followupFeedback={score.followup_feedback}
+            utterances={props.utterances}
           />
         )}
         {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
@@ -1207,6 +1299,7 @@ function TabBar(props: {
 function OverviewTab({ score }: { score: ScoreResponse }) {
   return (
     <div className="space-y-4">
+      {score.math_checks.length > 0 && <MathChecksCard checks={score.math_checks} />}
       {score.summary && (
         <Card>
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Summary</h3>
@@ -1238,6 +1331,71 @@ function OverviewTab({ score }: { score: ScoreResponse }) {
         </div>
       )}
     </div>
+  );
+}
+
+// Formats a number for display: trims trailing zeros, keeps it readable.
+function fmtNum(n: number): string {
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+}
+
+function MathChecksCard({ checks }: { checks: MathCheck[] }) {
+  const wrong = checks.filter((c) => c.ok === false).length;
+  return (
+    <Card className="border-indigo-200 dark:border-indigo-900/60">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
+          🧮 Math check
+        </h3>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          {wrong === 0 ? "all verified" : `${wrong} to fix`}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        Every calculation is recomputed by our server — not the AI — so this is exact.
+      </p>
+      <div className="mt-3 space-y-2">
+        {checks.map((c, i) => {
+          const good = c.ok === true;
+          const bad = c.ok === false;
+          const tone = bad
+            ? "border-red-200 bg-red-50/60 dark:border-red-900/60 dark:bg-red-950/30"
+            : good
+              ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+              : "border-slate-200 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40";
+          const icon = bad ? "✗" : good ? "✓" : "•";
+          const iconTone = bad ? "text-red-600" : good ? "text-emerald-600" : "text-slate-400";
+          const unit = c.unit ? ` ${c.unit}` : "";
+          return (
+            <div key={i} className={`rounded-xl border ${tone} px-3 py-2.5`}>
+              <div className="flex items-start gap-2">
+                <span className={`mt-0.5 font-bold ${iconTone}`}>{icon}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{c.label || "Calculation"}</p>
+                  {c.expression && (
+                    <p className="mt-0.5 break-words font-mono text-xs text-slate-500 dark:text-slate-400">{c.expression}</p>
+                  )}
+                  <p className="mt-1 text-xs text-slate-700 dark:text-slate-200">
+                    {c.computed === null ? (
+                      c.note || "Couldn't verify this one."
+                    ) : bad ? (
+                      <>
+                        You said <span className="font-semibold text-red-700 dark:text-red-300">{c.claimed}{unit}</span> — the correct value is{" "}
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fmtNum(c.computed)}{unit}</span>.
+                      </>
+                    ) : good ? (
+                      <>Correct — <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fmtNum(c.computed)}{unit}</span>.</>
+                    ) : (
+                      <>Verified value: <span className="font-semibold">{fmtNum(c.computed)}{unit}</span>.</>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 
@@ -1286,6 +1444,8 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
         <Stat label="Time" value={fmt(Math.round(m.time_used_seconds))} unit={TIME_HINT[m.time_flag]} ok={m.time_flag === "good"} />
       </div>
 
+      {m.speakers.length > 0 && <TalkBalance metrics={m} />}
+
       <Card>
         <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Coaching notes</h3>
         <ul className="mt-2 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
@@ -1322,6 +1482,57 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
         confidence, or accent.
       </div>
     </div>
+  );
+}
+
+// Two-tone bars for the speaker labels, so A and B read distinctly.
+const SPEAKER_BAR = ["bg-indigo-500", "bg-teal-500", "bg-amber-500", "bg-rose-500"];
+
+function TalkBalance({ metrics: m }: { metrics: DeliveryMetrics }) {
+  return (
+    <Card className={m.dominated_by ? "border-amber-200 dark:border-amber-900/60" : ""}>
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">
+          🎙️ Talk-time balance
+        </h3>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">team event</span>
+      </div>
+
+      {/* Single stacked bar showing each speaker's share of the talking. */}
+      <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+        {m.speakers.map((s, i) => (
+          <div
+            key={s.speaker}
+            className={SPEAKER_BAR[i % SPEAKER_BAR.length]}
+            style={{ width: `${Math.round(s.talk_share * 100)}%` }}
+            title={`Speaker ${s.speaker}: ${Math.round(s.talk_share * 100)}%`}
+          />
+        ))}
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {m.speakers.map((s, i) => (
+          <div key={s.speaker} className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
+            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${SPEAKER_BAR[i % SPEAKER_BAR.length]}`} />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                Speaker {s.speaker}
+                <span className="ml-1.5 font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">{Math.round(s.talk_share * 100)}%</span>
+              </p>
+              <p className="font-mono text-[11px] text-slate-400 dark:text-slate-500">
+                {fmt(Math.round(s.talk_seconds))} · {s.word_count} words · {s.pace_wpm} wpm · {s.filler_count} fillers
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {m.balance_note && (
+        <p className={`mt-3 text-xs leading-relaxed ${m.dominated_by ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
+          {m.dominated_by ? "⚠ " : "✓ "}{m.balance_note}
+        </p>
+      )}
+    </Card>
   );
 }
 
@@ -1458,6 +1669,13 @@ function buildMarks(scores: CriterionScore[]): Mark[] {
   return marks;
 }
 
+// Stable color index for a speaker label (sorted first-appearance order), so the
+// transcript badges line up with the talk-balance bars.
+function speakerIndex(utterances: Utterance[], speaker: string): number {
+  const labels = [...new Set(utterances.map((u) => u.speaker))].sort();
+  return Math.max(0, labels.indexOf(speaker));
+}
+
 function TranscriptTab(props: {
   response: string;
   followupAnswer: string;
@@ -1466,20 +1684,39 @@ function TranscriptTab(props: {
   active: string | null;
   onSelect: (id: string | null) => void;
   followupFeedback: string;
+  utterances: Utterance[];
 }) {
   const activeMark = props.marks.find((m) => m.id === props.active) ?? null;
   const tone = activeMark ? LEVEL_TONE[activeMark.level] : null;
+  const hasTurns = props.utterances.length > 0;
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_19rem]">
       <div className="order-2 space-y-4 lg:order-1">
         <Card>
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your presentation</h3>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-            Highlights mark where each criterion found credit; color is the level it reached. Tap one for the note.
+            {hasTurns
+              ? "Split by speaker so you can see who said what — highlights mark where each criterion found credit. Tap one for the note."
+              : "Highlights mark where each criterion found credit; color is the level it reached. Tap one for the note."}
           </p>
-          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
-            {highlight(props.response, props.marks, props.active, props.onSelect)}
-          </p>
+          {hasTurns ? (
+            <div className="mt-3 space-y-3">
+              {props.utterances.map((u, i) => (
+                <div key={i} className="flex gap-2.5">
+                  <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold text-white ${SPEAKER_BAR[speakerIndex(props.utterances, u.speaker) % SPEAKER_BAR.length]}`}>
+                    {u.speaker}
+                  </span>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+                    {highlight(u.text, props.marks, props.active, props.onSelect)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+              {highlight(props.response, props.marks, props.active, props.onSelect)}
+            </p>
+          )}
         </Card>
 
         {props.followupAnswer.trim() && (
@@ -1592,6 +1829,9 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 const TEXTAREA_CLS =
   "w-full resize-y rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 p-3.5 text-sm leading-relaxed shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
+
+const SELECT_CLS =
+  "w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 px-3.5 py-2.5 pr-10 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
 
 function Segmented<T extends string>(props: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
   return (
@@ -1764,6 +2004,169 @@ function LoadingScreen({ label }: { label: string }) {
 }
 
 // --- competition tips ------------------------------------------------------
+
+// --- FAQ -------------------------------------------------------------------
+
+function FAQItem({ q, children }: { q: string; children: ReactNode }) {
+  return (
+    <details className="group rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition open:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+        <span className="font-display text-[15px] font-semibold text-slate-900 dark:text-slate-100">{q}</span>
+        <span className="shrink-0 text-slate-400 transition group-open:rotate-45 dark:text-slate-500">＋</span>
+      </summary>
+      <div className="mt-3 space-y-2.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{children}</div>
+    </details>
+  );
+}
+
+function FAQGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section>
+      <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-wider text-indigo-500">{title}</h2>
+      <div className="space-y-2.5">{children}</div>
+    </section>
+  );
+}
+
+function FAQPage({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="space-y-10">
+      <section className="pt-2">
+        <Eyebrow>Questions &amp; answers</Eyebrow>
+        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
+          How PI Coach works
+          <br />
+          <span className="text-indigo-600 dark:text-indigo-400">and why it's different.</span>
+        </h1>
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+          Honest answers about the AI, how we grade, how we compare to other tools, whether it's allowed, and how
+          to actually get better with it.
+        </p>
+      </section>
+
+      <FAQGroup title="Using the AI">
+        <FAQItem q="How does the AI actually work?">
+          <p>
+            Two steps. When you pick an event and (optionally) a focus, an AI model writes an <strong className="font-semibold text-slate-800 dark:text-slate-200">original</strong> role-play
+            built to exercise a handful of specific business skills. After you present, a second pass grades your
+            response against those exact skills — quoting the phrases that earned credit and naming what was missing.
+          </p>
+          <p>
+            If you speak your answer, your audio is transcribed and we compute delivery metrics (pace, fillers, pauses,
+            timing) with plain arithmetic — no AI opinion involved there.
+          </p>
+        </FAQItem>
+        <FAQItem q="Can I trust the score? Is the AI just making things up?">
+          <p>
+            The score is <strong className="font-semibold text-slate-800 dark:text-slate-200">practice coaching, not an official or predicted competition score</strong> — no tool
+            can promise your real judge's number. We keep it honest in a few concrete ways: every skill is graded
+            against a written “strong vs. weak” bar so name-dropping a term doesn't earn full marks, and the feedback
+            has to cite exact quotes from what you said.
+          </p>
+          <p>
+            For finance and accounting events, we go further: the AI is <em>not trusted to do arithmetic</em>. It hands
+            each calculation to our server as a formula, and Python computes it — so a “Math check” either confirms your
+            number or shows the correct one. It can't tell you you're wrong when you're right.
+          </p>
+        </FAQItem>
+        <FAQItem q="What about my voice recording and privacy?">
+          <p>
+            Recordings are sent to a transcription service to measure delivery, then discarded on our servers — we keep
+            only the transcript and the numbers. Your audio stays on your device unless you choose to keep it. Delivery
+            covers timing only (pace, fillers, pauses) — never tone, confidence, accent, or “charisma.”
+          </p>
+        </FAQItem>
+      </FAQGroup>
+
+      <FAQGroup title="How we're different">
+        <FAQItem q="How is this different from Case Ace, DECAdemy, and other tools?">
+          <p>
+            Tools like <a className={FAQ_LINK} href="https://caseace.app/" target="_blank" rel="noreferrer">Case Ace</a> and{" "}
+            <a className={FAQ_LINK} href="https://www.decademy.app/roleplays" target="_blank" rel="noreferrer">DECAdemy</a> are
+            genuinely useful — they lean on huge banks of practice questions, PI flashcards, and scoring aligned to the
+            official event formats and judge categories. That's great for coverage. Where we focus differently:
+          </p>
+          <ul className="ml-4 list-disc space-y-1.5">
+            <li>
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Our own evaluation framework.</strong> We grade against 282 skills we authored from
+              public business fundamentals — not a licensed performance-indicator list. (More on why, below.)
+            </li>
+            <li>
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Voice &amp; delivery, not just typed content.</strong> Present out loud and get real, deterministic
+              delivery metrics — and for team events, speaker diarization that shows who dominated the talking.
+            </li>
+            <li>
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Verified math.</strong> Quantitative events get server-computed calculations, not AI mental math.
+            </li>
+            <li>
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Evidence-linked feedback.</strong> Every point ties back to a phrase you actually said, highlighted in
+              your transcript.
+            </li>
+          </ul>
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            We describe other tools as accurately as we can; details change, so check their sites for the latest.
+          </p>
+        </FAQItem>
+        <FAQItem q="Why build your own framework instead of using DECA's performance indicators?">
+          <p>
+            DECA / MBA Research's performance-indicator lists are <strong className="font-semibold text-slate-800 dark:text-slate-200">licensed intellectual property</strong>. Rather than
+            ship their exact wording, codes, and event-to-PI mapping, we authored our own framework of business skills
+            from the underlying public concepts — the same fundamentals taught in any business course. It's the right
+            thing legally and lets us keep improving the rubric ourselves. It also means the framework can travel beyond
+            DECA later (FBLA, interview prep, and so on).
+          </p>
+        </FAQItem>
+      </FAQGroup>
+
+      <FAQGroup title="Is this allowed?">
+        <FAQItem q="Is PI Coach affiliated with DECA? Is using it against the rules?">
+          <p>
+            No affiliation. PI Coach is an independent practice tool and is <strong className="font-semibold text-slate-800 dark:text-slate-200">not endorsed by or connected to DECA
+            Inc.</strong> We use the name “DECA” only to describe the competition we help you prepare for.
+          </p>
+          <p>
+            Practicing your own skills with original scenarios is ordinary prep — like a mock interview. What isn't okay
+            is bringing prepared materials or outside help into the actual competition room. Use this to <em>train</em>
+            beforehand, then compete on your own. When in doubt, follow your chapter advisor and DECA's guidelines.
+          </p>
+        </FAQItem>
+      </FAQGroup>
+
+      <FAQGroup title="Getting better">
+        <FAQItem q="How do I use this to actually place at competition?">
+          <ul className="ml-4 list-disc space-y-1.5">
+            <li>Practice your <strong className="font-semibold text-slate-800 dark:text-slate-200">real event</strong>, and rotate the focus box so you hit different skills across sessions.</li>
+            <li>Start in <strong className="font-semibold text-slate-800 dark:text-slate-200">Learn mode</strong> to see what “good” looks like; switch to <strong className="font-semibold text-slate-800 dark:text-slate-200">Competition mode</strong> once you want the real, blind test.</li>
+            <li><strong className="font-semibold text-slate-800 dark:text-slate-200">Speak your answers.</strong> Reading in your head hides pace and filler habits the judge will notice.</li>
+            <li>Use the prep timer for real — the pressure is the point — and always answer the follow-up questions.</li>
+            <li>Read the <strong className="font-semibold text-slate-800 dark:text-slate-200">gaps</strong> in each criterion; they're the exact things that would raise your level next time.</li>
+            <li>Climb the levels: <strong className="font-semibold text-slate-800 dark:text-slate-200">District → State → ICDC</strong> as the scenarios get harder.</li>
+          </ul>
+        </FAQItem>
+        <FAQItem q="How do team events work here?">
+          <p>
+            Pick any “(Team)” event and you get a longer prep and presentation window, matching how team decision-making
+            runs. If you record, we pick up both partners' voices and show a <strong className="font-semibold text-slate-800 dark:text-slate-200">talk-time balance</strong> — so you can see if
+            one person dominated, and read the transcript split by speaker. Right now you present together on one
+            device; there's no separate second-competitor simulation.
+          </p>
+        </FAQItem>
+      </FAQGroup>
+
+      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Still have a question?</h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Use the 💬 Feedback button up top — we read everything.</p>
+          </div>
+          <button className={BTN_PRIMARY} onClick={onStart}>Start practicing →</button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+const FAQ_LINK = "font-medium text-indigo-600 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400";
 
 function TipsPage({ onStart }: { onStart: () => void }) {
   return (
