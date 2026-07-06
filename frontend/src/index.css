@@ -73,6 +73,34 @@
   animation: pic-bob 1.8s ease-in-out infinite;
 }
 
+/* Loader: indeterminate progress sweep under the staged checklist. */
+@keyframes pic-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+.pic-sweep {
+  animation: pic-sweep 1.5s ease-in-out infinite;
+}
+
+/* Loader: a step fading/sliding in as it becomes active. */
+@keyframes pic-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.pic-step-in {
+  animation: pic-step-in 0.35s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

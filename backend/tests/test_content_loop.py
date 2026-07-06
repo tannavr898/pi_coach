@@ -105,6 +105,7 @@ def test_scenario_from_event_without_focus(monkeypatch):
     """Event chosen, no focus text: a random scenario in the event's scope, and
     the interpret LLM call is skipped (only generation runs)."""
     ev = events.get_event("principles-marketing")
+    # Hand the model 5 ids; selection must trim to exactly 4.
     cids = [c["id"] for c in framework.criteria_for_domains(ev["domain_ids"])[:5]]
     calls: list[str] = []
 
@@ -122,7 +123,7 @@ def test_scenario_from_event_without_focus(monkeypatch):
     assert r.status_code == 200
     d = r.json()
     assert d["event"] == "Principles of Marketing"
-    assert 4 <= len(d["criteria"]) <= 6
+    assert len(d["criteria"]) == 4  # exactly 4 indicators per scenario
     assert len(calls) == 1  # generation only — interpretation was skipped
 
 

@@ -131,10 +131,10 @@ COMPLEXITY: {level}   ({guide})
 CANDIDATE EVALUATION CRITERIA (choose from these ids only):
 {_format_candidates(candidates)}
 
-STEP 1 — SELECT the criteria to assess. Pick a coherent set of 4 to 6 criteria
+STEP 1 — SELECT the criteria to assess. Pick a coherent set of EXACTLY 4 criteria
 from the list above that are genuinely relevant to the topic AND can all be
-demonstrated together in one ~10-minute role-play. Prefer a focused, complementary
-set over a scattered one. Use ONLY ids from the list.
+demonstrated together in one role-play. Prefer a focused, complementary set over a
+scattered one. Use ONLY ids from the list. Return exactly 4 ids — no more, no fewer.
 
 STEP 2 — WRITE an original role-play whose task naturally gives the participant a
 reason to demonstrate EVERY criterion you selected. The participant takes a
@@ -145,7 +145,7 @@ details.
 
 Return a JSON object with EXACTLY these keys:
 {{
-  "criteria_ids": ["the 4-6 ids you selected in step 1"],
+  "criteria_ids": ["the EXACTLY 4 ids you selected in step 1"],
   "situation": "The participant-facing situation ONLY. {guide} OPEN by establishing,
      in the first sentence or two, the participant's specific role AND a one-line
      description of the company (its name and what it does) so the participant has

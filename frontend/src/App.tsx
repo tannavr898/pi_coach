@@ -191,7 +191,18 @@ export default function App() {
               />
             )}
 
-            {stage === "loading" && <LoadingScreen label="Writing an original scenario…" />}
+            {stage === "loading" && (
+              <LoadingScreen
+                title="Building your role-play…"
+                steps={[
+                  "Reading what you want to practice",
+                  "Choosing the indicators to assess",
+                  "Setting the business & context",
+                  "Writing the situation",
+                  "Preparing the judge's questions",
+                ]}
+              />
+            )}
 
             {stage === "ready" && scenario && <ReadyScreen scenario={scenario} onStart={() => setStage("prep")} />}
 
@@ -234,7 +245,28 @@ export default function App() {
             )}
 
             {stage === "scoring" && (
-              <LoadingScreen label={mode === "speak" ? "Transcribing and grading your delivery…" : "Grading your response against the criteria…"} />
+              <LoadingScreen
+                title="Grading your response…"
+                steps={
+                  mode === "speak"
+                    ? [
+                        "Transcribing your delivery",
+                        ...(scenario?.team ? ["Separating the speakers"] : []),
+                        "Measuring pace, fillers & timing",
+                        "Matching your words to each indicator",
+                        "Evaluating your solution",
+                        ...(scenario?.quantitative ? ["Checking your math"] : []),
+                        "Writing your feedback",
+                      ]
+                    : [
+                        "Reading your response",
+                        "Matching your words to each indicator",
+                        "Evaluating your solution",
+                        ...(scenario?.quantitative ? ["Checking your math"] : []),
+                        "Writing your feedback",
+                      ]
+                }
+              />
             )}
 
             {stage === "feedback" && score && scenario && (
@@ -1978,10 +2010,26 @@ function Card({ children, className = "" }: { children: ReactNode; className?: s
 
 // Animated loader built from the target logo: concentric "radar" rings pulse
 // outward (like locking onto a target) while the mark gently bobs.
-function LoadingScreen({ label }: { label: string }) {
+function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
+  // Walk the checklist forward on a timer to give the wait a sense of progress.
+  // We don't know the exact finish, so hold on the last step until the real
+  // result swaps this screen out.
+  const [active, setActive] = useState(0);
+  const count = steps.length;
+  const key = steps.join("|"); // stable across re-renders unless the steps change
+  useEffect(() => {
+    setActive(0);
+    if (count <= 1) return;
+    const id = window.setInterval(() => {
+      setActive((i) => (i >= count - 1 ? i : i + 1));
+    }, 1400);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
   return (
     <Card>
-      <div className="flex flex-col items-center justify-center gap-6 py-14 text-center">
+      <div className="flex flex-col items-center gap-6 py-12">
         <div className="relative grid h-24 w-24 place-items-center">
           {[0, 0.6, 1.2].map((delay) => (
             <span
@@ -1994,10 +2042,47 @@ function LoadingScreen({ label }: { label: string }) {
             <BrandMark size={48} />
           </div>
         </div>
-        <div>
-          <p className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{label}</p>
+
+        <div className="text-center">
+          <p className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</p>
           <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-indigo-500">PI Coach</p>
         </div>
+
+        {/* Indeterminate progress sweep. */}
+        <div className="h-1 w-full max-w-xs overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+          <div className="pic-sweep h-full w-1/3 rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
+        </div>
+
+        {/* Staged checklist — done steps check off, the current one spins. */}
+        <ul className="w-full max-w-xs space-y-2.5">
+          {steps.map((s, i) => {
+            const done = i < active;
+            const current = i === active;
+            return (
+              <li
+                key={s}
+                className={`flex items-center gap-2.5 text-sm transition-colors ${
+                  done
+                    ? "text-slate-500 dark:text-slate-400"
+                    : current
+                      ? "font-medium text-slate-900 dark:text-slate-100"
+                      : "text-slate-300 dark:text-slate-600"
+                }`}
+              >
+                <span className="grid h-5 w-5 shrink-0 place-items-center">
+                  {done ? (
+                    <span className="text-emerald-500">✓</span>
+                  ) : current ? (
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                  ) : (
+                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  )}
+                </span>
+                <span className={current ? "pic-step-in" : ""}>{s}</span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </Card>
   );

@@ -105,13 +105,19 @@ def candidate_pool(domain_ids: list[str]) -> list[dict]:
     return pool[:_MAX_CANDIDATES]
 
 
+# Every role-play assesses exactly this many indicators (matches a real role-play
+# and keeps feedback focused).
+CRITERIA_PER_SCENARIO = 4
+
+
 def resolve_selection(criteria_ids: list[str], pool: list[dict]) -> list[dict]:
-    """Turn the model's chosen ids into pinned framework criteria (4-6).
+    """Turn the model's chosen ids into exactly CRITERIA_PER_SCENARIO pinned
+    framework criteria.
 
     - Keep only ids the model was actually offered (the pool), preserving order.
-    - Drop duplicates, cap at 6.
-    - If the model returned too few valid ids, top up from the pool so a role-play
-      always has a coherent set to grade against.
+    - Drop duplicates.
+    - If the model returned too few valid ids, top up from the pool; if it returned
+      too many, take the first N — so a role-play always grades against exactly N.
     """
     pool_ids = [c["id"] for c in pool]
     pool_set = set(pool_ids)
@@ -121,11 +127,11 @@ def resolve_selection(criteria_ids: list[str], pool: list[dict]) -> list[dict]:
         if cid in pool_set and cid not in seen:
             chosen.append(cid)
             seen.add(cid)
-    for cid in pool_ids:  # top up toward a minimum of 4 if the model under-picked
-        if len(chosen) >= 4:
+    for cid in pool_ids:  # top up if the model under-picked
+        if len(chosen) >= CRITERIA_PER_SCENARIO:
             break
         if cid not in seen:
             chosen.append(cid)
             seen.add(cid)
-    chosen = chosen[:6]
+    chosen = chosen[:CRITERIA_PER_SCENARIO]
     return framework.get_criteria(chosen)
