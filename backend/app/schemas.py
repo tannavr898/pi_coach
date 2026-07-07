@@ -159,6 +159,9 @@ class CriterionScore(BaseModel):
     # Concrete things that were missing/too weak and would raise the level. These
     # are ABSENT from the response, so they can't be highlighted — listed instead.
     gaps: list[str] = []
+    # An example of a stronger line the participant could have said for this
+    # criterion — surfaced inline in the transcript as "what you could have said".
+    suggestion: str = ""
 
 
 class ScoreResponse(BaseModel):
@@ -191,6 +194,12 @@ class CrutchCount(BaseModel):
 class LongPause(BaseModel):
     at_seconds: float
     length_seconds: float
+
+
+class DeliveryComponent(BaseModel):
+    label: str
+    score: int
+    hint: str = ""
 
 
 class SpeakerStat(BaseModel):
@@ -230,6 +239,10 @@ class DeliveryMetrics(BaseModel):
     time_flag: Literal["short", "good", "long"]
     reading_signal: bool
     notes: list[str] = []
+    # Deterministic 0-100 delivery score + its component breakdown. Blended into
+    # the overall score when the participant spoke.
+    delivery_score: int = 0
+    delivery_components: list[DeliveryComponent] = []
     # Team events only: who spoke how much, and a plain-language balance note.
     speakers: list[SpeakerStat] = []
     dominated_by: str = ""  # speaker label if one voice dominated, else ""

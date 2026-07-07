@@ -152,6 +152,7 @@ export const DEMO_SCORE: ScoreResponse = {
         "You moved past the textbook line and showed **how data drives loyalty** — capturing purchase history and rewarding repeat visits. To reach exemplary, tie it to a **retention number** you'd expect to move.",
       evidence: ["capture purchase history in the app and trigger a free smoothie reward every tenth visit"],
       gaps: ["No retention rate or churn figure named", "Didn't distinguish regulars vs. new buyers"],
+      suggestion: "I'd segment first-time vs. returning customers and target a repeat-visit rate lift from 22% to 30% this quarter.",
     },
     {
       criterion_id: "FW-168",
@@ -166,6 +167,7 @@ export const DEMO_SCORE: ScoreResponse = {
         "Good reasoning for **shifting spend from radio to app push and micro-influencers** based on where the 18–28 core actually is. You named the channels but didn't fully explain the **trade-offs** between them.",
       evidence: ["shift spend away from untargeted radio and toward app push notifications and local micro-influencers"],
       gaps: ["Didn't weigh the cost of influencers vs. push", "No budget split across the channels"],
+      suggestion: "I'd put 60% of the budget into app push since it's near-free per send, and 40% into two local micro-influencers to drive trial.",
     },
     {
       criterion_id: "FW-177",
@@ -180,6 +182,7 @@ export const DEMO_SCORE: ScoreResponse = {
         "Strong insight that **the app becomes an owned channel** and returns first-party data the delivery apps withhold. That's the systems thinking judges reward — one step short of comparing it to the delivery channel on cost.",
       evidence: ["the app becomes our owned channel", "first-party data the delivery apps never hand back"],
       gaps: ["No comparison to the third-party delivery channel's economics"],
+      suggestion: "Delivery apps take 20–30% per order, so shifting even a quarter of those sales to our own app protects real margin.",
     },
     {
       criterion_id: "FW-164",
@@ -194,6 +197,7 @@ export const DEMO_SCORE: ScoreResponse = {
         "You kept the **visual identity consistent**, which is real, but brand is mostly treated as a logo here. Push into what FreshBlend **stands for** — the promise that earns loyalty — to lift this above developing.",
       evidence: ["keep the visual identity consistent from the cup to the app icon"],
       gaps: ["No brand promise or positioning stated", "Didn't connect brand to the loyalty program"],
+      suggestion: "FreshBlend should stand for 'fresh, fast, and local' — and the loyalty rewards should reinforce that, like a free local-fruit add-on.",
     },
     {
       criterion_id: "FW-280",
@@ -208,6 +212,7 @@ export const DEMO_SCORE: ScoreResponse = {
         "You named a real target — a **15 percent lift in returning customers** — and a pilot to prove it, which is more than most do. To reach exemplary, show **why the tactics should produce that lift**, not just that you'd measure it.",
       evidence: ["track repeat-visit rate and reward redemption monthly, aiming for a 15 percent lift"],
       gaps: ["No link from tactics to the 15% number"],
+      suggestion: "If the loyalty program converts even 1 in 5 first-timers into regulars, that alone gets us most of the way to the 15% lift.",
     },
   ],
 };
@@ -236,6 +241,13 @@ export const DEMO_DELIVERY: DeliveryMetrics = {
     "Pace sat in the ideal 120–150 WPM range — easy for a judge to follow.",
     "Only 6 fillers across nearly 8 minutes; the one 4-second pause came right before your channel point, which actually read as a deliberate beat.",
     "You used 7:52 of the window, leaving room for the follow-up — well managed.",
+  ],
+  delivery_score: 84,
+  delivery_components: [
+    { label: "Pace", score: 100, hint: "In the 130–160 WPM range" },
+    { label: "Fluency", score: 90, hint: "Few filler words" },
+    { label: "Flow", score: 80, hint: "One long pause" },
+    { label: "Timing", score: 100, hint: "Used the window well" },
   ],
   speakers: [],
   dominated_by: "",

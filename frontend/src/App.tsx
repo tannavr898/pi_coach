@@ -29,7 +29,11 @@ const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices 
 // and the judge's questions: the response clock counts it down, the follow-up
 // inherits the rest.
 
-type Stage = "pick" | "loading" | "ready" | "prep" | "respond" | "followup" | "scoring" | "feedback";
+type Stage = "pick" | "loading" | "ready" | "prep" | "walkin" | "respond" | "followup" | "scoring" | "feedback";
+
+// How long the participant can sit on the response/follow-up screen without
+// starting before the 5-second auto-start countdown kicks in.
+const IDLE_GRACE_MS = 40000;
 
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
@@ -42,7 +46,13 @@ export default function App() {
   const [mode, setMode] = useState<ResponseMode>("type");
   const [responseText, setResponseText] = useState("");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [presentationEndsAt, setPresentationEndsAt] = useState<number | null>(null);
+  // Presentation clock: a shared window (response + judge's questions) that only
+  // counts down while `clockRunning` — it starts when the participant actually
+  // begins, and pauses between screens. `autoCountdown` is the 5-second nudge that
+  // auto-starts it if they idle too long.
+  const [presentRemaining, setPresentRemaining] = useState(0);
+  const [clockRunning, setClockRunning] = useState(false);
+  const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   const [followupMode, setFollowupMode] = useState<ResponseMode>("type");
   const [followupAnswer, setFollowupAnswer] = useState("");
   const [followupAudio, setFollowupAudio] = useState<Blob | null>(null);
@@ -59,6 +69,47 @@ export default function App() {
     getEvents().then(setEvents).catch(() => setEvents([]));
   }, []);
 
+  const onClockScreen = stage === "respond" || stage === "followup";
+
+  // Tick the shared presentation clock down, but only while it's running and we're
+  // on a screen that uses it.
+  useEffect(() => {
+    if (!clockRunning || !onClockScreen) return;
+    const id = window.setInterval(() => setPresentRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(id);
+  }, [clockRunning, onClockScreen]);
+
+  // If the participant lingers without starting, nudge them: after a grace period,
+  // run a 5-second countdown, then auto-start the clock so they can't stall forever.
+  useEffect(() => {
+    if (!onClockScreen || clockRunning) return;
+    let tick: number | undefined;
+    const grace = window.setTimeout(() => {
+      setAutoCountdown(5);
+      tick = window.setInterval(() => {
+        setAutoCountdown((v) => {
+          if (v === null) return null;
+          if (v <= 1) {
+            if (tick) clearInterval(tick);
+            setClockRunning(true);
+            return null;
+          }
+          return v - 1;
+        });
+      }, 1000);
+    }, IDLE_GRACE_MS);
+    return () => {
+      clearTimeout(grace);
+      if (tick) clearInterval(tick);
+      setAutoCountdown(null);
+    };
+  }, [stage, clockRunning, onClockScreen]);
+
+  const startClock = () => {
+    setAutoCountdown(null);
+    setClockRunning(true);
+  };
+
   async function generate() {
     if (!eventId) return;
     setError(null);
@@ -69,7 +120,9 @@ export default function App() {
       setScenario(s);
       setResponseText("");
       setAudioBlob(null);
-      setPresentationEndsAt(null);
+      setPresentRemaining(0);
+      setClockRunning(false);
+      setAutoCountdown(null);
       setFollowupAnswer("");
       setFollowupAudio(null);
       setScore(null);
@@ -149,7 +202,9 @@ export default function App() {
     setUtterances([]);
     setResponseText("");
     setAudioBlob(null);
-    setPresentationEndsAt(null);
+    setPresentRemaining(0);
+    setClockRunning(false);
+    setAutoCountdown(null);
     setFollowupAnswer("");
     setFollowupAudio(null);
     setError(null);
@@ -210,30 +265,45 @@ export default function App() {
               <PrepScreen
                 scenario={scenario}
                 onStart={() => {
-                  setPresentationEndsAt(Date.now() + scenario.timing.present_seconds * 1000);
-                  setStage("respond");
+                  setPresentRemaining(scenario.timing.present_seconds);
+                  setClockRunning(false);
+                  setAutoCountdown(null);
+                  setStage("walkin");
                 }}
               />
+            )}
+
+            {stage === "walkin" && scenario && (
+              <WalkinScreen scenario={scenario} onEnter={() => setStage("respond")} />
             )}
 
             {stage === "respond" && scenario && (
               <RespondScreen
                 scenario={scenario}
-                endsAt={presentationEndsAt}
+                remaining={presentRemaining}
+                running={clockRunning}
+                autoCountdown={autoCountdown}
+                onStart={startClock}
                 mode={mode}
                 onMode={setMode}
                 value={responseText}
                 onChange={setResponseText}
                 audioBlob={audioBlob}
                 onRecorded={setAudioBlob}
-                onContinue={() => setStage("followup")}
+                onContinue={() => {
+                  setClockRunning(false); // pause the window while moving to the questions
+                  setStage("followup");
+                }}
               />
             )}
 
             {stage === "followup" && scenario && (
               <FollowupScreen
                 scenario={scenario}
-                endsAt={presentationEndsAt}
+                remaining={presentRemaining}
+                running={clockRunning}
+                autoCountdown={autoCountdown}
+                onStart={startClock}
                 mode={followupMode}
                 onMode={setFollowupMode}
                 value={followupAnswer}
@@ -941,19 +1011,73 @@ function PrepScreen(props: { scenario: ScenarioResponse; onStart: () => void }) 
   const left = useCountdown(prep, true, props.onStart);
   return (
     <div className="space-y-4">
-      <TimerBar label="Prep time" left={left} total={prep} tone="indigo" />
+      <TimerBar label="Prep time" left={left} total={prep} tone="indigo" sticky />
       <CoverSheet scenario={props.scenario} />
       <SituationSheet text={props.scenario.situation} />
       <button className={BTN_PRIMARY} onClick={props.onStart}>
-        Start my response →
+        I'm done prepping — I'm ready to present →
       </button>
+    </div>
+  );
+}
+
+// The shared presentation clock, shown on both the response and follow-up screens.
+// It only counts down while `running`; before that it's paused, and if the
+// participant idles too long an auto-start countdown appears.
+function PresentClock({ remaining, running, total, autoCountdown }: {
+  remaining: number; running: boolean; total: number; autoCountdown: number | null;
+}) {
+  const wrapUp = running && remaining > 0 && remaining <= 150;
+  const label = !running
+    ? autoCountdown !== null
+      ? `Starting in ${autoCountdown}… (begin now to take control)`
+      : "Clock paused — it starts the moment you begin"
+    : remaining === 0
+      ? "Time's up — you can still finish"
+      : wrapUp
+        ? "Wrap up soon — leave time for the questions"
+        : "Presentation time (shared with the judge's questions)";
+  const tone = !running
+    ? autoCountdown !== null ? "amber" : "indigo"
+    : remaining === 0 ? "red" : wrapUp ? "amber" : "slate";
+  return <TimerBar label={label} left={remaining} total={total} tone={tone} sticky />;
+}
+
+// A quick breather between prep and presenting, so the participant walks in on
+// their own cue instead of being dropped straight into the clock.
+function WalkinScreen(props: { scenario: ScenarioResponse; onEnter: () => void }) {
+  const s = props.scenario;
+  return (
+    <div className="space-y-4">
+      <Card className="text-center">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-indigo-50 dark:bg-indigo-950/50">
+          <span className="text-3xl">🚪</span>
+        </div>
+        <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          You're up next
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          Prep's done. Take a breath, gather your notes, and walk in when you're ready. The presentation clock
+          <strong className="font-semibold text-slate-800 dark:text-slate-200"> won't start until you begin speaking or typing</strong> — so there's no rush to press this.
+        </p>
+        <div className="mx-auto mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+          Open with a greeting and a firm handshake energy, state who you are and your recommendation up front, then
+          walk the judge through it. You've got {Math.round(s.timing.present_seconds / 60)} minutes for everything.
+        </div>
+        <button className={`mt-6 ${BTN_PRIMARY}`} onClick={props.onEnter}>
+          Enter the room →
+        </button>
+      </Card>
     </div>
   );
 }
 
 function RespondScreen(props: {
   scenario: ScenarioResponse;
-  endsAt: number | null;
+  remaining: number;
+  running: boolean;
+  autoCountdown: number | null;
+  onStart: () => void;
   mode: ResponseMode;
   onMode: (m: ResponseMode) => void;
   value: string;
@@ -962,18 +1086,16 @@ function RespondScreen(props: {
   onRecorded: (b: Blob | null) => void;
   onContinue: () => void;
 }) {
-  const left = useDeadline(props.endsAt);
   const words = wordCount(props.value);
   const canContinue = props.mode === "type" ? !!props.value.trim() : !!props.audioBlob;
-  const wrapUp = left > 0 && left <= 150;
-  const label = left === 0
-    ? "Presentation time — time's up (you can still continue)"
-    : wrapUp
-      ? "Wrap up soon — leave time for the questions"
-      : "Presentation time (shared with the judge's questions)";
+  // Starting to type or record starts the clock.
+  const handleType = (v: string) => {
+    if (!props.running && v.trim()) props.onStart();
+    props.onChange(v);
+  };
   return (
     <div className="space-y-4">
-      <TimerBar label={label} left={left} total={props.scenario.timing.present_seconds} tone={left === 0 ? "red" : wrapUp ? "amber" : "slate"} />
+      <PresentClock remaining={props.remaining} running={props.running} total={props.scenario.timing.present_seconds} autoCountdown={props.autoCountdown} />
 
       <details className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Show scenario &amp; what you're graded on</summary>
@@ -995,13 +1117,13 @@ function RespondScreen(props: {
               className={`mt-3 h-64 ${TEXTAREA_CLS}`}
               placeholder="Open with a greeting, address the situation and every skill you're assessed on, propose your solution, and close. Speak it out loud as you type — that's the rep."
               value={props.value}
-              onChange={(e) => props.onChange(e.target.value)}
+              onChange={(e) => handleType(e.target.value)}
             />
             <div className="mt-2 font-mono text-xs text-slate-400 dark:text-slate-500">{words} words</div>
           </>
         ) : (
           <div className="mt-3">
-            <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} />
+            <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
             <p className="mt-3 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
               Present out loud as if the judge is in front of you. We transcribe the audio and measure delivery —
               pace, fillers, pauses, time — alongside the content score. Delivery covers timing only, not tone or
@@ -1036,7 +1158,7 @@ function ModeToggle({ mode, onMode }: { mode: ResponseMode; onMode: (m: Response
   );
 }
 
-function VoiceRecorder({ audioBlob, onRecorded }: { audioBlob: Blob | null; onRecorded: (b: Blob | null) => void }) {
+function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | null; onRecorded: (b: Blob | null) => void; onStart?: () => void }) {
   const [state, setState] = useState<"idle" | "recording" | "recorded">(audioBlob ? "recorded" : "idle");
   const [elapsed, setElapsed] = useState(0);
   const [err, setErr] = useState<string | null>(null);
@@ -1073,6 +1195,7 @@ function VoiceRecorder({ audioBlob, onRecorded }: { audioBlob: Blob | null; onRe
       recorderRef.current = mr;
       setElapsed(0);
       setState("recording");
+      onStart?.(); // starting to speak starts the presentation clock
       timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
     } catch {
       setErr("Microphone access was blocked. Allow mic permission in your browser and try again.");
@@ -1120,7 +1243,10 @@ function VoiceRecorder({ audioBlob, onRecorded }: { audioBlob: Blob | null; onRe
 
 function FollowupScreen(props: {
   scenario: ScenarioResponse;
-  endsAt: number | null;
+  remaining: number;
+  running: boolean;
+  autoCountdown: number | null;
+  onStart: () => void;
   mode: ResponseMode;
   onMode: (m: ResponseMode) => void;
   value: string;
@@ -1129,17 +1255,15 @@ function FollowupScreen(props: {
   onRecorded: (b: Blob | null) => void;
   onSubmit: () => void;
 }) {
-  const left = useDeadline(props.endsAt);
   const qs = props.scenario.followup_questions;
   const canSubmit = props.mode === "type" ? !!props.value.trim() : !!props.audioBlob;
+  const handleType = (v: string) => {
+    if (!props.running && v.trim()) props.onStart();
+    props.onChange(v);
+  };
   return (
     <div className="space-y-4">
-      <TimerBar
-        label={left === 0 ? "Time's up — you can still answer" : "The judge follows up (same presentation window)"}
-        left={left}
-        total={props.scenario.timing.present_seconds}
-        tone={left === 0 ? "red" : left <= 60 ? "amber" : "slate"}
-      />
+      <PresentClock remaining={props.remaining} running={props.running} total={props.scenario.timing.present_seconds} autoCountdown={props.autoCountdown} />
       <Card>
         <div className="flex items-center justify-between">
           <h2 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">The judge asks you</h2>
@@ -1162,7 +1286,7 @@ function FollowupScreen(props: {
               className={`mt-2 h-40 ${TEXTAREA_CLS}`}
               placeholder="Answer the judge's questions directly. This is graded as part of your response."
               value={props.value}
-              onChange={(e) => props.onChange(e.target.value)}
+              onChange={(e) => handleType(e.target.value)}
             />
             <div className="mt-2 font-mono text-xs text-slate-400 dark:text-slate-500">{wordCount(props.value)} words</div>
           </>
@@ -1170,7 +1294,7 @@ function FollowupScreen(props: {
           <div className="mt-4">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Answer out loud</label>
             <div className="mt-2">
-              <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} />
+              <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
             </div>
             <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
               We transcribe your answer for grading. Delivery isn't scored on the follow-up — only your content.
@@ -1190,6 +1314,26 @@ function FollowupScreen(props: {
 
 // --- feedback --------------------------------------------------------------
 
+// Mirror of the backend's overall_bands, for the blended (content + delivery) score.
+function levelFromPercent(p: number): RubricLevel {
+  if (p >= 90) return "exemplary";
+  if (p >= 70) return "proficient";
+  if (p >= 40) return "developing";
+  return "novice";
+}
+
+function ScorePill({ label, value, weight }: { label: string; value: number; weight: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800">
+      <div className="flex items-baseline justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</span>
+        <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{weight}</span>
+      </div>
+      <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100">{value}<span className="text-xs font-medium text-slate-400">%</span></div>
+    </div>
+  );
+}
+
 type FeedbackTab = "overview" | "transcript" | "delivery" | "criteria";
 
 function FeedbackScreen(props: {
@@ -1204,7 +1348,12 @@ function FeedbackScreen(props: {
 }) {
   const { score } = props;
   const marks = buildMarks(score.scores);
-  const pct = score.overall_percent;
+  const content = score.overall_percent;
+  // When the participant spoke, delivery counts toward the overall (content 80%,
+  // delivery 20%). Typed practice shows content only.
+  const dscore = props.delivery ? props.delivery.delivery_score : null;
+  const pct = dscore !== null ? Math.round(content * 0.8 + dscore * 0.2) : content;
+  const level = dscore !== null ? levelFromPercent(pct) : score.overall_level;
   const [tab, setTab] = useState<FeedbackTab>("overview");
   const [activeMark, setActiveMark] = useState<string | null>(null);
 
@@ -1227,12 +1376,23 @@ function FeedbackScreen(props: {
           <div className="mt-5 flex items-end gap-1.5">
             <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{pct}</span>
             <span className="mb-1 font-mono text-lg font-medium text-slate-300 dark:text-slate-600">%</span>
-            <span className="mb-1 ml-auto font-mono text-sm text-slate-500 dark:text-slate-400">{score.total_points}/{score.max_points} pts</span>
+            {dscore === null && (
+              <span className="mb-1 ml-auto font-mono text-sm text-slate-500 dark:text-slate-400">{score.total_points}/{score.max_points} pts</span>
+            )}
           </div>
-          <div className="mt-3"><LevelMeter level={score.overall_level} /></div>
+          <div className="mt-3"><LevelMeter level={level} /></div>
+          {dscore !== null && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <ScorePill label="Content" value={content} weight="80%" />
+              <ScorePill label="Delivery" value={dscore} weight="20%" />
+            </div>
+          )}
           <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            Graded on {score.scores.length} business skills against our evaluation framework. Practice coaching,
-            not an official competition score.
+            {dscore !== null ? (
+              <>Blends your {score.scores.length}-skill content score with delivery. Practice coaching, not an official competition score.</>
+            ) : (
+              <>Graded on {score.scores.length} business skills against our evaluation framework. Practice coaching, not an official competition score.</>
+            )}
           </p>
           <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
             <LevelLegend />
@@ -1462,6 +1622,35 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
 
   return (
     <div className="space-y-4">
+      {m.delivery_components.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Delivery score</h3>
+            <span className="font-mono text-xs text-slate-400 dark:text-slate-500">counts 20% of your overall</span>
+          </div>
+          <div className="mt-2 flex items-end gap-1.5">
+            <span className="font-mono text-4xl font-bold leading-none text-slate-900 dark:text-slate-100">{m.delivery_score}</span>
+            <span className="mb-0.5 font-mono text-base font-medium text-slate-300 dark:text-slate-600">/100</span>
+          </div>
+          <div className="mt-4 space-y-2.5">
+            {m.delivery_components.map((c) => (
+              <div key={c.label}>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-700 dark:text-slate-200">{c.label}</span>
+                  <span className="text-slate-400 dark:text-slate-500">{c.hint}</span>
+                </div>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className={`h-full rounded-full ${c.score >= 80 ? "bg-emerald-500" : c.score >= 55 ? "bg-amber-500" : "bg-red-500"}`}
+                    style={{ width: `${c.score}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {url && (
         <Card>
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Listen back</h3>
@@ -1670,6 +1859,11 @@ function MissingCard({ scores }: { scores: CriterionScore[] }) {
                 <li key={i} className="flex gap-1.5 text-xs text-slate-600 dark:text-slate-300"><span className="text-amber-500">+</span><span>{g}</span></li>
               ))}
             </ul>
+            {s.suggestion && (
+              <p className="mt-1.5 rounded-lg border border-dashed border-indigo-300 bg-indigo-50/70 px-2.5 py-1.5 text-xs leading-relaxed text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
+                <span className="font-semibold">💡 Could've said:</span> <span className="italic">“{s.suggestion}”</span>
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -1681,12 +1875,14 @@ function MissingCard({ scores }: { scores: CriterionScore[] }) {
 
 type Mark = {
   id: string;
+  criterionId: string;
   quote: string;
   level: RubricLevel;
   label: string;
   feedback: string;
   points: number;
   maxPoints: number;
+  suggestion: string;
 };
 
 function buildMarks(scores: CriterionScore[]): Mark[] {
@@ -1694,7 +1890,13 @@ function buildMarks(scores: CriterionScore[]): Mark[] {
   for (const s of scores) {
     s.evidence.forEach((q, i) => {
       if (q && q.trim().length > 3) {
-        marks.push({ id: `${s.criterion_id}#${i}`, quote: q.trim(), level: s.level, label: s.name, feedback: s.feedback, points: s.points, maxPoints: s.max_points });
+        marks.push({
+          id: `${s.criterion_id}#${i}`, criterionId: s.criterion_id, quote: q.trim(),
+          level: s.level, label: s.name, feedback: s.feedback,
+          points: s.points, maxPoints: s.max_points,
+          // Only anchor a suggestion to the first evidence span of a non-exemplary criterion.
+          suggestion: i === 0 && s.level !== "exemplary" ? s.suggestion : "",
+        });
       }
     });
   }
@@ -1719,6 +1921,9 @@ function TranscriptTab(props: {
   utterances: Utterance[];
 }) {
   const activeMark = props.marks.find((m) => m.id === props.active) ?? null;
+  const activeSuggestion = activeMark && activeMark.level !== "exemplary"
+    ? props.scores.find((s) => s.criterion_id === activeMark.criterionId)?.suggestion ?? ""
+    : "";
   const tone = activeMark ? LEVEL_TONE[activeMark.level] : null;
   const hasTurns = props.utterances.length > 0;
   return (
@@ -1728,8 +1933,8 @@ function TranscriptTab(props: {
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your presentation</h3>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             {hasTurns
-              ? "Split by speaker so you can see who said what — highlights mark where each criterion found credit. Tap one for the note."
-              : "Highlights mark where each criterion found credit; color is the level it reached. Tap one for the note."}
+              ? "Split by speaker so you can see who said what. Highlights mark where each criterion found credit; 💡 notes show what you could have said. Tap a highlight for detail."
+              : "Highlights mark where each criterion found credit (color = the level it reached); 💡 notes woven in show what you could have said. Tap a highlight for the note."}
           </p>
           {hasTurns ? (
             <div className="mt-3 space-y-3">
@@ -1781,6 +1986,11 @@ function TranscriptTab(props: {
                 </div>
                 <p className="mt-1.5 text-sm italic text-slate-500 dark:text-slate-400">“{activeMark.quote}”</p>
                 {activeMark.feedback && <p className="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(activeMark.feedback)}</p>}
+                {activeSuggestion && (
+                  <p className="mt-2 rounded-lg border border-dashed border-indigo-300 bg-indigo-50/70 px-2.5 py-1.5 text-xs leading-relaxed text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
+                    <span className="font-semibold">💡 What you could have said:</span> <span className="italic">“{activeSuggestion}”</span>
+                  </p>
+                )}
                 <button className="mt-2 font-mono text-xs font-medium text-slate-400 dark:text-slate-500 underline" onClick={() => props.onSelect(null)}>
                   Clear
                 </button>
@@ -1839,6 +2049,18 @@ function highlight(text: string, marks: Mark[], active: string | null, onSelect:
         {text.slice(f.start, f.end)}
       </mark>,
     );
+    // "What you could have said" — woven into the transcript right after the phrase.
+    if (f.mark.suggestion) {
+      nodes.push(
+        <span
+          key={`s${i}`}
+          className="mx-1 inline-flex items-baseline gap-1 rounded-md border border-dashed border-indigo-300 bg-indigo-50/80 px-1.5 py-0.5 align-baseline text-[0.85em] leading-snug text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200"
+        >
+          <span aria-hidden>💡</span>
+          <span><span className="font-semibold">Could've said:</span> <span className="italic">“{f.mark.suggestion}”</span></span>
+        </span>,
+      );
+    }
     cursor = f.end;
   });
   if (cursor < text.length) nodes.push(<span key="tail">{text.slice(cursor)}</span>);
@@ -1977,16 +2199,16 @@ function HonestyNote() {
   );
 }
 
-function TimerBar({ label, left, total, tone }: { label: string; left: number; total: number; tone: "indigo" | "amber" | "slate" | "red" }) {
+function TimerBar({ label, left, total, tone, sticky = false }: { label: string; left: number; total: number; tone: "indigo" | "amber" | "slate" | "red"; sticky?: boolean }) {
   const tones = {
-    indigo: { box: "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-200", num: "text-indigo-700 dark:text-indigo-300", bar: "bg-indigo-500" },
-    amber: { box: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200", num: "text-amber-700 dark:text-amber-300", bar: "bg-amber-500" },
+    indigo: { box: "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-200", num: "text-indigo-700 dark:text-indigo-300", bar: "bg-indigo-500" },
+    amber: { box: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200", num: "text-amber-700 dark:text-amber-300", bar: "bg-amber-500" },
     slate: { box: "border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200", num: "text-slate-900 dark:text-slate-100", bar: "bg-slate-400" },
-    red: { box: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200", num: "text-red-600 dark:text-red-300", bar: "bg-red-500" },
+    red: { box: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200", num: "text-red-600 dark:text-red-300", bar: "bg-red-500" },
   }[tone];
   const pct = total > 0 ? Math.max(0, Math.min(100, (left / total) * 100)) : 0;
   return (
-    <div className={`rounded-2xl border px-4 py-3 shadow-sm ${tones.box}`}>
+    <div className={`rounded-2xl border px-4 py-3 shadow-sm ${tones.box} ${sticky ? "sticky top-[68px] z-10" : ""}`}>
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{label}</div>
         <div className={`font-mono text-2xl font-bold tabular-nums ${tones.num}`}>{fmt(left)}</div>
@@ -2030,16 +2252,23 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
   return (
     <Card>
       <div className="flex flex-col items-center gap-6 py-12">
-        <div className="relative grid h-24 w-24 place-items-center">
+        <div className="relative grid h-28 w-28 place-items-center">
+          {/* Spinning conic-gradient ring — the clearly-moving element. */}
+          <div
+            className="absolute inset-0 animate-spin rounded-full [animation-duration:2.4s]"
+            style={{ background: "conic-gradient(from 90deg, rgba(99,102,241,0) 0deg, rgba(99,102,241,0.15) 140deg, rgba(139,92,246,0.95) 340deg, rgba(99,102,241,0))" }}
+          />
+          <div className="absolute inset-[5px] rounded-full bg-white dark:bg-slate-900" />
+          {/* Radar rings pulsing outward. */}
           {[0, 0.6, 1.2].map((delay) => (
             <span
               key={delay}
-              className="pic-radar-ring absolute inset-0 rounded-full border-2 border-indigo-400/60 dark:border-indigo-500/50"
+              className="pic-radar-ring absolute inset-[10px] rounded-full border-2 border-indigo-400/50 dark:border-indigo-500/40"
               style={{ animationDelay: `${delay}s` }}
             />
           ))}
-          <div className="pic-bob">
-            <BrandMark size={48} />
+          <div className="pic-bob relative">
+            <BrandMark size={44} />
           </div>
         </div>
 
@@ -2164,32 +2393,33 @@ function FAQPage({ onStart }: { onStart: () => void }) {
       </FAQGroup>
 
       <FAQGroup title="How we're different">
-        <FAQItem q="How is this different from Case Ace, DECAdemy, and other tools?">
+        <FAQItem q="What makes PI Coach's feedback different?">
           <p>
-            Tools like <a className={FAQ_LINK} href="https://caseace.app/" target="_blank" rel="noreferrer">Case Ace</a> and{" "}
-            <a className={FAQ_LINK} href="https://www.decademy.app/roleplays" target="_blank" rel="noreferrer">DECAdemy</a> are
-            genuinely useful — they lean on huge banks of practice questions, PI flashcards, and scoring aligned to the
-            official event formats and judge categories. That's great for coverage. Where we focus differently:
+            Most practice comes down to a number and some generic advice. We built PI Coach around feedback specific
+            enough to actually change how you present next time:
           </p>
           <ul className="ml-4 list-disc space-y-1.5">
             <li>
-              <strong className="font-semibold text-slate-800 dark:text-slate-200">Our own evaluation framework.</strong> We grade against 282 skills we authored from
-              public business fundamentals — not a licensed performance-indicator list. (More on why, below.)
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Phrase-level grading.</strong> We transcribe your presentation and grade the actual phrases you
+              said — highlighting the exact words that earned credit, and showing <em>“what you could have said”</em>
+              right in your transcript where a stronger line would have raised your score.
             </li>
             <li>
-              <strong className="font-semibold text-slate-800 dark:text-slate-200">Voice &amp; delivery, not just typed content.</strong> Present out loud and get real, deterministic
-              delivery metrics — and for team events, speaker diarization that shows who dominated the talking.
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Skill by skill, with the gaps.</strong> Every indicator is scored against a written “strong vs. weak”
+              bar, so name-dropping a term doesn't fool it — and you get the concrete thing that was missing.
             </li>
             <li>
-              <strong className="font-semibold text-slate-800 dark:text-slate-200">Verified math.</strong> Quantitative events get server-computed calculations, not AI mental math.
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Delivery that counts.</strong> Present out loud and your pace, fillers, pauses, and timing are
+              measured and folded into your score — for team events we even show who dominated the talking.
             </li>
             <li>
-              <strong className="font-semibold text-slate-800 dark:text-slate-200">Evidence-linked feedback.</strong> Every point ties back to a phrase you actually said, highlighted in
-              your transcript.
+              <strong className="font-semibold text-slate-800 dark:text-slate-200">Math you can trust.</strong> On finance events, every calculation is recomputed on our server, so a
+              wrong number is caught with the right one — never guessed at.
             </li>
           </ul>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            We describe other tools as accurately as we can; details change, so check their sites for the latest.
+          <p>
+            It's all built on our own evaluation framework, authored from public business fundamentals (more on why
+            below) — so the coaching is ours, end to end.
           </p>
         </FAQItem>
         <FAQItem q="Why build your own framework instead of using DECA's performance indicators?">
@@ -2251,7 +2481,6 @@ function FAQPage({ onStart }: { onStart: () => void }) {
   );
 }
 
-const FAQ_LINK = "font-medium text-indigo-600 underline underline-offset-2 hover:text-indigo-700 dark:text-indigo-400";
 
 function TipsPage({ onStart }: { onStart: () => void }) {
   return (
@@ -2349,6 +2578,65 @@ function TipsPage({ onStart }: { onStart: () => void }) {
         </div>
       </section>
 
+      {/* Notebook */}
+      <section>
+        <SectionHead eyebrow="Prep like a pro" title="How to lay out your notebook page">
+          Your prep paper is a map you'll present from — not an essay. Set it up the same way every time so, under
+          pressure, your eyes always know where to look. Here's a layout that works.
+        </SectionHead>
+        <div className="mt-7 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
+          <NotebookMock />
+          <div className="space-y-3">
+            <NotebookStep n="1" title="Company & your role" body="Top of the page: the company name and the exact role you're playing. It anchors everything and stops you slipping out of character." />
+            <NotebookStep n="2" title="The problem, in one line" body="Force yourself to write the actual ask in a single sentence. If you can't, you haven't found it yet — reread the situation." />
+            <NotebookStep n="3" title="Each indicator + your own definition" body="List the skills you're assessed on. Next to each, write a short definition in YOUR words — that's your Define beat, ready to go." />
+            <NotebookStep n="4" title="A tie-back bullet per indicator" body="Under each, one bullet on how it applies to THIS scenario. That bullet is your Connect beat — where the points live." />
+            <NotebookStep n="5" title="Open & close" body="Jot your first line and last line. Bookending strong is half the impression, and it saves you when nerves hit." />
+          </div>
+        </div>
+      </section>
+
+      {/* Fill the time */}
+      <section>
+        <SectionHead eyebrow="Command the room" title="Acronyms, and how to fill the time">
+          Two things separate a thin four-minute answer from a full, confident one: giving the judge a structure they
+          can follow, and having enough depth to actually use the window.
+        </SectionHead>
+        <div className="mt-7 grid gap-4 md:grid-cols-2">
+          <Card className="border-indigo-200 dark:border-indigo-900/60">
+            <Eyebrow>Use an acronym</Eyebrow>
+            <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Give the judge a handle</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              When you explain a process or plan, coin a simple acronym and walk its letters. It makes you sound
+              organized, helps the judge follow, and makes your answer memorable when they score you afterward.
+            </p>
+            <p className="mt-3 rounded-xl bg-slate-50 px-3.5 py-3 text-sm text-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
+              “My retention plan follows <strong className="font-semibold">R.A.M.P.</strong> — <strong className="font-semibold">R</strong>eward loyalty,
+              <strong className="font-semibold"> A</strong>utomate the outreach, <strong className="font-semibold">M</strong>easure repeat visits,
+              <strong className="font-semibold"> P</strong>ilot before rollout.”
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+              Keep it to 3–5 letters and make each one real. A clear structure beats a clever-but-empty one.
+            </p>
+          </Card>
+          <Card>
+            <Eyebrow>Fill the time with substance</Eyebrow>
+            <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Add depth, not padding</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              Running short? Don't slow down or repeat — add another layer. Each of these buys real time and earns points:
+            </p>
+            <ul className="mt-3 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
+              <Tip icon="④">Run every skill through all four beats (Define → Explain → Connect → Above &amp; Beyond).</Tip>
+              <Tip icon="⚖️">Name a second option you considered and why you rejected it.</Tip>
+              <Tip icon="🔢">Quantify — a rough number, a cost, or a target makes it concrete.</Tip>
+              <Tip icon="🗓️">Add an implementation timeline (first 30 days, then 90).</Tip>
+              <Tip icon="⚠️">Raise a risk and how you'd handle it — judges love foresight.</Tip>
+              <Tip icon="🏆">Drop a real brand example or a quick stat as proof.</Tip>
+            </ul>
+          </Card>
+        </div>
+      </section>
+
       {/* CTA */}
       <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -2422,6 +2710,47 @@ function TipCard({ eyebrow, title, items }: { eyebrow: string; title: string; it
           <li key={i} className="flex gap-2"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-indigo-400" />{it}</li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function NotebookStep({ n, title, body }: { n: string; title: string; body: string }) {
+  return (
+    <div className="flex gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-indigo-100 font-mono text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">{n}</span>
+      <div>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+        <p className="mt-0.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+// A stylized notebook page mockup for the prep-layout tip.
+function NotebookMock() {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-[#fffdf5] p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* margin line */}
+      <div className="pointer-events-none absolute inset-y-0 left-9 w-px bg-rose-300/60 dark:bg-rose-500/30" />
+      <div className="relative pl-6 font-mono text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
+        <p className="font-bold text-slate-900 dark:text-slate-100">FreshBrew Coffee Co. — Marketing Consultant</p>
+        <p className="mt-1 text-slate-500 dark:text-slate-400">Problem: afternoons are dead + first-timers don't return.</p>
+        <div className="mt-3 space-y-2.5">
+          {[
+            { pi: "Promotional strategy", def: "= the mix of ways we reach customers", tie: "→ app push + a 3–5pm power hour" },
+            { pi: "Customer relationships", def: "= turning buyers into regulars", tie: "→ tiered loyalty, birthday reward" },
+            { pi: "Channel strategy", def: "= how the product reaches them", tie: "→ own the app, drop 3rd-party fees" },
+            { pi: "Measuring success", def: "= how we'll know it worked", tie: "→ repeat-visit rate, +15% / 2 qtrs" },
+          ].map((r) => (
+            <div key={r.pi}>
+              <p><span className="font-semibold text-indigo-700 dark:text-indigo-300">▸ {r.pi}</span> <span className="text-slate-400 dark:text-slate-500">{r.def}</span></p>
+              <p className="pl-4 text-emerald-700 dark:text-emerald-400">{r.tie}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-slate-500 dark:text-slate-400">Open: “Thanks for having me — here's how we win back the afternoon.”</p>
+        <p className="text-slate-500 dark:text-slate-400">Close: “Pilot 3 stores, prove the lift, then scale.”</p>
+      </div>
     </div>
   );
 }
@@ -2564,21 +2893,6 @@ function useCountdown(seconds: number, running: boolean, onElapsed?: () => void)
     return () => clearInterval(id);
   }, [running]);
 
-  return left;
-}
-
-// Counts down to a wall-clock deadline (ms epoch). Survives stage changes so the
-// presentation budget keeps running from response into the judge's questions.
-function useDeadline(endsAt: number | null): number {
-  const calc = () => (endsAt ? Math.max(0, Math.round((endsAt - Date.now()) / 1000)) : 0);
-  const [left, setLeft] = useState(calc);
-  useEffect(() => {
-    if (!endsAt) return;
-    setLeft(calc);
-    const id = setInterval(() => setLeft(Math.max(0, Math.round((endsAt - Date.now()) / 1000))), 250);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [endsAt]);
   return left;
 }
 

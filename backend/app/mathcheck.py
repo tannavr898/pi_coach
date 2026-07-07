@@ -141,10 +141,31 @@ def verify_check(raw: dict) -> dict:
     return result
 
 
+# Guardrail on how many checks we surface, so a chatty model can't bury the user.
+_MAX_CHECKS = 8
+
+
+def _dedup_key(check: dict) -> str:
+    """Two checks are 'the same' if they compute the same expression (ignoring
+    whitespace) — this drops the model's duplicate/contradictory variants."""
+    return "".join((check.get("expression") or "").split())
+
+
 def verify_all(raw_checks: list) -> list[dict]:
-    """Verify a list of model-supplied checks, skipping malformed entries."""
+    """Verify model-supplied checks: skip malformed entries, drop duplicate
+    expressions (which is how contradictory 'claimed vs correct' pairs show up),
+    and cap the count."""
     out: list[dict] = []
+    seen: set[str] = set()
     for raw in raw_checks or []:
-        if isinstance(raw, dict):
-            out.append(verify_check(raw))
+        if not isinstance(raw, dict):
+            continue
+        result = verify_check(raw)
+        key = _dedup_key(result)
+        if key and key in seen:
+            continue  # already verified this exact expression
+        seen.add(key)
+        out.append(result)
+        if len(out) >= _MAX_CHECKS:
+            break
     return out

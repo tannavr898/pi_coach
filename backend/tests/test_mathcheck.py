@@ -43,6 +43,27 @@ def test_verify_check_survives_bad_expression():
     assert r["computed"] is None and r["ok"] is None and r["note"]
 
 
+def test_verify_all_dedupes_same_expression():
+    # The model's contradictory "claimed vs correct" pair collapses to one check.
+    checks = mathcheck.verify_all([
+        {"label": "break-even (correct)", "expression": "1800 / (14 - 7.5)"},
+        {"label": "break-even (using wrong overhead)", "expression": "1800/(14-7.5)"},  # same, whitespace differs
+    ])
+    assert len(checks) == 1
+
+
+def test_verify_all_caps_count():
+    many = [{"label": f"c{i}", "expression": f"{i}+1"} for i in range(20)]
+    assert len(mathcheck.verify_all(many)) <= 8
+
+
+def test_delivery_score_and_components():
+    score, comps = delivery.delivery_score("good", 0.0, 0, "good", False)
+    assert score == 100 and len(comps) == 4
+    worse, _ = delivery.delivery_score("fast", 6.0, 3, "long", True)
+    assert worse < score
+
+
 # --- speaker diarization breakdown ----------------------------------------
 
 

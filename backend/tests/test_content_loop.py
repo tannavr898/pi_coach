@@ -149,7 +149,8 @@ def test_score_assembles_and_totals(monkeypatch, crit_ids):
         return json.dumps({
             "criteria": [
                 {"criterion_id": cid, "level": "proficient", "points": 99,  # must clamp to 8
-                 "headline": "h", "feedback": "fb", "evidence": ["BrightPath"], "gaps": []}
+                 "headline": "h", "feedback": "fb", "evidence": ["BrightPath"], "gaps": [],
+                 "suggestion": "I'd track repeat visits monthly."}
                 for cid in crit_ids
             ],
             "summary": "ok", "strengths": ["a"], "improvements": ["b"], "followup_feedback": "decent",
@@ -174,6 +175,8 @@ def test_score_assembles_and_totals(monkeypatch, crit_ids):
     # criterion name is pinned from our framework, not trusted from the client
     first = s["scores"][0]
     assert first["name"] and first["criterion_id"] == crit_ids[0]
+    # "what you could have said" is carried through to the client
+    assert first["suggestion"] == "I'd track repeat visits monthly."
 
 
 def test_score_runs_math_checks_for_quantitative_event(monkeypatch, crit_ids):

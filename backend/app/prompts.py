@@ -22,7 +22,46 @@ performance-indicator text, codes, or event-to-PI mapping appears in any prompt.
 
 from __future__ import annotations
 
+import random
+
 from . import rubric
+
+# Names the model reaches for by default — banning them forces genuine variety so
+# every session doesn't feature "Crestline" run by "Dana".
+_OVERUSED_NAMES = (
+    "Crestline, Summit, Apex, Evergreen, Ridgeline, BrightPath, BrightBean, FreshBlend, "
+    "Peak, Pinnacle, Horizon, Vertex, Stellar, Nova, Dana, Alex, Sarah, Maria, Sam, Jordan"
+)
+# Company-name starting letters to seed from (skips ones that bias toward the
+# overused set above).
+_INITIALS = "ABCDEFGHIJKLMNOQRTUVWYZ"
+
+
+# Sector nudges so no-industry runs don't all land on the same default (coffee
+# shops, candle makers, boutiques). Only a hint — a stated industry always wins.
+_SECTORS = (
+    "auto repair, landscaping, a dental practice, a moving company, a craft brewery, "
+    "a pet daycare, a solar installer, a food truck, a bookstore, a fitness studio, "
+    "a print shop, a medical clinic, a farmers' co-op, a bike shop, a catering company, "
+    "a tutoring center, a hardware store, an event venue, a trucking firm, a plant nursery"
+)
+
+
+def _variety_block() -> str:
+    """A per-call randomized nudge that breaks the model's default name/setting
+    attractor, so companies, people, places, AND industries vary between sessions."""
+    inits = ", ".join(random.sample(_INITIALS, 3))
+    sectors = ", ".join(random.sample(_SECTORS.split(", "), 4))
+    seed = random.randint(1000, 9999)
+    return (
+        f"VARIETY (seed {seed}): invent a fresh, specific company name and character "
+        f"name(s) for THIS scenario. Do NOT reuse these overused defaults: "
+        f"{_OVERUSED_NAMES}. Try a company name starting with one of: {inits}. Vary the "
+        f"setting (region, company size, and the character's name/background) from a "
+        f"generic default. If no specific industry is required by the topic, pick an "
+        f"UNEXPECTED one rather than the obvious default — e.g. {sectors} — so sessions "
+        f"don't all feel the same.\n"
+    )
 
 
 # Level-scaled length/complexity. Shorter and more concrete at the entry tier;
@@ -124,7 +163,7 @@ def build_scenario_prompt(
                 "participant's work to show. Make sure the raw inputs you give are internally "
                 "consistent and realistic.\n"
             )
-    user = f"""{event_line}{quant_line}REQUESTED TOPIC: {topic}
+    user = f"""{event_line}{quant_line}{_variety_block()}REQUESTED TOPIC: {topic}
 INDUSTRY / CONTEXT: {industry_line}
 COMPLEXITY: {level}   ({guide})
 
@@ -141,7 +180,11 @@ reason to demonstrate EVERY criterion you selected. The participant takes a
 specific role at a specific, realistic (invented) company in the stated industry
 and must work through a concrete business situation that calls for a solution.
 Keep it grounded and current; no placeholder names; invent specific, believable
-details.
+details. Give the task enough SUBSTANCE to fill the full presentation window: weave
+in 2-3 concrete angles a strong answer must address (e.g. a specific constraint or
+budget, a second stakeholder's concern, a tradeoff between two options, or a couple
+of realistic data points) — so there is genuinely enough to talk through, not a
+one-line problem.
 
 Return a JSON object with EXACTLY these keys:
 {{
@@ -209,16 +252,28 @@ def _criteria_block(criteria: list[dict]) -> str:
 
 
 _MATH_BLOCK = """
-THIS IS A QUANTITATIVE EVENT — DO NOT DO ARITHMETIC IN YOUR HEAD. For every number
-the participant calculated or asserted (margins, break-even, ROI, totals, ratios,
-interest, price changes, etc.), add an entry to "math_checks" giving the raw
-arithmetic as an EXPRESSION we will compute ourselves, plus the value the
-participant claimed. Use ONLY numbers and + - * / % ** and parentheses in
-"expression" (no words, no units, no $ or , — write 50000 not $50,000). Our backend
-evaluates the expression; that result — NOT your mental math — is authoritative and
-is what feedback shows. When judging whether the participant's numbers were right,
-defer to these checks: do not call a calculation wrong in your feedback unless its
-check shows a mismatch, and do not bless a number you did not put in a check.
+THIS IS A QUANTITATIVE EVENT — DO NOT DO ARITHMETIC IN YOUR HEAD. List the KEY
+quantities the participant was expected to calculate (margin, break-even, ROI,
+totals, ratios, interest, price changes, etc.) in "math_checks". Follow these rules
+EXACTLY so the checks are clean and never contradict each other:
+
+1. ONE check per distinct quantity. Never produce two versions of the same quantity.
+2. ALWAYS build "expression" from the CORRECT input values given in the scenario —
+   never from a number the participant got wrong. The expression is the right way to
+   compute it; "claimed" is what the participant actually said.
+3. If the participant used a wrong input or made an error, you still write the
+   expression with the correct inputs and put their final answer in "claimed" — the
+   check will then show the mismatch. Do NOT add a separate "using their wrong number"
+   check, and do NOT cascade an error into later expressions (later expressions still
+   use correct inputs).
+4. Keep it to the ~4-6 quantities that actually matter. Do not invent extra
+   calculations the scenario didn't call for.
+5. Use ONLY numbers and + - * / % ** and parentheses in "expression" (no words, no
+   units, no $ or ,: write 50000, not $50,000).
+
+Our backend evaluates each expression; that result — NOT your mental math — is
+authoritative and is what feedback shows. In your written feedback, defer to these
+checks: don't call a calculation wrong unless its check shows a mismatch.
 Each entry: {"label": "gross margin %", "expression": "(50000-30000)/50000*100", "claimed": 40, "unit": "%"}.
 Omit "claimed" only if the participant clearly should have computed it but didn't.
 """
@@ -268,12 +323,17 @@ For EVERY criterion provide:
   raised the level (e.g. "Didn't quantify the discount", "No success metric named").
   Phrase each as a brief missing item, not a full sentence. Use an empty list [] ONLY
   if the criterion was genuinely Exemplary with nothing to add.
+- "suggestion": ONE sentence of "what you could have said" — a concrete, better line
+  the participant could have spoken to strengthen THIS criterion, written in the
+  first person as if they said it (e.g. "I'd track repeat-visit rate monthly, aiming
+  for a 15% lift within two quarters."). Make it specific to this scenario. Use an
+  empty string ONLY if the criterion was already Exemplary.
 
 Return a JSON object with EXACTLY this shape:
 {{
   "criteria": [
     {{"criterion_id": "<id>", "level": "novice|developing|proficient|exemplary",
-      "points": <int in band>, "headline": "<<=8 words>", "feedback": "<specific, with **key phrase** bolded>", "evidence": ["<verbatim quote>"], "gaps": ["<short missing item>"]}}
+      "points": <int in band>, "headline": "<<=8 words>", "feedback": "<specific, with **key phrase** bolded>", "evidence": ["<verbatim quote>"], "gaps": ["<short missing item>"], "suggestion": "<one first-person line they could have said>"}}
     // one object per criterion above, same order
   ],
   "summary": "<2-3 sentence overall read of the response>",

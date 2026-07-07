@@ -203,6 +203,7 @@ def _score_one(c: dict, raw: dict) -> CriterionScore:
         feedback=str(raw.get("feedback", "")).strip(),
         evidence=[str(q) for q in raw.get("evidence", []) if str(q).strip()],
         gaps=[str(g).strip() for g in raw.get("gaps", []) if str(g).strip()],
+        suggestion=str(raw.get("suggestion", "")).strip(),
     )
 
 

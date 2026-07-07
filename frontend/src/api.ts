@@ -73,6 +73,7 @@ export type CriterionScore = {
   feedback: string;
   evidence: string[];
   gaps: string[];
+  suggestion: string;
 };
 
 export type MathCheck = {
@@ -101,6 +102,12 @@ export type ScoreResponse = {
 export type FillerCount = { word: string; count: number };
 export type CrutchCount = { phrase: string; count: number };
 export type LongPause = { at_seconds: number; length_seconds: number };
+
+export type DeliveryComponent = {
+  label: string;
+  score: number;
+  hint: string;
+};
 
 export type SpeakerStat = {
   speaker: string;
@@ -135,6 +142,8 @@ export type DeliveryMetrics = {
   time_flag: "short" | "good" | "long";
   reading_signal: boolean;
   notes: string[];
+  delivery_score: number;
+  delivery_components: DeliveryComponent[];
   speakers: SpeakerStat[];
   dominated_by: string;
   balance_note: string;

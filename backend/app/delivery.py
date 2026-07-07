@@ -48,6 +48,45 @@ def _norm(text: str) -> str:
     return re.sub(r"^[^\w]+|[^\w]+$", "", text.lower())
 
 
+def _clamp(v: float, lo: float = 0, hi: float = 100) -> int:
+    return int(round(max(lo, min(hi, v))))
+
+
+def delivery_score(
+    pace_flag: str,
+    filler_per_min: float,
+    long_pause_count: int,
+    time_flag: str,
+    reading_signal: bool,
+) -> tuple[int, list[dict]]:
+    """A deterministic 0-100 delivery score with a component breakdown.
+
+    Built only from timing/fluency facts (never tone or confidence). Returns
+    (score, components) where each component is {label, score, hint}. This feeds
+    both the Delivery tab and the blended overall score.
+    """
+    pace = 100 if pace_flag == "good" else 58
+    fluency = _clamp(100 - filler_per_min * 12)          # ~0/min=100, 2.5=70, 5=40
+    flow = _clamp(100 - long_pause_count * 20)            # each 3s+ pause costs 20
+    timing = 100 if time_flag == "good" else 62
+
+    components = [
+        {"label": "Pace", "score": pace,
+         "hint": "In the 130–160 WPM range" if pace == 100 else "Drifted fast or slow"},
+        {"label": "Fluency", "score": fluency,
+         "hint": "Few filler words" if fluency >= 80 else "Trim the um/uh"},
+        {"label": "Flow", "score": flow,
+         "hint": "No long stalls" if flow >= 80 else "Watch the long pauses"},
+        {"label": "Timing", "score": timing,
+         "hint": "Used the window well" if timing == 100 else "Off the target length"},
+    ]
+    # Weighted blend; a read-aloud signal shaves a little off.
+    overall = pace * 0.30 + fluency * 0.30 + flow * 0.20 + timing * 0.20
+    if reading_signal:
+        overall -= 4
+    return _clamp(overall), components
+
+
 def compute_delivery(
     words: Sequence[_Word],
     audio_duration_s: float = 0.0,
@@ -74,6 +113,8 @@ def compute_delivery(
             "time_flag": "short",
             "reading_signal": False,
             "notes": ["No speech was detected in the recording."],
+            "delivery_score": 0,
+            "delivery_components": [],
         }
 
     first_start = words[0].start_ms
@@ -137,6 +178,8 @@ def compute_delivery(
             cv = statistics.pstdev(nonzero) / mean_gap if mean_gap > 0 else 1.0
             reading_signal = cv < 0.5
 
+    dscore, dcomponents = delivery_score(pace_flag, filler_per_min, len(long_pauses), time_flag, reading_signal)
+
     return {
         "duration_seconds": round(duration_s, 1),
         "word_count": n,
@@ -154,6 +197,8 @@ def compute_delivery(
         "time_flag": time_flag,
         "reading_signal": reading_signal,
         "notes": _notes(pace, pace_flag, filler_total, filler_per_min, crutch_counts, long_pauses, duration_s, time_flag, reading_signal),
+        "delivery_score": dscore,
+        "delivery_components": dcomponents,
     }
 
 
