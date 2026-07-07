@@ -2252,24 +2252,18 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
   return (
     <Card>
       <div className="flex flex-col items-center gap-6 py-12">
-        <div className="relative grid h-28 w-28 place-items-center">
-          {/* Spinning conic-gradient ring — the clearly-moving element. */}
-          <div
-            className="absolute inset-0 animate-spin rounded-full [animation-duration:2.4s]"
-            style={{ background: "conic-gradient(from 90deg, rgba(99,102,241,0) 0deg, rgba(99,102,241,0.15) 140deg, rgba(139,92,246,0.95) 340deg, rgba(99,102,241,0))" }}
-          />
-          <div className="absolute inset-[5px] rounded-full bg-white dark:bg-slate-900" />
-          {/* Radar rings pulsing outward. */}
-          {[0, 0.6, 1.2].map((delay) => (
-            <span
-              key={delay}
-              className="pic-radar-ring absolute inset-[10px] rounded-full border-2 border-indigo-400/50 dark:border-indigo-500/40"
-              style={{ animationDelay: `${delay}s` }}
-            />
-          ))}
-          <div className="pic-bob relative">
-            <BrandMark size={44} />
-          </div>
+        {/* The brand mark as a rippling target: 5 concentric layers (2 real rings
+            + 2 background-colored "gap" rings + a glowing dot) share one wave
+            keyframe, staggered center→edge so the pulse travels outward. The gap
+            rings are the card's own bg, which is what creates the ring illusion.
+            Layers are centered with `inset-0 m-auto` (not transforms) so the
+            scale animation is free to drive `transform`. */}
+        <div className="relative grid place-items-center" style={{ width: 120, height: 120 }}>
+          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 120, height: 120, background: "#4c5fe4", animationDelay: "0.45s" }} />
+          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 88, height: 88, animationDelay: "0.3s" }} />
+          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 58, height: 58, background: "#7c8cf7", animationDelay: "0.15s" }} />
+          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 31, height: 31, animationDelay: "0.05s" }} />
+          <span className="pic-wave-dot absolute inset-0 m-auto rounded-full" style={{ width: 14, height: 14, background: "#a9b6ff" }} />
         </div>
 
         <div className="text-center">
@@ -2302,7 +2296,7 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
                   {done ? (
                     <span className="text-emerald-500">✓</span>
                   ) : current ? (
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                    <span className="pic-spin h-3.5 w-3.5 rounded-full border-2 border-indigo-500 border-t-transparent" />
                   ) : (
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   )}
