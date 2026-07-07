@@ -237,7 +237,12 @@ export default function App() {
                 request={request}
                 practiceMode={practiceMode}
                 level={level}
-                onEvent={setEventId}
+                onEvent={(id) => {
+                  setEventId(id);
+                  // Funnel entry: they committed to an event. Pairs with
+                  // scenario_generated to expose "picked but never generated."
+                  if (id) track("event_selected", { event: id });
+                }}
                 onRequest={setRequest}
                 onPracticeMode={setPracticeMode}
                 onLevel={setLevel}
@@ -259,7 +264,15 @@ export default function App() {
               />
             )}
 
-            {stage === "ready" && scenario && <ReadyScreen scenario={scenario} onStart={() => setStage("prep")} />}
+            {stage === "ready" && scenario && (
+              <ReadyScreen
+                scenario={scenario}
+                onStart={() => {
+                  track("prep_started", { event: eventId });
+                  setStage("prep");
+                }}
+              />
+            )}
 
             {stage === "prep" && scenario && (
               <PrepScreen
@@ -274,7 +287,15 @@ export default function App() {
             )}
 
             {stage === "walkin" && scenario && (
-              <WalkinScreen scenario={scenario} onEnter={() => setStage("respond")} />
+              <WalkinScreen
+                scenario={scenario}
+                onEnter={() => {
+                  // They left the waiting room to face the judge — the last
+                  // step before they actually present.
+                  track("presentation_started", { event: eventId });
+                  setStage("respond");
+                }}
+              />
             )}
 
             {stage === "respond" && scenario && (
