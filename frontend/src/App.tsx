@@ -3,6 +3,7 @@ import {
   type Criterion,
   type CriterionScore,
   type DeliveryMetrics,
+  type DeliveryResponse,
   type EventSummary,
   type Level,
   type MathCheck,
@@ -146,11 +147,21 @@ export default function App() {
       // Spoken path: transcribe first, then score the transcript.
       if (mode === "speak") {
         if (!audioBlob) {
-          setError("No recording found — record your response first.");
+          setError("No recording found — record your response first, then submit.");
           setStage("respond");
           return;
         }
-        const d = await postDelivery(audioBlob, scenario.timing.target_seconds, scenario.team);
+        let d: DeliveryResponse;
+        try {
+          d = await postDelivery(audioBlob, scenario.timing.target_seconds, scenario.team);
+        } catch (e) {
+          // Transcription failed — silent/empty/unclear clip, or the provider was
+          // unreachable. Send them back to re-record (not on to the questions) with
+          // the reason shown, instead of the old bare "HTTP 502".
+          setError(errMsg(e));
+          setStage("respond");
+          return;
+        }
         responseForScoring = d.transcript;
         deliveryMetrics = d.metrics;
         setUtterances(d.utterances); // team: speaker-labeled turns for the transcript
@@ -158,7 +169,8 @@ export default function App() {
       }
 
       if (!responseForScoring.trim()) {
-        setError("Your response came back empty — try again.");
+        // Valid audio the provider heard as silence — comes back as empty text.
+        setError("We couldn't hear anything in that recording — it came through silent. Check your mic, then record again.");
         setStage("respond");
         return;
       }

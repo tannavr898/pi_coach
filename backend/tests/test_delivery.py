@@ -103,3 +103,28 @@ def test_endpoint_503_without_key(monkeypatch):
     monkeypatch.setattr(transcription, "transcribe", boom)
     r = client.post("/api/score-delivery", files={"audio": ("take.webm", b"xxxx", "audio/webm")})
     assert r.status_code == 503
+
+
+def test_endpoint_422_on_empty_audio(monkeypatch):
+    # Nothing recorded: the provider is never called, and the user gets a clear
+    # 4xx with a next step instead of a 502.
+    def boom(audio, **kw):
+        raise AssertionError("transcribe should not run on empty audio")
+
+    monkeypatch.setattr(transcription, "transcribe", boom)
+    r = client.post("/api/score-delivery", files={"audio": ("take.webm", b"", "audio/webm")})
+    assert r.status_code == 422
+    assert "record" in r.json()["detail"].lower()
+
+
+def test_endpoint_502_gives_actionable_message(monkeypatch):
+    # A silent/undecodable clip makes the provider error; surface a helpful reason,
+    # not the raw provider string.
+    def boom(audio, **kw):
+        raise transcription.TranscriptionError("Audio does not appear to contain audio")
+
+    monkeypatch.setattr(transcription, "transcribe", boom)
+    r = client.post("/api/score-delivery", files={"audio": ("take.webm", b"xxxx", "audio/webm")})
+    assert r.status_code == 502
+    detail = r.json()["detail"].lower()
+    assert "silent" in detail and "microphone" in detail

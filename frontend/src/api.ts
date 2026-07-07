@@ -231,6 +231,22 @@ export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = f
   fd.append("target_seconds", String(targetSeconds));
   fd.append("diarize", String(diarize));
   const res = await fetch("/api/score-delivery", { method: "POST", body: fd });
-  await throwIfError(res);
+  if (!res.ok) {
+    // Prefer the backend's specific reason (e.g. "silent or too short"); fall back
+    // to a plain-English message when the body isn't JSON — which is what a raw
+    // gateway 502/504 (proxy timeout, cold start) looks like, and where the bare
+    // "HTTP 502" used to leak through to the user.
+    let detail = "";
+    try {
+      const body = await res.json();
+      if (body?.detail) detail = String(body.detail);
+    } catch {
+      /* non-JSON error body (HTML gateway page) */
+    }
+    throw new Error(
+      detail ||
+        "We couldn't process your recording — it may have been silent, too short, or unclear. Find a quiet spot and record again.",
+    );
+  }
   return res.json() as Promise<DeliveryResponse>;
 }

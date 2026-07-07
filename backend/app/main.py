@@ -269,12 +269,28 @@ def score_delivery(
     holds the recording for playback, deleting it unless the user opts to keep it).
     """
     raw = audio.file.read()
+    if not raw:
+        # Nothing was captured (mic blocked, or "stop" hit before any audio) —
+        # a client problem, so a clear 422 rather than a scary gateway-style 5xx.
+        raise HTTPException(
+            status_code=422,
+            detail="Nothing was recorded — no audio reached the server. Record your response, then submit again.",
+        )
     try:
         result = transcription.transcribe(raw, diarize=diarize)
     except transcription.TranscriptionNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
-    except transcription.TranscriptionError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+    except transcription.TranscriptionError:
+        # Almost always a silent, too-short, or unintelligible clip the provider
+        # can't decode. Give the likely cause and a next step, not a raw 502.
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "We couldn't transcribe that recording. It may have been silent, too "
+                "short, or picked up no clear speech — check your microphone, then "
+                "record and submit again."
+            ),
+        )
 
     metrics = delivery.compute_delivery(result.words, result.audio_duration_s, target_seconds=target_seconds)
     utterances: list[Utterance] = []
