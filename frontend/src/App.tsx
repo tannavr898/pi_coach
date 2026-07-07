@@ -2253,17 +2253,18 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
     <Card>
       <div className="flex flex-col items-center gap-6 py-12">
         {/* The brand mark as a rippling target: 5 concentric layers (2 real rings
-            + 2 background-colored "gap" rings + a glowing dot) share one wave
-            keyframe, staggered center→edge so the pulse travels outward. The gap
-            rings are the card's own bg, which is what creates the ring illusion.
-            Layers are centered with `inset-0 m-auto` (not transforms) so the
-            scale animation is free to drive `transform`. */}
-        <div className="relative grid place-items-center" style={{ width: 120, height: 120 }}>
-          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 120, height: 120, background: "#4c5fe4", animationDelay: "0.45s" }} />
-          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 88, height: 88, animationDelay: "0.3s" }} />
-          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 58, height: 58, background: "#7c8cf7", animationDelay: "0.15s" }} />
-          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 31, height: 31, animationDelay: "0.05s" }} />
-          <span className="pic-wave-dot absolute inset-0 m-auto rounded-full" style={{ width: 14, height: 14, background: "#a9b6ff" }} />
+            + 2 background-colored "gap" rings + a glowing indigo dot) share one
+            wave keyframe, staggered center→edge so the pulse travels outward. The
+            gap rings are the card's own bg, which is what creates the ring
+            illusion. Colors track BrandMark (#c7d2fe / #818cf8 / #4f46e5). Layers
+            are centered with `inset-0 m-auto` (not transforms) so the scale
+            animation is free to drive `transform`. */}
+        <div className="relative grid place-items-center" style={{ width: 140, height: 140 }}>
+          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 140, height: 140, background: "#c7d2fe", animationDelay: "0.6s" }} />
+          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 116, height: 116, animationDelay: "0.4s" }} />
+          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 92, height: 92, background: "#818cf8", animationDelay: "0.2s" }} />
+          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 72, height: 72, animationDelay: "0.07s" }} />
+          <span className="pic-wave-dot absolute inset-0 m-auto rounded-full" style={{ width: 34, height: 34, background: "#4f46e5" }} />
         </div>
 
         <div className="text-center">

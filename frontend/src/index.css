@@ -51,30 +51,19 @@
   0%, 100% {
     transform: scale(1);
   }
-  25% {
-    transform: scale(0.62);
-  }
   50% {
-    transform: scale(1);
+    transform: scale(0.68);
   }
 }
-/* The center dot rides the same wave but overshoots with a pulsing glow. */
+/* The center dot rides the same wave but swells outward with a pulsing glow. */
 @keyframes pic-wave-dot {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 8px 2px rgba(139, 157, 255, 0.5);
-  }
-  25% {
-    transform: scale(0.55);
-    box-shadow: 0 0 6px 1px rgba(139, 157, 255, 0.4);
+    box-shadow: 0 0 10px 2px rgba(79, 70, 229, 0.55);
   }
   50% {
-    transform: scale(1.3);
-    box-shadow: 0 0 22px 6px rgba(139, 157, 255, 0.9);
-  }
-  75% {
-    transform: scale(1);
-    box-shadow: 0 0 8px 2px rgba(139, 157, 255, 0.5);
+    transform: scale(1.2);
+    box-shadow: 0 0 22px 6px rgba(129, 140, 248, 0.85);
   }
 }
 @keyframes pic-spin {
@@ -83,10 +72,10 @@
   }
 }
 .pic-wave {
-  animation: pic-wave 2s ease-in-out infinite;
+  animation: pic-wave 2.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
 }
 .pic-wave-dot {
-  animation: pic-wave-dot 2s ease-in-out infinite;
+  animation: pic-wave-dot 2.8s cubic-bezier(0.45, 0, 0.2, 1) infinite;
 }
 /* Loader-owned spinner so the reduced-motion carve-out below can keep it moving
    without re-enabling every animate-spin in the app. */
@@ -137,7 +126,7 @@
   .pic-wave-dot,
   .pic-sweep,
   .pic-spin {
-    animation-duration: 2.6s !important;
+    animation-duration: 2.8s !important;
     animation-iteration-count: infinite !important;
   }
   .pic-spin {
