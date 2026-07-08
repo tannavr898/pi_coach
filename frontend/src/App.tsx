@@ -140,6 +140,9 @@ export default function App() {
     if (!scenario) return;
     setError(null);
     setStage("scoring");
+    // Funnel: they hit submit. Pairs with `scored` to expose the gap between
+    // "tried to submit" and "got a score" — i.e. transcription/scoring failures.
+    track("response_submitted", { mode, event: eventId });
     try {
       let responseForScoring = responseText;
       let deliveryMetrics: DeliveryMetrics | null = null;
@@ -158,6 +161,7 @@ export default function App() {
           // Transcription failed — silent/empty/unclear clip, or the provider was
           // unreachable. Send them back to re-record (not on to the questions) with
           // the reason shown, instead of the old bare "HTTP 502".
+          track("transcription_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
           setError(errMsg(e));
           setStage("respond");
           return;
@@ -170,6 +174,7 @@ export default function App() {
 
       if (!responseForScoring.trim()) {
         // Valid audio the provider heard as silence — comes back as empty text.
+        track("recording_silent", { event: eventId });
         setError("We couldn't hear anything in that recording — it came through silent. Check your mic, then record again.");
         setStage("respond");
         return;
@@ -202,6 +207,9 @@ export default function App() {
       });
       setStage("feedback");
     } catch (e) {
+      // Scoring itself failed (e.g. the grading call errored or timed out). Track
+      // it so a run that submitted but never `scored` is visible, not silent.
+      track("score_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
       setError(errMsg(e));
       setStage("followup");
     }
