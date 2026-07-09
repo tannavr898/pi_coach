@@ -29,6 +29,8 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException
 from . import config, delivery, events, framework, interpret, llm, notify, prompts, rubric, transcription
 from .ratelimit import daily_cap, rate_limit
 from .schemas import (
+    AnalyticalSection,
+    CreativityScore,
     Criterion,
     CriterionScore,
     DeliveryMetrics,
@@ -36,12 +38,15 @@ from .schemas import (
     DomainSummary,
     EventSummary,
     FeedbackRequest,
+    FinalScore,
     Mode,
+    PresentationSection,
     PublicConfig,
     ScenarioRequest,
     ScenarioResponse,
     ScoreRequest,
     ScoreResponse,
+    SubScore,
     Timing,
     Utterance,
 )
@@ -207,9 +212,81 @@ def _score_one(c: dict, raw: dict) -> CriterionScore:
     )
 
 
+def _clamp(value: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, value))
+
+
+def _sub_score(raw: dict) -> SubScore:
+    """One 1-4 analytical sub-criterion, clamped to the valid band."""
+    try:
+        s = int(round(float(raw.get("score", 2))))
+    except (TypeError, ValueError):
+        s = 2  # default to the middle of the scale, per the global grading rules
+    ev = raw.get("evidence")
+    ev = str(ev).strip() if ev not in (None, "", "null") else None
+    return SubScore(score=int(_clamp(s, 1, 4)), justification=str(raw.get("justification", "")).strip(), evidence=ev)
+
+
+def _build_analytical(raw: dict) -> AnalyticalSection:
+    """Section 2: take the model's 1-4 sub-scores + creativity bonus, then compute
+    the roll-up arithmetic DETERMINISTICALLY (the model is never trusted to do the
+    weighting or the min())."""
+    framing = _sub_score(raw.get("framing", {}))
+    solution = _sub_score(raw.get("solution_quality", {}))
+    pi_app = _sub_score(raw.get("pi_application", {}))
+
+    craw = raw.get("creativity", {}) or {}
+    try:
+        bonus = float(craw.get("bonus", 0.0))
+    except (TypeError, ValueError):
+        bonus = 0.0
+    # Snap to the allowed rungs and gate on solution quality (no bonus unless 2b >= 3).
+    bonus = min((0.0, 0.25, 0.5), key=lambda b: abs(b - bonus))
+    if solution.score < 3:
+        bonus = 0.0
+    cev = craw.get("evidence")
+    cev = str(cev).strip() if cev not in (None, "", "null") else None
+    creativity = CreativityScore(bonus=bonus, justification=str(craw.get("justification", "")).strip(), evidence=cev)
+
+    core = framing.score * 0.30 + solution.score * 0.45 + pi_app.score * 0.25
+    section = _clamp(core + bonus, 0.0, 4.0)
+    return AnalyticalSection(
+        framing=framing,
+        solution_quality=solution,
+        pi_application=pi_app,
+        creativity=creativity,
+        core_score=round(core, 3),
+        section_score=round(section, 3),
+        section_percent=round(section / 4 * 100, 1),
+    )
+
+
+def _build_presentation(raw: dict, spoken: bool, delivery_score: int | None) -> PresentationSection:
+    """Section 3: the model's 1-4 read of presentation, blended with the objective
+    delivery score when the run was spoken (60% metric / 40% model read). Typed
+    runs use the model's read alone."""
+    try:
+        model_score = int(round(float(raw.get("score", 2))))
+    except (TypeError, ValueError):
+        model_score = 2
+    model_score = int(_clamp(model_score, 1, 4))
+    model_percent = model_score / 4 * 100
+
+    if spoken and delivery_score is not None:
+        percent = round(0.6 * delivery_score + 0.4 * model_percent, 1)
+    else:
+        percent = round(model_percent, 1)
+    return PresentationSection(
+        section_score=round(percent / 25, 3),
+        section_percent=percent,
+        notes=str(raw.get("notes", "")).strip(),
+    )
+
+
 @app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def score_content(req: ScoreRequest) -> ScoreResponse:
-    """Grade a typed response against the selected framework criteria."""
+    """Grade a response against the selected framework criteria using the weighted
+    three-section rubric (60% performance indicators, 25% analytical, 15% presentation)."""
     # Resolve criteria from our framework — never trust the client for their text.
     criteria = framework.get_criteria(req.criteria_ids)
     if not criteria:
@@ -219,7 +296,8 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     quantitative = events.is_quantitative(events.get_event(req.event)) if req.event else False
 
     system, user = prompts.build_scoring_prompt(
-        req.scenario, criteria, req.response, req.followup_questions, req.followup_answer, quantitative
+        req.scenario, criteria, req.response, req.followup_questions, req.followup_answer,
+        quantitative, req.spoken, req.delivery_score,
     )
     try:
         raw = llm.complete(system, user, max_tokens=4096)
@@ -229,12 +307,31 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     except llm.LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
-    entries = {str(e.get("criterion_id", "")): e for e in data.get("criteria", [])}
+    # --- Section 1: Performance Indicators (60%) ---
+    entries = {str(e.get("criterion_id", "")): e for e in data.get("performance_indicators", [])}
     scores = [_score_one(c, entries.get(c["id"], {})) for c in criteria]
-
     total = sum(s.points for s in scores)
     max_points = sum(s.max_points for s in scores)
-    percent = round((total / max_points) * 100) if max_points else 0
+    pi_percent = (total / max_points) * 100 if max_points else 0.0
+
+    # --- Section 2: Analytical & Problem-Solving (25%) ---
+    analytical = _build_analytical(data.get("analytical", {}) or {})
+
+    # --- Section 3: Professional Presentation (15%) ---
+    presentation = _build_presentation(data.get("presentation", {}) or {}, req.spoken, req.delivery_score)
+
+    # --- Final weighted roll-up (deterministic; the model never does the math) ---
+    final_percent = round(
+        pi_percent * 0.60 + analytical.section_percent * 0.25 + presentation.section_percent * 0.15, 1
+    )
+    fraw = data.get("final", {}) or {}
+    final = FinalScore(
+        percent=final_percent,
+        top_strength=str(fraw.get("top_strength", "")).strip(),
+        biggest_weakness=str(fraw.get("biggest_weakness", "")).strip(),
+        one_key_fix=str(fraw.get("one_key_fix", "")).strip(),
+    )
+    overall = round(final_percent)
 
     # Deterministically recompute every calculation the model flagged. Python's
     # result is authoritative — the model is never trusted for arithmetic.
@@ -244,13 +341,18 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
         scores=scores,
         total_points=total,
         max_points=max_points,
-        overall_percent=percent,
-        overall_level=rubric.overall_level(percent),  # type: ignore[arg-type]
+        overall_percent=overall,
+        overall_level=rubric.overall_level(overall),  # type: ignore[arg-type]
         summary=str(data.get("summary", "")).strip(),
         strengths=[str(x) for x in data.get("strengths", []) if str(x).strip()],
         improvements=[str(x) for x in data.get("improvements", []) if str(x).strip()],
         followup_feedback=str(data.get("followup_feedback", "")).strip(),
         math_checks=math_checks,  # type: ignore[arg-type]
+        pi_section_score=round(pi_percent / 25, 3),
+        pi_section_percent=round(pi_percent, 1),
+        analytical=analytical,
+        presentation=presentation,
+        final=final,
     )
 
 

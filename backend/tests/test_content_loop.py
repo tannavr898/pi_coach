@@ -147,12 +147,20 @@ def test_scenario_out_of_scope_redirects(monkeypatch):
 def test_score_assembles_and_totals(monkeypatch, crit_ids):
     def fake(system, user, **kw):
         return json.dumps({
-            "criteria": [
+            "performance_indicators": [
                 {"criterion_id": cid, "level": "proficient", "points": 99,  # must clamp to 8
                  "headline": "h", "feedback": "fb", "evidence": ["BrightPath"], "gaps": [],
                  "suggestion": "I'd track repeat visits monthly."}
                 for cid in crit_ids
             ],
+            "analytical": {
+                "framing": {"score": 3, "justification": "clear", "evidence": "BrightPath"},
+                "solution_quality": {"score": 4, "justification": "realistic", "evidence": None},
+                "pi_application": {"score": 3, "justification": "applied", "evidence": None},
+                "creativity": {"bonus": 0.25, "justification": "apt acronym", "evidence": None},
+            },
+            "presentation": {"score": 3, "notes": "clear and structured"},
+            "final": {"top_strength": "framing", "biggest_weakness": "brand", "one_key_fix": "quantify"},
             "summary": "ok", "strengths": ["a"], "improvements": ["b"], "followup_feedback": "decent",
         })
     monkeypatch.setattr(llm, "complete", fake)
@@ -170,13 +178,55 @@ def test_score_assembles_and_totals(monkeypatch, crit_ids):
     assert all(x["points"] == 8 for x in s["scores"])  # proficient band caps at 8
     assert s["total_points"] == 32
     assert s["max_points"] == 40
-    assert s["overall_percent"] == 80
+    # Section 1 (PIs) rolls up to 80%; sections are computed deterministically.
+    assert s["pi_section_percent"] == 80.0
+    # Section 2: core = 3*0.30 + 4*0.45 + 3*0.25 = 3.45, +0.25 creativity = 3.70 -> 92.5%
+    assert s["analytical"]["core_score"] == 3.45
+    assert s["analytical"]["section_percent"] == 92.5
+    # Section 3 (typed): model score 3/4 -> 75%
+    assert s["presentation"]["section_percent"] == 75.0
+    # Final = 80*0.60 + 92.5*0.25 + 75*0.15 = 82.375 -> 82.4; overall rounds to 82
+    assert s["final"]["percent"] == 82.4
+    assert s["overall_percent"] == 82
     assert s["overall_level"] == "proficient"
+    assert s["final"]["one_key_fix"] == "quantify"
     # criterion name is pinned from our framework, not trusted from the client
     first = s["scores"][0]
     assert first["name"] and first["criterion_id"] == crit_ids[0]
     # "what you could have said" is carried through to the client
     assert first["suggestion"] == "I'd track repeat visits monthly."
+
+
+def test_presentation_blends_delivery_when_spoken(monkeypatch, crit_ids):
+    """Spoken runs blend the deterministic delivery score (60%) with the model's
+    presentation read (40%); the creativity bonus is gated on solution quality >= 3."""
+    def fake(system, user, **kw):
+        assert "DELIVERY_METRICS" in user and "90/100" in user
+        return json.dumps({
+            "performance_indicators": [
+                {"criterion_id": cid, "level": "developing", "points": 5} for cid in crit_ids
+            ],
+            "analytical": {
+                "framing": {"score": 3, "justification": "", "evidence": None},
+                "solution_quality": {"score": 2, "justification": "", "evidence": None},
+                "pi_application": {"score": 3, "justification": "", "evidence": None},
+                "creativity": {"bonus": 0.5, "justification": "", "evidence": None},  # gated off: 2b < 3
+            },
+            "presentation": {"score": 4, "notes": ""},
+            "summary": "", "strengths": [], "improvements": [], "followup_feedback": "",
+        })
+    monkeypatch.setattr(llm, "complete", fake)
+    r = client.post(
+        "/api/score-content",
+        json={"scenario": "x", "criteria_ids": crit_ids, "response": "spoken words",
+              "spoken": True, "delivery_score": 90},
+    )
+    assert r.status_code == 200
+    s = r.json()
+    # creativity gated off because solution_quality (2b) < 3
+    assert s["analytical"]["creativity"]["bonus"] == 0.0
+    # presentation: model 4/4 = 100%, blended 0.6*90 + 0.4*100 = 94.0
+    assert s["presentation"]["section_percent"] == 94.0
 
 
 def test_score_runs_math_checks_for_quantitative_event(monkeypatch, crit_ids):
@@ -185,7 +235,7 @@ def test_score_runs_math_checks_for_quantitative_event(monkeypatch, crit_ids):
     def fake(system, user, **kw):
         assert "QUANTITATIVE EVENT" in user  # the math block was included
         return json.dumps({
-            "criteria": [
+            "performance_indicators": [
                 {"criterion_id": cid, "level": "developing", "points": 5,
                  "headline": "h", "feedback": "fb", "evidence": [], "gaps": []}
                 for cid in crit_ids
@@ -215,7 +265,7 @@ def test_score_skips_math_checks_for_nonquant_event(monkeypatch, crit_ids):
     def fake(system, user, **kw):
         assert "QUANTITATIVE EVENT" not in user
         return json.dumps({
-            "criteria": [{"criterion_id": cid, "level": "developing", "points": 5} for cid in crit_ids],
+            "performance_indicators": [{"criterion_id": cid, "level": "developing", "points": 5} for cid in crit_ids],
             "summary": "", "strengths": [], "improvements": [], "followup_feedback": "",
         })
     monkeypatch.setattr(llm, "complete", fake)

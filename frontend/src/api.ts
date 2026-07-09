@@ -86,17 +86,62 @@ export type MathCheck = {
   note: string;
 };
 
+// --- Section 2 (Analytical & Problem-Solving) ---
+export type SubScore = {
+  score: number; // 1-4
+  justification: string;
+  evidence: string | null;
+};
+
+export type CreativityScore = {
+  bonus: number; // 0, 0.25, 0.5
+  justification: string;
+  evidence: string | null;
+};
+
+export type AnalyticalSection = {
+  weight: number;
+  framing: SubScore;
+  solution_quality: SubScore;
+  pi_application: SubScore;
+  creativity: CreativityScore;
+  core_score: number;
+  section_score: number; // 0-4
+  section_percent: number;
+};
+
+// --- Section 3 (Professional Presentation) ---
+export type PresentationSection = {
+  weight: number;
+  section_score: number; // 0-4
+  section_percent: number;
+  notes: string;
+};
+
+export type FinalScore = {
+  percent: number;
+  top_strength: string;
+  biggest_weakness: string;
+  one_key_fix: string;
+};
+
 export type ScoreResponse = {
   scores: CriterionScore[];
   total_points: number;
   max_points: number;
-  overall_percent: number;
+  overall_percent: number; // now the final weighted percent (rounded)
   overall_level: RubricLevel;
   summary: string;
   strengths: string[];
   improvements: string[];
   followup_feedback: string;
   math_checks: MathCheck[];
+  // 3-section weighted rubric
+  pi_section_score: number; // 0-4
+  pi_section_percent: number; // Section 1 (60%)
+  analytical: AnalyticalSection | null; // Section 2 (25%)
+  presentation: PresentationSection | null; // Section 3 (15%)
+  final: FinalScore | null;
 };
 
 export type FillerCount = { word: string; count: number };
@@ -215,6 +260,9 @@ export function postScore(body: {
   followup_questions: string[];
   followup_answer: string;
   event?: string;
+  // Section 3 (presentation) blends objective delivery metrics when spoken.
+  spoken?: boolean;
+  delivery_score?: number | null;
 }): Promise<ScoreResponse> {
   return request<ScoreResponse>("/api/score-content", {
     method: "POST",

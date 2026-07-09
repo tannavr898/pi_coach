@@ -128,6 +128,13 @@ class ScoreRequest(BaseModel):
     # The event id, so scoring can re-derive (server-side) whether this is a
     # quantitative event and should run deterministic math verification.
     event: str = ""
+    # Delivery signal for Section 3 (Professional Presentation). When the response
+    # was spoken, the client forwards the deterministic delivery score (0-100) so
+    # the presentation section can blend objective pace/filler/pause metrics with
+    # the model's read of conversational delivery + follow-up quality. Typed runs
+    # leave these unset and Section 3 rests on the written answer + follow-up.
+    spoken: bool = False
+    delivery_score: int | None = Field(default=None, ge=0, le=100)
 
 
 class MathCheck(BaseModel):
@@ -164,10 +171,74 @@ class CriterionScore(BaseModel):
     suggestion: str = ""
 
 
+# --- Section 2: Analytical & Problem-Solving --------------------------------
+
+
+class SubScore(BaseModel):
+    """One 1-4 analytical sub-criterion (framing / solution quality / PI
+    application) with the phrase that justifies it."""
+
+    score: int  # 1-4
+    justification: str = ""
+    evidence: str | None = None
+
+
+class CreativityScore(BaseModel):
+    """Bonus-only creativity award for Section 2 (0, +0.25, or +0.5). Never a
+    penalty — a plain, correct answer earns 0 here and loses nothing."""
+
+    bonus: float = 0.0
+    justification: str = ""
+    evidence: str | None = None
+
+
+class AnalyticalSection(BaseModel):
+    """Section 2 — how well the competitor APPLIES business thinking to solve the
+    scenario. Sub-scores come from the model; the roll-up arithmetic is computed
+    deterministically by the backend (never trusted to the model)."""
+
+    weight: float = 0.25
+    framing: SubScore
+    solution_quality: SubScore
+    pi_application: SubScore
+    creativity: CreativityScore
+    core_score: float = 0.0  # (2a×0.30)+(2b×0.45)+(2c×0.25)
+    section_score: float = 0.0  # min(4, core + creativity)
+    section_percent: float = 0.0  # section_score / 4 × 100
+
+
+# --- Section 3: Professional Presentation -----------------------------------
+
+
+class PresentationSection(BaseModel):
+    """Section 3 — delivery + follow-up handling, rolled to a single 0-4 score.
+    When the run was spoken, section_percent blends the deterministic delivery
+    score with the model's read; typed runs use the model's read alone."""
+
+    weight: float = 0.15
+    section_score: float = 0.0  # 0-4
+    section_percent: float = 0.0
+    notes: str = ""
+
+
+# --- Final weighted result --------------------------------------------------
+
+
+class FinalScore(BaseModel):
+    """The weighted roll-up: 60% PIs + 25% analytical + 15% presentation."""
+
+    percent: float = 0.0
+    top_strength: str = ""
+    biggest_weakness: str = ""
+    one_key_fix: str = ""
+
+
 class ScoreResponse(BaseModel):
     scores: list[CriterionScore]
     total_points: int
     max_points: int
+    # Kept for existing UI/analytics: this is now the FINAL weighted percent
+    # (rounded), so a single number still reads as "the score".
     overall_percent: int
     overall_level: RubricLevel
     summary: str = ""
@@ -176,6 +247,13 @@ class ScoreResponse(BaseModel):
     followup_feedback: str = ""
     # Deterministically recomputed calculations (quantitative events only).
     math_checks: list[MathCheck] = []
+    # --- New 3-section weighted rubric ---
+    # Section 1 (Performance Indicators, 60%) rolls up from `scores`.
+    pi_section_score: float = 0.0  # 0-4
+    pi_section_percent: float = 0.0
+    analytical: AnalyticalSection | None = None  # Section 2 (25%)
+    presentation: PresentationSection | None = None  # Section 3 (15%)
+    final: FinalScore | None = None
 
 
 # --- POST /api/score-delivery (voice) -------------------------------------

@@ -217,14 +217,22 @@ CRITICAL: never put judge instructions, judge characterization, or answers insid
 # ---------------------------------------------------------------------------
 
 SCORING_SYSTEM = (
-    "You are an experienced, fair judge and coach grading a typed practice "
-    "response against a set of business evaluation criteria. Judge ONLY what the "
-    "words show — content, reasoning, structure, and how well each criterion is "
-    "met — NOT delivery, voice, confidence, or presence (those are coached "
-    "separately). Score each criterion against its own 'strong' and 'weak' bar: "
-    "a response that merely mentions or name-drops the idea is usually Developing, "
-    "not Proficient. Be specific and honest; cite verbatim quotes from the response "
-    "as evidence; never inflate; never invent criteria beyond the ones given.\n\n"
+    "You are an experienced, fair judge and coach grading a business role-play "
+    "practice response. You grade against a weighted rubric with three sections: "
+    "(1) the participant's UNDERSTANDING and EXPLANATION of each evaluation "
+    "criterion, (2) how well they APPLY business thinking to solve the scenario, "
+    "and (3) their professional presentation.\n\n"
+    "GLOBAL GRADING RULES (apply to every score):\n"
+    "- Default to the MIDDLE of every scale. Move up only with specific evidence; "
+    "move down when evidence is missing, vague, or wrong.\n"
+    "- Cite the exact phrase from the transcript that justifies each score. If no "
+    "phrase supports a score, that score cannot be high and its evidence must be null.\n"
+    "- Do not reward length, effort, or enthusiasm by themselves. A short, correct "
+    "answer beats a long, padded one.\n"
+    "- Never invent content the participant did not say. If something the rubric "
+    "requires is absent, say so and score accordingly.\n\n"
+    "Be specific and honest; cite verbatim quotes as evidence; never inflate; never "
+    "invent criteria beyond the ones given.\n\n"
     "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
@@ -279,6 +287,29 @@ Omit "claimed" only if the participant clearly should have computed it but didn'
 """
 
 
+def _delivery_block(spoken: bool, delivery_score: int | None) -> str:
+    """Context for Section 3. Spoken runs get the deterministic delivery score
+    (pace/fillers/pauses/timing already measured) so the model doesn't guess at
+    what it can't hear; typed runs are told to judge written structure instead."""
+    if spoken and delivery_score is not None:
+        return (
+            f"DELIVERY_METRICS: this response was SPOKEN. Our system already measured "
+            f"objective delivery (pace, filler words, pauses, timing) as a deterministic "
+            f"score of {delivery_score}/100 — you do NOT need to re-estimate pace or "
+            f"fillers. For the presentation score, focus on what the transcript reveals "
+            f"that raw metrics can't: whether the delivery reads as conversational and "
+            f"adaptive versus stiff or memorized, and the quality of the answer to the "
+            f"judge's follow-up. The backend blends your read with the {delivery_score}/100 "
+            f"metric, so grade the human side."
+        )
+    return (
+        "DELIVERY_METRICS: this response was TYPED, so there is no audio. Base the "
+        "presentation score on the clarity, structure, and professionalism of the "
+        "WRITTEN response and, above all, the quality of the answer to the judge's "
+        "follow-up question. Do not penalize the absence of vocal delivery."
+    )
+
+
 def build_scoring_prompt(
     scenario: str,
     criteria: list[dict],
@@ -286,15 +317,18 @@ def build_scoring_prompt(
     followup_questions: list[str],
     followup_answer: str,
     quantitative: bool = False,
+    spoken: bool = False,
+    delivery_score: int | None = None,
 ) -> tuple[str, str]:
-    """Build the (system, user) messages for framework scoring."""
+    """Build the (system, user) messages for the weighted 3-section scoring."""
     fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
     math_instructions = _MATH_BLOCK if quantitative else ""
     math_key = '\n  "math_checks": [{"label": "...", "expression": "...", "claimed": <number or omit>, "unit": "..."}],' if quantitative else ""
     user = f"""{_levels_brief()}
 {math_instructions}
 
-THE EVALUATION CRITERIA for this role-play (grade against these and ONLY these):
+THE EVALUATION CRITERIA (the "performance indicators") for this role-play — grade
+against these and ONLY these:
 {_criteria_block(criteria)}
 
 BUSINESS SITUATION the participant responded to:
@@ -309,33 +343,74 @@ JUDGE'S FOLLOW-UP QUESTIONS:
 PARTICIPANT'S ANSWER TO THE FOLLOW-UP:
 {followup_answer or "(the participant did not answer)"}
 
-Grade every criterion against its own strong/weak bar. For "evidence", quote EXACT
-substrings from the participant's text (main response or follow-up) so each quote
-can be found and highlighted — never paraphrase inside evidence. Give concrete,
-criterion-specific feedback that names what was present and what would raise the level.
+{_delivery_block(spoken, delivery_score)}
 
-For EVERY criterion provide:
-- "headline": a punchy one-line verdict, at most 8 words (e.g. "Named the idea but never applied it"). Shown first; the reader expands for the full feedback.
-- "feedback": 1-2 sentences of specific detail. Wrap the 1-2 most important phrases
-  — the key thing to fix or the thing done well — in **double asterisks** so they
-  stand out. Do not bold whole sentences.
-- "gaps": 1-3 SHORT, concrete things that were MISSING or too weak and would have
-  raised the level (e.g. "Didn't quantify the discount", "No success metric named").
-  Phrase each as a brief missing item, not a full sentence. Use an empty list [] ONLY
-  if the criterion was genuinely Exemplary with nothing to add.
-- "suggestion": ONE sentence of "what you could have said" — a concrete, better line
-  the participant could have spoken to strengthen THIS criterion, written in the
-  first person as if they said it (e.g. "I'd track repeat-visit rate monthly, aiming
-  for a 15% lift within two quarters."). Make it specific to this scenario. Use an
-  empty string ONLY if the criterion was already Exemplary.
+================================================================================
+SECTION 1 — PERFORMANCE INDICATORS (understanding & explanation)
+Grade ONLY the participant's UNDERSTANDING and EXPLANATION of each criterion — how
+well they DEFINE and EXPLAIN it, with a slight boost for CONNECTING it and going
+ABOVE AND BEYOND. Do NOT grade how well they APPLIED it to the scenario here — that
+is scored entirely in Section 2. A participant who explains a criterion perfectly
+but applies it poorly should score HIGH here and LOW in Section 2. This separation
+is a hard rule; do not let application leak into this section. Grade each criterion
+against its own strong/weak bar; a response that merely name-drops the idea is
+Developing, not Proficient.
+
+For "evidence", quote EXACT substrings from the participant's text (main response or
+follow-up) so each quote can be found and highlighted — never paraphrase inside
+evidence. For EVERY criterion provide:
+- "headline": a punchy one-line verdict, at most 8 words (e.g. "Named the idea but never applied it").
+- "feedback": 1-2 sentences of specific detail. Wrap the 1-2 most important phrases in **double asterisks**. Do not bold whole sentences.
+- "gaps": 1-3 SHORT, concrete things that were MISSING or too weak and would have raised the level. Empty list [] ONLY if genuinely Exemplary.
+- "suggestion": ONE first-person sentence of "what you could have said" to strengthen THIS criterion, specific to this scenario. Empty string ONLY if already Exemplary.
+
+SECTION 2 — ANALYTICAL & PROBLEM-SOLVING (application)
+Grade how well the participant APPLIES business thinking to SOLVE the scenario.
+STRICTLY follow what the scenario actually asks for (e.g. if it asks how to save
+money, do NOT reward an off-target marketing plan). Score three sub-criteria 1-4:
+  framing (2a): 1 misreads/ignores the core problem · 2 identifies it loosely, misses
+    key constraints/stakeholders · 3 clearly frames the actual problem and context ·
+    4 that PLUS a constraint or stakeholder most competitors overlook.
+  solution_quality (2b): 1 no real solution · 2 partly addresses it but unrealistic/
+    disorganized/hard to implement · 3 realistic, organized, implementable solution
+    that solves the stated problem · 4 all of 3 PLUS accounts for a real-world
+    constraint (budget, timeline, stakeholder) the scenario implies.
+  pi_application (2c): 1 doesn't apply the relevant criteria, or applies them wrong ·
+    2 applies some superficially or in the wrong place · 3 applies the relevant ones
+    correctly and appropriately · 4 weaves them in so they directly drive the recommendation.
+Then "creativity" — a BONUS ONLY, NEVER a penalty. A plain, correct, straightforward
+answer earns +0.0 and loses nothing; absence of acronyms/visuals/flourishes is never
+penalized. Award a bonus ONLY if BOTH: (a) solution_quality is already 3+, and (b)
+the creative element makes the response genuinely clearer, more persuasive, or more
+effective. +0.0 none · +0.25 one clear beneficial creative element (an apt acronym,
+a referenced visual that aids clarity, a memorable framing) · +0.5 creativity is a
+consistent, defining strength that materially elevates the response.
+
+SECTION 3 — PROFESSIONAL PRESENTATION
+Give ONE integer score 1-4 for professional presentation, using DELIVERY_METRICS
+above, conversational versus memorized delivery, and the quality of the answer to
+the judge's follow-up. Do NOT score visual cues (eye contact, posture) — this is
+audio/text only. Add a one-line "notes" summary.
 
 Return a JSON object with EXACTLY this shape:
 {{
-  "criteria": [
+  "performance_indicators": [
     {{"criterion_id": "<id>", "level": "novice|developing|proficient|exemplary",
-      "points": <int in band>, "headline": "<<=8 words>", "feedback": "<specific, with **key phrase** bolded>", "evidence": ["<verbatim quote>"], "gaps": ["<short missing item>"], "suggestion": "<one first-person line they could have said>"}}
-    // one object per criterion above, same order
+      "points": <int 0-10 in band>, "headline": "<<=8 words>", "feedback": "<specific, with **key phrase** bolded>", "evidence": ["<verbatim quote>"], "gaps": ["<short missing item>"], "suggestion": "<one first-person line they could have said>"}}
+    // one object per criterion above, SAME order
   ],
+  "analytical": {{
+    "framing": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
+    "solution_quality": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
+    "pi_application": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
+    "creativity": {{"bonus": <0.0|0.25|0.5>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}}
+  }},
+  "presentation": {{"score": <1-4>, "notes": "<one sentence on pace/delivery/follow-up>"}},
+  "final": {{
+    "top_strength": "<one sentence — their single strongest area>",
+    "biggest_weakness": "<one sentence — the single area costing them the most>",
+    "one_key_fix": "<one sentence — the highest-leverage change for next attempt>"
+  }},
   "summary": "<2-3 sentence overall read of the response>",
   "strengths": ["<short>", "..."],
   "improvements": ["<short, actionable>", "..."],

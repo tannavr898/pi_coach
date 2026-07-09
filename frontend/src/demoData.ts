@@ -121,8 +121,57 @@ You will present your recommendation to Dana, who will play the role of the owne
 export const DEMO_SCORE: ScoreResponse = {
   total_points: 37,
   max_points: 50,
-  overall_percent: 74,
+  // Final weighted score: 74% indicators × 0.60 + 92.5% analysis × 0.25 + 84% present × 0.15 = 80.1.
+  overall_percent: 80,
   overall_level: "proficient",
+  pi_section_score: 2.96,
+  pi_section_percent: 74,
+  analytical: {
+    weight: 0.25,
+    framing: {
+      score: 3,
+      justification:
+        "Clearly frames the real problem — turning one-time buyers into repeat visits and filling the slow afternoon window — and names the target audience.",
+      evidence: "our 18 to 28 core lives on their phones",
+    },
+    solution_quality: {
+      score: 4,
+      justification:
+        "A realistic, organized loyalty-plus-promotion plan that respects the owner's constraints and de-risks with a three-store pilot before rollout.",
+      evidence: "I would pilot in three stores first to prove it before a full rollout",
+    },
+    pi_application: {
+      score: 3,
+      justification:
+        "The assessed skills genuinely drive the recommendation rather than sitting beside it, though the brand thread stays thin.",
+      evidence: "the app becomes our owned channel",
+    },
+    creativity: {
+      bonus: 0.25,
+      justification:
+        "The '3 to 5pm power hour' is a memorable, apt framing that makes the off-peak tactic instantly clear and sellable to the owner.",
+      evidence: "A 3 to 5pm power hour discount fills our slowest window",
+    },
+    core_score: 3.45,
+    section_score: 3.7,
+    section_percent: 92.5,
+  },
+  presentation: {
+    weight: 0.15,
+    section_score: 3.36,
+    section_percent: 84,
+    notes:
+      "Steady 129 WPM with only six fillers reads as conversational, not memorized, and the follow-up answer stayed composed and specific.",
+  },
+  final: {
+    percent: 80.1,
+    top_strength:
+      "A realistic, well-sequenced solution — loyalty program, targeted promo, and a pilot to prove it before rollout.",
+    biggest_weakness:
+      "Brand is treated as look-and-feel, so the indicator score and the persuasive core both leave points on the table.",
+    one_key_fix:
+      "State what FreshBlend stands for and tie the loyalty rewards back to that promise, then link the tactics to the 15% target.",
+  },
   summary:
     "A clear, well-organized recommendation that ties a mobile loyalty program to every assigned skill and lands a sensible pilot-first plan. The thinking is strong on customer relationships and channel; it leaves points on the table on brand and on proving the solution will actually move the numbers.",
   strengths: [

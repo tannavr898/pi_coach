@@ -11,6 +11,7 @@ import {
   type RubricLevel,
   type ScenarioResponse,
   type ScoreResponse,
+  type SubScore,
   type Utterance,
   getEvents,
   postDelivery,
@@ -195,6 +196,9 @@ export default function App() {
         followup_questions: scenario.followup_questions,
         followup_answer: followupForScoring,
         event: eventId, // lets the backend run math checks for quantitative events
+        // Section 3 blends objective delivery metrics with the judge's read when spoken.
+        spoken: mode === "speak" && !!deliveryMetrics,
+        delivery_score: deliveryMetrics ? deliveryMetrics.delivery_score : null,
       });
       setDelivery(deliveryMetrics);
       setScore(result);
@@ -1355,14 +1359,6 @@ function FollowupScreen(props: {
 
 // --- feedback --------------------------------------------------------------
 
-// Mirror of the backend's overall_bands, for the blended (content + delivery) score.
-function levelFromPercent(p: number): RubricLevel {
-  if (p >= 90) return "exemplary";
-  if (p >= 70) return "proficient";
-  if (p >= 40) return "developing";
-  return "novice";
-}
-
 function ScorePill({ label, value, weight }: { label: string; value: number; weight: string }) {
   return (
     <div className="rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800">
@@ -1375,7 +1371,7 @@ function ScorePill({ label, value, weight }: { label: string; value: number; wei
   );
 }
 
-type FeedbackTab = "overview" | "transcript" | "delivery" | "criteria";
+type FeedbackTab = "overview" | "transcript" | "delivery" | "analysis" | "criteria";
 
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
@@ -1389,12 +1385,10 @@ function FeedbackScreen(props: {
 }) {
   const { score } = props;
   const marks = buildMarks(score.scores);
-  const content = score.overall_percent;
-  // When the participant spoke, delivery counts toward the overall (content 80%,
-  // delivery 20%). Typed practice shows content only.
-  const dscore = props.delivery ? props.delivery.delivery_score : null;
-  const pct = dscore !== null ? Math.round(content * 0.8 + dscore * 0.2) : content;
-  const level = dscore !== null ? levelFromPercent(pct) : score.overall_level;
+  // The backend now returns the FINAL weighted percent (60% indicators + 25%
+  // analysis + 15% presentation) directly, plus each section's own percentage.
+  const pct = score.overall_percent;
+  const level = score.overall_level;
   const [tab, setTab] = useState<FeedbackTab>("overview");
   const [activeMark, setActiveMark] = useState<string | null>(null);
 
@@ -1402,7 +1396,8 @@ function FeedbackScreen(props: {
     { key: "overview", label: "Overview" },
     { key: "transcript", label: "Transcript" },
     ...(props.delivery ? [{ key: "delivery", label: "Delivery" }] : []),
-    { key: "criteria", label: "Criteria", badge: `${score.total_points}/${score.max_points}` },
+    { key: "analysis", label: "Analysis" },
+    { key: "criteria", label: "Indicators", badge: `${score.total_points}/${score.max_points}` },
   ];
 
   return (
@@ -1415,25 +1410,19 @@ function FeedbackScreen(props: {
             {props.scenario.topic}
           </h2>
           <div className="mt-5 flex items-end gap-1.5">
-            <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{pct}</span>
+            <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{Math.round(pct)}</span>
             <span className="mb-1 font-mono text-lg font-medium text-slate-300 dark:text-slate-600">%</span>
-            {dscore === null && (
-              <span className="mb-1 ml-auto font-mono text-sm text-slate-500 dark:text-slate-400">{score.total_points}/{score.max_points} pts</span>
-            )}
           </div>
           <div className="mt-3"><LevelMeter level={level} /></div>
-          {dscore !== null && (
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <ScorePill label="Content" value={content} weight="80%" />
-              <ScorePill label="Delivery" value={dscore} weight="20%" />
-            </div>
-          )}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <ScorePill label="Indicators" value={Math.round(score.pi_section_percent)} weight="60%" />
+            <ScorePill label="Analysis" value={Math.round(score.analytical?.section_percent ?? 0)} weight="25%" />
+            <ScorePill label="Present" value={Math.round(score.presentation?.section_percent ?? 0)} weight="15%" />
+          </div>
           <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            {dscore !== null ? (
-              <>Blends your {score.scores.length}-skill content score with delivery. Practice coaching, not an official competition score.</>
-            ) : (
-              <>Graded on {score.scores.length} business skills against our evaluation framework. Practice coaching, not an official competition score.</>
-            )}
+            Weighted across {score.scores.length} performance indicators (60%), your problem-solving (25%),
+            and presentation (15%){props.delivery ? ", blending your voice delivery into presentation" : ""}.
+            Practice coaching, not an official competition score.
           </p>
           <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
             <LevelLegend />
@@ -1445,6 +1434,7 @@ function FeedbackScreen(props: {
         <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />
 
         {tab === "overview" && <OverviewTab score={score} />}
+        {tab === "analysis" && <AnalysisTab score={score} />}
         {tab === "transcript" && (
           <TranscriptTab
             response={props.response}
@@ -1461,18 +1451,14 @@ function FeedbackScreen(props: {
         {tab === "criteria" && <CriteriaTab scores={score.scores} />}
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+          Your score weights <strong className="font-semibold text-slate-700 dark:text-slate-200">performance indicators</strong> (60%),
+          your <strong className="font-semibold text-slate-700 dark:text-slate-200">analytical problem-solving</strong> (25%), and
+          your <strong className="font-semibold text-slate-700 dark:text-slate-200">presentation</strong> (15%).{" "}
           {props.delivery ? (
-            <>
-              <strong className="font-semibold text-slate-700 dark:text-slate-200">Content</strong> is the rubric score;{" "}
-              <strong className="font-semibold text-slate-700 dark:text-slate-200">Delivery</strong> measures pace, fillers, pauses, and
-              time only — not tone, confidence, or charisma.
-            </>
+            <>Presentation blends measured delivery — pace, fillers, pauses, timing — with how you handled the follow-up. It never judges tone, confidence, or charisma.</>
           ) : (
-            <>
-              Typed practice measures <strong className="font-semibold text-slate-700 dark:text-slate-200">content</strong> only. Switch to{" "}
-              <strong className="font-semibold text-slate-700 dark:text-slate-200">🎙️ Speak</strong> on the response step to also get
-              delivery feedback from your voice.
-            </>
+            <>Typed practice scores presentation from your written structure and follow-up. Switch to{" "}
+              <strong className="font-semibold text-slate-700 dark:text-slate-200">🎙️ Speak</strong> to fold your voice delivery in too.</>
           )}
         </div>
 
@@ -1530,6 +1516,7 @@ function TabBar(props: {
 }
 
 function OverviewTab({ score }: { score: ScoreResponse }) {
+  const final = score.final;
   return (
     <div className="space-y-4">
       {score.math_checks.length > 0 && <MathChecksCard checks={score.math_checks} />}
@@ -1537,6 +1524,31 @@ function OverviewTab({ score }: { score: ScoreResponse }) {
         <Card>
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Summary</h3>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{score.summary}</p>
+        </Card>
+      )}
+      {final && (final.top_strength || final.biggest_weakness || final.one_key_fix) && (
+        <Card>
+          <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">The one-look read</h3>
+          <dl className="mt-3 space-y-2.5 text-sm">
+            {final.top_strength && (
+              <div className="flex gap-2.5">
+                <dt className="mt-0.5 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Strength</dt>
+                <dd className="text-slate-700 dark:text-slate-200">{final.top_strength}</dd>
+              </div>
+            )}
+            {final.biggest_weakness && (
+              <div className="flex gap-2.5">
+                <dt className="mt-0.5 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Weakness</dt>
+                <dd className="text-slate-700 dark:text-slate-200">{final.biggest_weakness}</dd>
+              </div>
+            )}
+            {final.one_key_fix && (
+              <div className="flex gap-2.5">
+                <dt className="mt-0.5 shrink-0 font-mono text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Key fix</dt>
+                <dd className="text-slate-700 dark:text-slate-200">{final.one_key_fix}</dd>
+              </div>
+            )}
+          </dl>
         </Card>
       )}
       {(score.strengths.length > 0 || score.improvements.length > 0) && (
@@ -1563,6 +1575,96 @@ function OverviewTab({ score }: { score: ScoreResponse }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// A compact 1-4 pip meter for the analytical sub-scores.
+function ScaleMeter({ score, max = 4 }: { score: number; max?: number }) {
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <div className="flex gap-0.5">
+        {Array.from({ length: max }, (_, i) => (
+          <span
+            key={i}
+            className={`h-1.5 w-5 rounded-full ${i < score ? "bg-indigo-500" : "bg-slate-200 dark:bg-slate-700"}`}
+          />
+        ))}
+      </div>
+      <span className="font-mono text-[11px] font-medium text-slate-500 dark:text-slate-400">{fmtNum(score)}/{max}</span>
+    </div>
+  );
+}
+
+function AnalysisRow(props: { label: string; blurb: string; sub: SubScore }) {
+  return (
+    <div className="border-t border-slate-100 py-3 first:border-t-0 first:pt-0 dark:border-slate-800">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{props.label}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{props.blurb}</p>
+        </div>
+        <ScaleMeter score={props.sub.score} />
+      </div>
+      {props.sub.justification && (
+        <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{props.sub.justification}</p>
+      )}
+      {props.sub.evidence && (
+        <p className="mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400">
+          “{props.sub.evidence}”
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Section 2 — how well the participant APPLIED business thinking to the scenario.
+function AnalysisTab({ score }: { score: ScoreResponse }) {
+  const a = score.analytical;
+  if (!a) {
+    return (
+      <Card>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No analytical breakdown was returned for this run.</p>
+      </Card>
+    );
+  }
+  const c = a.creativity;
+  return (
+    <div className="space-y-4">
+      <Card>
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Analytical &amp; problem-solving</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">How well you applied the skills to actually solve the scenario · 25% of the score</p>
+          </div>
+          <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{Math.round(a.section_percent)}%</span>
+        </div>
+        <div className="mt-1">
+          <AnalysisRow label="Problem framing" blurb="Reading the real problem, its constraints and stakeholders" sub={a.framing} />
+          <AnalysisRow label="Solution quality" blurb="A realistic, organized, implementable solution" sub={a.solution_quality} />
+          <AnalysisRow label="Application of indicators" blurb="Weaving the assessed skills into the recommendation" sub={a.pi_application} />
+        </div>
+      </Card>
+
+      <Card className={c.bonus > 0 ? "border-fuchsia-200 dark:border-fuchsia-900/60" : ""}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">✨ Creativity bonus</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Bonus only — a plain, correct answer never loses points here</p>
+          </div>
+          <span className={`font-mono text-sm font-semibold ${c.bonus > 0 ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-slate-400 dark:text-slate-500"}`}>
+            {c.bonus > 0 ? `+${fmtNum(c.bonus)}` : "+0"}
+          </span>
+        </div>
+        {c.justification && (
+          <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{c.justification}</p>
+        )}
+        {c.evidence && (
+          <p className="mt-1.5 border-l-2 border-fuchsia-200 pl-2.5 text-xs italic text-slate-500 dark:border-fuchsia-900/60 dark:text-slate-400">
+            “{c.evidence}”
+          </p>
+        )}
+      </Card>
     </div>
   );
 }
