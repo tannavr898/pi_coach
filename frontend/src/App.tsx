@@ -1361,12 +1361,14 @@ function FollowupScreen(props: {
 
 function ScorePill({ label, value, weight }: { label: string; value: number; weight: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 px-2.5 py-1.5 dark:border-slate-800">
-      <div className="flex items-baseline justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</span>
-        <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{weight}</span>
+    <div className="rounded-lg border border-slate-200 px-2 py-1.5 dark:border-slate-800">
+      <div className="font-mono text-[9px] uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate">{label}</div>
+      <div className="mt-0.5 flex items-baseline justify-between gap-1">
+        <span className="font-mono text-lg font-bold leading-none text-slate-900 dark:text-slate-100">
+          {value}<span className="text-xs font-medium text-slate-400">%</span>
+        </span>
+        <span className="font-mono text-[9px] leading-none text-slate-400 dark:text-slate-500">{weight}</span>
       </div>
-      <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100">{value}<span className="text-xs font-medium text-slate-400">%</span></div>
     </div>
   );
 }
@@ -1981,36 +1983,102 @@ function GapList({ gaps }: { gaps: string[] }) {
   );
 }
 
-function MissingCard({ scores }: { scores: CriterionScore[] }) {
-  const rows = scores.filter((s) => s.gaps.length > 0 && s.level !== "exemplary");
-  if (rows.length === 0) return null;
+// The transcript sidebar: one collapsible note per indicator. Collapsed, each
+// shows the indicator, its level and points, and a one-line headline; expanded,
+// it reveals the feedback, the phrases that earned credit, what was missing, and
+// a stronger line the participant could have said. Tapping a highlight in the
+// transcript opens the matching note (and vice-versa) via the shared `activeId`.
+function TranscriptNotes({ scores, activeId, onSelect }: {
+  scores: CriterionScore[];
+  activeId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
   return (
-    <Card className="border-amber-200 dark:border-amber-900/60">
-      <h3 className="font-display text-sm font-semibold text-amber-900 dark:text-amber-300">What was missing</h3>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Gaps that cost points — these weren't in your response, so they can't be highlighted. Add them next time.
-      </p>
-      <div className="mt-3 space-y-3">
-        {rows.map((s) => (
-          <div key={s.criterion_id}>
-            <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
-              {s.name}
-              {s.topic && <span className="ml-1 font-mono text-slate-400 dark:text-slate-500">· {s.topic}</span>}
-            </p>
-            <ul className="mt-1 space-y-1">
-              {s.gaps.map((g, i) => (
-                <li key={i} className="flex gap-1.5 text-xs text-slate-600 dark:text-slate-300"><span className="text-amber-500">+</span><span>{g}</span></li>
+    <div className="space-y-3 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <Card>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Indicator notes</h3>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{scores.length} skills</span>
+        </div>
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+          Open any indicator — or tap a highlight in your transcript — to see what it earned, what was missing, and a
+          stronger line you could’ve said.
+        </p>
+        <div className="mt-3 space-y-2">
+          {scores.map((s) => {
+            const open = activeId === s.criterion_id;
+            const openId = s.evidence.length > 0 ? `${s.criterion_id}#0` : `${s.criterion_id}#note`;
+            return (
+              <TranscriptNoteRow
+                key={s.criterion_id}
+                r={s}
+                open={open}
+                onToggle={() => onSelect(open ? null : openId)}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+          <LevelLegend />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boolean; onToggle: () => void }) {
+  const tone = LEVEL_TONE[r.level];
+  const ref = useRef<HTMLDivElement>(null);
+  const headline = r.headline || truncate(r.feedback.replace(/\*\*/g, ""), 70);
+  const showGaps = r.gaps.length > 0 && r.level !== "exemplary";
+  const showSuggestion = !!r.suggestion && r.level !== "exemplary";
+  // When opened (e.g. by tapping a transcript highlight), bring the note into view
+  // without yanking the page — matters most on mobile, where notes sit below.
+  useEffect(() => {
+    if (open) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [open]);
+  return (
+    <div ref={ref} className={`rounded-xl border ${tone.border} ${tone.bg}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-start justify-between gap-2 px-3 py-2.5 text-left"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+            {r.name}
+            {r.topic && <span className="ml-1 font-mono text-[11px] font-normal text-slate-400 dark:text-slate-500">· {r.topic}</span>}
+          </p>
+          {!open && headline && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{headline}</p>}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone.badge}`}>{tone.label}</span>
+          <span className="font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{open ? "▾" : "▸"}</span>
+        </div>
+      </button>
+      {open && (
+        <div className="space-y-2 border-t border-black/5 px-3 pb-3 pt-2.5 dark:border-white/10">
+          {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
+          {r.evidence.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {r.evidence.map((q, i) => (
+                <span key={i} className="rounded bg-white/70 dark:bg-slate-800/60 px-1.5 py-0.5 text-xs italic text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700">
+                  “{truncate(q, 80)}”
+                </span>
               ))}
-            </ul>
-            {s.suggestion && (
-              <p className="mt-1.5 rounded-lg border border-dashed border-indigo-300 bg-indigo-50/70 px-2.5 py-1.5 text-xs leading-relaxed text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
-                <span className="font-semibold">💡 Could've said:</span> <span className="italic">“{s.suggestion}”</span>
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    </Card>
+            </div>
+          )}
+          {showGaps && <GapList gaps={r.gaps} />}
+          {showSuggestion && (
+            <p className="rounded-lg border border-dashed border-indigo-300 bg-indigo-50/70 px-2.5 py-1.5 text-xs leading-relaxed text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
+              <span className="font-semibold">💡 Could’ve said:</span> <span className="italic">“{r.suggestion}”</span>
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -2063,21 +2131,17 @@ function TranscriptTab(props: {
   followupFeedback: string;
   utterances: Utterance[];
 }) {
-  const activeMark = props.marks.find((m) => m.id === props.active) ?? null;
-  const activeSuggestion = activeMark && activeMark.level !== "exemplary"
-    ? props.scores.find((s) => s.criterion_id === activeMark.criterionId)?.suggestion ?? ""
-    : "";
-  const tone = activeMark ? LEVEL_TONE[activeMark.level] : null;
+  const activeCriterionId = props.active ? props.active.split("#")[0] : null;
   const hasTurns = props.utterances.length > 0;
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_19rem]">
-      <div className="order-2 space-y-4 lg:order-1">
+    <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="space-y-4">
         <Card>
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your presentation</h3>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             {hasTurns
-              ? "Split by speaker so you can see who said what. Highlights mark where each criterion found credit; 💡 notes show what you could have said. Tap a highlight for detail."
-              : "Highlights mark where each criterion found credit (color = the level it reached); 💡 notes woven in show what you could have said. Tap a highlight for the note."}
+              ? "Split by speaker so you can see who said what. Highlighted phrases are where an indicator earned credit — color shows the level. Tap one to open its note."
+              : "Highlighted phrases are where an indicator earned credit — the color is the level it reached. Tap one to open its note on the right."}
           </p>
           {hasTurns ? (
             <div className="mt-3 space-y-3">
@@ -2114,43 +2178,7 @@ function TranscriptTab(props: {
         )}
       </div>
 
-      <div className="order-1 space-y-3 lg:order-2">
-        <div className="lg:sticky lg:top-20">
-          <Card>
-            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Annotation</h3>
-            {activeMark && tone ? (
-              <div className={`mt-2 rounded-xl border ${tone.border} ${tone.bg} px-3 py-2.5`}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{activeMark.label}</span>
-                  <span className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
-                    <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">{activeMark.points}/{activeMark.maxPoints}</span>
-                  </span>
-                </div>
-                <p className="mt-1.5 text-sm italic text-slate-500 dark:text-slate-400">“{activeMark.quote}”</p>
-                {activeMark.feedback && <p className="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(activeMark.feedback)}</p>}
-                {activeSuggestion && (
-                  <p className="mt-2 rounded-lg border border-dashed border-indigo-300 bg-indigo-50/70 px-2.5 py-1.5 text-xs leading-relaxed text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
-                    <span className="font-semibold">💡 What you could have said:</span> <span className="italic">“{activeSuggestion}”</span>
-                  </p>
-                )}
-                <button className="mt-2 font-mono text-xs font-medium text-slate-400 dark:text-slate-500 underline" onClick={() => props.onSelect(null)}>
-                  Clear
-                </button>
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-                Tap any highlighted phrase in your transcript to see which criterion it counted toward, the level it
-                reached, and why.
-              </p>
-            )}
-            <div className="mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
-              <LevelLegend />
-            </div>
-          </Card>
-        </div>
-        <MissingCard scores={props.scores} />
-      </div>
+      <TranscriptNotes scores={props.scores} activeId={activeCriterionId} onSelect={props.onSelect} />
     </div>
   );
 }
@@ -2192,18 +2220,6 @@ function highlight(text: string, marks: Mark[], active: string | null, onSelect:
         {text.slice(f.start, f.end)}
       </mark>,
     );
-    // "What you could have said" — woven into the transcript right after the phrase.
-    if (f.mark.suggestion) {
-      nodes.push(
-        <span
-          key={`s${i}`}
-          className="mx-1 inline-flex items-baseline gap-1 rounded-md border border-dashed border-indigo-300 bg-indigo-50/80 px-1.5 py-0.5 align-baseline text-[0.85em] leading-snug text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200"
-        >
-          <span aria-hidden>💡</span>
-          <span><span className="font-semibold">Could've said:</span> <span className="italic">“{f.mark.suggestion}”</span></span>
-        </span>,
-      );
-    }
     cursor = f.end;
   });
   if (cursor < text.length) nodes.push(<span key="tail">{text.slice(cursor)}</span>);
