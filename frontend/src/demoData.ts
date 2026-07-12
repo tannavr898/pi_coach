@@ -58,7 +58,7 @@ export const DEMO_SCENARIO: ScenarioResponse = {
       topic: "Promotion",
       name: "Promotional Strategy",
       definition:
-        "Does the response choose a deliberate, audience-appropriate mix of ways to reach customers and justify why that blend fits THIS business — rather than defaulting to 'advertise more'?",
+        "Does the response choose a deliberate, audience-appropriate mix of ways to reach customers and justify why that blend fits THIS business, rather than defaulting to 'advertise more'?",
       strong_looks_like: "Names specific channels, matches them to the target audience, and explains the trade-offs.",
       weak_looks_like: "Generic 'we'll market it'; channels with no audience rationale.",
       coaches: "Choosing a coherent, audience-fit promotional mix",
@@ -69,7 +69,7 @@ export const DEMO_SCENARIO: ScenarioResponse = {
       topic: "Place",
       name: "Distribution and Channel Strategy",
       definition:
-        "Does the response think about how the product reaches customers — the places and channels — and choose ones that fit the customer and offer?",
+        "Does the response think about how the product reaches customers, the places and channels, and choose ones that fit the customer and offer?",
       strong_looks_like:
         "Chooses where and how customers get the product to match their habits and the offer, weighing each channel's trade-offs.",
       weak_looks_like:
@@ -82,7 +82,7 @@ export const DEMO_SCENARIO: ScenarioResponse = {
       topic: "Brand",
       name: "Branding and Brand Identity",
       definition:
-        "Does the response build a clear, consistent identity for the business — what it stands for and how it presents — rather than leaving the brand accidental?",
+        "Does the response build a clear, consistent identity for the business, what it stands for and how it presents, rather than leaving the brand accidental?",
       strong_looks_like:
         "Articulates what the business stands for and keeps decisions consistent with that identity.",
       weak_looks_like: "No coherent identity; inconsistent presentation; the brand is whatever happens by accident.",
@@ -94,7 +94,7 @@ export const DEMO_SCENARIO: ScenarioResponse = {
       topic: "Measurement",
       name: "Measuring Success and Follow-Through",
       definition:
-        "Does the response define how it will know whether the plan worked — a concrete measure — and follow through, rather than leaving 'success' undefined?",
+        "Does the response define how it will know whether the plan worked, a concrete measure, and follow through, rather than leaving 'success' undefined?",
       strong_looks_like:
         "Names a specific, measurable indicator of success and how it would be tracked, and plans to adjust from it.",
       weak_looks_like: "No way to tell if the plan worked; 'it'll be a success' with no metric; no follow-up on the result.",
@@ -109,7 +109,7 @@ export const DEMO_SCENARIO: ScenarioResponse = {
   ],
   situation: `You are a marketing consultant brought in by FreshBlend, a regional chain of nine smoothie and juice bars in a mid-sized metro area. FreshBlend has loyal weekday-morning regulars but its afternoons are quiet, and management has noticed that many first-time customers never come back.
 
-The owner, Dana Okafor, wants a plan to turn more one-time buyers into repeat customers and to lift traffic in the slow 3-to-5pm window — without simply slashing prices across the board. Dana cares about the brand feeling fresh and local, and is open to using the FreshBlend mobile app more aggressively.
+The owner, Dana Okafor, wants a plan to turn more one-time buyers into repeat customers and to lift traffic in the slow 3-to-5pm window, without simply slashing prices across the board. Dana cares about the brand feeling fresh and local, and is open to using the FreshBlend mobile app more aggressively.
 
 You will present your recommendation to Dana, who will play the role of the owner and ask you two follow-up questions at the end.`,
   followup_questions: [
@@ -131,7 +131,7 @@ export const DEMO_SCORE: ScoreResponse = {
     framing: {
       score: 3,
       justification:
-        "Clearly frames the real problem — turning one-time buyers into repeat visits and filling the slow afternoon window — and names the target audience.",
+        "Clearly frames the real problem, turning one-time buyers into repeat visits and filling the slow afternoon window, and names the target audience.",
       evidence: "our 18 to 28 core lives on their phones",
     },
     solution_quality: {
@@ -166,7 +166,7 @@ export const DEMO_SCORE: ScoreResponse = {
   final: {
     percent: 80.1,
     top_strength:
-      "A realistic, well-sequenced solution — loyalty program, targeted promo, and a pilot to prove it before rollout.",
+      "A realistic, well-sequenced solution: loyalty program, targeted promo, and a pilot to prove it before rollout.",
     biggest_weakness:
       "Brand is treated as look-and-feel, so the indicator score and the persuasive core both leave points on the table.",
     one_key_fix:
@@ -180,12 +180,12 @@ export const DEMO_SCORE: ScoreResponse = {
     "Connected the app to first-party data, not just convenience.",
   ],
   improvements: [
-    "Develop the brand point beyond visual consistency — what does FreshBlend stand for?",
+    "Develop the brand point beyond visual consistency: what does FreshBlend stand for?",
     "Quantify the expected impact, not just the metric you'd watch.",
     "Tie the 15% target back to why the tactics should produce it.",
   ],
   followup_feedback:
-    "Handled the margin question well — capping rewards at paid visits and modeling breakeven shows real business judgment, and the fallback to lengthen the earn cycle is a thoughtful contingency.",
+    "Handled the margin question well: capping rewards at paid visits and modeling breakeven shows real business judgment, and the fallback to lengthen the earn cycle is a thoughtful contingency.",
   math_checks: [],
   scores: [
     {
@@ -198,7 +198,7 @@ export const DEMO_SCORE: ScoreResponse = {
       max_points: 10,
       headline: "Used data to drive retention",
       feedback:
-        "You moved past the textbook line and showed **how data drives loyalty** — capturing purchase history and rewarding repeat visits. To reach exemplary, tie it to a **retention number** you'd expect to move.",
+        "You moved past the textbook line and showed **how data drives loyalty**, capturing purchase history and rewarding repeat visits. To reach exemplary, tie it to a **retention number** you'd expect to move.",
       evidence: ["capture purchase history in the app and trigger a free smoothie reward every tenth visit"],
       gaps: ["No retention rate or churn figure named", "Didn't distinguish regulars vs. new buyers"],
       suggestion: "I'd segment first-time vs. returning customers and target a repeat-visit rate lift from 22% to 30% this quarter.",
@@ -228,7 +228,7 @@ export const DEMO_SCORE: ScoreResponse = {
       max_points: 10,
       headline: "Framed the app as an owned channel",
       feedback:
-        "Strong insight that **the app becomes an owned channel** and returns first-party data the delivery apps withhold. That's the systems thinking judges reward — one step short of comparing it to the delivery channel on cost.",
+        "Strong insight that **the app becomes an owned channel** and returns first-party data the delivery apps withhold. That's the systems thinking judges reward, one step short of comparing it to the delivery channel on cost.",
       evidence: ["the app becomes our owned channel", "first-party data the delivery apps never hand back"],
       gaps: ["No comparison to the third-party delivery channel's economics"],
       suggestion: "Delivery apps take 20–30% per order, so shifting even a quarter of those sales to our own app protects real margin.",
@@ -243,10 +243,10 @@ export const DEMO_SCORE: ScoreResponse = {
       max_points: 10,
       headline: "Stayed at look-and-feel, not meaning",
       feedback:
-        "You kept the **visual identity consistent**, which is real, but brand is mostly treated as a logo here. Push into what FreshBlend **stands for** — the promise that earns loyalty — to lift this above developing.",
+        "You kept the **visual identity consistent**, which is real, but brand is mostly treated as a logo here. Push into what FreshBlend **stands for**, the promise that earns loyalty, to lift this above developing.",
       evidence: ["keep the visual identity consistent from the cup to the app icon"],
       gaps: ["No brand promise or positioning stated", "Didn't connect brand to the loyalty program"],
-      suggestion: "FreshBlend should stand for 'fresh, fast, and local' — and the loyalty rewards should reinforce that, like a free local-fruit add-on.",
+      suggestion: "FreshBlend should stand for 'fresh, fast, and local,' and the loyalty rewards should reinforce that, like a free local-fruit add-on.",
     },
     {
       criterion_id: "FW-280",
@@ -258,7 +258,7 @@ export const DEMO_SCORE: ScoreResponse = {
       max_points: 10,
       headline: "Named a real target and a pilot",
       feedback:
-        "You named a real target — a **15 percent lift in returning customers** — and a pilot to prove it, which is more than most do. To reach exemplary, show **why the tactics should produce that lift**, not just that you'd measure it.",
+        "You named a real target, a **15 percent lift in returning customers**, and a pilot to prove it, which is more than most do. To reach exemplary, show **why the tactics should produce that lift**, not just that you'd measure it.",
       evidence: ["track repeat-visit rate and reward redemption monthly, aiming for a 15 percent lift"],
       gaps: ["No link from tactics to the 15% number"],
       suggestion: "If the loyalty program converts even 1 in 5 first-timers into regulars, that alone gets us most of the way to the 15% lift.",
@@ -287,9 +287,9 @@ export const DEMO_DELIVERY: DeliveryMetrics = {
   time_flag: "good",
   reading_signal: false,
   notes: [
-    "Pace sat in the ideal 120–150 WPM range — easy for a judge to follow.",
+    "Pace sat in the ideal 120–150 WPM range, easy for a judge to follow.",
     "Only 6 fillers across nearly 8 minutes; the one 4-second pause came right before your channel point, which actually read as a deliberate beat.",
-    "You used 7:52 of the window, leaving room for the follow-up — well managed.",
+    "You used 7:52 of the window, leaving room for the follow-up, which is well managed.",
   ],
   delivery_score: 84,
   delivery_components: [

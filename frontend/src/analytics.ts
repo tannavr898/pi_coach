@@ -40,3 +40,16 @@ export function track(event: string, props?: Record<string, unknown>): void {
     /* swallow */
   }
 }
+
+// Attach an email to the PostHog person so waitlist signups are queryable as a
+// list in the Persons view. Person profiles are "identified_only", so this call
+// is what creates the profile — we only ever do it for a voluntary email capture
+// (waitlist), never for anonymous practice sessions.
+export function identifyEmail(email: string): void {
+  if (!ph || !email) return;
+  try {
+    ph.identify(email, { email });
+  } catch {
+    /* swallow */
+  }
+}

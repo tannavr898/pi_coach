@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   type Criterion,
   type CriterionScore,
@@ -19,11 +19,14 @@ import {
   postScenario,
   postScore,
 } from "./api";
-import { track } from "./analytics";
+import { identifyEmail, track } from "./analytics";
 import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
 
 type ResponseMode = "type" | "speak";
-type View = "practice" | "tips" | "faq";
+// "home" is the scroll-based marketing landing page (the default). "practice" is
+// the role-play flow, whose first screen is now just the setup form — the hero and
+// how-it-works copy moved to the landing page.
+type View = "home" | "practice" | "tips" | "faq";
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 
 // Presentation timing now comes per-event from scenario.timing (team events get a
@@ -62,7 +65,7 @@ export default function App() {
   const [delivery, setDelivery] = useState<DeliveryMetrics | null>(null);
   const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>("practice");
+  const [view, setView] = useState<View>("home");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
@@ -235,7 +238,7 @@ export default function App() {
     setStage("pick");
   }
 
-  const wide = (view === "practice" && stage === "feedback") || view === "tips";
+  const wide = view === "home" || (view === "practice" && stage === "feedback") || view === "tips";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -248,7 +251,15 @@ export default function App() {
           </div>
         )}
 
-        {view === "tips" ? (
+        {view === "home" ? (
+          <LandingPage
+            onStart={() => {
+              track("practice_cta_clicked", { from: "landing" });
+              setView("practice");
+            }}
+            onTips={() => setView("tips")}
+          />
+        ) : view === "tips" ? (
           <TipsPage onStart={() => setView("practice")} />
         ) : view === "faq" ? (
           <FAQPage onStart={() => setView("practice")} />
@@ -432,7 +443,7 @@ export function DemoApp() {
             <DemoStepHeader
               step={2}
               title="The graded feedback"
-              blurb="Scored criterion by criterion against the framework. Open any tab — the Transcript even highlights the exact phrases that earned credit."
+              blurb="Scored criterion by criterion against the framework. Open any tab; the Transcript even highlights the exact phrases that earned credit."
               backLabel="Back to the scenario"
               onBack={() => setStep("scenario")}
             />
@@ -461,7 +472,7 @@ function DemoRibbon({ onExit }: { onExit: () => void }) {
       <div className="mx-auto flex max-w-6xl flex-col items-start gap-2 px-5 py-2.5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-indigo-900 dark:text-indigo-200">
           <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-indigo-500">Demo</span>
-          <span className="ml-2">A sample session — example scenario and feedback, no account needed.</span>
+          <span className="ml-2">A sample session with an example scenario and feedback, no account needed.</span>
         </p>
         <button
           onClick={onExit}
@@ -499,7 +510,7 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
     <div className="space-y-5">
       <DemoStepHeader
         step={1}
-        title="The scenario — and a sample response"
+        title="The scenario, and a sample response"
         blurb="PI Coach writes an original scenario built around the skills you want to practice, then the competitor presents. Here's an example prompt with a strong (not perfect) typed response, the way a real session looks before grading."
       />
       <Card>
@@ -543,7 +554,7 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
 
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-          Now see how PI Coach grades it — as a percentage, skill by skill.
+          Now see how PI Coach grades it, as a percentage, skill by skill.
         </p>
         <button className={`${BTN_PRIMARY} w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`} onClick={onNext}>
           See the graded feedback →
@@ -579,11 +590,11 @@ function SiteFooter() {
         </div>
         <p>
           Trains the business skills and delivery that win DECA role-plays, using original practice scenarios and
-          our own independent evaluation framework — not official DECA materials, and not affiliated with DECA Inc.
+          our own independent evaluation framework. Not official DECA materials, and not affiliated with DECA Inc.
           Feedback is practice coaching, never an official competition score.
         </p>
         <p className="mt-1.5">
-          Recordings are transcribed to measure delivery, then discarded on our servers — your audio stays on your
+          Recordings are transcribed to measure delivery, then discarded on our servers; your audio stays on your
           device unless you keep it. Delivery covers timing only (pace, fillers, pauses), never tone or confidence.
         </p>
       </div>
@@ -706,7 +717,7 @@ function SiteHeader({ view, onView, theme, onToggleTheme, onFeedback }: {
   return (
     <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md dark:bg-slate-950/60">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
-        <button onClick={() => onView("practice")} className="flex items-center gap-2.5 text-left">
+        <button onClick={() => onView("home")} className="flex items-center gap-2.5 text-left">
           <BrandMark />
           <div className="leading-none">
             <div className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">PI Coach</div>
@@ -810,29 +821,23 @@ function PickScreen(props: {
   const suggestions = selected?.suggestions ?? [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <section className="pt-4">
-        <Eyebrow>DECA role-play practice</Eyebrow>
-        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
-          Rehearse the room
-          <br />
-          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            before you're in it.
-          </span>
+        <Eyebrow>Set up your role-play</Eyebrow>
+        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
+          Build your role-play
         </h1>
-        <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Pick your event, get an original role-play built around it, prep against a real timer,
-          present out loud, and get honest, per-criterion feedback — content <em>and</em> delivery.
+        <p className="mt-3 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          Pick your event and we'll write an original scenario built around it, then prep against a real
+          timer, present out loud, and get honest, per-criterion feedback.
         </p>
         <button
           onClick={props.onTips}
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
         >
           New to DECA role-plays? Read the competition tips →
         </button>
       </section>
-
-      <ProcessStrip />
 
       <Card className="overflow-hidden p-0">
         <div className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
@@ -875,7 +880,7 @@ function PickScreen(props: {
               </p>
             ) : (
               <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-                {props.events.length ? "Grouped by cluster — pick the one you compete in." : "Loading events…"}
+                {props.events.length ? "Grouped by cluster. Pick the one you compete in." : "Loading events…"}
               </p>
             )}
           </Field>
@@ -885,7 +890,7 @@ function PickScreen(props: {
               className={`h-20 ${TEXTAREA_CLS}`}
               placeholder={
                 selected
-                  ? `e.g. "${suggestions[0] ?? "a challenge you want to practice"}" — or leave blank for a surprise scenario`
+                  ? `e.g. "${suggestions[0] ?? "a challenge you want to practice"}", or leave blank for a surprise scenario`
                   : "Pick your event above first"
               }
               value={props.request}
@@ -987,6 +992,292 @@ function ProcessStrip() {
         </div>
       ))}
     </div>
+  );
+}
+
+// --- landing page (/, view="home") -----------------------------------------
+// A scroll-based marketing page. A cold visitor lands here — hero, how it works,
+// what the feedback looks like, then an email capture — and is one click away from
+// the setup form (onStart → view="practice").
+
+function LandingPage({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
+  return (
+    <div className="space-y-20 pb-10 sm:space-y-24">
+      <HeroSection onStart={onStart} onTips={onTips} />
+      <HowItWorksSection />
+      <FeedbackExplainerSection />
+      <WaitlistCTA onStart={onStart} />
+    </div>
+  );
+}
+
+function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: string; blurb?: string }) {
+  return (
+    <div className="max-w-2xl">
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+        {title}
+      </h2>
+      {blurb && <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{blurb}</p>}
+    </div>
+  );
+}
+
+// A branded first-frame fallback shown before the loop plays (or if it can't).
+// Matches the clip's native 1920×1080 so there's no letterboxing on load.
+const HERO_POSTER =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e0e7ff'/%3E%3Cstop offset='1' stop-color='%23ede9fe'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23g)'/%3E%3Ctext x='960' y='520' font-family='system-ui,sans-serif' font-size='64' font-weight='600' fill='%234f46e5' text-anchor='middle'%3EPI Coach demo%3C/text%3E%3Ctext x='960' y='600' font-family='system-ui,sans-serif' font-size='38' fill='%236366f1' text-anchor='middle'%3Ea scenario, presented, and graded%3C/text%3E%3C/svg%3E";
+
+function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
+  return (
+    <section className="grid items-center gap-10 pt-6 lg:grid-cols-2 lg:gap-12">
+      {/* Video is first in the DOM so it stacks ABOVE the copy on mobile; lg:order-2
+          moves it to the right column on desktop. At ~half width it's shown small
+          enough that the 1080p source isn't upscaled, so it stays crisp on Retina.
+          The recording has ~10% black bars around a centered app window, so we
+          oversize the element to 127% and clip the overflow to crop them off (sizing
+          the element, not transform: scale, so it downscales from 1920px in one step). */}
+      <div className="lg:order-2">
+        <div
+          className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-xl shadow-indigo-500/10 dark:border-slate-800"
+          style={{ aspectRatio: "16 / 9" }}
+        >
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            src="/demo-loop.mp4"
+            poster={HERO_POSTER}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-label="A short, silent demo of PI Coach: an original role-play scenario and its graded feedback"
+          />
+        </div>
+      </div>
+
+      <div className="lg:order-1">
+        <Eyebrow>DECA role-play practice</Eyebrow>
+        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
+          Practice DECA role-plays out loud and{" "}
+          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            get scored like the real thing.
+          </span>
+        </h1>
+        <p className="mt-4 font-display text-lg font-medium text-slate-500 dark:text-slate-400">
+          Rehearse the room before you're in it.
+        </p>
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          Pick your event, get an original scenario built around it, prep against a real timer,
+          present out loud, and get honest, per-criterion feedback on both content and delivery.
+        </p>
+        <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <button
+            onClick={onStart}
+            className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
+          >
+            Ready to practice? →
+          </button>
+          <button
+            onClick={onTips}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            New to DECA role-plays? Read the competition tips →
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HowItWorksSection() {
+  return (
+    <section>
+      <SectionHeading
+        eyebrow="How it works"
+        title="Three steps, start to score"
+        blurb="The same shape as the real event: prep against the clock, present it live, then read exactly where you stood."
+      />
+      <div className="mt-6">
+        <ProcessStrip />
+      </div>
+    </section>
+  );
+}
+
+type FbSection = "pi" | "analysis" | "present";
+
+function FeedbackExplainerSection() {
+  const [active, setActive] = useState<FbSection>("pi");
+  const blocks: { key: FbSection; weight: string; title: string; body: string; looksFor: string }[] = [
+    {
+      key: "pi",
+      weight: "60%",
+      title: "Performance Indicators",
+      body: "The specific business skills the event lists. For each one we judge whether you actually demonstrated it or only name-dropped it, then score it Novice to Exemplary and highlight the exact phrase in your transcript that earned the credit.",
+      looksFor: "using customer data to drive loyalty, not just saying “good service”",
+    },
+    {
+      key: "analysis",
+      weight: "25%",
+      title: "Analytical & Problem-Solving",
+      body: "How you think, not just what you cite. We look at how sharply you framed the real problem, whether your solution is specific and realistic, and whether you de-risked it instead of hand-waving.",
+      looksFor: "a clear target audience, a sound plan, a pilot before a full rollout",
+    },
+    {
+      key: "present",
+      weight: "15%",
+      title: "Professional Presentation",
+      body: "How it lands as a presentation. When you speak, we measure objective delivery signals against the clock. We never judge tone, confidence, or charisma.",
+      looksFor: "structure, pace, filler words, and using your time well",
+    },
+  ];
+  const activeBlock = blocks.find((b) => b.key === active)!;
+  return (
+    <section>
+      <SectionHeading
+        eyebrow="What the feedback looks like"
+        title="Graded on the same weighted rubric a judge uses"
+        blurb="Most tools hand you a vibe. PI Coach breaks your score into the three things that actually decide a role-play, and shows its work on each. Tap any one to see the real feedback it produces."
+      />
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        {blocks.map((b) => {
+          const on = b.key === active;
+          return (
+            <button
+              key={b.key}
+              onClick={() => {
+                setActive(b.key);
+                track("feedback_section_viewed", { section: b.key });
+              }}
+              aria-pressed={on}
+              className={`flex flex-col rounded-2xl border p-5 text-left shadow-sm transition ${
+                on
+                  ? "border-indigo-400 bg-indigo-50/50 ring-1 ring-indigo-400 dark:border-indigo-500 dark:bg-indigo-950/40 dark:ring-indigo-500"
+                  : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900/60"
+              }`}
+            >
+              <span className="font-mono text-3xl font-bold leading-none text-indigo-600 dark:text-indigo-400">{b.weight}</span>
+              <h3 className="mt-3 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{b.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{b.body}</p>
+              <p className="mt-3 flex gap-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Looks for</span>
+                <span>{b.looksFor}</span>
+              </p>
+              <span
+                className={`mt-4 inline-flex items-center gap-1 text-xs font-semibold ${
+                  on ? "text-indigo-600 dark:text-indigo-300" : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                {on ? "Showing below ↓" : "See real feedback →"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* The revealed panel renders the app's ACTUAL feedback component for the
+          selected section, fed with the sample session's real graded data — so this
+          is exactly what a competitor sees after a run, not a mockup. */}
+      <div className="mt-6">
+        <div className="mb-3 flex items-baseline gap-2">
+          <Eyebrow>Real feedback</Eyebrow>
+          <span className="text-xs text-slate-400 dark:text-slate-500">the {activeBlock.title} section, from the sample session</span>
+        </div>
+        {active === "pi" && <CriteriaTab scores={DEMO_SCORE.scores} />}
+        {active === "analysis" && <AnalysisTab score={DEMO_SCORE} />}
+        {active === "present" && <DeliveryTab metrics={DEMO_DELIVERY} audioBlob={null} />}
+      </div>
+
+      <div className="mt-8">
+        <a
+          href="/demo"
+          onClick={() => track("demo_opened", { from: "landing" })}
+          className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/60 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
+        >
+          See exactly what the feedback looks like →
+        </a>
+        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+          A full sample session. Click through the scenario and every graded tab, no account needed.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// Email capture for an upcoming feature. Reuses the existing /api/feedback pipeline
+// (page:"waitlist") so the address is logged server-side and emailed to the operator
+// via Resend — no new backend. PostHog gets a `waitlist_signup` event and identifies
+// the person by email so the list is exportable from the Persons view.
+function WaitlistCTA({ onStart }: { onStart: () => void }) {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const addr = email.trim();
+    if (!addr || state === "sending") return;
+    setState("sending");
+    try {
+      await postFeedback({ message: "Waitlist signup", email: addr, page: "waitlist" });
+      identifyEmail(addr);
+      track("waitlist_signup", { email: addr });
+      setState("done");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 px-6 py-10 dark:border-indigo-900/50 dark:from-indigo-950/40 dark:to-violet-950/30 sm:px-10">
+      <div className="mx-auto max-w-xl text-center">
+        <Eyebrow>New feature coming</Eyebrow>
+        <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+          Get notified when it lands
+        </h2>
+        <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          Drop your email and we'll tell you the moment the next feature ships. No spam, just the launch.
+        </p>
+
+        {state === "done" ? (
+          <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">
+            You're on the list. 🎉 We'll be in touch.
+          </p>
+        ) : (
+          <form onSubmit={submit} className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@school.edu"
+              aria-label="Email address"
+              className="w-full flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+            <button
+              type="submit"
+              disabled={!email.trim() || state === "sending"}
+              className={`${BTN_PRIMARY} shrink-0 px-6 py-3`}
+            >
+              {state === "sending" ? "Signing up…" : "Notify me"}
+            </button>
+          </form>
+        )}
+        {state === "error" && (
+          <p className="mt-2 text-xs text-red-600 dark:text-red-400">Couldn't sign you up — check your connection and try again.</p>
+        )}
+
+        <div className="mt-8 border-t border-indigo-100 pt-6 dark:border-indigo-900/50">
+          <p className="text-sm text-slate-500 dark:text-slate-400">Or start practicing right now:</p>
+          <button
+            onClick={onStart}
+            className={`mt-3 ${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
+          >
+            Ready to practice? →
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1652,7 +1943,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">✨ Creativity bonus</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Bonus only — a plain, correct answer never loses points here</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Bonus only: a plain, correct answer never loses points here</p>
           </div>
           <span className={`font-mono text-sm font-semibold ${c.bonus > 0 ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-slate-400 dark:text-slate-500"}`}>
             {c.bonus > 0 ? `+${fmtNum(c.bonus)}` : "+0"}
@@ -1771,7 +2062,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
         <Card>
           <div className="flex items-center justify-between">
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Delivery score</h3>
-            <span className="font-mono text-xs text-slate-400 dark:text-slate-500">counts 20% of your overall</span>
+            <span className="font-mono text-xs text-slate-400 dark:text-slate-500">folds into your 15% presentation score</span>
           </div>
           <div className="mt-2 flex items-end gap-1.5">
             <span className="font-mono text-4xl font-bold leading-none text-slate-900 dark:text-slate-100">{m.delivery_score}</span>
@@ -1844,7 +2135,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
       )}
 
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
-        Delivery is deterministic timing measured from your audio — accurate and honest. It does not judge tone,
+        Delivery is deterministic timing measured from your audio: accurate and honest. It does not judge tone,
         confidence, or accent.
       </div>
     </div>
@@ -2353,7 +2644,7 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
 function HonestyNote() {
   return (
     <p className="max-w-xs text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-      Original practice scenarios that train the skills DECA role-plays reward — not official DECA materials.
+      Original practice scenarios that train the skills DECA role-plays reward, not official DECA materials.
     </p>
   );
 }
