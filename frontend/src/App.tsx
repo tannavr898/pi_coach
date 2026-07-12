@@ -243,7 +243,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader view={view} onView={setView} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" ? "max-w-7xl" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -1030,13 +1030,38 @@ const HERO_POSTER =
 
 function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
   return (
-    <section className="grid items-center gap-10 pt-6 lg:grid-cols-[5.5fr_14.5fr] lg:gap-8">
-      {/* Video is first in the DOM so it stacks ABOVE the copy on mobile; lg:order-2
-          moves it to the right column on desktop. The right column takes ~65% of the
-          row so the mockup's fine UI detail is shown large enough to read. It's a
-          native 16:9 mockup with no letterbox, so object-cover fills the frame with
-          no crop. At ~700px CSS it still downscales from the 1920px source (even at
-          2x DPR that's ~1400 device px), so it stays crisp rather than upscaled. */}
+    <section className="grid items-center gap-10 pt-6 lg:grid-cols-[6fr_14fr] lg:gap-8">
+      {/* Copy is first in the DOM so on mobile it stacks ABOVE the video; lg:order
+          puts the copy left and the video right on desktop, where the video takes
+          ~70% of the row so the mockup's fine UI detail is shown large enough to read.
+          It's a native 16:9 mockup with no letterbox, so object-cover fills the frame
+          with no crop. Kept under ~960px CSS so even at 2x DPR it downscales from the
+          1920px source (stays crisp) rather than upscaling. */}
+      <div className="lg:order-1">
+        <Eyebrow>DECA role-play practice</Eyebrow>
+        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
+          Practice DECA role-plays out loud and{" "}
+          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            get scored like the real thing.
+          </span>
+        </h1>
+        <p className="mt-4 font-display text-lg font-medium text-slate-500 dark:text-slate-400">
+          Rehearse the room before you're in it.
+        </p>
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          Pick your event, get an original scenario built around it, prep against a real timer,
+          present out loud, and get honest, per-criterion feedback on both content and delivery.
+        </p>
+        <div className="mt-7">
+          <button
+            onClick={onStart}
+            className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
+          >
+            Ready to practice? →
+          </button>
+        </div>
+      </div>
+
       <div className="lg:order-2">
         <div
           className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-xl shadow-indigo-500/10 dark:border-slate-800"
@@ -1054,37 +1079,12 @@ function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => v
             aria-label="A short, silent demo of PI Coach: an original role-play scenario and its graded feedback"
           />
         </div>
-      </div>
-
-      <div className="lg:order-1">
-        <Eyebrow>DECA role-play practice</Eyebrow>
-        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Practice DECA role-plays out loud and{" "}
-          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            get scored like the real thing.
-          </span>
-        </h1>
-        <p className="mt-4 font-display text-lg font-medium text-slate-500 dark:text-slate-400">
-          Rehearse the room before you're in it.
-        </p>
-        <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Pick your event, get an original scenario built around it, prep against a real timer,
-          present out loud, and get honest, per-criterion feedback on both content and delivery.
-        </p>
-        <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <button
-            onClick={onStart}
-            className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
-          >
-            Ready to practice? →
-          </button>
-          <button
-            onClick={onTips}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            New to DECA role-plays? Read the competition tips →
-          </button>
-        </div>
+        <button
+          onClick={onTips}
+          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+        >
+          New to DECA role-plays? Read the competition tips →
+        </button>
       </div>
     </section>
   );
