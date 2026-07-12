@@ -243,7 +243,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader view={view} onView={setView} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${wide ? "max-w-6xl" : "max-w-3xl"}`}>
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" ? "max-w-7xl" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -1030,13 +1030,13 @@ const HERO_POSTER =
 
 function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
   return (
-    <section className="grid items-center gap-10 pt-6 lg:grid-cols-2 lg:gap-12">
+    <section className="grid items-center gap-10 pt-6 lg:grid-cols-[5.5fr_14.5fr] lg:gap-8">
       {/* Video is first in the DOM so it stacks ABOVE the copy on mobile; lg:order-2
-          moves it to the right column on desktop. At ~half width it's shown small
-          enough that the 1080p source isn't upscaled, so it stays crisp on Retina.
-          The recording has ~10% black bars around a centered app window, so we
-          oversize the element to 127% and clip the overflow to crop them off (sizing
-          the element, not transform: scale, so it downscales from 1920px in one step). */}
+          moves it to the right column on desktop. The right column takes ~65% of the
+          row so the mockup's fine UI detail is shown large enough to read. It's a
+          native 16:9 mockup with no letterbox, so object-cover fills the frame with
+          no crop. At ~700px CSS it still downscales from the 1920px source (even at
+          2x DPR that's ~1400 device px), so it stays crisp rather than upscaled. */}
       <div className="lg:order-2">
         <div
           className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-xl shadow-indigo-500/10 dark:border-slate-800"
@@ -1058,7 +1058,7 @@ function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => v
 
       <div className="lg:order-1">
         <Eyebrow>DECA role-play practice</Eyebrow>
-        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
+        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
           Practice DECA role-plays out loud and{" "}
           <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
             get scored like the real thing.
