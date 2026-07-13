@@ -13,6 +13,7 @@ import {
   type ScoreResponse,
   type SubScore,
   type Utterance,
+  adminVerify,
   getEvents,
   postDelivery,
   postFeedback,
@@ -21,8 +22,36 @@ import {
 } from "./api";
 import { identifyEmail, track } from "./analytics";
 import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
+import { ONBOARDING_SCENARIO } from "./onboardingData";
+import { PreSessionScreen } from "./onboarding";
+import { AuthModal, useAuth } from "./auth";
+import { clearSamples, getSession, saveSession, seedSamples, type SaveSessionBody } from "./progress";
+import { HomePage } from "./home";
+import { Flashcards } from "./flashcards";
 
 type ResponseMode = "type" | "speak";
+
+// A compact snapshot of a completed run, used to show a before/after when the
+// same scenario is re-attempted ("Try this again"). Because it's the SAME
+// scenario, the improvement is directly attributable — no difficulty confound.
+type RunSnapshot = {
+  percent: number;
+  criteriaHit: number; // criteria at proficient or above
+  criteriaTotal: number;
+  fillerPerMin: number | null;
+  wpm: number | null;
+};
+
+function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
+  const hit = s.scores.filter((c) => c.level === "proficient" || c.level === "exemplary").length;
+  return {
+    percent: Math.round(s.overall_percent),
+    criteriaHit: hit,
+    criteriaTotal: s.scores.length,
+    fillerPerMin: d ? d.filler_per_min : null,
+    wpm: d ? d.pace_wpm : null,
+  };
+}
 // "home" is the scroll-based marketing landing page (the default). "practice" is
 // the role-play flow, whose first screen is now just the setup form — the hero and
 // how-it-works copy moved to the landing page.
@@ -34,7 +63,7 @@ const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices 
 // and the judge's questions: the response clock counts it down, the follow-up
 // inherits the rest.
 
-type Stage = "pick" | "loading" | "ready" | "prep" | "walkin" | "respond" | "followup" | "scoring" | "feedback";
+type Stage = "presession" | "pick" | "loading" | "ready" | "prep" | "walkin" | "respond" | "followup" | "scoring" | "feedback";
 
 // How long the participant can sit on the response/follow-up screen without
 // starting before the 5-second auto-start countdown kicks in.
@@ -68,6 +97,194 @@ export default function App() {
   const [view, setView] = useState<View>("home");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { user: authUser, ready: authReady, signOut } = useAuth();
+  // Login dialog (optional; opened after a session, from the header, or the
+  // landing page — never before the user has experienced the product).
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<"signup" | "login">("signup");
+  const [authReason, setAuthReason] = useState<string | undefined>(undefined);
+  function openAuth(tab: "signup" | "login", reason?: string) {
+    setAuthTab(tab);
+    setAuthReason(reason);
+    setAuthOpen(true);
+  }
+  // After a successful login/sign-up, drop the user into the practice flow (the
+  // pre-session/setup "prep" page) rather than the home dashboard — EXCEPT when
+  // they just finished a rep and are on the feedback screen, where we keep them
+  // put so they can watch that session attach to their new account.
+  function handleAuthed() {
+    const onFeedback = view === "practice" && stage === "feedback";
+    if (!onFeedback) enterPractice(false);
+  }
+  // Session persistence (logged-in only). `pendingSession` holds a just-completed
+  // anonymous run so we can attach it the moment the user signs up ("your first
+  // rep isn't lost"). `currentSessionId` is the saved id of the on-screen run,
+  // used to link a "Try this again" retry back to it.
+  const [pendingSession, setPendingSession] = useState<SaveSessionBody | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [retryOf, setRetryOf] = useState<string | null>(null);
+  // When set, the current run is a re-attempt of the same scenario; the feedback
+  // screen shows a before→after comparison against this snapshot.
+  const [priorSnapshot, setPriorSnapshot] = useState<RunSnapshot | null>(null);
+
+  // Flashcards overlay: the criterion ids currently being studied (Task 5).
+  const [flashcardIds, setFlashcardIds] = useState<string[] | null>(null);
+
+  // Open a stored session's feedback (from the home "recent sessions" list).
+  async function loadSession(id: string) {
+    setError(null);
+    try {
+      const d = await getSession(id);
+      setScenario(d.scenario);
+      setScore(d.score);
+      setResponseText(d.response);
+      setFollowupAnswer(d.followup_answer);
+      setDelivery(d.delivery);
+      setUtterances(d.utterances);
+      setAudioBlob(null); // audio is never persisted
+      setPriorSnapshot(null);
+      setRetryOf(null);
+      setCurrentSessionId(d.id);
+      setOnboarding(false);
+      setView("practice");
+      setStage("feedback");
+      window.scrollTo({ top: 0 });
+    } catch (e) {
+      setError(errMsg(e));
+    }
+  }
+
+  // Targeted practice for a weak criterion: pre-fill the focus and open setup.
+  function practiceCriterion(name: string) {
+    setRequest(`Focus on: ${name}`);
+    enterPractice(false);
+  }
+
+  // Re-run the SAME scenario so the user can apply the feedback immediately.
+  function tryAgain() {
+    if (!scenario || !score) return;
+    track("try_again", { event: eventId });
+    setPriorSnapshot(snapshotOf(score, delivery));
+    setRetryOf(currentSessionId); // link the retry to the saved run (null if anon/unsaved)
+    setResponseText("");
+    setAudioBlob(null);
+    setPresentRemaining(0);
+    setClockRunning(false);
+    setAutoCountdown(null);
+    setFollowupAnswer("");
+    setFollowupAudio(null);
+    setScore(null);
+    setDelivery(null);
+    setUtterances([]);
+    setError(null);
+    setStage("ready");
+  }
+
+  // Restore any stash left by an anonymous completion in a previous page load
+  // (e.g. the user left to confirm their email, then came back).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("pic-pending-session");
+      if (raw) setPendingSession(JSON.parse(raw) as SaveSessionBody);
+    } catch {
+      /* ignore malformed/absent stash */
+    }
+  }, []);
+
+  // Save immediately when logged in; otherwise stash (in memory + localStorage)
+  // so it can be attached on sign-up.
+  async function saveOrStash(body: SaveSessionBody) {
+    if (authUser) {
+      try {
+        const saved = await saveSession(body);
+        setCurrentSessionId(saved.id);
+      } catch {
+        /* saving is best-effort — never block the feedback screen on it */
+      }
+    } else if (authReady) {
+      setPendingSession(body);
+      try {
+        localStorage.setItem("pic-pending-session", JSON.stringify(body));
+      } catch {
+        /* storage disabled — the in-memory copy still attaches this session */
+      }
+    }
+  }
+
+  // Attach a stashed anonymous session once the user is authenticated.
+  useEffect(() => {
+    if (!authUser || !pendingSession) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const saved = await saveSession(pendingSession);
+        if (!cancelled) setCurrentSessionId(saved.id);
+      } catch {
+        /* best-effort */
+      } finally {
+        if (!cancelled) {
+          setPendingSession(null);
+          try {
+            localStorage.removeItem("pic-pending-session");
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser, pendingSession]);
+  // Onboarding: a first-time visitor is offered a guided "first rep" (Task 1).
+  // `onboarded` (persisted) gates whether entering practice starts on the
+  // pre-session intro vs. the normal setup form. `onboarding` marks the current
+  // run as that guided rep.
+  const [onboarded, setOnboarded] = useState(() => {
+    try {
+      return localStorage.getItem("pic-onboarded") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [onboarding, setOnboarding] = useState(false);
+
+  // Enter the practice flow. First-time visitors (or an explicit guided click)
+  // land on the pre-session intro; returning visitors go straight to setup.
+  function enterPractice(guided: boolean) {
+    setError(null);
+    setView("practice");
+    if (guided || !onboarded) {
+      setOnboarding(true);
+      setStage("presession");
+    } else {
+      setOnboarding(false);
+      setStage("pick");
+    }
+  }
+
+  // Seed the hardcoded onboarding scenario (no /api/scenario call) and jump into
+  // the same session flow the full app uses.
+  function startOnboardingRep(respMode: ResponseMode) {
+    track("onboarding_started", { mode: respMode });
+    setScenario(ONBOARDING_SCENARIO);
+    setMode(respMode);
+    setFollowupMode(respMode);
+    setResponseText("");
+    setAudioBlob(null);
+    setPresentRemaining(0);
+    setClockRunning(false);
+    setAutoCountdown(null);
+    setFollowupAnswer("");
+    setFollowupAudio(null);
+    setScore(null);
+    setDelivery(null);
+    setUtterances([]);
+    setPriorSnapshot(null);
+    setRetryOf(null);
+    setError(null);
+    setStage("ready");
+  }
 
   // Load the event catalog once, so the picker is ready on the first screen.
   useEffect(() => {
@@ -133,6 +350,8 @@ export default function App() {
       setScore(null);
       setDelivery(null);
       setUtterances([]);
+      setPriorSnapshot(null); // fresh scenario, not a re-attempt
+      setRetryOf(null);
       setStage("ready");
     } catch (e) {
       setError(errMsg(e));
@@ -150,6 +369,7 @@ export default function App() {
     try {
       let responseForScoring = responseText;
       let deliveryMetrics: DeliveryMetrics | null = null;
+      let runUtterances: Utterance[] = [];
 
       // Spoken path: transcribe first, then score the transcript.
       if (mode === "speak") {
@@ -172,6 +392,7 @@ export default function App() {
         }
         responseForScoring = d.transcript;
         deliveryMetrics = d.metrics;
+        runUtterances = d.utterances;
         setUtterances(d.utterances); // team: speaker-labeled turns for the transcript
         setResponseText(d.transcript); // so the Transcript tab can highlight it
       }
@@ -211,6 +432,29 @@ export default function App() {
         mode,
         practice_mode: scenario.mode,
         has_delivery: !!deliveryMetrics,
+        onboarding,
+      });
+      // They reached the payoff — mark them onboarded so future practice entries
+      // skip the intro and go straight to full setup.
+      if (!onboarded) {
+        try {
+          localStorage.setItem("pic-onboarded", "1");
+        } catch {
+          /* private mode / storage disabled — non-fatal */
+        }
+        setOnboarded(true);
+      }
+      // Persist the completed run (logged in) or stash it to attach on sign-up.
+      setCurrentSessionId(null);
+      void saveOrStash({
+        scenario,
+        score: result,
+        response: responseForScoring,
+        followup_answer: followupForScoring,
+        delivery: deliveryMetrics,
+        utterances: runUtterances,
+        event_id: eventId,
+        retry_of_session_id: retryOf,
       });
       setStage("feedback");
     } catch (e) {
@@ -235,6 +479,10 @@ export default function App() {
     setFollowupAnswer("");
     setFollowupAudio(null);
     setError(null);
+    setOnboarding(false);
+    setPriorSnapshot(null);
+    setRetryOf(null);
+    setCurrentSessionId(null);
     setStage("pick");
   }
 
@@ -242,7 +490,21 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader view={view} onView={setView} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <SiteHeader
+        view={view}
+        onView={setView}
+        onPractice={() => enterPractice(false)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onFeedback={() => setFeedbackOpen(true)}
+        authReady={authReady}
+        userEmail={authUser?.email ?? null}
+        onLogin={() => openAuth("login")}
+        onSignup={() => openAuth("signup")}
+        onSignOut={() => { void signOut(); setView("home"); }}
+      />
+      <AuthModal open={authOpen} initialTab={authTab} reason={authReason} onClose={() => setAuthOpen(false)} onAuthed={handleAuthed} />
+      {flashcardIds && <Flashcards ids={flashcardIds} onClose={() => setFlashcardIds(null)} />}
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
@@ -251,20 +513,45 @@ export default function App() {
           </div>
         )}
 
-        {view === "home" ? (
+        {view === "home" && authUser ? (
+          <HomePage
+            onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(false); }}
+            onPracticeCriterion={practiceCriterion}
+            onStudyCriterion={(cid) => setFlashcardIds([cid])}
+            onOpenSession={loadSession}
+          />
+        ) : view === "home" ? (
           <LandingPage
             onStart={() => {
               track("practice_cta_clicked", { from: "landing" });
-              setView("practice");
+              enterPractice(false);
+            }}
+            onGuidedStart={() => {
+              track("practice_cta_clicked", { from: "landing_guided" });
+              enterPractice(true);
             }}
             onTips={() => setView("tips")}
+            supabaseEnabled={authReady}
+            onSignIn={() => openAuth("login", "Log in to pick up your progress and session history.")}
+            onSignup={() => openAuth("signup", "Create a free account to start tracking your progress.")}
           />
         ) : view === "tips" ? (
-          <TipsPage onStart={() => setView("practice")} />
+          <TipsPage onStart={() => enterPractice(false)} />
         ) : view === "faq" ? (
-          <FAQPage onStart={() => setView("practice")} />
+          <FAQPage onStart={() => enterPractice(false)} />
         ) : (
           <>
+            {stage === "presession" && (
+              <PreSessionScreen
+                canRecord={CAN_RECORD}
+                onStart={(respMode) => startOnboardingRep(respMode)}
+                onSkip={() => {
+                  setOnboarding(false);
+                  setStage("pick");
+                }}
+              />
+            )}
+
             {stage === "pick" && (
               <PickScreen
                 events={events}
@@ -405,6 +692,11 @@ export default function App() {
                 utterances={utterances}
                 audioBlob={audioBlob}
                 onRestart={restart}
+                onTryAgain={tryAgain}
+                onStudyCriteria={(ids) => setFlashcardIds(ids)}
+                priorSnapshot={priorSnapshot}
+                loggedIn={!!authUser}
+                onSignIn={() => openAuth("signup", "Want to see if you improve next time? Create an account to track your progress.")}
               />
             )}
           </>
@@ -433,7 +725,7 @@ export function DemoApp() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader view="practice" onView={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <SiteHeader view="practice" onView={exit} onPractice={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
         {step === "scenario" ? (
@@ -481,6 +773,201 @@ function DemoRibbon({ onExit }: { onExit: () => void }) {
           Try it for real →
         </button>
       </div>
+    </div>
+  );
+}
+
+// --- admin QA page (/admin) ------------------------------------------------
+// Owner-only, gated by a secret passphrase verified server-side. Two jobs:
+//  1. Mock previews of the new surfaces (no data, no tokens).
+//  2. Seed/clear CANNED sample sessions in the logged-in account (no LLM tokens)
+//     so the REAL home page + progress graphs can be eyeballed with data.
+export function AdminApp() {
+  const { theme, toggleTheme } = useTheme();
+  const { user, ready } = useAuth();
+  const [unlocked, setUnlocked] = useState(() => {
+    try { return sessionStorage.getItem("pic-admin-ok") === "1"; } catch { return false; }
+  });
+  const [pass, setPass] = useState("");
+  const [gateErr, setGateErr] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [tab, setTab] = useState<"live" | "feedback" | "beforeafter" | "onboarding">("live");
+  const [flashOpen, setFlashOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [busy, setBusy] = useState<"" | "seed" | "clear">("");
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function unlock(e: FormEvent) {
+    e.preventDefault();
+    setGateErr(null);
+    setChecking(true);
+    try {
+      const r = await adminVerify(pass);
+      if (r.ok) {
+        setUnlocked(true);
+        try { sessionStorage.setItem("pic-admin-ok", "1"); } catch { /* ignore */ }
+      } else {
+        setGateErr("Wrong passphrase.");
+      }
+    } catch {
+      setGateErr("The admin page isn't enabled on this server (no ADMIN_PASSPHRASE set).");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  async function doSeed() {
+    setBusy("seed"); setMsg(null);
+    try { const r = await seedSamples(); setMsg(`✓ Seeded ${r.seeded} sample sessions. Open your real Home to see the graphs.`); }
+    catch (e) { setMsg(errMsg(e)); }
+    finally { setBusy(""); }
+  }
+  async function doClear() {
+    setBusy("clear"); setMsg(null);
+    try { const r = await clearSamples(); setMsg(`✓ Cleared ${r.deleted} sample sessions.`); }
+    catch (e) { setMsg(errMsg(e)); }
+    finally { setBusy(""); }
+  }
+
+  if (!unlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+        <form onSubmit={unlock} className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-500">Admin QA</div>
+          <h1 className="mt-2 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Enter the passphrase</h1>
+          <input
+            type="password"
+            autoFocus
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            placeholder="Passphrase"
+            className="mt-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          />
+          {gateErr && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{gateErr}</p>}
+          <button type="submit" disabled={checking || !pass} className={`mt-4 w-full ${BTN_PRIMARY}`}>
+            {checking ? "…" : "Unlock"}
+          </button>
+          <a href="/" className="mt-3 block text-center text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">← back to the app</a>
+        </form>
+      </div>
+    );
+  }
+
+  const noop = () => {};
+  const before: RunSnapshot = { percent: 61, criteriaHit: 1, criteriaTotal: 4, fillerPerMin: 9.0, wpm: 108 };
+  const tabs: { key: typeof tab; label: string }[] = [
+    { key: "live", label: "Live data (graphs)" },
+    { key: "feedback", label: "Feedback screen" },
+    { key: "beforeafter", label: "Before / after" },
+    { key: "onboarding", label: "Onboarding" },
+  ];
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
+          <p className="text-sm text-amber-900 dark:text-amber-200">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-600">Admin QA</span>
+            <span className="ml-2">Owner-only preview. Sample data is fake and clearable.</span>
+          </p>
+          <div className="flex items-center gap-3">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <a href="/" className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900">Exit →</a>
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-20 pt-6">
+        <div className="mb-5 flex flex-wrap gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
+                tab === t.key ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+          <button
+            onClick={() => setFlashOpen(true)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+          >
+            Flashcards ↗
+          </button>
+        </div>
+
+        {tab === "live" && (
+          <div className="mx-auto max-w-2xl space-y-4">
+            <Card>
+              <Eyebrow>Live data — your account</Eyebrow>
+              <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Seed sample sessions, then view the real Home</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                This writes 6 backdated, canned sessions into your account (no LLM tokens) so the real delivery trend,
+                weakest-criterion nudge, and recent list render with data. Clear them any time.
+              </p>
+              {!ready ? (
+                <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">Supabase isn't configured on this server.</p>
+              ) : !user ? (
+                <button className={`mt-4 ${BTN_PRIMARY}`} onClick={() => setAuthOpen(true)}>Log in to seed data</button>
+              ) : (
+                <>
+                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Signed in as {user.email}</p>
+                  <div className="mt-3 flex flex-wrap gap-2.5">
+                    <button className={BTN_PRIMARY} disabled={busy !== ""} onClick={doSeed}>{busy === "seed" ? "Seeding…" : "Seed 6 sample sessions"}</button>
+                    <button
+                      className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                      disabled={busy !== ""}
+                      onClick={doClear}
+                    >
+                      {busy === "clear" ? "Clearing…" : "Clear sample data"}
+                    </button>
+                    <a href="/" className="inline-flex items-center justify-center rounded-xl border border-indigo-300 bg-indigo-50 px-5 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/50 dark:text-indigo-300">Open your real Home →</a>
+                  </div>
+                  {msg && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{msg}</p>}
+                </>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {tab === "feedback" && (
+          <FeedbackScreen
+            scenario={DEMO_SCENARIO}
+            score={DEMO_SCORE}
+            response={DEMO_RESPONSE}
+            followupAnswer={DEMO_FOLLOWUP}
+            delivery={DEMO_DELIVERY}
+            utterances={[]}
+            audioBlob={null}
+            onRestart={noop}
+            onStudyCriteria={(ids) => { void ids; setFlashOpen(true); }}
+          />
+        )}
+
+        {tab === "beforeafter" && (
+          <FeedbackScreen
+            scenario={DEMO_SCENARIO}
+            score={DEMO_SCORE}
+            response={DEMO_RESPONSE}
+            followupAnswer={DEMO_FOLLOWUP}
+            delivery={DEMO_DELIVERY}
+            utterances={[]}
+            audioBlob={null}
+            onRestart={noop}
+            onTryAgain={noop}
+            priorSnapshot={before}
+          />
+        )}
+
+        {tab === "onboarding" && (
+          <PreSessionScreen canRecord={CAN_RECORD} onStart={noop} onSkip={noop} />
+        )}
+      </main>
+
+      {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} onClose={() => setFlashOpen(false)} />}
+      <AuthModal open={authOpen} initialTab="login" reason="Log in to seed sample data into your account." onClose={() => setAuthOpen(false)} />
     </div>
   );
 }
@@ -707,12 +1194,18 @@ function BrandMark({ size = 30 }: { size?: number }) {
   );
 }
 
-function SiteHeader({ view, onView, theme, onToggleTheme, onFeedback }: {
+function SiteHeader({ view, onView, onPractice, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut }: {
   view: View;
   onView: (v: View) => void;
+  onPractice: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
   onFeedback: () => void;
+  authReady?: boolean;
+  userEmail?: string | null;
+  onLogin?: () => void;
+  onSignup?: () => void;
+  onSignOut?: () => void;
 }) {
   return (
     <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md dark:bg-slate-950/60">
@@ -725,7 +1218,7 @@ function SiteHeader({ view, onView, theme, onToggleTheme, onFeedback }: {
           </div>
         </button>
         <nav className="flex items-center gap-4 sm:gap-5">
-          <NavLink active={view === "practice"} onClick={() => onView("practice")}>Practice</NavLink>
+          <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ</NavLink>
           <button
@@ -736,11 +1229,73 @@ function SiteHeader({ view, onView, theme, onToggleTheme, onFeedback }: {
             <span className="text-sm leading-none">💬</span>
             <span className="hidden sm:inline">Feedback</span>
           </button>
+          {authReady && (userEmail ? (
+            <AccountMenu email={userEmail} onSignOut={onSignOut} onHome={() => onView("home")} />
+          ) : (
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={onLogin}
+                className="text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              >
+                Log in
+              </button>
+              <button
+                onClick={onSignup}
+                className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              >
+                Sign up
+              </button>
+            </div>
+          ))}
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </nav>
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
     </header>
+  );
+}
+
+// Small account control shown when signed in: the email initial, opening a menu
+// with the address and a sign-out. (A "Home" entry is added once the logged-in
+// home page exists.)
+function AccountMenu({ email, onSignOut, onHome }: { email: string; onSignOut?: () => void; onHome?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const initial = (email[0] || "?").toUpperCase();
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Account"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white transition hover:bg-indigo-700"
+      >
+        {initial}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-10 z-30 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div className="truncate px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{email}</div>
+          {onHome && (
+            <button
+              onClick={() => { setOpen(false); onHome(); }}
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Home
+            </button>
+          )}
+          <button
+            onClick={() => { setOpen(false); onSignOut?.(); }}
+            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1000,14 +1555,53 @@ function ProcessStrip() {
 // what the feedback looks like, then an email capture — and is one click away from
 // the setup form (onStart → view="practice").
 
-function LandingPage({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
+function LandingPage({ onStart, onGuidedStart, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onGuidedStart: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
     <div className="space-y-20 pb-10 sm:space-y-24">
-      <HeroSection onStart={onStart} onTips={onTips} />
+      <HeroSection onStart={onStart} onGuidedStart={onGuidedStart} onTips={onTips} />
       <HowItWorksSection />
       <FeedbackExplainerSection />
-      <WaitlistCTA onStart={onStart} />
+      {supabaseEnabled && onSignup ? (
+        <SignupCTA onSignup={onSignup} onStart={onStart} onSignIn={onSignIn} />
+      ) : (
+        <WaitlistCTA onStart={onStart} />
+      )}
     </div>
+  );
+}
+
+// Bottom-of-landing conversion: sign up to start tracking progress (replaces the
+// email waitlist once accounts are live).
+function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onStart: () => void; onSignIn?: () => void }) {
+  return (
+    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 px-6 py-10 dark:border-indigo-900/50 dark:from-indigo-950/40 dark:to-violet-950/30 sm:px-10">
+      <div className="mx-auto max-w-xl text-center">
+        <Eyebrow>Track your progress</Eyebrow>
+        <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+          Sign up to start tracking your progress today!
+        </h2>
+        <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          Free account. We save your sessions and show how your delivery and your weakest skills improve over time.
+          You can keep practicing without one — signing up just remembers your reps.
+        </p>
+        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <button onClick={onSignup} className={`${BTN_PRIMARY} px-6 py-3`}>
+            Sign up free →
+          </button>
+          <button onClick={onStart} className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+            or just start practicing →
+          </button>
+        </div>
+        {onSignIn && (
+          <p className="mt-5 text-sm text-slate-500 dark:text-slate-400">
+            Already have an account?{" "}
+            <button onClick={onSignIn} className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
+              Log in
+            </button>
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1028,7 +1622,7 @@ function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: str
 const HERO_POSTER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e0e7ff'/%3E%3Cstop offset='1' stop-color='%23ede9fe'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23g)'/%3E%3Ctext x='960' y='520' font-family='system-ui,sans-serif' font-size='64' font-weight='600' fill='%234f46e5' text-anchor='middle'%3EPI Coach demo%3C/text%3E%3Ctext x='960' y='600' font-family='system-ui,sans-serif' font-size='38' fill='%236366f1' text-anchor='middle'%3Ea scenario, presented, and graded%3C/text%3E%3C/svg%3E";
 
-function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
+function HeroSection({ onStart, onGuidedStart, onTips }: { onStart: () => void; onGuidedStart: () => void; onTips: () => void }) {
   return (
     <section className="grid items-center gap-10 pt-6 lg:grid-cols-[6fr_14fr] lg:gap-8">
       {/* Copy is first in the DOM so on mobile it stacks ABOVE the video; lg:order
@@ -1052,12 +1646,18 @@ function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => v
           Pick your event, get an original scenario built around it, prep against a real timer,
           present out loud, and get honest, per-criterion feedback on both content and delivery.
         </p>
-        <div className="mt-7">
+        <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
           <button
             onClick={onStart}
             className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
           >
             Ready to practice? →
+          </button>
+          <button
+            onClick={onGuidedStart}
+            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            New here? Try a 2-minute guided first rep →
           </button>
         </div>
       </div>
@@ -1321,7 +1921,9 @@ function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void })
             Aim to wrap your pitch in about <strong className="font-semibold">{targetMin} minutes</strong>, leaving the rest for the follow-up.
           </Tip>
           <Tip icon="🗣️">Find a quiet spot and present out loud — type or use 🎙️ Speak.</Tip>
-          <Tip icon="❓">At the end the judge asks two follow-up questions — you'll answer those too.</Tip>
+          <Tip icon="❓">
+            At the end the judge asks {s.followup_questions.length === 1 ? "a follow-up question" : `${s.followup_questions.length} follow-up questions`} — you'll answer {s.followup_questions.length === 1 ? "it" : "those"} too.
+          </Tip>
         </ul>
 
         <button className={`mt-6 ${BTN_PRIMARY}`} onClick={props.onStart}>
@@ -1675,9 +2277,17 @@ function FeedbackScreen(props: {
   utterances: Utterance[];
   audioBlob: Blob | null;
   onRestart: () => void;
+  onTryAgain?: () => void;
+  onStudyCriteria?: (ids: string[]) => void;
+  priorSnapshot?: RunSnapshot | null;
+  loggedIn?: boolean;
+  onSignIn?: () => void;
 }) {
   const { score } = props;
   const marks = buildMarks(score.scores);
+  // The criteria worth studying: those below proficient (fall back to all).
+  const weakIds = score.scores.filter((c) => c.level === "novice" || c.level === "developing").map((c) => c.criterion_id);
+  const studyIds = weakIds.length > 0 ? weakIds : score.scores.map((c) => c.criterion_id);
   // The backend now returns the FINAL weighted percent (60% indicators + 25%
   // analysis + 15% presentation) directly, plus each section's own percentage.
   const pct = score.overall_percent;
@@ -1724,6 +2334,10 @@ function FeedbackScreen(props: {
       </div>
 
       <div className="mt-5 space-y-5 lg:mt-0">
+        {props.priorSnapshot && (
+          <BeforeAfterCard before={props.priorSnapshot} after={snapshotOf(score, props.delivery)} />
+        )}
+
         <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />
 
         {tab === "overview" && <OverviewTab score={score} />}
@@ -1755,9 +2369,98 @@ function FeedbackScreen(props: {
           )}
         </div>
 
-        <button className={BTN_PRIMARY} onClick={props.onRestart}>
-          Practice again →
-        </button>
+        {!props.loggedIn && props.onSignIn && (
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+              Want to see if you improve next time?
+            </p>
+            <p className="mt-1 text-sm text-indigo-800/90 dark:text-indigo-300/90">
+              Create a free account and we'll track your delivery and your weakest skills across sessions — and save this one.
+            </p>
+            <button className={`mt-3 ${BTN_PRIMARY}`} onClick={props.onSignIn}>
+              Sign in to track my progress →
+            </button>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2.5 sm:flex-row">
+          {props.onTryAgain && (
+            <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={props.onTryAgain}>
+              🔁 Try this scenario again
+            </button>
+          )}
+          <button
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 ${props.onTryAgain ? "sm:flex-1" : "w-full"}`}
+            onClick={props.onRestart}
+          >
+            Practice a new scenario →
+          </button>
+        </div>
+        {props.onTryAgain && (
+          <p className="text-center text-xs text-slate-400 dark:text-slate-500">
+            Re-running the same scenario is the fastest way to see your feedback pay off.
+          </p>
+        )}
+
+        {props.onStudyCriteria && (
+          <button
+            onClick={() => props.onStudyCriteria?.(studyIds)}
+            className="w-full text-center text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            📇 Study {weakIds.length > 0 ? "your weak criteria" : "these criteria"} →
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// A compact before→after when the same scenario is re-attempted. Improvement here
+// is directly attributable (same scenario), so this is the most convincing signal.
+function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSnapshot }) {
+  const delta = after.percent - before.percent;
+  const deltaTone = delta > 0 ? "text-emerald-600 dark:text-emerald-400" : delta < 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400";
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+      <div className="flex items-center justify-between">
+        <Eyebrow>Same scenario — before → after</Eyebrow>
+        <span className={`font-mono text-sm font-semibold ${deltaTone}`}>
+          {delta > 0 ? `+${delta}` : delta} pts
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <BeforeAfterStat label="Score" before={`${before.percent}%`} after={`${after.percent}%`} improved={after.percent >= before.percent} />
+        <BeforeAfterStat
+          label="Criteria hit"
+          before={`${before.criteriaHit}/${before.criteriaTotal}`}
+          after={`${after.criteriaHit}/${after.criteriaTotal}`}
+          improved={after.criteriaHit >= before.criteriaHit}
+        />
+        <BeforeAfterStat
+          label="Fillers/min"
+          before={before.fillerPerMin != null ? before.fillerPerMin.toFixed(1) : "—"}
+          after={after.fillerPerMin != null ? after.fillerPerMin.toFixed(1) : "—"}
+          improved={after.fillerPerMin != null && before.fillerPerMin != null ? after.fillerPerMin <= before.fillerPerMin : true}
+        />
+        <BeforeAfterStat
+          label="Pace (WPM)"
+          before={before.wpm != null ? String(before.wpm) : "—"}
+          after={after.wpm != null ? String(after.wpm) : "—"}
+          improved
+        />
+      </div>
+    </div>
+  );
+}
+
+function BeforeAfterStat({ label, before, after, improved }: { label: string; before: string; after: string; improved: boolean }) {
+  return (
+    <div className="rounded-lg bg-white/70 px-3 py-2 dark:bg-slate-900/50">
+      <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5 text-sm">
+        <span className="text-slate-400 line-through dark:text-slate-500">{before}</span>
+        <span className="text-slate-300 dark:text-slate-600">→</span>
+        <span className={`font-semibold ${improved ? "text-emerald-600 dark:text-emerald-400" : "text-slate-700 dark:text-slate-200"}`}>{after}</span>
       </div>
     </div>
   );

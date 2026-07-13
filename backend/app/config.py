@@ -46,6 +46,25 @@ FEEDBACK_EMAIL_TO = os.getenv("FEEDBACK_EMAIL_TO", "tannavr898@gmail.com")
 # no domain verification. Override once you verify trypicoach.com in Resend.
 FEEDBACK_EMAIL_FROM = os.getenv("FEEDBACK_EMAIL_FROM", "PI Coach <onboarding@resend.dev>")
 
+# Supabase (optional login + cross-session progress). Anonymous practice never
+# needs these — they only gate the account features.
+#  - URL + ANON_KEY are PUBLIC (the anon key is safe client-side, guarded by RLS);
+#    we serve them to the SPA via /api/config, like the PostHog key.
+#  - SERVICE_ROLE_KEY is a SECRET (backend-only). It lets FastAPI read/write the
+#    `sessions` table on the user's behalf; it must never reach the client.
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
+# Secret passphrase for the owner-only admin QA page (/admin). Verified server-side
+# so the secret never ships in the frontend bundle. Empty = admin page disabled.
+ADMIN_PASSPHRASE = os.getenv("ADMIN_PASSPHRASE", "")
+
+
+def has_supabase() -> bool:
+    """True if Supabase is configured (login + progress features are enabled)."""
+    return bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+
 
 def has_api_key() -> bool:
     """True if an Anthropic key is configured (used for friendly 503s)."""

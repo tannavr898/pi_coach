@@ -1,8 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App, { DemoApp } from "./App.tsx";
+import App, { DemoApp, AdminApp } from "./App.tsx";
 import "./index.css";
 import { initAnalytics } from "./analytics";
+import { AuthProvider } from "./auth";
 
 void initAnalytics();
 
@@ -15,10 +16,18 @@ function isDemoRoute(): boolean {
   return window.location.hash.replace(/^#\/?/, "") === "demo";
 }
 
-const Root = isDemoRoute() ? DemoApp : App;
+function isAdminRoute(): boolean {
+  const path = window.location.pathname.replace(/\/+$/, "");
+  if (path === "/admin") return true;
+  return window.location.hash.replace(/^#\/?/, "") === "admin";
+}
+
+const Root = isAdminRoute() ? AdminApp : isDemoRoute() ? DemoApp : App;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Root />
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
   </StrictMode>,
 );

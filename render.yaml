@@ -28,3 +28,11 @@ services:
         sync: false # secret; enables emailing each feedback submission
       - key: FEEDBACK_EMAIL_TO
         value: tannavr898@gmail.com
+      - key: SUPABASE_URL
+        sync: false # public Supabase project URL; enables login + progress
+      - key: SUPABASE_ANON_KEY
+        sync: false # public anon key (served via /api/config, guarded by RLS)
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false # SECRET service_role key; backend-only DB access
+      - key: ADMIN_PASSPHRASE
+        sync: false # secret passphrase for the owner-only /admin QA page

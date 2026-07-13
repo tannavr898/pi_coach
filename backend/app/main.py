@@ -24,9 +24,12 @@ from __future__ import annotations
 
 import logging
 
+import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import config, delivery, events, framework, interpret, llm, notify, prompts, rubric, transcription
+from . import admin_samples, config, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, transcription
+from .auth import current_user
+from pydantic import BaseModel
 from .ratelimit import daily_cap, rate_limit
 from .schemas import (
     AnalyticalSection,
@@ -41,11 +44,16 @@ from .schemas import (
     FinalScore,
     Mode,
     PresentationSection,
+    ProgressResponse,
     PublicConfig,
     ScenarioRequest,
     ScenarioResponse,
     ScoreRequest,
     ScoreResponse,
+    SessionDetail,
+    SessionSaveRequest,
+    SessionSaved,
+    SessionSummary,
     SubScore,
     Timing,
     Utterance,
@@ -75,8 +83,13 @@ def health() -> dict[str, str]:
 
 @app.get("/api/config", response_model=PublicConfig)
 def public_config() -> PublicConfig:
-    """Client-safe runtime config (the public PostHog key, if configured)."""
-    return PublicConfig(posthog_key=config.POSTHOG_KEY, posthog_host=config.POSTHOG_HOST)
+    """Client-safe runtime config (public PostHog + Supabase keys, if configured)."""
+    return PublicConfig(
+        posthog_key=config.POSTHOG_KEY,
+        posthog_host=config.POSTHOG_HOST,
+        supabase_url=config.SUPABASE_URL,
+        supabase_anon_key=config.SUPABASE_ANON_KEY,
+    )
 
 
 @app.get("/api/framework", response_model=list[DomainSummary])
@@ -90,6 +103,18 @@ def get_events() -> list[EventSummary]:
     """The role-play events students pick from (our own catalog), in file order.
     Each carries its cluster (for grouping) and original focus suggestions."""
     return [EventSummary(**e) for e in events.event_summaries()]
+
+
+@app.get("/api/criteria", response_model=list[Criterion])
+def get_criteria(ids: str = "") -> list[Criterion]:
+    """Full teaching fields for specific framework criteria, by id (comma list).
+    Powers the flashcards for a user's weak criteria. Always returns the Learn-mode
+    view (definition + strong/weak looks-like), regardless of practice mode."""
+    wanted = [x.strip() for x in ids.split(",") if x.strip()]
+    if not wanted:
+        return []
+    fields = ("id", "domain", "topic", "name", "definition", "strong_looks_like", "weak_looks_like", "coaches")
+    return [Criterion(**{k: c.get(k, "") for k in fields}) for c in framework.get_criteria(wanted)]
 
 
 @app.get("/api/rubric")
@@ -409,6 +434,142 @@ def score_delivery(
     return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics), utterances=utterances)
 
 
+# --- account: persist sessions + cross-session progress --------------------
+# These are the ONLY authenticated endpoints. They require a Supabase access
+# token (Depends(current_user)); the practice loop above stays fully anonymous.
+
+@app.post("/api/sessions", response_model=SessionSaved)
+async def save_session(req: SessionSaveRequest, user: dict = Depends(current_user)) -> SessionSaved:
+    """Persist a completed session for the signed-in user. Stores the full
+    bundles (to re-render feedback exactly) plus a few flattened columns (to make
+    progress queries cheap). Raw audio is never sent or stored."""
+    d = req.delivery
+    criterion_results = [
+        {"criterion_id": s.criterion_id, "name": s.name, "domain": s.domain, "level": s.level, "points": s.points}
+        for s in req.score.scores
+    ]
+    row = {
+        "user_id": user["id"],
+        "scenario": req.scenario.model_dump(),
+        "response": req.response,
+        "followup_answer": req.followup_answer,
+        "score": req.score.model_dump(),
+        "delivery": d.model_dump() if d else None,
+        "utterances": [u.model_dump() for u in req.utterances],
+        "event": req.event_id or req.scenario.event,
+        "content_score": int(req.score.overall_percent),
+        "criterion_results": criterion_results,
+        "filler_per_min": d.filler_per_min if d else None,
+        "pace_wpm": d.pace_wpm if d else None,
+        "long_pause_count": len(d.long_pauses) if d else None,
+        "duration_seconds": d.duration_seconds if d else None,
+        "retry_of_session_id": req.retry_of_session_id,
+    }
+    try:
+        created = await db.insert_session(row)
+    except httpx.HTTPError as exc:
+        log.warning("session insert failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Couldn't save your session — try again.") from exc
+    return SessionSaved(id=str(created.get("id")))
+
+
+@app.get("/api/sessions", response_model=list[SessionSummary])
+async def list_sessions_endpoint(user: dict = Depends(current_user)) -> list[SessionSummary]:
+    """The signed-in user's recent sessions (compact), newest first."""
+    try:
+        rows = await db.list_sessions(user["id"], limit=50)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't load your sessions.") from exc
+    return [
+        SessionSummary(
+            id=str(r["id"]),
+            created_at=r.get("created_at", ""),
+            topic=r.get("topic") or "",
+            event=r.get("event") or "",
+            content_score=int(r.get("content_score") or 0),
+            level=r.get("level") or "novice",
+            mode=r.get("mode") or "",
+            filler_per_min=r.get("filler_per_min"),
+            pace_wpm=r.get("pace_wpm"),
+            retry_of_session_id=r.get("retry_of_session_id"),
+        )
+        for r in rows
+    ]
+
+
+@app.get("/api/sessions/{session_id}", response_model=SessionDetail)
+async def get_session_endpoint(session_id: str, user: dict = Depends(current_user)) -> SessionDetail:
+    """One stored session, enough to re-render the feedback screen."""
+    try:
+        row = await db.get_session(user["id"], session_id)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't load that session.") from exc
+    if not row:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    return SessionDetail(
+        id=str(row["id"]),
+        created_at=row.get("created_at", ""),
+        scenario=ScenarioResponse(**row["scenario"]),
+        score=ScoreResponse(**row["score"]),
+        response=row.get("response", ""),
+        followup_answer=row.get("followup_answer", ""),
+        delivery=DeliveryMetrics(**row["delivery"]) if row.get("delivery") else None,
+        utterances=[Utterance(**u) for u in (row.get("utterances") or [])],
+        retry_of_session_id=row.get("retry_of_session_id"),
+    )
+
+
+@app.get("/api/progress", response_model=ProgressResponse)
+async def get_progress(user: dict = Depends(current_user)) -> ProgressResponse:
+    """Cross-session progress payload for the home page (deterministic math)."""
+    try:
+        rows = await db.list_sessions(user["id"], limit=200, select=db.PROGRESS_SELECT)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't load your progress.") from exc
+    return ProgressResponse(**progress.compute_progress(rows))
+
+
+# --- admin QA page (owner-only, secret passphrase) -------------------------
+
+class AdminVerify(BaseModel):
+    passphrase: str = ""
+
+
+@app.post("/api/admin/verify")
+def admin_verify(req: AdminVerify) -> dict:
+    """Check the admin passphrase server-side (so the secret never ships in the
+    SPA bundle). 404 when no passphrase is configured — the admin page is off."""
+    import hmac
+
+    if not config.ADMIN_PASSPHRASE:
+        raise HTTPException(status_code=404, detail="Not found.")
+    ok = hmac.compare_digest(req.passphrase or "", config.ADMIN_PASSPHRASE)
+    return {"ok": ok}
+
+
+@app.post("/api/admin/seed")
+async def admin_seed(user: dict = Depends(current_user)) -> dict:
+    """Seed the caller's account with backdated CANNED sample sessions (no LLM
+    tokens) so the home page / progress graphs render with realistic data. Rows
+    are tagged so they can be cleared again."""
+    rows = admin_samples.build_sample_rows(user["id"])
+    try:
+        n = await db.insert_sessions(rows)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't seed sample sessions.") from exc
+    return {"seeded": n}
+
+
+@app.delete("/api/admin/sample")
+async def admin_clear_sample(user: dict = Depends(current_user)) -> dict:
+    """Delete the caller's sample sessions (the ones seeded above)."""
+    try:
+        n = await db.delete_where(user["id"], admin_samples.SAMPLE_EVENT)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't clear sample sessions.") from exc
+    return {"deleted": n}
+
+
 # --- serve the built SPA (production) --------------------------------------
 # In dev, Vite serves the frontend and proxies /api here. In production we ship
 # one service: the built SPA is mounted at "/" (after all /api routes, so they
@@ -430,6 +591,11 @@ if Path(_DIST).is_dir():
     # fallback to the SPA shell; React then renders the demo from the path.
     @app.get("/demo", include_in_schema=False)
     def _demo() -> FileResponse:
+        return FileResponse(_INDEX)
+
+    # Same explicit fallback for the owner-only admin QA page.
+    @app.get("/admin", include_in_schema=False)
+    def _admin() -> FileResponse:
         return FileResponse(_INDEX)
 
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")

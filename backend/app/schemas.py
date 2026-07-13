@@ -66,6 +66,10 @@ class PublicConfig(BaseModel):
 
     posthog_key: str = ""
     posthog_host: str = "https://us.i.posthog.com"
+    # Supabase URL + anon key are public (the anon key is safe client-side; row
+    # access is enforced by RLS + the backend). Empty = login disabled in the UI.
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
 
 
 class FeedbackRequest(BaseModel):
@@ -332,3 +336,100 @@ class DeliveryResponse(BaseModel):
     metrics: DeliveryMetrics
     # Team events only: the transcript split into speaker turns.
     utterances: list[Utterance] = []
+
+
+# --- Account / progress (logged-in users) ----------------------------------
+
+class SessionSaveRequest(BaseModel):
+    """A completed session to persist (the feedback-screen bundle). The backend
+    flattens a few columns from these for cheap progress queries."""
+
+    scenario: ScenarioResponse
+    score: ScoreResponse
+    response: str
+    followup_answer: str = ""
+    delivery: DeliveryMetrics | None = None
+    utterances: list[Utterance] = []
+    event_id: str = ""  # stable event slug (for grouping / targeted practice)
+    retry_of_session_id: str | None = None
+
+
+class SessionSaved(BaseModel):
+    id: str
+
+
+class SessionSummary(BaseModel):
+    """Compact row for the recent-sessions list."""
+
+    id: str
+    created_at: str
+    topic: str = ""
+    event: str = ""
+    content_score: int = 0
+    level: RubricLevel = "novice"
+    mode: str = ""
+    filler_per_min: float | None = None
+    pace_wpm: int | None = None
+    retry_of_session_id: str | None = None
+
+
+class SessionDetail(BaseModel):
+    """A full stored session, enough to re-render the feedback screen."""
+
+    id: str
+    created_at: str
+    scenario: ScenarioResponse
+    score: ScoreResponse
+    response: str
+    followup_answer: str = ""
+    delivery: DeliveryMetrics | None = None
+    utterances: list[Utterance] = []
+    retry_of_session_id: str | None = None
+
+
+class DeliveryTrend(BaseModel):
+    available: bool
+    note: str
+    metric: str = "filler_per_min"
+    early: float | None = None
+    recent: float | None = None
+    recent_wpm: int | None = None
+    spoken_sessions: int = 0
+
+
+class CriterionMastery(BaseModel):
+    criterion_id: str
+    name: str
+    domain: str = ""
+    sessions: int
+    recent_level: RubricLevel
+    consistent_level: RubricLevel
+    avg_rank: float
+
+
+class WeakestCriterion(BaseModel):
+    criterion_id: str
+    name: str
+    domain: str = ""
+    consistent_level: RubricLevel
+    note: str
+
+
+class ScoreTrendPoint(BaseModel):
+    created_at: str
+    score: int
+
+
+class ScoreTrend(BaseModel):
+    available: bool
+    points: list[ScoreTrendPoint] = []
+    direction: str = "flat"
+    note: str
+
+
+class ProgressResponse(BaseModel):
+    sessions_count: int
+    delivery_trend: DeliveryTrend
+    criterion_mastery: list[CriterionMastery] = []
+    weakest_criterion: WeakestCriterion | None = None
+    score_trend: ScoreTrend

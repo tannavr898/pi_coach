@@ -229,6 +229,21 @@ export function getEvents(): Promise<EventSummary[]> {
   return request<EventSummary[]>("/api/events");
 }
 
+// Full teaching fields for specific criteria (by id) — powers the flashcards.
+export function getCriteria(ids: string[]): Promise<Criterion[]> {
+  if (ids.length === 0) return Promise.resolve([]);
+  return request<Criterion[]>(`/api/criteria?ids=${encodeURIComponent(ids.join(","))}`);
+}
+
+// Admin QA page: verify the secret passphrase server-side (throws 404 when the
+// admin page is disabled, i.e. no ADMIN_PASSPHRASE configured).
+export function adminVerify(passphrase: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>("/api/admin/verify", {
+    method: "POST",
+    body: JSON.stringify({ passphrase }),
+  });
+}
+
 export function postFeedback(body: {
   message: string;
   rating?: number | null;
