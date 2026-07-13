@@ -506,7 +506,7 @@ export default function App() {
           <HomePage
             onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(); }}
             onPracticeCriterion={practiceCriterion}
-            onStudyCriterion={(cid) => setFlashcardIds([cid])}
+            onOpenFlashcards={(ids) => setFlashcardIds(ids)}
             onOpenSession={loadSession}
           />
         ) : view === "home" ? (

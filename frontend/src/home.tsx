@@ -1,15 +1,17 @@
-// The logged-in home page (Task 4) — deliberately LEAN. Exactly four things, in
-// this order, and nothing else:
-//   1. Start a role-play (the primary action, always on top)
-//   2. One headline stat — the delivery trend (the most trustworthy signal)
-//   3. The weakest criterion + one action (practice it / study it)
-//   4. Recent sessions (click to re-read past feedback)
-// No extra charts, badges, leaderboards, streaks, or confetti. Every number maps
-// to a next action.
+// The logged-in home dashboard (Task 4, expanded). Leads with the one action
+// (Start a role-play), then visualizes progress so a student sees at a glance
+// what's strong and what to drill:
+//   - a skill radar of criterion mastery (the "at a glance" view)
+//   - the written weakest-criterion nudge + actions (kept — it names the fix)
+//   - score trend + delivery trend as line charts
+//   - a consistency (sessions/week) bar chart
+//   - recent sessions, and a flashcards deck with a recommendation
+// Every number still maps to a next action; no badges/leaderboards/streak games.
 
 import { useEffect, useState } from "react";
 import { getProgress, getSessions, type ProgressResponse, type SessionSummary } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
+import { ChartFrame, SkillRadar, TrendLine, VolumeBars } from "./charts";
 
 function fmtDate(iso: string): string {
   try {
@@ -19,10 +21,33 @@ function fmtDate(iso: string): string {
   }
 }
 
+// Sessions bucketed into the last `weeks` calendar weeks (oldest → newest).
+function weeklyVolume(dates: string[], weeks = 8): { label: string; value: number }[] {
+  const now = new Date();
+  const day = now.getDay();
+  const thisWeekStart = new Date(now);
+  thisWeekStart.setHours(0, 0, 0, 0);
+  thisWeekStart.setDate(now.getDate() - day); // Sunday
+  const buckets: { label: string; value: number; start: number; end: number }[] = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    const start = new Date(thisWeekStart);
+    start.setDate(thisWeekStart.getDate() - i * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    buckets.push({ label: `${start.getMonth() + 1}/${start.getDate()}`, value: 0, start: start.getTime(), end: end.getTime() });
+  }
+  for (const d of dates) {
+    const t = new Date(d).getTime();
+    const b = buckets.find((x) => t >= x.start && t < x.end);
+    if (b) b.value += 1;
+  }
+  return buckets.map(({ label, value }) => ({ label, value }));
+}
+
 export function HomePage(props: {
   onStart: () => void;
   onPracticeCriterion: (name: string) => void;
-  onStudyCriterion: (criterionId: string) => void;
+  onOpenFlashcards: (ids: string[]) => void;
   onOpenSession: (id: string) => void;
 }) {
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
@@ -47,24 +72,47 @@ export function HomePage(props: {
 
   const weak = progress?.weakest_criterion ?? null;
   const trend = progress?.delivery_trend ?? null;
+  const scoreTrend = progress?.score_trend ?? null;
   const count = progress?.sessions_count ?? 0;
+  const mastery = progress?.criterion_mastery ?? [];
+
+  // Radar: up to 8 most-practiced criteria (most reliable), placed alphabetically
+  // for a stable shape. value = avg mastery rank (0 Novice → 3 Exemplary).
+  const radarData = [...mastery]
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 8)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((m) => ({ label: m.name, value: m.avg_rank }));
+
+  const scorePoints = (scoreTrend?.points ?? []).map((p) => ({ label: fmtDate(p.created_at), value: p.score }));
+  const deliveryPoints = (sessions ?? [])
+    .filter((s) => s.filler_per_min != null)
+    .slice()
+    .reverse() // getSessions is newest-first; charts want oldest-first
+    .map((s) => ({ label: fmtDate(s.created_at), value: Number(s.filler_per_min) }));
+  const volume = weeklyVolume((sessions ?? []).map((s) => s.created_at));
+  const allCriterionIds = mastery.map((m) => m.criterion_id);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pt-2">
+    <div className="mx-auto max-w-6xl space-y-4">
       {/* 1 — Start, always at the top */}
       <Card>
-        <Eyebrow>Ready when you are</Eyebrow>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-          Let's run a role-play.
-        </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-          {count > 0
-            ? `You've completed ${count} session${count === 1 ? "" : "s"}. Keep the streak of showing up going.`
-            : "Pick your event, present out loud, and get honest per-criterion feedback."}
-        </p>
-        <button className={`mt-4 ${BTN_PRIMARY}`} onClick={props.onStart}>
-          Start a role-play →
-        </button>
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <Eyebrow>Ready when you are</Eyebrow>
+            <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+              Let's run a role-play.
+            </h1>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              {count > 0
+                ? `${count} session${count === 1 ? "" : "s"} in. Keep showing up — that's how the numbers below move.`
+                : "Pick your event, present out loud, and get honest per-criterion feedback."}
+            </p>
+          </div>
+          <button className={`${BTN_PRIMARY} shrink-0 px-6 py-3 text-base`} onClick={props.onStart}>
+            Start a role-play →
+          </button>
+        </div>
       </Card>
 
       {error && (
@@ -73,74 +121,132 @@ export function HomePage(props: {
         </div>
       )}
 
-      {/* 2 — Delivery trend (the one headline stat) */}
-      {trend && (
-        <Card>
-          <Eyebrow>Your delivery over time</Eyebrow>
-          <p className="mt-2 text-base leading-relaxed text-slate-800 dark:text-slate-100">{trend.note}</p>
-          {trend.available && trend.recent_wpm != null && (
-            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-              Recent pace ≈ {trend.recent_wpm} WPM. Delivery is measured from your audio — it never judges tone or confidence.
-            </p>
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* 2 — Skill radar + weakest-criterion coaching (the headline) */}
+        <Card className="lg:col-span-2">
+          <ChartFrame title="Your skills at a glance" hint="Higher is stronger — 0 Novice → 3 Exemplary, averaged across your sessions.">
+            {radarData.length >= 3 ? (
+              <div className="grid items-center gap-4 sm:grid-cols-[1fr_auto]">
+                <SkillRadar data={radarData} max={3} />
+                <ul className="space-y-1 text-xs">
+                  {radarData.map((d) => (
+                    <li key={d.label} className="flex items-center justify-between gap-3">
+                      <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
+                      <span className="font-mono tabular-nums text-slate-400 dark:text-slate-500">{d.value.toFixed(1)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                Finish a few sessions and your skill map fills in here — one point per criterion you've been graded on.
+              </p>
+            )}
+          </ChartFrame>
+
+          {weak && (
+            <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+              <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">Your next focus</div>
+              <h2 className="mt-1 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{weak.name}</h2>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{weak.note}</p>
+              <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
+                <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={() => props.onPracticeCriterion(weak.name)}>Practice it →</button>
+                <button className={`${BTN_SECONDARY} sm:flex-1`} onClick={() => props.onOpenFlashcards([weak.criterion_id])}>Study this criterion</button>
+              </div>
+            </div>
           )}
         </Card>
-      )}
 
-      {/* 3 — Weakest criterion + one action (the coaching moment) */}
-      {weak && (
-        <Card>
-          <Eyebrow>Your next focus</Eyebrow>
-          <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{weak.name}</h2>
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{weak.note}</p>
-          <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
-            <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={() => props.onPracticeCriterion(weak.name)}>
-              Practice it →
-            </button>
-            <button className={`${BTN_SECONDARY} sm:flex-1`} onClick={() => props.onStudyCriterion(weak.criterion_id)}>
-              Study this criterion
-            </button>
+        {/* Recent sessions */}
+        <Card className="lg:col-span-1">
+          <Eyebrow>Recent sessions</Eyebrow>
+          {sessions === null ? (
+            <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
+          ) : sessions.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your completed role-plays show up here.</p>
+          ) : (
+            <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
+              {sessions.slice(0, 7).map((s) => (
+                <li key={s.id}>
+                  <button onClick={() => props.onOpenSession(s.id)} className="flex w-full items-center justify-between gap-3 py-2.5 text-left transition hover:opacity-80">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                        {s.topic || s.event || "Role-play"}
+                        {s.retry_of_session_id && (
+                          <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">retry</span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                        {fmtDate(s.created_at)}
+                        {s.filler_per_min != null ? ` · ${s.filler_per_min.toFixed(1)} fillers/min` : " · typed"}
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-mono tabular-nums text-sm font-semibold text-slate-700 dark:text-slate-200">{s.content_score}%</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* Score trend */}
+        <Card className="lg:col-span-1">
+          <ChartFrame title="Score trend" hint={scoreTrend?.note}>
+            {scorePoints.length >= 2 ? (
+              <TrendLine points={scorePoints} color="indigo" yMin={0} yMax={100} valueSuffix="%" />
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">A few more sessions and your score trend plots here.</p>
+            )}
+          </ChartFrame>
+        </Card>
+
+        {/* Delivery trend (fillers/min) */}
+        <Card className="lg:col-span-1">
+          <ChartFrame title="Delivery — fillers per minute" hint={trend?.note}>
+            {deliveryPoints.length >= 2 ? (
+              <TrendLine points={deliveryPoints} color="emerald" yMin={0} valueSuffix="/min" />
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Do a couple of spoken reps to track your filler rate.</p>
+            )}
+          </ChartFrame>
+        </Card>
+
+        {/* Consistency / volume */}
+        <Card className="lg:col-span-1">
+          <ChartFrame title="Your consistency" hint={count > 0 ? `${count} session${count === 1 ? "" : "s"} total — sessions per week.` : "Sessions per week."}>
+            {sessions && sessions.length > 0 ? (
+              <VolumeBars bars={volume} />
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Your weekly activity shows up here.</p>
+            )}
+          </ChartFrame>
+        </Card>
+
+        {/* Flashcards deck */}
+        <Card className="lg:col-span-3">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <Eyebrow>Flashcards</Eyebrow>
+              <h3 className="mt-1 font-display text-base font-semibold text-slate-900 dark:text-slate-100">
+                {weak ? <>Recommended: study <span className="text-indigo-600 dark:text-indigo-400">{weak.name}</span></> : "Build your flashcard deck"}
+              </h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                {allCriterionIds.length > 0
+                  ? `Flip through the ${allCriterionIds.length} criteria you've been graded on — definition, what strong vs. weak looks like, and the DECA method.`
+                  : "Finish a session and the criteria you were graded on become a study deck here."}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row">
+              {weak && (
+                <button className={BTN_PRIMARY} onClick={() => props.onOpenFlashcards([weak.criterion_id])}>Study the recommendation →</button>
+              )}
+              {allCriterionIds.length > 0 && (
+                <button className={BTN_SECONDARY} onClick={() => props.onOpenFlashcards(allCriterionIds)}>Browse all {allCriterionIds.length} cards</button>
+              )}
+            </div>
           </div>
         </Card>
-      )}
-
-      {/* 4 — Recent sessions */}
-      <Card>
-        <Eyebrow>Recent sessions</Eyebrow>
-        {sessions === null ? (
-          <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
-        ) : sessions.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Your completed role-plays will show up here — finish one to start tracking.
-          </p>
-        ) : (
-          <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
-            {sessions.slice(0, 8).map((s) => (
-              <li key={s.id}>
-                <button
-                  onClick={() => props.onOpenSession(s.id)}
-                  className="flex w-full items-center justify-between gap-3 py-2.5 text-left transition hover:opacity-80"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                      {s.topic || s.event || "Role-play"}
-                      {s.retry_of_session_id && (
-                        <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                          retry
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                      {fmtDate(s.created_at)} · {s.level}
-                      {s.filler_per_min != null ? ` · ${s.filler_per_min.toFixed(1)} fillers/min` : " · typed"}
-                    </div>
-                  </div>
-                  <span className="shrink-0 font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">{s.content_score}%</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      </div>
     </div>
   );
 }
