@@ -108,13 +108,16 @@ export default function App() {
     setAuthReason(reason);
     setAuthOpen(true);
   }
-  // After a successful login/sign-up, drop the user into the practice flow (the
-  // pre-session/setup "prep" page) rather than the home dashboard — EXCEPT when
-  // they just finished a rep and are on the feedback screen, where we keep them
-  // put so they can watch that session attach to their new account.
-  function handleAuthed() {
+  // Where to go after a successful auth:
+  //  - if they just finished a rep (on the feedback screen), stay put so it
+  //    attaches to the new account;
+  //  - a brand-new sign-up gets the guided first-rep intro;
+  //  - a returning login goes to their Home dashboard.
+  function handleAuthed(mode: "signup" | "login") {
     const onFeedback = view === "practice" && stage === "feedback";
-    if (!onFeedback) enterPractice(false);
+    if (onFeedback) return;
+    if (mode === "signup") startFirstRep();
+    else setView("home");
   }
   // Session persistence (logged-in only). `pendingSession` holds a just-completed
   // anonymous run so we can attach it the moment the user signs up ("your first
@@ -157,7 +160,7 @@ export default function App() {
   // Targeted practice for a weak criterion: pre-fill the focus and open setup.
   function practiceCriterion(name: string) {
     setRequest(`Focus on: ${name}`);
-    enterPractice(false);
+    enterPractice();
   }
 
   // Re-run the SAME scenario so the user can apply the feedback immediately.
@@ -236,31 +239,26 @@ export default function App() {
       cancelled = true;
     };
   }, [authUser, pendingSession]);
-  // Onboarding: a first-time visitor is offered a guided "first rep" (Task 1).
-  // `onboarded` (persisted) gates whether entering practice starts on the
-  // pre-session intro vs. the normal setup form. `onboarding` marks the current
-  // run as that guided rep.
-  const [onboarded, setOnboarded] = useState(() => {
-    try {
-      return localStorage.getItem("pic-onboarded") === "1";
-    } catch {
-      return false;
-    }
-  });
+  // `onboarding` marks the current run as the guided "first rep" (the hardcoded
+  // scenario shown to brand-new accounts).
   const [onboarding, setOnboarding] = useState(false);
 
-  // Enter the practice flow. First-time visitors (or an explicit guided click)
-  // land on the pre-session intro; returning visitors go straight to setup.
-  function enterPractice(guided: boolean) {
+  // Enter the practice flow at the normal setup form. Everyone uses this now —
+  // anonymous visitors included — so nobody is forced through the intro.
+  function enterPractice() {
     setError(null);
+    setOnboarding(false);
     setView("practice");
-    if (guided || !onboarded) {
-      setOnboarding(true);
-      setStage("presession");
-    } else {
-      setOnboarding(false);
-      setStage("pick");
-    }
+    setStage("pick");
+  }
+
+  // The guided first-rep intro (pre-session screen → hardcoded rep) is shown
+  // ONLY to people who just created an account.
+  function startFirstRep() {
+    setError(null);
+    setOnboarding(true);
+    setView("practice");
+    setStage("presession");
   }
 
   // Seed the hardcoded onboarding scenario (no /api/scenario call) and jump into
@@ -434,16 +432,6 @@ export default function App() {
         has_delivery: !!deliveryMetrics,
         onboarding,
       });
-      // They reached the payoff — mark them onboarded so future practice entries
-      // skip the intro and go straight to full setup.
-      if (!onboarded) {
-        try {
-          localStorage.setItem("pic-onboarded", "1");
-        } catch {
-          /* private mode / storage disabled — non-fatal */
-        }
-        setOnboarded(true);
-      }
       // Persist the completed run (logged in) or stash it to attach on sign-up.
       setCurrentSessionId(null);
       void saveOrStash({
@@ -493,7 +481,8 @@ export default function App() {
       <SiteHeader
         view={view}
         onView={setView}
-        onPractice={() => enterPractice(false)}
+        onPractice={() => enterPractice()}
+        onHome={() => setView("home")}
         theme={theme}
         onToggleTheme={toggleTheme}
         onFeedback={() => setFeedbackOpen(true)}
@@ -515,7 +504,7 @@ export default function App() {
 
         {view === "home" && authUser ? (
           <HomePage
-            onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(false); }}
+            onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(); }}
             onPracticeCriterion={practiceCriterion}
             onStudyCriterion={(cid) => setFlashcardIds([cid])}
             onOpenSession={loadSession}
@@ -524,11 +513,7 @@ export default function App() {
           <LandingPage
             onStart={() => {
               track("practice_cta_clicked", { from: "landing" });
-              enterPractice(false);
-            }}
-            onGuidedStart={() => {
-              track("practice_cta_clicked", { from: "landing_guided" });
-              enterPractice(true);
+              enterPractice();
             }}
             onTips={() => setView("tips")}
             supabaseEnabled={authReady}
@@ -536,9 +521,9 @@ export default function App() {
             onSignup={() => openAuth("signup", "Create a free account to start tracking your progress.")}
           />
         ) : view === "tips" ? (
-          <TipsPage onStart={() => enterPractice(false)} />
+          <TipsPage onStart={() => enterPractice()} />
         ) : view === "faq" ? (
-          <FAQPage onStart={() => enterPractice(false)} />
+          <FAQPage onStart={() => enterPractice()} />
         ) : (
           <>
             {stage === "presession" && (
@@ -725,7 +710,7 @@ export function DemoApp() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader view="practice" onView={exit} onPractice={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
         {step === "scenario" ? (
@@ -1194,10 +1179,11 @@ function BrandMark({ size = 30 }: { size?: number }) {
   );
 }
 
-function SiteHeader({ view, onView, onPractice, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut }: {
+function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut }: {
   view: View;
   onView: (v: View) => void;
   onPractice: () => void;
+  onHome: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
   onFeedback: () => void;
@@ -1218,7 +1204,11 @@ function SiteHeader({ view, onView, onPractice, theme, onToggleTheme, onFeedback
           </div>
         </button>
         <nav className="flex items-center gap-4 sm:gap-5">
-          <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
+          {userEmail ? (
+            <NavLink active={view === "home"} onClick={onHome}>Home</NavLink>
+          ) : (
+            <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
+          )}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ</NavLink>
           <button
@@ -1230,7 +1220,7 @@ function SiteHeader({ view, onView, onPractice, theme, onToggleTheme, onFeedback
             <span className="hidden sm:inline">Feedback</span>
           </button>
           {authReady && (userEmail ? (
-            <AccountMenu email={userEmail} onSignOut={onSignOut} onHome={() => onView("home")} />
+            <AccountMenu email={userEmail} onSignOut={onSignOut} />
           ) : (
             <div className="flex items-center gap-2 sm:gap-3">
               <button
@@ -1555,10 +1545,10 @@ function ProcessStrip() {
 // what the feedback looks like, then an email capture — and is one click away from
 // the setup form (onStart → view="practice").
 
-function LandingPage({ onStart, onGuidedStart, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onGuidedStart: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
+function LandingPage({ onStart, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
     <div className="space-y-20 pb-10 sm:space-y-24">
-      <HeroSection onStart={onStart} onGuidedStart={onGuidedStart} onTips={onTips} />
+      <HeroSection onStart={onStart} onTips={onTips} />
       <HowItWorksSection />
       <FeedbackExplainerSection />
       {supabaseEnabled && onSignup ? (
@@ -1622,7 +1612,7 @@ function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: str
 const HERO_POSTER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e0e7ff'/%3E%3Cstop offset='1' stop-color='%23ede9fe'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23g)'/%3E%3Ctext x='960' y='520' font-family='system-ui,sans-serif' font-size='64' font-weight='600' fill='%234f46e5' text-anchor='middle'%3EPI Coach demo%3C/text%3E%3Ctext x='960' y='600' font-family='system-ui,sans-serif' font-size='38' fill='%236366f1' text-anchor='middle'%3Ea scenario, presented, and graded%3C/text%3E%3C/svg%3E";
 
-function HeroSection({ onStart, onGuidedStart, onTips }: { onStart: () => void; onGuidedStart: () => void; onTips: () => void }) {
+function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
   return (
     <section className="grid items-center gap-10 pt-6 lg:grid-cols-[6fr_14fr] lg:gap-8">
       {/* Copy is first in the DOM so on mobile it stacks ABOVE the video; lg:order
@@ -1646,18 +1636,12 @@ function HeroSection({ onStart, onGuidedStart, onTips }: { onStart: () => void; 
           Pick your event, get an original scenario built around it, prep against a real timer,
           present out loud, and get honest, per-criterion feedback on both content and delivery.
         </p>
-        <div className="mt-7 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+        <div className="mt-7">
           <button
             onClick={onStart}
             className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
           >
             Ready to practice? →
-          </button>
-          <button
-            onClick={onGuidedStart}
-            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            New here? Try a 2-minute guided first rep →
           </button>
         </div>
       </div>

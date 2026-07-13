@@ -105,7 +105,7 @@ export function AuthModal({
   initialTab?: "signup" | "login";
   reason?: string;
   onClose: () => void;
-  onAuthed?: () => void;
+  onAuthed?: (mode: "signup" | "login") => void;
 }) {
   const { signIn, signUp } = useAuth();
   const [tab, setTab] = useState<"signup" | "login">(initialTab);
@@ -142,7 +142,7 @@ export function AuthModal({
       return;
     }
     // Signed in — a session is active.
-    onAuthed?.();
+    onAuthed?.(tab);
     onClose();
   }
 
