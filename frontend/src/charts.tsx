@@ -30,9 +30,10 @@ function polar(cx: number, cy: number, r: number, angleDeg: number) {
 
 export function SkillRadar({ data, max = 3 }: { data: { label: string; value: number }[]; max?: number }) {
   const n = data.length;
-  const cx = 160;
+  const cx = 190;
   const cy = 150;
-  const r = 96;
+  const r = 92;
+  const labelR = r + 12;
   const angleAt = (i: number) => (360 / n) * i;
 
   const ringLevels = Array.from({ length: max }, (_, i) => i + 1);
@@ -40,7 +41,7 @@ export function SkillRadar({ data, max = 3 }: { data: { label: string; value: nu
   const dataPoly = dataPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
 
   return (
-    <svg viewBox="0 0 320 300" className="h-auto w-full" role="img" aria-label="Skill mastery radar">
+    <svg viewBox="0 0 380 300" className="h-auto w-full" role="img" aria-label="Skill mastery radar">
       {/* rings */}
       {ringLevels.map((lvl) => {
         const pts = data.map((_, i) => polar(cx, cy, (lvl / max) * r, angleAt(i)));
@@ -56,9 +57,9 @@ export function SkillRadar({ data, max = 3 }: { data: { label: string; value: nu
       {/* spokes + labels */}
       {data.map((d, i) => {
         const end = polar(cx, cy, r, angleAt(i));
-        const lab = polar(cx, cy, r + 16, angleAt(i));
+        const lab = polar(cx, cy, labelR, angleAt(i));
         const anchor = lab.x > cx + 6 ? "start" : lab.x < cx - 6 ? "end" : "middle";
-        const name = d.label.length > 16 ? d.label.slice(0, 15) + "…" : d.label;
+        const name = d.label.length > 14 ? d.label.slice(0, 13) + "…" : d.label;
         return (
           <g key={i}>
             <line x1={cx} y1={cy} x2={end.x} y2={end.y} className="stroke-slate-200 dark:stroke-slate-700" strokeWidth={1} />
@@ -68,7 +69,7 @@ export function SkillRadar({ data, max = 3 }: { data: { label: string; value: nu
               textAnchor={anchor}
               dominantBaseline="middle"
               className="fill-slate-500 dark:fill-slate-400"
-              style={{ fontSize: 9 }}
+              style={{ fontSize: 8 }}
             >
               {name}
             </text>

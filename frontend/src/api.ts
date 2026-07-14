@@ -235,6 +235,11 @@ export function getCriteria(ids: string[]): Promise<Criterion[]> {
   return request<Criterion[]>(`/api/criteria?ids=${encodeURIComponent(ids.join(","))}`);
 }
 
+// The whole framework (all 282 criteria) — powers the flashcard library.
+export function getAllCriteria(): Promise<Criterion[]> {
+  return request<Criterion[]>("/api/criteria");
+}
+
 // Admin QA page: verify the secret passphrase server-side (throws 404 when the
 // admin page is disabled, i.e. no ADMIN_PASSPHRASE configured).
 export function adminVerify(passphrase: string): Promise<{ ok: boolean }> {

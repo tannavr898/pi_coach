@@ -107,14 +107,14 @@ def get_events() -> list[EventSummary]:
 
 @app.get("/api/criteria", response_model=list[Criterion])
 def get_criteria(ids: str = "") -> list[Criterion]:
-    """Full teaching fields for specific framework criteria, by id (comma list).
-    Powers the flashcards for a user's weak criteria. Always returns the Learn-mode
-    view (definition + strong/weak looks-like), regardless of practice mode."""
-    wanted = [x.strip() for x in ids.split(",") if x.strip()]
-    if not wanted:
-        return []
+    """Full teaching fields for framework criteria (Learn-mode view: definition +
+    strong/weak looks-like + coaches). With `ids` (comma list) returns just those,
+    for a user's weak-criterion flashcards; with no `ids` returns the WHOLE
+    framework, for the flashcard library grouped by domain."""
     fields = ("id", "domain", "topic", "name", "definition", "strong_looks_like", "weak_looks_like", "coaches")
-    return [Criterion(**{k: c.get(k, "") for k in fields}) for c in framework.get_criteria(wanted)]
+    wanted = [x.strip() for x in ids.split(",") if x.strip()]
+    source = framework.get_criteria(wanted) if wanted else framework.all_criteria()
+    return [Criterion(**{k: c.get(k, "") for k in fields}) for c in source]
 
 
 @app.get("/api/rubric")

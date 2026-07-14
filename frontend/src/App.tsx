@@ -27,7 +27,8 @@ import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
 import { clearSamples, getSession, saveSession, seedSamples, type SaveSessionBody } from "./progress";
 import { HomePage } from "./home";
-import { Flashcards } from "./flashcards";
+import { Flashcards, FlashcardLibrary } from "./flashcards";
+import { useFlags } from "./flags";
 
 type ResponseMode = "type" | "speak";
 
@@ -55,7 +56,10 @@ function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
 // "home" is the scroll-based marketing landing page (the default). "practice" is
 // the role-play flow, whose first screen is now just the setup form — the hero and
 // how-it-works copy moved to the landing page.
-type View = "home" | "practice" | "tips" | "faq";
+type View = "home" | "practice" | "tips" | "faq" | "flashcards";
+// What the flashcard study overlay is showing: either ids to fetch, or preloaded
+// cards (from the library), optionally opened at a specific card.
+type FlashcardTarget = { ids?: string[]; cards?: Criterion[]; startId?: string; title?: string };
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 
 // Presentation timing now comes per-event from scenario.timing (team events get a
@@ -130,8 +134,10 @@ export default function App() {
   // screen shows a before→after comparison against this snapshot.
   const [priorSnapshot, setPriorSnapshot] = useState<RunSnapshot | null>(null);
 
-  // Flashcards overlay: the criterion ids currently being studied (Task 5).
-  const [flashcardIds, setFlashcardIds] = useState<string[] | null>(null);
+  // Flashcards: the study overlay target (ids or preloaded cards), plus the
+  // per-account flag store shared by the overlay and the library.
+  const [flashcard, setFlashcard] = useState<FlashcardTarget | null>(null);
+  const flags = useFlags(authUser?.id ?? null);
 
   // Open a stored session's feedback (from the home "recent sessions" list).
   async function loadSession(id: string) {
@@ -483,6 +489,7 @@ export default function App() {
         onView={setView}
         onPractice={() => enterPractice()}
         onHome={() => setView("home")}
+        onFlashcards={() => setView("flashcards")}
         theme={theme}
         onToggleTheme={toggleTheme}
         onFeedback={() => setFeedbackOpen(true)}
@@ -493,8 +500,17 @@ export default function App() {
         onSignOut={() => { void signOut(); setView("home"); }}
       />
       <AuthModal open={authOpen} initialTab={authTab} reason={authReason} onClose={() => setAuthOpen(false)} onAuthed={handleAuthed} />
-      {flashcardIds && <Flashcards ids={flashcardIds} onClose={() => setFlashcardIds(null)} />}
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
+      {flashcard && (
+        <Flashcards
+          ids={flashcard.ids}
+          cards={flashcard.cards}
+          startId={flashcard.startId}
+          title={flashcard.title}
+          flags={flags}
+          onClose={() => setFlashcard(null)}
+        />
+      )}
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -506,7 +522,8 @@ export default function App() {
           <HomePage
             onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(); }}
             onPracticeCriterion={practiceCriterion}
-            onOpenFlashcards={(ids) => setFlashcardIds(ids)}
+            onOpenFlashcards={(ids) => setFlashcard({ ids })}
+            onOpenLibrary={() => setView("flashcards")}
             onOpenSession={loadSession}
           />
         ) : view === "home" ? (
@@ -519,6 +536,11 @@ export default function App() {
             supabaseEnabled={authReady}
             onSignIn={() => openAuth("login", "Log in to pick up your progress and session history.")}
             onSignup={() => openAuth("signup", "Create a free account to start tracking your progress.")}
+          />
+        ) : view === "flashcards" ? (
+          <FlashcardLibrary
+            flags={flags}
+            onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
           />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />
@@ -678,7 +700,7 @@ export default function App() {
                 audioBlob={audioBlob}
                 onRestart={restart}
                 onTryAgain={tryAgain}
-                onStudyCriteria={(ids) => setFlashcardIds(ids)}
+                onStudyCriteria={(ids) => setFlashcard({ ids })}
                 priorSnapshot={priorSnapshot}
                 loggedIn={!!authUser}
                 onSignIn={() => openAuth("signup", "Want to see if you improve next time? Create an account to track your progress.")}
@@ -710,7 +732,7 @@ export function DemoApp() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} onFlashcards={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
         {step === "scenario" ? (
@@ -770,6 +792,7 @@ function DemoRibbon({ onExit }: { onExit: () => void }) {
 export function AdminApp() {
   const { theme, toggleTheme } = useTheme();
   const { user, ready } = useAuth();
+  const flags = useFlags(user?.id ?? null);
   const [unlocked, setUnlocked] = useState(() => {
     try { return sessionStorage.getItem("pic-admin-ok") === "1"; } catch { return false; }
   });
@@ -951,7 +974,7 @@ export function AdminApp() {
         )}
       </main>
 
-      {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} onClose={() => setFlashOpen(false)} />}
+      {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} flags={flags} title="Flashcards preview" onClose={() => setFlashOpen(false)} />}
       <AuthModal open={authOpen} initialTab="login" reason="Log in to seed sample data into your account." onClose={() => setAuthOpen(false)} />
     </div>
   );
@@ -1179,11 +1202,12 @@ function BrandMark({ size = 30 }: { size?: number }) {
   );
 }
 
-function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut }: {
+function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut }: {
   view: View;
   onView: (v: View) => void;
   onPractice: () => void;
   onHome: () => void;
+  onFlashcards: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
   onFeedback: () => void;
@@ -1209,6 +1233,7 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
           ) : (
             <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
           )}
+          {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Flashcards</NavLink>}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ</NavLink>
           <button

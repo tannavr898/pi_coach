@@ -9,6 +9,7 @@
 // Every number still maps to a next action; no badges/leaderboards/streak games.
 
 import { useEffect, useState } from "react";
+import { getDomains, type DomainSummary } from "./api";
 import { getProgress, getSessions, type ProgressResponse, type SessionSummary } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 import { ChartFrame, SkillRadar, TrendLine, VolumeBars } from "./charts";
@@ -48,19 +49,22 @@ export function HomePage(props: {
   onStart: () => void;
   onPracticeCriterion: (name: string) => void;
   onOpenFlashcards: (ids: string[]) => void;
+  onOpenLibrary: () => void;
   onOpenSession: (id: string) => void;
 }) {
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
+  const [domains, setDomains] = useState<DomainSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.all([getProgress(), getSessions()])
-      .then(([p, s]) => {
+    Promise.all([getProgress(), getSessions(), getDomains()])
+      .then(([p, s, d]) => {
         if (!active) return;
         setProgress(p);
         setSessions(s);
+        setDomains(d);
       })
       .catch((e) => {
         if (active) setError(e instanceof Error ? e.message : String(e));
@@ -76,13 +80,15 @@ export function HomePage(props: {
   const count = progress?.sessions_count ?? 0;
   const mastery = progress?.criterion_mastery ?? [];
 
-  // Radar: up to 8 most-practiced criteria (most reliable), placed alphabetically
-  // for a stable shape. value = avg mastery rank (0 Novice → 3 Exemplary).
-  const radarData = [...mastery]
-    .sort((a, b) => b.sessions - a.sessions)
-    .slice(0, 8)
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((m) => ({ label: m.name, value: m.avg_rank }));
+  // Skill radar = the 13 domains. Each domain's value is the average mastery rank
+  // (0 Novice → 3 Exemplary) of the criteria you've been graded on in it; domains
+  // you haven't touched sit at 0 — the "fill in your skills" view.
+  const radarData = domains.map((d) => {
+    const crits = mastery.filter((m) => m.domain === d.name);
+    const value = crits.length ? crits.reduce((s, m) => s + m.avg_rank, 0) / crits.length : 0;
+    return { label: d.name, value };
+  });
+  const practicedDomains = radarData.filter((d) => d.value > 0).length;
 
   const scorePoints = (scoreTrend?.points ?? []).map((p) => ({ label: fmtDate(p.created_at), value: p.score }));
   const deliveryPoints = (sessions ?? [])
@@ -94,7 +100,7 @@ export function HomePage(props: {
   const allCriterionIds = mastery.map((m) => m.criterion_id);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="mx-auto max-w-[84rem] space-y-5">
       {/* 1 — Start, always at the top */}
       <Card>
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -121,28 +127,33 @@ export function HomePage(props: {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* 2 — Skill radar + weakest-criterion coaching (the headline) */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* 2 — Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
         <Card className="lg:col-span-2">
-          <ChartFrame title="Your skills at a glance" hint="Higher is stronger — 0 Novice → 3 Exemplary, averaged across your sessions.">
-            {radarData.length >= 3 ? (
-              <div className="grid items-center gap-4 sm:grid-cols-[1fr_auto]">
+          <ChartFrame title="Your skills across the 13 domains" hint="Higher is stronger — 0 Novice → 3 Exemplary, averaged over the criteria you've been graded on in each domain.">
+            {radarData.length >= 3 && count > 0 ? (
+              <div className="grid items-center gap-6 sm:grid-cols-[1.4fr_1fr]">
                 <SkillRadar data={radarData} max={3} />
-                <ul className="space-y-1 text-xs">
-                  {radarData.map((d) => (
-                    <li key={d.label} className="flex items-center justify-between gap-3">
-                      <span className="text-slate-600 dark:text-slate-300">{d.label}</span>
-                      <span className="font-mono tabular-nums text-slate-400 dark:text-slate-500">{d.value.toFixed(1)}</span>
-                    </li>
-                  ))}
+                <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                  {[...radarData]
+                    .sort((a, b) => b.value - a.value)
+                    .map((d) => (
+                      <li key={d.label} className="flex items-center justify-between gap-2">
+                        <span className="truncate text-slate-600 dark:text-slate-300">{d.label}</span>
+                        <span className={`font-mono tabular-nums ${d.value === 0 ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"}`}>{d.value.toFixed(1)}</span>
+                      </li>
+                    ))}
                 </ul>
               </div>
             ) : (
-              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                Finish a few sessions and your skill map fills in here — one point per criterion you've been graded on.
+              <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                Finish a session and your skill map fills in here — one spoke per domain, {domains.length || 13} in all.
               </p>
             )}
           </ChartFrame>
+          {practicedDomains > 0 && (
+            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">You've touched {practicedDomains} of {domains.length || 13} domains. Spokes at 0 are ones you haven't practiced yet.</p>
+          )}
 
           {weak && (
             <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
@@ -240,9 +251,7 @@ export function HomePage(props: {
               {weak && (
                 <button className={BTN_PRIMARY} onClick={() => props.onOpenFlashcards([weak.criterion_id])}>Study the recommendation →</button>
               )}
-              {allCriterionIds.length > 0 && (
-                <button className={BTN_SECONDARY} onClick={() => props.onOpenFlashcards(allCriterionIds)}>Browse all {allCriterionIds.length} cards</button>
-              )}
+              <button className={BTN_SECONDARY} onClick={props.onOpenLibrary}>Open flashcard library →</button>
             </div>
           </div>
         </Card>
