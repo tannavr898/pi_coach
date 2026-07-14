@@ -135,14 +135,57 @@ def _format_candidates(criteria: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# How each sampled dimension is phrased as a fixed build parameter. Rendered in
+# this order; any dimension the event opted out of is simply skipped.
+_PARAM_LINES = [
+    ("subtopic", "Focus of the challenge: {}"),
+    ("business_type", "The business or setting: {}"),
+    ("company_size", "Its scale: {}"),
+    ("stakeholder", "The participant presents to: {}"),
+    ("problem", "The core problem to solve: {}"),
+    ("constraint", "A constraint that must shape the solution: {}"),
+]
+
+
+def _params_block(params: dict[str, str]) -> str:
+    """Phase 3: the sampled taxonomy combination, stated as FIXED build parameters.
+    The model executes on this specific setup rather than inventing its own — which
+    is what actually breaks the repetition (telling it to 'be creative' does not)."""
+    lines = [f"- {tmpl.format(params[d])}" for d, tmpl in _PARAM_LINES if params.get(d)]
+    # `company_size` is present for every business scenario and dropped only for
+    # person-centered ones (e.g. personal finance), where "invent a company" is wrong.
+    if params.get("company_size"):
+        name_line = (
+            "Invent a specific, fresh company name and character name(s) that fit these "
+            f"parameters (avoid overused defaults like {_OVERUSED_NAMES})."
+        )
+    else:
+        name_line = (
+            "Invent specific, fresh names for the people involved (and any business they "
+            f"work at) so it feels real; avoid overused defaults like {_OVERUSED_NAMES}."
+        )
+    return (
+        "SCENARIO PARAMETERS — build the role-play around EXACTLY these. Do not swap, "
+        "generalize, or ignore any of them; they are the point of this scenario:\n"
+        + "\n".join(lines)
+        + "\n" + name_line + " Make the setting, stakeholder, problem, and constraint "
+        "all visibly matter in the situation — not just decoration.\n\n"
+    )
+
+
 def build_scenario_prompt(
     topic: str,
     industry: str,
     level: str,
     candidates: list[dict],
     event: dict | None = None,
+    params: dict[str, str] | None = None,
 ) -> tuple[str, str]:
-    """Build the (system, user) messages: select 4-6 criteria and write the scenario."""
+    """Build the (system, user) messages: select 4-6 criteria and write the scenario.
+
+    When `params` (a sampled taxonomy combination) is given, the scenario is pinned
+    to that specific setup via a fixed-parameters block; otherwise we fall back to
+    the free-form variety nudge (`_variety_block`)."""
     guide = _LEVEL_GUIDE.get(level, _LEVEL_GUIDE["district"])
     industry_line = industry.strip() or "not specified — choose one that fits the event and topic"
     event_line = ""
@@ -163,7 +206,8 @@ def build_scenario_prompt(
                 "participant's work to show. Make sure the raw inputs you give are internally "
                 "consistent and realistic.\n"
             )
-    user = f"""{event_line}{quant_line}{_variety_block()}REQUESTED TOPIC: {topic}
+    variety = _params_block(params) if params else _variety_block()
+    user = f"""{event_line}{quant_line}{variety}REQUESTED TOPIC: {topic}
 INDUSTRY / CONTEXT: {industry_line}
 COMPLEXITY: {level}   ({guide})
 
@@ -419,3 +463,56 @@ Return a JSON object with EXACTLY this shape:
 
 Output ONLY the JSON object."""
     return SCORING_SYSTEM, user
+
+
+# ---------------------------------------------------------------------------
+# 4. Mastery Blitz — one batched "used correctly in context?" pass (Phase 5)
+# ---------------------------------------------------------------------------
+
+BLITZ_SYSTEM = (
+    "You are a fast, fair DECA coach grading a rapid drill. The student was given a "
+    "short scenario and, one at a time under time pressure, had to use a specific "
+    "business skill correctly IN THAT SCENARIO. You grade a batch of these at once.\n\n"
+    "For EACH item, judge ONLY one thing: did they use THAT skill correctly and in "
+    "context? Ignore delivery, grammar, length, and every other skill.\n"
+    "- correct  = clearly applied the right idea to THIS scenario.\n"
+    "- partial  = touched the skill but stayed vague, generic, or not tied to the scenario.\n"
+    "- missed   = wrong, absent, off-topic, or empty.\n\n"
+    "Give ONE short, specific coaching note per item (max ~20 words) — say what would "
+    "have made it correct. Be quick and decisive.\n\n"
+    "Return ONLY a JSON object, no markdown."
+)
+
+
+def build_blitz_prompt(scenario: str, items: list[dict]) -> tuple[str, str]:
+    """Batched blitz grading. `items`: [{name, definition, good_example, response}].
+    Returns (system, user); the model returns a verdict + note per item by index."""
+    blocks = []
+    for i, it in enumerate(items):
+        good = (it.get("good_example") or "").strip()
+        good_line = f"\n   Correct use sounds like: {good}" if good else ""
+        name = it.get("name", "")
+        definition = it.get("definition", "")
+        answer = (it.get("response") or "").strip() or "(no answer)"
+        blocks.append(
+            f"ITEM {i}\n"
+            f"   Skill: {name}\n"
+            f"   What it means: {definition}{good_line}\n"
+            f"   Student answer: {answer}"
+        )
+    items_block = "\n\n".join(blocks)
+    user = f"""SCENARIO (shared by every item):
+{scenario}
+
+Grade each item below on whether the student used THAT skill correctly, in the context of the scenario.
+
+{items_block}
+
+Return ONLY this JSON:
+{{
+  "results": [
+    {{ "index": 0, "verdict": "correct" | "partial" | "missed", "note": "<=20 words, specific" }}
+  ]
+}}
+One result per item, matched by index. Output ONLY the JSON."""
+    return BLITZ_SYSTEM, user

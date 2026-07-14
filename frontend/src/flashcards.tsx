@@ -1,21 +1,23 @@
 // Criterion flashcards — a study overlay (flip-through with flagging) and a full
 // library grouped by the 13 domains. Cards keep the same mechanic: FRONT is the
-// term/prompt, BACK is the definition + what strong vs. weak looks like + the
-// fixed DECA method. Weak sets are highlighted; any card can be flagged to study
-// later (persisted per-account via useFlags).
+// term/prompt, BACK is a plain definition, a term-specific worked example run
+// through the four DECA beats (Define -> Explain -> Connect -> Above & Beyond,
+// matching the Tips page), and one term-specific common mistake. Weak sets are
+// highlighted; any card can be flagged to study later (persisted via useFlags).
 
 import { useEffect, useMemo, useState } from "react";
-import { getAllCriteria, getCriteria, type Criterion } from "./api";
+import { getAllCriteria, getCriteria, type Criterion, type FlashcardExample } from "./api";
 import { getProgress } from "./progress";
 import type { FlagsApi } from "./flags";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 
-// The DECA method — fixed coaching shown on every card back.
-const DECA_METHOD: { step: string; blurb: string }[] = [
-  { step: "Define", blurb: "Say what the skill is in plain terms." },
-  { step: "Explain", blurb: "Show why it matters for this business." },
-  { step: "Connect", blurb: "Tie it to your actual recommendation." },
-  { step: "Above & beyond", blurb: "Add a number, trade-off, or risk most people miss." },
+// The four beats — the same method the Tips page teaches, but the CONTENT is
+// specific to each term (from the card's worked example), not a fixed blurb.
+const BEATS: { key: keyof FlashcardExample; label: string; cls: string; note?: string }[] = [
+  { key: "define", label: "Define", cls: "text-indigo-600 dark:text-indigo-400" },
+  { key: "explain", label: "Explain", cls: "text-violet-600 dark:text-violet-400" },
+  { key: "connect", label: "Connect", cls: "text-fuchsia-600 dark:text-fuchsia-400", note: "most points" },
+  { key: "above", label: "Above & Beyond", cls: "text-amber-600 dark:text-amber-400" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -133,7 +135,7 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Criterion;
             <h2 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-100">{card.name}</h2>
             {card.coaches && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{card.coaches}</p>}
           </div>
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500">Tap to see what a strong answer looks like →</p>
+          <p className="text-center text-xs text-slate-400 dark:text-slate-500">Tap for a worked example →</p>
         </div>
 
         {/* Back */}
@@ -142,33 +144,35 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Criterion;
             <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{card.name}</h3>
             <FlagButton flagged={flagged} onFlag={onFlag} />
           </div>
-          <div className="mt-3 space-y-3 text-sm">
+          <div className="mt-3 space-y-3.5 text-sm">
             {card.definition && (
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">What it's asking</div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Definition</div>
                 <p className="mt-1 text-slate-700 dark:text-slate-200">{card.definition}</p>
               </div>
             )}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Strong looks like</div>
-                <p className="mt-1 text-emerald-900 dark:text-emerald-200">{card.strong_looks_like}</p>
+            {card.example && (
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">In a response — run it through the four beats</div>
+                <ol className="mt-2 space-y-2">
+                  {BEATS.map((b) => (
+                    <li key={b.key} className="leading-relaxed">
+                      <span className={`font-semibold ${b.cls}`}>{b.label}</span>
+                      {b.note && (
+                        <span className="ml-1.5 rounded bg-fuchsia-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-fuchsia-600 dark:bg-fuchsia-950/40 dark:text-fuchsia-300">{b.note}</span>
+                      )}
+                      <span className="text-slate-700 dark:text-slate-200"> — {card.example?.[b.key]}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
+            )}
+            {card.mistake && (
               <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/50 dark:bg-amber-950/30">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400">Weak looks like</div>
-                <p className="mt-1 text-amber-900 dark:text-amber-200">{card.weak_looks_like}</p>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400">Common mistake</div>
+                <p className="mt-1 text-amber-900 dark:text-amber-200">{card.mistake}</p>
               </div>
-            </div>
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Nail it — the DECA method</div>
-              <ol className="mt-1.5 space-y-1">
-                {DECA_METHOD.map((m) => (
-                  <li key={m.step} className="text-slate-700 dark:text-slate-200">
-                    <strong className="font-semibold text-indigo-600 dark:text-indigo-400">{m.step}:</strong> {m.blurb}
-                  </li>
-                ))}
-              </ol>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -198,9 +202,11 @@ const LEVEL_RANK: Record<string, number> = { novice: 0, developing: 1, proficien
 export function FlashcardLibrary({
   flags,
   onStudy,
+  onBlitz,
 }: {
   flags: FlagsApi;
   onStudy: (cards: Criterion[], startId?: string, title?: string) => void;
+  onBlitz: (cards: Criterion[], title?: string) => void;
 }) {
   const [all, setAll] = useState<Criterion[] | null>(null);
   const [weakIds, setWeakIds] = useState<Set<string>>(new Set());
@@ -255,7 +261,7 @@ export function FlashcardLibrary({
         <div>
           <Eyebrow>Flashcard library</Eyebrow>
           <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">All {all.length} terms, by domain</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Front: the term. Back: definition, strong vs. weak, and the DECA method. Flag any card ★ to study later.</p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Front: the term. Back: a plain definition, a worked example run through the four beats, and the one mistake to avoid. Flag any card ★ to study later.</p>
         </div>
         <input
           value={query}
@@ -263,6 +269,22 @@ export function FlashcardLibrary({
           placeholder="Search terms…"
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:w-64"
         />
+      </div>
+
+      {/* Mastery Blitz launcher — rapid, timed drill over a set of terms. */}
+      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30 sm:flex-row sm:items-center">
+        <div>
+          <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Mastery Blitz</h3>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            Rapid drill: one scenario, {5} terms, {45}s each — apply each term in DECA format, graded instantly at the end.
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {recommended.length > 0 && (
+            <button className={BTN_PRIMARY} onClick={() => onBlitz(recommended, "Your weak terms")}>Blitz weak terms →</button>
+          )}
+          <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onBlitz(all, "All terms")}>Blitz random terms →</button>
+        </div>
       </div>
 
       {/* Highlighted sets */}
@@ -273,6 +295,7 @@ export function FlashcardLibrary({
           subtitle={recommended.length ? `The ${recommended.length} criteria you've been weakest on.` : "Finish some sessions and your weak spots show up here."}
           count={recommended.length}
           onStudy={() => recommended.length && onStudy(recommended, undefined, "Recommended for you")}
+          onBlitz={() => recommended.length && onBlitz(recommended, "Recommended for you")}
         />
         <SetCard
           tone="amber"
@@ -280,6 +303,7 @@ export function FlashcardLibrary({
           subtitle={flaggedCards.length ? `${flaggedCards.length} card${flaggedCards.length === 1 ? "" : "s"} you starred.` : "Star ★ any card to add it here."}
           count={flaggedCards.length}
           onStudy={() => flaggedCards.length && onStudy(flaggedCards, undefined, "Flagged to study later")}
+          onBlitz={() => flaggedCards.length && onBlitz(flaggedCards, "Flagged to study later")}
         />
       </div>
 
@@ -296,7 +320,10 @@ export function FlashcardLibrary({
                   <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">{weakHere} to drill</span>
                 )}
               </div>
-              <button className={BTN_SECONDARY} onClick={() => onStudy(cards, undefined, domain)}>Study domain →</button>
+              <div className="flex items-center gap-2">
+                <button className={BTN_SECONDARY} onClick={() => onBlitz(cards, domain)}>⚡ Blitz</button>
+                <button className={BTN_SECONDARY} onClick={() => onStudy(cards, undefined, domain)}>Study domain →</button>
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {cards.map((c) => {
@@ -333,7 +360,7 @@ export function FlashcardLibrary({
   );
 }
 
-function SetCard({ tone, title, subtitle, count, onStudy }: { tone: "indigo" | "amber"; title: string; subtitle: string; count: number; onStudy: () => void }) {
+function SetCard({ tone, title, subtitle, count, onStudy, onBlitz }: { tone: "indigo" | "amber"; title: string; subtitle: string; count: number; onStudy: () => void; onBlitz: () => void }) {
   const toneCls =
     tone === "indigo"
       ? "border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/40"
@@ -342,9 +369,12 @@ function SetCard({ tone, title, subtitle, count, onStudy }: { tone: "indigo" | "
     <div className={`rounded-2xl border p-5 ${toneCls}`}>
       <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{subtitle}</p>
-      <button className={`mt-3 ${BTN_PRIMARY} disabled:opacity-40`} disabled={count === 0} onClick={onStudy}>
-        Study {count > 0 ? `${count} card${count === 1 ? "" : "s"}` : "—"} →
-      </button>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button className={`${BTN_PRIMARY} disabled:opacity-40`} disabled={count === 0} onClick={onStudy}>
+          Study {count > 0 ? `${count} card${count === 1 ? "" : "s"}` : "—"} →
+        </button>
+        <button className={`${BTN_SECONDARY} disabled:opacity-40`} disabled={count === 0} onClick={onBlitz}>⚡ Blitz</button>
+      </div>
     </div>
   );
 }

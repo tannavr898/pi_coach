@@ -15,6 +15,17 @@ export type Criterion = {
   strong_looks_like: string;
   weak_looks_like: string;
   coaches: string;
+  // Flashcard content (Phase 4) — populated on the /api/criteria path only.
+  example?: FlashcardExample | null;
+  mistake?: string;
+};
+
+// A worked example run through the four DECA beats (the Tips-page method).
+export type FlashcardExample = {
+  define: string;
+  explain: string;
+  connect: string;
+  above: string;
 };
 
 export type DomainSummary = {
@@ -57,6 +68,16 @@ export type ScenarioResponse = {
   procedures: string[];
   situation: string;
   followup_questions: string[];
+  // Phase 3: the scenario-variety combination the backend sampled + injected
+  // (null when the event has no taxonomy yet or a free-text focus was used).
+  sampling?: Sampling | null;
+};
+
+// The variety combo that shaped a scenario. `signature` is an opaque id the client
+// records to avoid immediate repeats; `labels` is for display/QA.
+export type Sampling = {
+  signature: string;
+  labels: Record<string, string>;
 };
 
 export type RubricLevel = "novice" | "developing" | "proficient" | "exemplary";
@@ -266,6 +287,9 @@ export function postScenario(body: {
   request?: string;
   level: Level;
   mode: Mode;
+  // Recent variety-combo signatures for this user+event (newest last) so the
+  // backend can skip immediate repeats. Ignored on the free-text focus path.
+  avoid?: string[];
 }): Promise<ScenarioResponse> {
   return request<ScenarioResponse>("/api/scenario", {
     method: "POST",
@@ -288,6 +312,46 @@ export function postScore(body: {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+// --- Mastery Blitz (Phase 5) ----------------------------------------------
+
+export type BlitzScenario = { id: string; text: string };
+export type BlitzVerdict = "correct" | "partial" | "missed";
+export type BlitzResult = { criterion_id: string; verdict: BlitzVerdict; note: string };
+
+export function getBlitzScenarios(): Promise<BlitzScenario[]> {
+  return request<BlitzScenario[]>("/api/blitz/scenarios");
+}
+
+export function postBlitzScore(body: {
+  scenario: string;
+  answers: { criterion_id: string; response: string }[];
+}): Promise<{ results: BlitzResult[] }> {
+  return request<{ results: BlitzResult[] }>("/api/blitz-score", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+// Transcript only (no delivery metrics) — for spoken blitz answers, graded on content.
+export async function postTranscribe(audio: Blob): Promise<string> {
+  const ext = audio.type.includes("webm") ? "webm" : audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "dat";
+  const fd = new FormData();
+  fd.append("audio", audio, `blitz.${ext}`);
+  const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const body = await res.json();
+      if (body?.detail) detail = String(body.detail);
+    } catch {
+      /* non-JSON */
+    }
+    throw new Error(detail || "Couldn't transcribe that recording.");
+  }
+  const body = (await res.json()) as { transcript: string };
+  return body.transcript;
 }
 
 // Upload a recording for transcription + delivery metrics. FormData sets its own

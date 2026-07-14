@@ -14,6 +14,15 @@ RubricLevel = Literal["novice", "developing", "proficient", "exemplary"]
 # --- shared ---------------------------------------------------------------
 
 
+class FlashcardExample(BaseModel):
+    """A term-specific worked example, run through the four DECA beats (the Tips-page
+    method), used as the back of a flashcard."""
+    define: str = ""
+    explain: str = ""
+    connect: str = ""
+    above: str = ""
+
+
 class Criterion(BaseModel):
     """One evaluation criterion, as shown to the participant on the cover sheet.
 
@@ -31,6 +40,10 @@ class Criterion(BaseModel):
     strong_looks_like: str = ""
     weak_looks_like: str = ""
     coaches: str = ""
+    # Flashcard display content (Phase 4). Populated only on the /api/criteria
+    # (flashcard) path; scenario cover-sheets leave these empty.
+    example: FlashcardExample | None = None
+    mistake: str = ""
 
 
 class DomainSummary(BaseModel):
@@ -94,6 +107,19 @@ class ScenarioRequest(BaseModel):
     request: str = Field(default="", max_length=400)
     level: Level = "district"
     mode: Mode = "competition"
+    # Recent scenario-variety combo signatures for THIS user+event (newest last),
+    # so the backend can skip immediate repeats when sampling the taxonomy. Client
+    # tracks these locally; empty on the free-text / no-taxonomy paths. Capped to
+    # keep the payload small.
+    avoid: list[str] = Field(default_factory=list, max_length=20)
+
+
+class Sampling(BaseModel):
+    """The scenario-variety combination the backend sampled and injected (Phase 3).
+    Returned so the client can remember it (avoid immediate repeats) and the admin
+    QA page can see what drove the scenario. Absent when no taxonomy was applied."""
+    signature: str
+    labels: dict[str, str] = {}
 
 
 class ScenarioResponse(BaseModel):
@@ -118,6 +144,9 @@ class ScenarioResponse(BaseModel):
     # The judge's set follow-up questions, surfaced to the participant only AFTER
     # they submit their main response (mirrors a real role-play), then graded.
     followup_questions: list[str]
+    # The variety combination that shaped this scenario (Phase 3), or null when the
+    # event has no taxonomy yet / a free-text focus was used.
+    sampling: Sampling | None = None
 
 
 # --- POST /api/score-content ----------------------------------------------
@@ -433,3 +462,37 @@ class ProgressResponse(BaseModel):
     criterion_mastery: list[CriterionMastery] = []
     weakest_criterion: WeakestCriterion | None = None
     score_trend: ScoreTrend
+
+
+# --- Mastery Blitz (Phase 5) ----------------------------------------------
+
+
+class BlitzScenario(BaseModel):
+    """A short, predetermined drill scenario."""
+    id: str
+    text: str
+
+
+class BlitzAnswer(BaseModel):
+    """One drilled term + the student's quick (typed or transcribed) answer."""
+    criterion_id: str
+    response: str = ""
+
+
+class BlitzScoreRequest(BaseModel):
+    scenario: str = Field(max_length=1200)
+    answers: list[BlitzAnswer] = Field(min_length=1, max_length=12)
+
+
+class BlitzResult(BaseModel):
+    criterion_id: str
+    verdict: Literal["correct", "partial", "missed"] = "missed"
+    note: str = ""
+
+
+class BlitzScoreResponse(BaseModel):
+    results: list[BlitzResult]
+
+
+class TranscribeResponse(BaseModel):
+    transcript: str

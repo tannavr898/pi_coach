@@ -9,7 +9,7 @@ fixed event-to-criteria blueprint.
 
 from __future__ import annotations
 
-from . import framework, llm, prompts
+from . import config, framework, llm, prompts
 
 # When the model's interpretation yields no usable domains (but the request is in
 # scope), fall back to a broad, coherent general-business spread so we never block
@@ -77,7 +77,7 @@ def interpret_request(request: str) -> dict:
     parsing/validation slip degrades to a sensible in-scope default rather than
     failing the user."""
     system, user = prompts.build_interpretation_prompt(request, framework.domains())
-    raw = llm.complete(system, user, max_tokens=500)
+    raw = llm.complete(system, user, model=config.SCENARIO_MODEL, max_tokens=500)
     data = llm.parse_json_object(raw)
 
     if data.get("in_scope") is False:

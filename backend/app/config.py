@@ -21,10 +21,18 @@ try:  # pragma: no cover - environment-dependent
 except Exception:
     pass
 
-# Scenario generation + content scoring model. The roadmap (§5) explicitly chose
-# "Sonnet-class for quality; it's the product" — so we default to Sonnet 4.6,
-# overridable via env without a code change.
-MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+# We split the model by job (Phase 2, latency). Scenario generation is creative
+# writing with a lower accuracy bar; scoring is where grading accuracy matters.
+# Both currently run Sonnet 5 (near-Opus quality at Sonnet price) — a quality
+# upgrade over the old Sonnet 4.6 — but they're separate knobs so scoring can be
+# moved to a stronger model later without touching scenario latency. Overridable
+# via env without a code change. MODEL stays as the shared fallback/back-compat.
+MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
+SCENARIO_MODEL = os.getenv("ANTHROPIC_SCENARIO_MODEL", MODEL)
+SCORING_MODEL = os.getenv("ANTHROPIC_SCORING_MODEL", MODEL)
+# Mastery Blitz (Phase 5): a single "used correctly in context?" judgment, batched
+# into ONE call per drill — a fast/cheap model is the right fit, so Haiku by default.
+BLITZ_MODEL = os.getenv("ANTHROPIC_BLITZ_MODEL", "claude-haiku-4-5")
 
 # Transcription (Phase 3, voice). Provider is swappable; default AssemblyAI —
 # simplest REST integration with word timestamps + filler/disfluency detection.

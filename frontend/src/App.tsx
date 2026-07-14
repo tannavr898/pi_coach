@@ -28,6 +28,7 @@ import { AuthModal, useAuth } from "./auth";
 import { clearSamples, getSession, saveSession, seedSamples, type SaveSessionBody } from "./progress";
 import { HomePage } from "./home";
 import { Flashcards, FlashcardLibrary } from "./flashcards";
+import { MasteryBlitz } from "./blitz";
 import { useFlags } from "./flags";
 
 type ResponseMode = "type" | "speak";
@@ -72,6 +73,31 @@ type Stage = "presession" | "pick" | "loading" | "ready" | "prep" | "walkin" | "
 // How long the participant can sit on the response/follow-up screen without
 // starting before the 5-second auto-start countdown kicks in.
 const IDLE_GRACE_MS = 40000;
+
+// Phase 3: remember the last few scenario-variety combinations per event (locally,
+// per browser) so the backend can avoid handing the same user immediate repeats.
+// Session-local only — no backend/account involved.
+const RECENT_COMBOS_MAX = 10;
+function recentCombos(eventId: string): string[] {
+  if (!eventId) return [];
+  try {
+    const raw = localStorage.getItem(`pic-combos-${eventId}`);
+    const list = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(list) ? list.filter((s): s is string => typeof s === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function recordCombo(eventId: string, signature: string) {
+  if (!eventId || !signature) return;
+  try {
+    const list = recentCombos(eventId).filter((s) => s !== signature);
+    list.push(signature); // newest last
+    localStorage.setItem(`pic-combos-${eventId}`, JSON.stringify(list.slice(-RECENT_COMBOS_MAX)));
+  } catch {
+    /* private mode / quota — variety just falls back to random */
+  }
+}
 
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
@@ -134,14 +160,26 @@ export default function App() {
   // screen shows a before→after comparison against this snapshot.
   const [priorSnapshot, setPriorSnapshot] = useState<RunSnapshot | null>(null);
 
+  // Phase 2a: content scoring runs in the BACKGROUND while the delivery-first
+  // feedback screen is already showing. This token invalidates a stale grade if
+  // the user restarts / retries / regenerates before it lands.
+  const scoreRunRef = useRef(0);
+  // Phase 2b: prefetch the scenario the moment event + level are chosen (while
+  // the user is still in the optional focus box). Keyed on the no-focus combo;
+  // consumed by generate() only when the focus box is still empty.
+  const prefetchRef = useRef<{ key: string; promise: Promise<ScenarioResponse> } | null>(null);
+
   // Flashcards: the study overlay target (ids or preloaded cards), plus the
   // per-account flag store shared by the overlay and the library.
   const [flashcard, setFlashcard] = useState<FlashcardTarget | null>(null);
+  // Mastery Blitz (Phase 5): the term set to drill, or null when closed.
+  const [blitzCards, setBlitzCards] = useState<Criterion[] | null>(null);
   const flags = useFlags(authUser?.id ?? null);
 
   // Open a stored session's feedback (from the home "recent sessions" list).
   async function loadSession(id: string) {
     setError(null);
+    scoreRunRef.current++; // a stored session's score is authoritative; drop any pending grade
     try {
       const d = await getSession(id);
       setScenario(d.scenario);
@@ -172,6 +210,7 @@ export default function App() {
   // Re-run the SAME scenario so the user can apply the feedback immediately.
   function tryAgain() {
     if (!scenario || !score) return;
+    scoreRunRef.current++; // cancel any background grade in flight
     track("try_again", { event: eventId });
     setPriorSnapshot(snapshotOf(score, delivery));
     setRetryOf(currentSessionId); // link the retry to the saved run (null if anon/unsaved)
@@ -336,13 +375,47 @@ export default function App() {
     setClockRunning(true);
   };
 
+  const prefetchKey = (ev: string, lv: Level, md: Mode) => `${ev}|${lv}|${md}`;
+
+  // Fire the scenario request as soon as event + level (+ mode) are chosen, so it's
+  // often already done by the time the user finishes the optional focus box. Only
+  // the no-focus combo is prefetched; adding focus text simply isn't reused (see
+  // generate). Debounced so flipping through events doesn't fire a request each.
+  useEffect(() => {
+    if (stage !== "pick" || !eventId) return;
+    const key = prefetchKey(eventId, level, practiceMode);
+    if (prefetchRef.current?.key === key) return; // already prefetching this exact combo
+    const t = window.setTimeout(() => {
+      const promise = postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId) });
+      promise.catch(() => {}); // speculative — swallow; generate() re-requests on demand
+      prefetchRef.current = { key, promise };
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [stage, eventId, level, practiceMode]);
+
   async function generate() {
     if (!eventId) return;
     setError(null);
+    scoreRunRef.current++; // cancel any background grade still in flight from a prior run
     setStage("loading");
     try {
-      const s = await postScenario({ event: eventId, request: request.trim(), level, mode: practiceMode });
-      track("scenario_generated", { level, mode: practiceMode, event: eventId, focused: !!request.trim() });
+      const focus = request.trim();
+      const key = prefetchKey(eventId, level, practiceMode);
+      let s: ScenarioResponse;
+      if (!focus && prefetchRef.current?.key === key) {
+        // Reuse the request fired while they filled the focus box; if that
+        // speculative request errored, fall back to a fresh one.
+        try {
+          s = await prefetchRef.current.promise;
+        } catch {
+          s = await postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId) });
+        }
+      } else {
+        s = await postScenario({ event: eventId, request: focus, level, mode: practiceMode, avoid: recentCombos(eventId) });
+      }
+      prefetchRef.current = null; // consumed
+      if (s.sampling) recordCombo(eventId, s.sampling.signature); // remember this combo to vary the next
+      track("scenario_generated", { level, mode: practiceMode, event: eventId, focused: !!focus });
       setScenario(s);
       setResponseText("");
       setAudioBlob(null);
@@ -363,85 +436,52 @@ export default function App() {
     }
   }
 
-  async function submit() {
-    if (!scenario) return;
-    setError(null);
-    setStage("scoring");
-    // Funnel: they hit submit. Pairs with `scored` to expose the gap between
-    // "tried to submit" and "got a score" — i.e. transcription/scoring failures.
-    track("response_submitted", { mode, event: eventId });
+  // Grade the content (indicators + solution + presentation). Runs in the
+  // BACKGROUND for spoken runs — the delivery-first screen is already visible —
+  // so this only sets the score/stage when its run is still the active one.
+  async function runScoring(
+    runId: number,
+    sc: ScenarioResponse,
+    responseForScoring: string,
+    deliveryMetrics: DeliveryMetrics | null,
+    runUtterances: Utterance[],
+  ) {
     try {
-      let responseForScoring = responseText;
-      let deliveryMetrics: DeliveryMetrics | null = null;
-      let runUtterances: Utterance[] = [];
-
-      // Spoken path: transcribe first, then score the transcript.
-      if (mode === "speak") {
-        if (!audioBlob) {
-          setError("No recording found — record your response first, then submit.");
-          setStage("respond");
-          return;
-        }
-        let d: DeliveryResponse;
-        try {
-          d = await postDelivery(audioBlob, scenario.timing.target_seconds, scenario.team);
-        } catch (e) {
-          // Transcription failed — silent/empty/unclear clip, or the provider was
-          // unreachable. Send them back to re-record (not on to the questions) with
-          // the reason shown, instead of the old bare "HTTP 502".
-          track("transcription_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
-          setError(errMsg(e));
-          setStage("respond");
-          return;
-        }
-        responseForScoring = d.transcript;
-        deliveryMetrics = d.metrics;
-        runUtterances = d.utterances;
-        setUtterances(d.utterances); // team: speaker-labeled turns for the transcript
-        setResponseText(d.transcript); // so the Transcript tab can highlight it
-      }
-
-      if (!responseForScoring.trim()) {
-        // Valid audio the provider heard as silence — comes back as empty text.
-        track("recording_silent", { event: eventId });
-        setError("We couldn't hear anything in that recording — it came through silent. Check your mic, then record again.");
-        setStage("respond");
-        return;
-      }
-
       // Spoken follow-up: transcribe it too (content only — its delivery isn't graded).
       let followupForScoring = followupAnswer;
       if (followupMode === "speak" && followupAudio) {
-        const fd = await postDelivery(followupAudio, scenario.timing.target_seconds);
+        const fd = await postDelivery(followupAudio, sc.timing.target_seconds);
+        if (scoreRunRef.current !== runId) return;
         followupForScoring = fd.transcript;
         setFollowupAnswer(fd.transcript);
       }
 
       const result = await postScore({
-        scenario: scenario.situation,
-        criteria_ids: scenario.criteria.map((c) => c.id),
+        scenario: sc.situation,
+        criteria_ids: sc.criteria.map((c) => c.id),
         response: responseForScoring,
-        followup_questions: scenario.followup_questions,
+        followup_questions: sc.followup_questions,
         followup_answer: followupForScoring,
         event: eventId, // lets the backend run math checks for quantitative events
         // Section 3 blends objective delivery metrics with the judge's read when spoken.
-        spoken: mode === "speak" && !!deliveryMetrics,
+        spoken: !!deliveryMetrics,
         delivery_score: deliveryMetrics ? deliveryMetrics.delivery_score : null,
       });
-      setDelivery(deliveryMetrics);
+      if (scoreRunRef.current !== runId) return; // a restart/retry superseded this grade
       setScore(result);
+      setStage("feedback");
       track("scored", {
         total_points: result.total_points,
         pct: result.overall_percent,
         mode,
-        practice_mode: scenario.mode,
+        practice_mode: sc.mode,
         has_delivery: !!deliveryMetrics,
         onboarding,
       });
       // Persist the completed run (logged in) or stash it to attach on sign-up.
       setCurrentSessionId(null);
       void saveOrStash({
-        scenario,
+        scenario: sc,
         score: result,
         response: responseForScoring,
         followup_answer: followupForScoring,
@@ -450,8 +490,8 @@ export default function App() {
         event_id: eventId,
         retry_of_session_id: retryOf,
       });
-      setStage("feedback");
     } catch (e) {
+      if (scoreRunRef.current !== runId) return;
       // Scoring itself failed (e.g. the grading call errored or timed out). Track
       // it so a run that submitted but never `scored` is visible, not silent.
       track("score_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
@@ -460,7 +500,70 @@ export default function App() {
     }
   }
 
+  async function submit() {
+    if (!scenario) return;
+    setError(null);
+    // Funnel: they hit submit. Pairs with `scored` to expose the gap between
+    // "tried to submit" and "got a score" — i.e. transcription/scoring failures.
+    track("response_submitted", { mode, event: eventId });
+    const runId = ++scoreRunRef.current;
+    const sc = scenario;
+
+    // Spoken path: transcribe first (the slow step), then show delivery IMMEDIATELY
+    // and grade the content in the background (Phase 2a).
+    if (mode === "speak") {
+      if (!audioBlob) {
+        setError("No recording found — record your response first, then submit.");
+        setStage("respond");
+        return;
+      }
+      setStage("scoring"); // transcription loader — delivery metrics aren't ready yet
+      let d: DeliveryResponse;
+      try {
+        d = await postDelivery(audioBlob, sc.timing.target_seconds, sc.team);
+      } catch (e) {
+        // Transcription failed — silent/empty/unclear clip, or the provider was
+        // unreachable. Send them back to re-record (not on to the questions) with
+        // the reason shown, instead of the old bare "HTTP 502".
+        track("transcription_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
+        setError(errMsg(e));
+        setStage("respond");
+        return;
+      }
+      if (scoreRunRef.current !== runId) return;
+      if (!d.transcript.trim()) {
+        // Valid audio the provider heard as silence — comes back as empty text.
+        track("recording_silent", { event: eventId });
+        setError("We couldn't hear anything in that recording — it came through silent. Check your mic, then record again.");
+        setStage("respond");
+        return;
+      }
+      // Delivery metrics are deterministic and ready now — render them at once,
+      // leaving the content score to stream in behind them.
+      setUtterances(d.utterances); // team: speaker-labeled turns for the transcript
+      setResponseText(d.transcript); // so the Transcript tab can highlight it
+      setDelivery(d.metrics);
+      setScore(null);
+      setStage("feedback");
+      void runScoring(runId, sc, d.transcript, d.metrics, d.utterances);
+      return;
+    }
+
+    // Typed path: no delivery to show first, so keep the grading loader until the
+    // content score lands.
+    if (!responseText.trim()) {
+      setError("Type your response first, then submit.");
+      setStage("respond");
+      return;
+    }
+    setDelivery(null);
+    setScore(null);
+    setStage("scoring");
+    await runScoring(runId, sc, responseText, null, []);
+  }
+
   function restart() {
+    scoreRunRef.current++; // cancel any background grade in flight
     setScenario(null);
     setScore(null);
     setDelivery(null);
@@ -510,6 +613,7 @@ export default function App() {
           onClose={() => setFlashcard(null)}
         />
       )}
+      {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => setBlitzCards(null)} />}
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
@@ -541,6 +645,7 @@ export default function App() {
           <FlashcardLibrary
             flags={flags}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
+            onBlitz={(cards) => { track("blitz_started", { count: cards.length }); setBlitzCards(cards); }}
           />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />
@@ -687,6 +792,10 @@ export default function App() {
                       ]
                 }
               />
+            )}
+
+            {stage === "feedback" && scenario && !score && delivery && (
+              <DeliveryFirstScreen scenario={scenario} delivery={delivery} audioBlob={audioBlob} />
             )}
 
             {stage === "feedback" && score && scenario && (
@@ -1217,17 +1326,32 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
   onSignup?: () => void;
   onSignOut?: () => void;
 }) {
+  // Below `md` the full nav can't fit a phone's width without overflowing (the
+  // horizontal-scroll "bar"), so it collapses into a disclosure menu. The theme
+  // toggle stays inline — it's a one-tap affordance students use constantly.
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+  // Any menu choice both runs the action and closes the sheet.
+  const pick = (fn?: () => void) => () => { setMenuOpen(false); fn?.(); };
+
   return (
     <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md dark:bg-slate-950/60">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
-        <button onClick={() => onView("home")} className="flex items-center gap-2.5 text-left">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3.5">
+        <button onClick={() => onView("home")} className="flex min-w-0 items-center gap-2.5 text-left">
           <BrandMark />
-          <div className="leading-none">
+          <div className="min-w-0 leading-none">
             <div className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">PI Coach</div>
-            <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">DECA role-play practice</div>
+            <div className="mt-1 truncate font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">DECA role-play practice</div>
           </div>
         </button>
-        <nav className="flex items-center gap-4 sm:gap-5">
+
+        {/* Desktop nav (md+): the full inline row. */}
+        <nav className="hidden items-center gap-4 md:flex md:gap-5">
           {userEmail ? (
             <NavLink active={view === "home"} onClick={onHome}>Home</NavLink>
           ) : (
@@ -1239,15 +1363,15 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           <button
             onClick={onFeedback}
             aria-label="Send feedback"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2 py-1 text-sm font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-indigo-800 sm:px-2.5"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-sm font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-indigo-800"
           >
             <span className="text-sm leading-none">💬</span>
-            <span className="hidden sm:inline">Feedback</span>
+            <span>Feedback</span>
           </button>
           {authReady && (userEmail ? (
             <AccountMenu email={userEmail} onSignOut={onSignOut} />
           ) : (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-3">
               <button
                 onClick={onLogin}
                 className="text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
@@ -1264,8 +1388,61 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           ))}
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </nav>
+
+        {/* Mobile cluster (< md): theme toggle + hamburger. */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            </svg>
+          </button>
+        </div>
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
+
+      {/* Mobile disclosure sheet. Full-width stacked items with 44px+ hit areas. */}
+      {menuOpen && (
+        <nav className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:hidden">
+          <div className="mx-auto flex max-w-5xl flex-col gap-1">
+            {userEmail ? (
+              <MobileNavItem active={view === "home"} onClick={pick(onHome)}>Home</MobileNavItem>
+            ) : (
+              <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
+            )}
+            {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Flashcards</MobileNavItem>}
+            <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips</MobileNavItem>
+            <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ</MobileNavItem>
+            <MobileNavItem active={false} onClick={pick(onFeedback)}>💬 Feedback</MobileNavItem>
+            {authReady && (userEmail ? (
+              <>
+                <div className="mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400">{userEmail}</div>
+                <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
+              </>
+            ) : (
+              <div className="mt-2 flex flex-col gap-2">
+                <button
+                  onClick={pick(onLogin)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Log in
+                </button>
+                <button
+                  onClick={pick(onSignup)}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                >
+                  Sign up
+                </button>
+              </div>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
@@ -1331,6 +1508,23 @@ function NavLink({ active, onClick, children }: { active: boolean; onClick: () =
           active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
         }`}
       />
+    </button>
+  );
+}
+
+// Full-width row for the mobile disclosure menu — a comfortable 44px tap target.
+function MobileNavItem({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`flex min-h-11 items-center rounded-xl px-3 text-left text-sm font-medium transition ${
+        active
+          ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
+          : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+      }`}
+    >
+      {children}
     </button>
   );
 }
@@ -2129,11 +2323,20 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | n
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
-      const mr = new MediaRecorder(stream);
+      // iOS Safari records audio/mp4 (not webm); Chrome/Firefox prefer webm/opus.
+      // Negotiate the first container the browser actually supports instead of
+      // relying on the UA default, and label the blob with the SAME type the
+      // recorder used (its mimeType, else our negotiated pick) so the upload's
+      // extension matches the bytes.
+      const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+      const chosen = typeof MediaRecorder.isTypeSupported === "function"
+        ? preferred.find((t) => MediaRecorder.isTypeSupported(t))
+        : undefined;
+      const mr = chosen ? new MediaRecorder(stream, { mimeType: chosen }) : new MediaRecorder(stream);
       chunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mr.mimeType || "audio/webm" });
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || chosen || "audio/mp4" });
         onRecorded(blob);
         setState("recorded");
         stream.getTracks().forEach((t) => t.stop());
@@ -2144,8 +2347,18 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | n
       setState("recording");
       onStart?.(); // starting to speak starts the presentation clock
       timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
-    } catch {
-      setErr("Microphone access was blocked. Allow mic permission in your browser and try again.");
+    } catch (e) {
+      // Distinguish the common failures so the message is actionable on mobile.
+      const name = e instanceof DOMException ? e.name : "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setErr("Microphone permission was blocked. Allow mic access for this site in your browser settings, then try again.");
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setErr("No microphone was found. Check that your device has a working mic and it isn't in use by another app.");
+      } else if (typeof MediaRecorder === "undefined") {
+        setErr("Recording isn't supported in this browser. Switch to Type mode, or try Safari/Chrome.");
+      } else {
+        setErr("We couldn't start recording. Close other apps using the mic and try again, or switch to Type mode.");
+      }
     }
   }
 
@@ -2181,7 +2394,7 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | n
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">✓ Recorded — listen back below.</div>
           {previewUrl && <audio controls src={previewUrl} className="w-full" />}
-          <button onClick={reset} className="font-mono text-xs font-medium text-slate-500 dark:text-slate-400 underline">Re-record</button>
+          <button onClick={reset} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 font-mono text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200">↺ Re-record</button>
         </div>
       )}
     </div>
@@ -2260,6 +2473,33 @@ function FollowupScreen(props: {
 }
 
 // --- feedback --------------------------------------------------------------
+
+// Delivery-first results (Phase 2a): shown the instant transcription lands, while
+// the content score is still grading. Delivery metrics are deterministic (no model
+// call), so the student reads real feedback — pace, fillers, pauses, timing — and
+// can play their recording back during the wait instead of watching a spinner.
+function DeliveryFirstScreen({ scenario, delivery, audioBlob }: { scenario: ScenarioResponse; delivery: DeliveryMetrics; audioBlob: Blob | null }) {
+  return (
+    <div className="space-y-5">
+      <Card>
+        <Eyebrow>Delivery — ready now</Eyebrow>
+        <h2 className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100">
+          {scenario.topic}
+        </h2>
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+          <span className="pic-spin h-4 w-4 shrink-0 rounded-full border-2 border-indigo-300 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-300" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">Grading your content…</p>
+            <p className="text-xs leading-relaxed text-indigo-800/80 dark:text-indigo-300/80">
+              Read your delivery below while we score your indicators and solution. Your full feedback drops in here in a few seconds.
+            </p>
+          </div>
+        </div>
+      </Card>
+      <DeliveryTab metrics={delivery} audioBlob={audioBlob} />
+    </div>
+  );
+}
 
 function ScorePill({ label, value, weight }: { label: string; value: number; weight: string }) {
   return (

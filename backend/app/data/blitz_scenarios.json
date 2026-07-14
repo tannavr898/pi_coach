@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "note": "Short, predetermined scenarios for Mastery Blitz (Phase 5). Independently authored, general business situations — no DECA content. Each is 2-3 sentences and broad enough that any framework term can be applied to it in context. Picked at random per drill; the loop stays LLM-free.",
+  "scenarios": [
+    { "id": "bakery-chain", "text": "You're advising the owner of a neighborhood bakery. Foot traffic is down about 20% since a chain cafe opened two blocks away, the budget is tight, and the owner wants a plan for the next quarter." },
+    { "id": "studio-launch", "text": "You're the manager of a new boutique fitness studio opening downtown next month. You have one shot at a strong launch, a modest marketing budget, and a lot of established gyms nearby." },
+    { "id": "app-retention", "text": "You're on the team at a consumer mobile app. Lots of people download it, but most stop using it within a week, and leadership wants that fixed before the next funding conversation." },
+    { "id": "food-truck-scale", "text": "You're advising a food-truck owner who's doing well and wants to add a second truck. Cash is limited, staff is stretched, and one bad decision could sink the whole business." },
+    { "id": "retail-shrink", "text": "You manage a mid-size electronics store. Sales are steady but profit is slipping, and you suspect a mix of rising costs and inventory problems is to blame." },
+    { "id": "salon-reviews", "text": "You're advising the owner of a hair salon whose online reviews have turned negative after a few bad experiences. New-client bookings have dropped and the owner is worried about the reputation spreading." },
+    { "id": "nonprofit-donors", "text": "You work at a small nonprofit that relies on a handful of large donors. One major donor just pulled out, and you need a plan to stabilize funding without alienating the people you serve." },
+    { "id": "startup-pricing", "text": "You're a founder about to launch a subscription software product for small businesses. You haven't set a price yet, competitors range widely, and you only get one first impression." },
+    { "id": "restaurant-turnover", "text": "You manage a busy family restaurant losing servers faster than you can train them. Service quality is slipping, customers are noticing, and hiring season is competitive." },
+    { "id": "boutique-expansion", "text": "You're advising an online clothing boutique that wants to open its first physical store. Demand looks strong online, but a lease is a big fixed commitment and the team has never run a storefront." },
+    { "id": "coffee-loyalty", "text": "You manage a coffee shop with lots of one-time visitors but few regulars. The owner wants more repeat business but is skeptical of spending on a complicated loyalty program." },
+    { "id": "hotel-slow-season", "text": "You're the manager of a beach-town hotel heading into a slow off-season. Rooms will sit empty for months unless you find a way to fill them, and deep discounting could cheapen the brand." },
+    { "id": "manufacturer-cost", "text": "You're advising a small manufacturer whose material costs just jumped. Raising prices risks losing key customers, but absorbing the increase would wipe out the margin on every unit." },
+    { "id": "gym-competitor", "text": "You manage a neighborhood gym. A big-box fitness chain just opened nearby with lower prices and more equipment, and some of your members are already asking why they should stay." },
+    { "id": "bookstore-event", "text": "You're advising an independent bookstore that wants to draw more people in. The owner has space for events and a small community following, but limited time and no dedicated marketing person." },
+    { "id": "juice-launch", "text": "You're on the team at a small juice brand about to put a new product on grocery shelves. Shelf space is competitive, the launch window is short, and first-week sales will shape whether stores keep carrying it." }
+  ]
+}

@@ -27,7 +27,7 @@ import logging
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import admin_samples, config, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, transcription
+from . import admin_samples, blitz, config, db, delivery, events, flashcards, framework, interpret, llm, notify, progress, prompts, rubric, taxonomy, transcription
 from .auth import current_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, rate_limit
@@ -46,6 +46,11 @@ from .schemas import (
     PresentationSection,
     ProgressResponse,
     PublicConfig,
+    BlitzScenario,
+    BlitzResult,
+    BlitzScoreRequest,
+    BlitzScoreResponse,
+    Sampling,
     ScenarioRequest,
     ScenarioResponse,
     ScoreRequest,
@@ -56,6 +61,7 @@ from .schemas import (
     SessionSummary,
     SubScore,
     Timing,
+    TranscribeResponse,
     Utterance,
 )
 from . import mathcheck
@@ -107,14 +113,27 @@ def get_events() -> list[EventSummary]:
 
 @app.get("/api/criteria", response_model=list[Criterion])
 def get_criteria(ids: str = "") -> list[Criterion]:
-    """Full teaching fields for framework criteria (Learn-mode view: definition +
-    strong/weak looks-like + coaches). With `ids` (comma list) returns just those,
-    for a user's weak-criterion flashcards; with no `ids` returns the WHOLE
-    framework, for the flashcard library grouped by domain."""
+    """Flashcard content for framework criteria. With `ids` (comma list) returns just
+    those (a user's weak-criterion deck); with no `ids` returns the WHOLE framework
+    (the library). Each card carries a plain definition, a term-specific worked
+    example run through the four DECA beats, and one common-mistake line (Phase 4);
+    the old strong/weak fields are still sent for back-compat but no longer shown."""
     fields = ("id", "domain", "topic", "name", "definition", "strong_looks_like", "weak_looks_like", "coaches")
     wanted = [x.strip() for x in ids.split(",") if x.strip()]
     source = framework.get_criteria(wanted) if wanted else framework.all_criteria()
-    return [Criterion(**{k: c.get(k, "") for k in fields}) for c in source]
+    out: list[Criterion] = []
+    for c in source:
+        base = {k: c.get(k, "") for k in fields}
+        content = flashcards.content_for(c["id"])
+        if content:
+            # The flashcard definition is the plain, student-facing one — it overrides
+            # the grading-question definition on this (display-only) path.
+            base["definition"] = content.get("definition") or base["definition"]
+            ex = content.get("example") or {}
+            base["example"] = {k: ex.get(k, "") for k in ("define", "explain", "connect", "above")}
+            base["mistake"] = content.get("mistake", "")
+        out.append(Criterion(**base))
+    return out
 
 
 @app.get("/api/rubric")
@@ -176,12 +195,28 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
     except llm.LLMError as e:
         raise HTTPException(status_code=502, detail=str(e))
 
+    # 1b) Scenario variety (Phase 3): on the no-focus path (where scenarios were
+    # repetitive), sample a fixed combination from the event's taxonomy and inject
+    # it as concrete parameters, so the model executes on a given setup instead of
+    # inventing diversity. A free-text focus is the user steering it themselves, so
+    # we leave that path to the interpretation above. Events without a taxonomy
+    # entry yet fall through unchanged.
+    sampled = None
+    if event is not None and not req.request.strip() and taxonomy.has_event(event["id"]):
+        sampled = taxonomy.sample(event["id"], req.avoid)
+    if sampled is not None:
+        interp["topic"] = sampled["dims"]["subtopic"]["label"]
+        interp["industry"] = sampled["dims"]["business_type"]["label"]
+
     pool = interpret.candidate_pool(interp["domain_ids"])
 
     # 2) Generate: the model selects the criteria from the pool AND writes the scenario.
-    system, user = prompts.build_scenario_prompt(interp["topic"], interp["industry"], req.level, pool, event)
+    system, user = prompts.build_scenario_prompt(
+        interp["topic"], interp["industry"], req.level, pool, event,
+        params=sampled["labels"] if sampled else None,
+    )
     try:
-        raw = llm.complete(system, user, max_tokens=1600)
+        raw = llm.complete(system, user, model=config.SCENARIO_MODEL, max_tokens=1600)
         data = llm.parse_json_object(raw)
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -215,6 +250,7 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
         procedures=PROCEDURES,
         situation=situation,
         followup_questions=followups,
+        sampling=Sampling(signature=sampled["signature"], labels=sampled["labels"]) if sampled else None,
     )
 
 
@@ -325,7 +361,7 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
         quantitative, req.spoken, req.delivery_score,
     )
     try:
-        raw = llm.complete(system, user, max_tokens=4096)
+        raw = llm.complete(system, user, model=config.SCORING_MODEL, max_tokens=4096)
         data = llm.parse_json_object(raw)
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -432,6 +468,88 @@ def score_delivery(
             for u in result.utterances if u.text
         ]
     return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics), utterances=utterances)
+
+
+# --- Mastery Blitz (Phase 5) -----------------------------------------------
+# A rapid drill over the flashcard terms. The loop is model-free; the ONLY model
+# call is the single batched scoring pass below (fast/cheap Haiku). Everything is
+# session-local on the client — no accounts, no persistence.
+
+
+@app.get("/api/blitz/scenarios", response_model=list[BlitzScenario])
+def blitz_scenarios() -> list[BlitzScenario]:
+    """The static pool of short drill scenarios (the client picks one per round)."""
+    return [BlitzScenario(**s) for s in blitz.scenarios()]
+
+
+@app.post("/api/transcribe", response_model=TranscribeResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
+    """Transcript only (no delivery metrics) — used for spoken blitz answers, which
+    are graded on content, not delivery. Each recording is transcribed as it's
+    captured so the drill never waits."""
+    raw = audio.file.read()
+    if not raw:
+        raise HTTPException(status_code=422, detail="Nothing was recorded.")
+    try:
+        result = transcription.transcribe(raw, diarize=False)
+    except transcription.TranscriptionNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except transcription.TranscriptionError:
+        raise HTTPException(status_code=502, detail="Couldn't transcribe that recording — try again or type your answer.")
+    return TranscribeResponse(transcript=result.text)
+
+
+@app.post("/api/blitz-score", response_model=BlitzScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
+    """Grade a whole drill in ONE batched call: for each term, 'used correctly and
+    in context?' -> correct | partial | missed + a one-line note. Criterion text is
+    re-pinned server-side by id (never trusted from the client)."""
+    # Resolve each answer's term server-side: plain definition + the flashcard's
+    # 'Connect' beat as the gold-standard "correct use" reference.
+    items: list[dict] = []
+    order: list[str] = []
+    for a in req.answers:
+        crit = framework.get_criteria([a.criterion_id])
+        if not crit:
+            continue  # unknown id — skip rather than fail the whole drill
+        c = crit[0]
+        content = flashcards.content_for(a.criterion_id) or {}
+        definition = content.get("definition") or c.get("definition", "")
+        good = (content.get("example") or {}).get("connect", "")
+        items.append({"name": c["name"], "definition": definition, "good_example": good, "response": a.response})
+        order.append(a.criterion_id)
+
+    if not items:
+        raise HTTPException(status_code=400, detail="No known terms to grade.")
+
+    system, user = prompts.build_blitz_prompt(req.scenario, items)
+    try:
+        raw = llm.complete(system, user, model=config.BLITZ_MODEL, max_tokens=1024)
+        data = llm.parse_json_object(raw)
+    except llm.LLMNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except llm.LLMError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    # Map the model's per-index verdicts back onto criterion ids; default to
+    # "missed" for anything the model skipped, so the client always gets N results.
+    by_index: dict[int, dict] = {}
+    for r in data.get("results", []):
+        try:
+            by_index[int(r.get("index"))] = r
+        except (TypeError, ValueError):
+            continue
+    valid = {"correct", "partial", "missed"}
+    results: list[BlitzResult] = []
+    for i, cid in enumerate(order):
+        r = by_index.get(i, {})
+        verdict = str(r.get("verdict", "missed")).lower()
+        results.append(BlitzResult(
+            criterion_id=cid,
+            verdict=verdict if verdict in valid else "missed",  # type: ignore[arg-type]
+            note=str(r.get("note", "")).strip(),
+        ))
+    return BlitzScoreResponse(results=results)
 
 
 # --- account: persist sessions + cross-session progress --------------------

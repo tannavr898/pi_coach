@@ -13,7 +13,7 @@ from typing import Any
 
 import anthropic
 
-from .config import MODEL
+from .config import MODEL, SCENARIO_MODEL, SCORING_MODEL  # noqa: F401  (re-exported for callers)
 
 
 class LLMNotConfigured(RuntimeError):
@@ -36,13 +36,21 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def complete(system: str, user: str, *, max_tokens: int = 2048) -> str:
-    """Run one non-streaming completion and return the concatenated text."""
+def complete(system: str, user: str, *, model: str | None = None, max_tokens: int = 2048) -> str:
+    """Run one non-streaming completion and return the concatenated text.
+
+    `model` selects the job-specific model (SCENARIO_MODEL / SCORING_MODEL); it
+    falls back to the shared MODEL. We pin `thinking` OFF: Sonnet 5 turns adaptive
+    thinking ON by default when the field is omitted (Sonnet 4.6 did not), which
+    would add latency and let thinking tokens eat into `max_tokens` and truncate
+    the JSON we parse. Disabling it preserves the old fast, JSON-only behavior.
+    """
     client = _get_client()
     try:
         msg = client.messages.create(
-            model=MODEL,
+            model=model or MODEL,
             max_tokens=max_tokens,
+            thinking={"type": "disabled"},
             system=system,
             messages=[{"role": "user", "content": user}],
         )
