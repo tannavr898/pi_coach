@@ -107,3 +107,63 @@ async def get_session(user_id: str, session_id: str) -> dict | None:
     resp.raise_for_status()
     rows = resp.json()
     return rows[0] if rows else None
+
+
+# --- study courses ---------------------------------------------------------
+
+STUDY_SELECT = "term_id,status,best_evidence,seen_count,correct_count,last_seen_at"
+
+
+async def get_study_profile(user_id: str) -> dict | None:
+    """Which event this user is studying for, or None if they haven't picked."""
+    params = {"user_id": f"eq.{user_id}", "limit": "1", "select": "event_id,started_at"}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(f"{_base()}/study_profile", headers=_headers(), params=params)
+    resp.raise_for_status()
+    rows = resp.json()
+    return rows[0] if rows else None
+
+
+async def set_study_profile(user_id: str, event_id: str) -> dict:
+    """Enroll (or re-enroll) a user in an event's course."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{_base()}/study_profile",
+            headers={**_headers(), "Prefer": "return=representation,resolution=merge-duplicates"},
+            params={"on_conflict": "user_id"},
+            json={"user_id": user_id, "event_id": event_id, "updated_at": "now()"},
+        )
+    resp.raise_for_status()
+    data = resp.json()
+    return data[0] if isinstance(data, list) and data else data
+
+
+async def list_study_progress(user_id: str, term_ids: list[str] | None = None) -> list[dict]:
+    """A user's per-term progress. `term_ids` narrows it to the terms we're about to
+    fold a result into (a read-modify-write needs the current rows first)."""
+    params = {"user_id": f"eq.{user_id}", "select": STUDY_SELECT, "limit": "5000"}
+    if term_ids:
+        # PostgREST `in` list: in.("a","b"). Quote to survive ids with punctuation.
+        quoted = ",".join(f'"{t}"' for t in term_ids)
+        params["term_id"] = f"in.({quoted})"
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(f"{_base()}/study_progress", headers=_headers(), params=params)
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def upsert_study_progress(user_id: str, rows: list[dict]) -> int:
+    """Upsert study rows for one user. Rows come from study.apply(); we stamp the
+    user and timestamp here so callers can't write to somebody else's map."""
+    if not rows:
+        return 0
+    payload = [{**r, "user_id": user_id, "last_seen_at": "now()"} for r in rows]
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.post(
+            f"{_base()}/study_progress",
+            headers={**_headers(), "Prefer": "return=minimal,resolution=merge-duplicates"},
+            params={"on_conflict": "user_id,term_id"},
+            json=payload,
+        )
+    resp.raise_for_status()
+    return len(payload)

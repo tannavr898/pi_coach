@@ -105,6 +105,57 @@ across sessions and covers the real conceptual territory of each field, while
 every indicator stays independently authored. The density approaches a real
 role-play's; the wording, structure, grouping, and ids remain entirely ours.
 
+## The study corpus (terms.json) — added after the framework
+
+`framework.json` is what we **grade**. `terms.json` is what a student **studies**.
+They were the same objects until the study library needed to be bigger than the
+grading framework, and splitting them is what let the corpus grow without touching
+scoring.
+
+- **The framework stays at 282.** Scenario selection draws 4–6 from it and mastery
+  math is tuned around it; none of that changed.
+- **The corpus is 830 terms** — the 282 graded ones plus 548 study-only terms, each
+  with a plain definition, a worked example through the four beats, and one common
+  mistake.
+- **`criterion_id`** links a term to its criterion when it has one. `tier` is
+  **core** exactly when that link exists — so "core" means *a skill we actually grade
+  you on*, which is what makes the Core study path a real promise rather than a
+  progress bar. A test pins that invariant (`tests/test_independence.py`).
+- **Ids:** the original 282 keep their `FW-*` id; study-only terms are `T-*`. Both
+  are plainly ours and neither resembles a coded PI list.
+
+The same two hard rules govern the corpus. Terms were authored **blind** from
+business fundamentals: `scripts/gen_terms.py` never reads `backend/reference/`, and
+it cannot — the similarity helpers it uses to dedupe its own output live in
+`scripts/_textsim.py` precisely so the authoring path has no import route to the PI
+list. Independence is checked **after** the fact (below). Author blind; audit after.
+
+### Why not just make the framework bigger?
+
+Tripling the *grading* framework would have been the easy version and the wrong one.
+It would reshape scenario selection and mastery, and — more importantly — it would
+have pushed the graded criteria toward the fine grain that is the actual legal risk
+(see below). Keeping grading at 282 means the audited artifact stays the audited
+artifact, and the growth happens in a layer that is straightforwardly a business
+glossary.
+
+### The depth award (grading touches the corpus, carefully)
+
+Section 2 offers the grader ~16 study terms adjacent to the criteria being graded,
+and pays a **bonus-only** 0/+0.25/+0.5 for genuinely applying one. This is the one
+place study content touches scoring, so three things constrain it:
+
+1. It lives in **Section 2 (application), never Section 1**, whose strong/weak bar is
+   the anti-inflation mechanism.
+2. It is **capped** by the existing `min(4, …)`, so vocabulary can never paper over
+   weak analysis, and it is bonus-only — a plain correct answer loses nothing.
+3. **Mention earns nothing.** The bonus is zeroed unless the model cites a quote we
+   can find verbatim in the participant's own words (`main.py:_quoted`). That guard
+   is code, not prompt wording.
+
+None of this involves DECA's list: the offered vocabulary is our own terms, chosen by
+our own topic adjacency.
+
 ## The grain (the most important design rule)
 
 Indicators are authored at a **coachable, explainable grain**: each names *one
@@ -205,8 +256,78 @@ Result: no criterion was found to mirror a PI's phrasing, trace their list 1-to-
 or read as sourced from their sheet. The framework stands on public business
 fundamentals.
 
+### The audit is now automated
+
+The review above was a one-time human read-through, and nothing re-ran it. Tripling
+the corpus is exactly the point where that stops being good enough, so it is now a
+script: **`scripts/check_independence.py`**, plus `tests/test_independence.py`, which
+skips when `backend/reference/` is absent (CI and Docker have no copy, by design) and
+runs the real comparison on an authoring machine.
+
+What it measures, and why shared vocabulary is not the signal:
+
+- **`run`** — longest run of consecutive shared content words. The primary red flag:
+  an 8-word shared run is not parallel invention. Fails at ≥ 8.
+- **`ratio`** — sequence similarity across the whole text. Catches paraphrase.
+  Fails at ≥ 0.60.
+- **`jaccard`** — bag-of-words overlap. **Informational only.** Two people writing
+  about break-even will both say "fixed costs"; the concepts are public domain and
+  overlap there is expected, not evidence.
+
+It also detects near-duplicates inside our own corpus and reports per-topic
+concentration (the automated look at grain drift). The report contains PI text, so it
+is written into `backend/reference/` — already git-ignored and docker-ignored.
+
+**Result at 830 terms, audited against 1,806 performance indicators:**
+
+| | |
+|---|---|
+| FAIL (run ≥ 8 or ratio ≥ 0.60) | **0** |
+| review (run ≥ 6 or ratio ≥ 0.45) | 1 — cleared by hand¹ |
+| near-duplicates in our own corpus | 0 (2 found and retired) |
+| grain-drift topics | 0 |
+| worst case anywhere | run = 4, ratio = 0.33 |
+
+¹ *"Nonverbal Cues in Service Interactions" scored ratio 0.51 with `run = 2` — i.e.
+zero shared phrasing. Both texts describe body language with the only vocabulary that
+exists for it ("tone", "facial expressions"). Run is dispositive; the pair is clean.*
+
+The two duplicates (`T-0486`, `T-0162`) were the same card written twice in different
+domains, caught by comparing definitions rather than names, and retired with
+`gen_terms prune`.
+
+### The risk that actually matters: grain collapse
+
+Not vocabulary. Business concepts are public domain and a study glossary is the most
+defensible content in the app. The risk is **grain**: check #2 above rests on criteria
+consolidating multiple concepts, and slicing finer to reach 3x pushes each term toward
+mapping to exactly one PI — at which point the list reads as a re-derivation of their
+curated list even with entirely original wording.
+
+Three things hold that line, in order of importance:
+
+1. **The grain test is enforced in the authoring prompt.** `gen_terms.py`'s skeleton
+   prompt states it, and explicitly forbids producing terms by sub-dividing existing
+   ones: new terms must be *siblings*, not fragments.
+2. **Breadth over depth.** The expansion added 46 new topics (Taxation, International
+   Law, Public Speaking, …) rather than only slicing existing ones finer. Covering
+   more territory is safer than covering the same territory more finely.
+3. **The per-topic report**, which flags a topic whose terms are both concentrated in
+   one PI performance element *and* textually close to it.
+
 ## Maintenance
 
-Keep this file current when criteria change. If a criterion is ever added or
-reworded, re-apply the grain test and the independence test above before shipping
-it, and note the change here so the audit trail stays honest.
+Keep this file current when criteria or terms change. If either is added or reworded,
+re-apply the grain test and run `python -m scripts.check_independence` before shipping,
+and note the change here so the audit trail stays honest.
+
+The authoring loop is:
+
+```
+gen_terms skeleton  ->  review the names BY HAND  ->  gen_terms content
+                    ->  check_independence  ->  gen_terms prune <ids>
+```
+
+The by-hand review is the step that matters and the one that shouldn't be automated
+away: it is the cheapest place to catch grain and duplication, and it is where a human
+decides whether a proposed term is a real sibling or a fragment.

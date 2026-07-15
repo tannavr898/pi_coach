@@ -33,11 +33,18 @@ def test_overall_level_bands():
 
 def test_framework_has_expected_shape():
     crit = framework.all_criteria()
-    assert len(crit) > 100  # rich, competition-density framework
+    # Pinned, not a floor: the graded framework is deliberately fixed at 282 while the
+    # STUDY corpus grows past it (see app/terms.py). A change here should be a decision
+    # — it moves scenario selection and mastery math — so make the test argue back.
+    assert len(crit) == 282
     ids = [c["id"] for c in crit]
     assert len(ids) == len(set(ids))
     # no leftover PI-style codes (e.g. "CRM:001") — ids are our own FW-NNN scheme
     assert all(c["id"].startswith("FW-") for c in crit)
+    for c in crit:
+        # The grading question is the anti-inflation bar; a criterion without one
+        # would silently grade on vibes.
+        assert c["definition"] and c["strong_looks_like"] and c["weak_looks_like"], c["id"]
 
 
 def _interp_and_scenario(crit_ids):

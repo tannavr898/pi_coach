@@ -62,15 +62,15 @@ export const ONBOARDING_SCENARIO: ScenarioResponse = {
   ],
   procedures: [
     "Take a couple of minutes to look over the situation and jot down a few notes.",
-    "Then give a short spoken (or typed) recommendation — about 60–90 seconds is plenty.",
+    "Then give a short spoken (or typed) recommendation: about 60–90 seconds is plenty.",
     "You're judged on your ideas and, if you speak, on your delivery (pace, fillers, pauses).",
     "The owner will ask you one quick follow-up question at the end.",
   ],
   situation: `Your friend Maya runs a small coffee cart parked outside the local gym on weekday mornings. Business is okay at the 7-to-9am rush, but she's noticed two things: most people who buy once never come back, and her afternoons are completely dead.
 
-Maya knows you've been learning about business, so she asks for your quick advice: how could she get more first-time buyers to become regulars, and how could she bring in customers beyond the morning rush — without just cutting her prices?
+Maya knows you've been learning about business, so she asks for your quick advice: how could she get more first-time buyers to become regulars, and how could she bring in customers beyond the morning rush, without just cutting her prices?
 
-Give Maya a short, friendly recommendation. You don't need a full plan — just a few clear, practical ideas she could actually try.`,
+Give Maya a short, friendly recommendation. You don't need a full plan, just a few clear, practical ideas she could actually try.`,
   followup_questions: [
     "Nice ideas. Of everything you suggested, what's the one thing you'd have Maya try first, and how would she know within a couple of weeks whether it's working?",
   ],

@@ -1,0 +1,3842 @@
+{
+  "version": 1,
+  "note": "Proposed study terms, authored blind from business fundamentals. REVIEW THIS BY HAND before running `gen_terms content`: check the grain (one coachable skill, a sibling of its neighbours — not a fragment of one) and delete anything duplicative. Deleting a row is free; its id is simply retired.",
+  "proposed": [
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Business Ownership",
+      "name": "Business Dissolution and Wind-Down",
+      "id": "T-0001"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Business Ownership",
+      "name": "Business Formation Filing Requirements",
+      "id": "T-0002"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Business Ownership",
+      "name": "Mergers and Acquisitions Basics",
+      "id": "T-0003"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Business Ownership",
+      "name": "Partnership Agreements Essentials",
+      "id": "T-0004"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Contracts",
+      "name": "Breach of Contract Recognition",
+      "id": "T-0005"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Contracts",
+      "name": "Contract Negotiation Fundamentals",
+      "id": "T-0006"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Contracts",
+      "name": "Electronic Contracts and E-Signatures",
+      "id": "T-0007"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Ethics and Governance",
+      "name": "Conflict of Interest Recognition",
+      "id": "T-0008"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Ethics and Governance",
+      "name": "Corporate Social Responsibility Standards",
+      "id": "T-0009"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Ethics and Governance",
+      "name": "Whistleblower Protections",
+      "id": "T-0010"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "name": "Civil Versus Criminal Liability",
+      "id": "T-0011"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "name": "Jurisdiction and Venue Basics",
+      "id": "T-0012"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "name": "Sources of Business Law",
+      "id": "T-0013"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Protecting Assets",
+      "name": "Licensing Intellectual Property Rights",
+      "id": "T-0014"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Protecting Assets",
+      "name": "Trade Secret Safeguards",
+      "id": "T-0015"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Protecting Assets",
+      "name": "Trademark Registration Process",
+      "id": "T-0016"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Real Property",
+      "name": "Commercial Lease Fundamentals",
+      "id": "T-0017"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Real Property",
+      "name": "Property Ownership and Title Basics",
+      "id": "T-0018"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Real Property",
+      "name": "Zoning and Land Use Rules",
+      "id": "T-0019"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Regulation and Compliance",
+      "name": "Advertising Law Compliance",
+      "id": "T-0020"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Regulation and Compliance",
+      "name": "Antitrust and Fair Competition",
+      "id": "T-0021"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Regulation and Compliance",
+      "name": "International Trade Regulation Basics",
+      "id": "T-0022"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Regulation and Compliance",
+      "name": "Licensing and Industry Standards",
+      "id": "T-0023"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "name": "Alternative Dispute Resolution Methods",
+      "id": "T-0024"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "name": "Insurance as Risk Transfer",
+      "id": "T-0025"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "name": "Negligence and Duty of Care",
+      "id": "T-0026"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "name": "Product Liability Exposure",
+      "id": "T-0027"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "name": "Anti-Discrimination Law Basics",
+      "id": "T-0028"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "name": "Independent Contractor Classification",
+      "id": "T-0029"
+    },
+    {
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "name": "Workplace Safety Regulations",
+      "id": "T-0030"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Audience",
+      "name": "Adjusting for Cultural Differences",
+      "id": "T-0031"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Audience",
+      "name": "Anticipating Audience Questions",
+      "id": "T-0032"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Audience",
+      "name": "Tailoring Detail Level",
+      "id": "T-0033"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Digital Communication",
+      "name": "Communicating Across Time Zones",
+      "id": "T-0034"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Digital Communication",
+      "name": "Matching Tone in Text-Based Messages",
+      "id": "T-0035"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Digital Communication",
+      "name": "Virtual Meeting Etiquette",
+      "id": "T-0036"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Group",
+      "name": "Assigning Roles in Discussion",
+      "id": "T-0037"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Group",
+      "name": "Managing Group Dynamics",
+      "id": "T-0038"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Interpersonal",
+      "name": "Apologizing Professionally",
+      "id": "T-0039"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Interpersonal",
+      "name": "Building Rapport",
+      "id": "T-0040"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Interpersonal",
+      "name": "Expressing Empathy",
+      "id": "T-0041"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Interpersonal",
+      "name": "Managing Interpersonal Conflict",
+      "id": "T-0042"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Listening",
+      "name": "Controlling the Narrative",
+      "id": "T-0043"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Listening",
+      "name": "Delivering Bad News Publicly",
+      "id": "T-0044"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Listening",
+      "name": "Paraphrasing for Understanding",
+      "id": "T-0045"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Listening",
+      "name": "Recognizing Unspoken Concerns",
+      "id": "T-0046"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Negotiation",
+      "name": "Identifying Common Ground",
+      "id": "T-0047"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Negotiation",
+      "name": "Knowing When to Compromise",
+      "id": "T-0048"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Negotiation",
+      "name": "Proposing Win-Win Solutions",
+      "id": "T-0049"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Negotiation",
+      "name": "Setting Negotiation Boundaries",
+      "id": "T-0050"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Nonverbal",
+      "name": "Reading Body Language",
+      "id": "T-0051"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Nonverbal",
+      "name": "Using Eye Contact Effectively",
+      "id": "T-0052"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Nonverbal",
+      "name": "Vocal Tone and Pacing",
+      "id": "T-0053"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Persuasion",
+      "name": "Appealing to Shared Values",
+      "id": "T-0054"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Persuasion",
+      "name": "Building Credibility and Trust",
+      "id": "T-0055"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Persuasion",
+      "name": "Creating a Sense of Urgency",
+      "id": "T-0056"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Public Speaking",
+      "name": "Closing with a Call to Action",
+      "id": "T-0057"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Public Speaking",
+      "name": "Handling Impromptu Speaking",
+      "id": "T-0058"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Public Speaking",
+      "name": "Managing Presentation Nerves",
+      "id": "T-0059"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Public Speaking",
+      "name": "Opening with Impact",
+      "id": "T-0060"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Public Speaking",
+      "name": "Using Visual Aids Effectively",
+      "id": "T-0061"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Structure and Clarity",
+      "name": "Logical Sequencing of Points",
+      "id": "T-0062"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Structure and Clarity",
+      "name": "Summarizing Key Takeaways",
+      "id": "T-0063"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Structure and Clarity",
+      "name": "Using Signposting Language",
+      "id": "T-0064"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Written",
+      "name": "Business Email Etiquette",
+      "id": "T-0065"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Written",
+      "name": "Formatting for Readability",
+      "id": "T-0066"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Written",
+      "name": "Proofreading and Editing",
+      "id": "T-0067"
+    },
+    {
+      "domain_id": "communication",
+      "domain": "Communication",
+      "topic": "Written",
+      "name": "Writing Effective Summaries",
+      "id": "T-0068"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Communication",
+      "name": "Active Listening with Customers",
+      "id": "T-0069"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Communication",
+      "name": "Adjusting Tone for the Audience",
+      "id": "T-0070"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Communication",
+      "name": "Clarifying Through Questioning",
+      "id": "T-0071"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Communication",
+      "name": "Nonverbal Cues in Service Interactions",
+      "id": "T-0072"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Cultural Awareness",
+      "name": "Adapting to Cultural Differences",
+      "id": "T-0073"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Cultural Awareness",
+      "name": "Overcoming Language Barriers",
+      "id": "T-0074"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Cultural Awareness",
+      "name": "Serving Customers with Disabilities",
+      "id": "T-0075"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Ethics and Trust",
+      "name": "Handling Conflicts of Interest with Customers",
+      "id": "T-0076"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Ethics and Trust",
+      "name": "Honesty in Customer Communication",
+      "id": "T-0077"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Ethics and Trust",
+      "name": "Protecting Customer Privacy",
+      "id": "T-0078"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Feedback",
+      "name": "Analyzing Customer Feedback Trends",
+      "id": "T-0079"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Feedback",
+      "name": "Closing the Loop with Customers",
+      "id": "T-0080"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Feedback",
+      "name": "Using Surveys to Measure Satisfaction",
+      "id": "T-0081"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "name": "Creating Emotional Brand Connection",
+      "id": "T-0082"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "name": "Designing Loyalty Programs",
+      "id": "T-0083"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "name": "Rewarding Customer Referrals",
+      "id": "T-0084"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "name": "Apologizing Effectively",
+      "id": "T-0085"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "name": "Diagnosing Root Causes of Dissatisfaction",
+      "id": "T-0086"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "name": "Preventing Recurring Service Failures",
+      "id": "T-0087"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Relationships",
+      "name": "Balancing Company and Customer Interests",
+      "id": "T-0088"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Relationships",
+      "name": "Building Long-Term Customer Partnerships",
+      "id": "T-0089"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Relationships",
+      "name": "Earning Customer Trust Through Transparency",
+      "id": "T-0090"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Reputation",
+      "name": "Managing Online Reviews",
+      "id": "T-0091"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Reputation",
+      "name": "Responding to Public Criticism",
+      "id": "T-0092"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "name": "Anticipating Customer Needs",
+      "id": "T-0093"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "name": "Consistency Across Service Channels",
+      "id": "T-0094"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "name": "Empowering Employees to Solve Problems",
+      "id": "T-0095"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "name": "Using Technology to Enhance Service",
+      "id": "T-0096"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Understanding Customers",
+      "name": "Identifying Internal Customers",
+      "id": "T-0097"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Understanding Customers",
+      "name": "Mapping the Customer Journey",
+      "id": "T-0098"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Understanding Customers",
+      "name": "Recognizing Buying Motives",
+      "id": "T-0099"
+    },
+    {
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Understanding Customers",
+      "name": "Segmenting Customers by Needs",
+      "id": "T-0100"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Competition",
+      "name": "Barriers to Market Entry",
+      "id": "T-0101"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Competition",
+      "name": "Economies of Scale",
+      "id": "T-0102"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Competition",
+      "name": "Monopoly Power",
+      "id": "T-0103"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Competition",
+      "name": "Product Differentiation Strategy",
+      "id": "T-0104"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Economic Systems",
+      "name": "Command Versus Market Economies",
+      "id": "T-0105"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Economic Systems",
+      "name": "Mixed Economy Characteristics",
+      "id": "T-0106"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Economic Systems",
+      "name": "Property Rights and Incentives",
+      "id": "T-0107"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Fundamentals",
+      "name": "Circular Flow of Economic Activity",
+      "id": "T-0108"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Fundamentals",
+      "name": "Diminishing Returns",
+      "id": "T-0109"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Fundamentals",
+      "name": "Marginal Thinking",
+      "id": "T-0110"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Fundamentals",
+      "name": "Opportunity Cost Reasoning",
+      "id": "T-0111"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Global",
+      "name": "Comparative Advantage",
+      "id": "T-0112"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Global",
+      "name": "Global Supply Chain Dependence",
+      "id": "T-0113"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Global",
+      "name": "Tariffs and Trade Barriers",
+      "id": "T-0114"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Government",
+      "name": "Antitrust Enforcement",
+      "id": "T-0115"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Government",
+      "name": "Public Goods Provision",
+      "id": "T-0116"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Government",
+      "name": "Regulation and Compliance Costs",
+      "id": "T-0117"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Government",
+      "name": "Taxation and Business Decisions",
+      "id": "T-0118"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "name": "Fiscal Policy Effects",
+      "id": "T-0119"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "name": "Gross Domestic Product",
+      "id": "T-0120"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "name": "Inflation and Purchasing Power",
+      "id": "T-0121"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "name": "Monetary Policy Effects",
+      "id": "T-0122"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "name": "Unemployment and the Labor Market",
+      "id": "T-0123"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "name": "Elasticity of Demand",
+      "id": "T-0124"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "name": "Market Equilibrium",
+      "id": "T-0125"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "name": "Substitute and Complement Goods",
+      "id": "T-0126"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "name": "Surplus and Shortage Conditions",
+      "id": "T-0127"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Money",
+      "name": "Currency Exchange Rates",
+      "id": "T-0128"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Money",
+      "name": "Inflation-Adjusted Value",
+      "id": "T-0129"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Money",
+      "name": "Time Value of Money",
+      "id": "T-0130"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Resource Allocation",
+      "name": "Allocative Efficiency",
+      "id": "T-0131"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Resource Allocation",
+      "name": "Factors of Production",
+      "id": "T-0132"
+    },
+    {
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Resource Allocation",
+      "name": "Resource Substitution Decisions",
+      "id": "T-0133"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Adaptability",
+      "name": "Embracing Change",
+      "id": "T-0134"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Adaptability",
+      "name": "Flexibility in Problem Solving",
+      "id": "T-0135"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Adaptability",
+      "name": "Tolerating Ambiguity",
+      "id": "T-0136"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Communication Style",
+      "name": "Assertive Communication",
+      "id": "T-0137"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Communication Style",
+      "name": "Clarity in Expression",
+      "id": "T-0138"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Communication Style",
+      "name": "Tailoring Message to Audience",
+      "id": "T-0139"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Conflict",
+      "name": "Addressing Difficult Conversations",
+      "id": "T-0140"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Conflict",
+      "name": "De-escalating Tension",
+      "id": "T-0141"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Conflict",
+      "name": "Mediating Between Others",
+      "id": "T-0142"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Conflict",
+      "name": "Negotiating Win-Win Outcomes",
+      "id": "T-0143"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Ethics",
+      "name": "Confidentiality and Trustworthiness",
+      "id": "T-0144"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Ethics",
+      "name": "Ethical Decision Making",
+      "id": "T-0145"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Ethics",
+      "name": "Fairness in Decision Making",
+      "id": "T-0146"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Ethics",
+      "name": "Honesty in Communication",
+      "id": "T-0147"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Growth Mindset",
+      "name": "Continuous Self-Improvement",
+      "id": "T-0148"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Growth Mindset",
+      "name": "Openness to Feedback",
+      "id": "T-0149"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Growth Mindset",
+      "name": "Reflective Practice",
+      "id": "T-0150"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Growth Mindset",
+      "name": "Seeking Mentorship",
+      "id": "T-0151"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Influence",
+      "name": "Building Credibility",
+      "id": "T-0152"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Influence",
+      "name": "Persuasive Communication",
+      "id": "T-0153"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Influence",
+      "name": "Reading the Room",
+      "id": "T-0154"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Influence",
+      "name": "Storytelling to Connect",
+      "id": "T-0155"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Leadership",
+      "name": "Accountability for Team Outcomes",
+      "id": "T-0156"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Leadership",
+      "name": "Adapting Leadership Style",
+      "id": "T-0157"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Leadership",
+      "name": "Leading by Example",
+      "id": "T-0158"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Leadership",
+      "name": "Servant Leadership Mindset",
+      "id": "T-0159"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Leadership",
+      "name": "Setting a Vision",
+      "id": "T-0160"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Networking",
+      "name": "Following Up and Follow-Through",
+      "id": "T-0161"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Networking",
+      "name": "Networking for Opportunity",
+      "id": "T-0163"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Networking",
+      "name": "Relationship Building",
+      "id": "T-0164"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Others",
+      "name": "Nonverbal Communication Awareness",
+      "id": "T-0165"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Others",
+      "name": "Respecting Differing Viewpoints",
+      "id": "T-0166"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Professional Presence",
+      "name": "First Impressions Management",
+      "id": "T-0167"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Professional Presence",
+      "name": "Time and Commitment Reliability",
+      "id": "T-0168"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Professional Presence",
+      "name": "Work Ethic Demonstration",
+      "id": "T-0169"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Self",
+      "name": "Confidence Without Arrogance",
+      "id": "T-0170"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Self",
+      "name": "Emotional Self-Regulation",
+      "id": "T-0171"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Self",
+      "name": "Learning From Failure",
+      "id": "T-0172"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Self",
+      "name": "Recognizing Personal Bias",
+      "id": "T-0173"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Self",
+      "name": "Self-Motivation and Initiative",
+      "id": "T-0174"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Teamwork",
+      "name": "Constructive Feedback Exchange",
+      "id": "T-0175"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Teamwork",
+      "name": "Contributing Diverse Strengths",
+      "id": "T-0176"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Teamwork",
+      "name": "Shared Goal Commitment",
+      "id": "T-0177"
+    },
+    {
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Teamwork",
+      "name": "Supporting Team Members",
+      "id": "T-0178"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Ethics",
+      "name": "Entrepreneurial Integrity and Trust",
+      "id": "T-0179"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Ethics",
+      "name": "Social Entrepreneurship Purpose",
+      "id": "T-0180"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Ethics",
+      "name": "Sustainable Business Practices",
+      "id": "T-0181"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Growth",
+      "name": "Building Repeatable Sales Processes",
+      "id": "T-0182"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Growth",
+      "name": "Franchising as a Growth Path",
+      "id": "T-0183"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Growth",
+      "name": "Licensing for Expansion",
+      "id": "T-0184"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Innovation",
+      "name": "Creative Problem Solving",
+      "id": "T-0185"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Innovation",
+      "name": "Design Thinking Process",
+      "id": "T-0186"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Innovation",
+      "name": "Disruptive Innovation Thinking",
+      "id": "T-0187"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Innovation",
+      "name": "Prototyping New Concepts",
+      "id": "T-0188"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Model",
+      "name": "Customer Segments and Niches",
+      "id": "T-0189"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Model",
+      "name": "Distribution Channel Choices",
+      "id": "T-0190"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Model",
+      "name": "Key Partnerships and Suppliers",
+      "id": "T-0191"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Model",
+      "name": "Minimum Viable Product Design",
+      "id": "T-0192"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Networking",
+      "name": "Building a Mentor Network",
+      "id": "T-0193"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Networking",
+      "name": "Leveraging Industry Contacts",
+      "id": "T-0194"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Networking",
+      "name": "Networking at Startup Events",
+      "id": "T-0195"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Opportunity",
+      "name": "Problem-Solution Fit",
+      "id": "T-0196"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Opportunity",
+      "name": "Spotting Market Gaps",
+      "id": "T-0197"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Opportunity",
+      "name": "Trend Spotting for Ventures",
+      "id": "T-0198"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Planning",
+      "name": "Exit Strategy Planning",
+      "id": "T-0199"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Planning",
+      "name": "Forecasting Startup Demand",
+      "id": "T-0200"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Planning",
+      "name": "Setting Milestones and Timelines",
+      "id": "T-0201"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Risk",
+      "name": "Contingency Thinking for Ventures",
+      "id": "T-0202"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Risk",
+      "name": "Testing Assumptions Before Committing",
+      "id": "T-0203"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Risk",
+      "name": "Weighing Risk Versus Reward",
+      "id": "T-0204"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Startup",
+      "name": "Choosing a Legal Structure",
+      "id": "T-0205"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Startup",
+      "name": "Crafting the Elevator Pitch",
+      "id": "T-0206"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Startup",
+      "name": "Entrepreneurial Decision-Making Under Uncertainty",
+      "id": "T-0207"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Startup",
+      "name": "Founder Roles and Equity Splits",
+      "id": "T-0208"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Startup",
+      "name": "Motivating a Small Team",
+      "id": "T-0209"
+    },
+    {
+      "domain_id": "entrepreneurship",
+      "domain": "Entrepreneurship",
+      "topic": "Startup",
+      "name": "Pitching to Investors",
+      "id": "T-0210"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "Benchmarking Against Industry Standards",
+      "id": "T-0211"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "Cost-Benefit Analysis",
+      "id": "T-0212"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "Impact of Interest Rates on Business",
+      "id": "T-0213"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "International Trade Payment Methods",
+      "id": "T-0214"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "Trend Analysis Over Time",
+      "id": "T-0215"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "Variance Analysis",
+      "id": "T-0216"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "name": "Vertical and Horizontal Analysis",
+      "id": "T-0217"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Business Valuation",
+      "name": "Asset-Based Valuation Approach",
+      "id": "T-0218"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Business Valuation",
+      "name": "Methods of Valuing a Business",
+      "id": "T-0219"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Business Valuation",
+      "name": "Valuing Intangible Assets",
+      "id": "T-0220"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Cost and Profit",
+      "name": "Direct Versus Indirect Costs",
+      "id": "T-0221"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Cost and Profit",
+      "name": "Sunk Cost Recognition",
+      "id": "T-0222"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Ethics and Compliance",
+      "name": "Conflicts of Interest in Financial Decisions",
+      "id": "T-0223"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Ethics and Compliance",
+      "name": "Ethical Financial Reporting",
+      "id": "T-0224"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Ethics and Compliance",
+      "name": "Regulatory Compliance in Finance",
+      "id": "T-0225"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Financial Communication",
+      "name": "Building a Financial Pitch",
+      "id": "T-0226"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Financial Communication",
+      "name": "Explaining Financial Results to Nonexperts",
+      "id": "T-0227"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Financial Communication",
+      "name": "Justifying a Budget Request",
+      "id": "T-0228"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Investment",
+      "name": "Angel and Venture Funding Basics",
+      "id": "T-0229"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Investment",
+      "name": "Debt Versus Equity Financing",
+      "id": "T-0230"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Investment",
+      "name": "Diversification Principles",
+      "id": "T-0231"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Investment",
+      "name": "Evaluating Loan Terms",
+      "id": "T-0232"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Money Basics",
+      "name": "Fixed Versus Variable Income Streams",
+      "id": "T-0233"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Money Basics",
+      "name": "Opportunity Cost of Money",
+      "id": "T-0234"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Money Basics",
+      "name": "Personal Versus Business Finances",
+      "id": "T-0235"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Planning",
+      "name": "Capital Versus Operating Budgets",
+      "id": "T-0236"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Planning",
+      "name": "Contingency Fund Planning",
+      "id": "T-0237"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Planning",
+      "name": "Zero-Based Budgeting Approach",
+      "id": "T-0238"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Pricing",
+      "name": "Competitive Pricing Analysis",
+      "id": "T-0239"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Pricing",
+      "name": "Cost-Plus Pricing Method",
+      "id": "T-0240"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Pricing",
+      "name": "Discount and Markdown Impact",
+      "id": "T-0241"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Pricing",
+      "name": "Value-Based Pricing Reasoning",
+      "id": "T-0242"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Records",
+      "name": "Audit Trail Importance",
+      "id": "T-0243"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Records",
+      "name": "Reconciling Accounts",
+      "id": "T-0244"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Records",
+      "name": "Recordkeeping for Tax Compliance",
+      "id": "T-0245"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Risk",
+      "name": "Currency and Exchange Rate Risk",
+      "id": "T-0246"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Risk",
+      "name": "Fraud Prevention Awareness",
+      "id": "T-0247"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Statements",
+      "name": "Consolidated Financial Statements",
+      "id": "T-0248"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Statements",
+      "name": "Notes and Disclosures Basics",
+      "id": "T-0249"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Statements",
+      "name": "Statement of Owner's Equity",
+      "id": "T-0250"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Statements",
+      "name": "Understanding the Cash Flow Statement",
+      "id": "T-0251"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Taxation",
+      "name": "Sales Tax Collection Responsibility",
+      "id": "T-0252"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Taxation",
+      "name": "Tax Deductions and Credits Basics",
+      "id": "T-0253"
+    },
+    {
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Taxation",
+      "name": "Types of Business Taxes",
+      "id": "T-0254"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Culture",
+      "name": "Building Trust Across Teams",
+      "id": "T-0255"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Culture",
+      "name": "Change Management for People",
+      "id": "T-0256"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Culture",
+      "name": "Organizational Values Alignment",
+      "id": "T-0257"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Development",
+      "name": "Career Pathing",
+      "id": "T-0258"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Development",
+      "name": "Cross-Training Employees",
+      "id": "T-0259"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Development",
+      "name": "Mentoring Relationships",
+      "id": "T-0260"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Fair Treatment",
+      "name": "Grievance Handling Procedures",
+      "id": "T-0261"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Fair Treatment",
+      "name": "Reasonable Accommodation Practices",
+      "id": "T-0262"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Fair Treatment",
+      "name": "Workplace Anti-Harassment Practices",
+      "id": "T-0263"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "HR Operations",
+      "name": "Benefits Program Design",
+      "id": "T-0264"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "HR Operations",
+      "name": "Compensation Benchmarking",
+      "id": "T-0265"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "HR Operations",
+      "name": "HR Recordkeeping and Compliance",
+      "id": "T-0266"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Leadership",
+      "name": "Building Employee Trust",
+      "id": "T-0267"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Leadership",
+      "name": "Leadership Styles",
+      "id": "T-0268"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Leadership",
+      "name": "Leading Through Change",
+      "id": "T-0269"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Motivation",
+      "name": "Employee Recognition Programs",
+      "id": "T-0270"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Motivation",
+      "name": "Incentive Program Design",
+      "id": "T-0271"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Motivation",
+      "name": "Job Satisfaction Drivers",
+      "id": "T-0272"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Performance",
+      "name": "Documenting Performance Issues",
+      "id": "T-0273"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Performance",
+      "name": "Progressive Discipline",
+      "id": "T-0274"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Performance",
+      "name": "Setting Performance Standards",
+      "id": "T-0275"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Retention",
+      "name": "Exit Interviews",
+      "id": "T-0276"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Retention",
+      "name": "Internal Mobility Programs",
+      "id": "T-0277"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Staffing",
+      "name": "Contingent and Contract Staffing",
+      "id": "T-0278"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Staffing",
+      "name": "Employer Branding",
+      "id": "T-0279"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Staffing",
+      "name": "Interviewing Techniques",
+      "id": "T-0280"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Team Dynamics",
+      "name": "Building Effective Teams",
+      "id": "T-0281"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Team Dynamics",
+      "name": "Conflict Resolution Among Employees",
+      "id": "T-0282"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Team Dynamics",
+      "name": "Cross-Functional Collaboration",
+      "id": "T-0283"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Team Dynamics",
+      "name": "Delegation Skills",
+      "id": "T-0284"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Workplace Communication",
+      "name": "Difficult Conversations at Work",
+      "id": "T-0285"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Workplace Communication",
+      "name": "Running Effective Meetings",
+      "id": "T-0286"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Workplace Communication",
+      "name": "Written Workplace Communication",
+      "id": "T-0287"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Workplace Safety",
+      "name": "Crisis and Emergency Preparedness",
+      "id": "T-0288"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Workplace Safety",
+      "name": "Managing Workplace Stress",
+      "id": "T-0289"
+    },
+    {
+      "domain_id": "human_resources",
+      "domain": "Human Resources",
+      "topic": "Workplace Safety",
+      "name": "Workplace Safety Programs",
+      "id": "T-0290"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Brand",
+      "name": "Brand Equity Building",
+      "id": "T-0291"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Brand",
+      "name": "Brand Licensing",
+      "id": "T-0292"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Brand",
+      "name": "Brand Personality Development",
+      "id": "T-0293"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Brand",
+      "name": "Brand Storytelling Consistency",
+      "id": "T-0294"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Brand",
+      "name": "Co-Branding Partnerships",
+      "id": "T-0295"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Cause Marketing",
+      "name": "Cause-Related Marketing",
+      "id": "T-0296"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Cause Marketing",
+      "name": "Corporate Social Responsibility Messaging",
+      "id": "T-0297"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Cause Marketing",
+      "name": "Social Marketing Campaigns",
+      "id": "T-0298"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Cause Marketing",
+      "name": "Sustainability Marketing",
+      "id": "T-0299"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Ethics",
+      "name": "Consumer Privacy Protection",
+      "id": "T-0300"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Ethics",
+      "name": "Truth in Advertising Standards",
+      "id": "T-0301"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Global Marketing",
+      "name": "Adapting Offers for Global Markets",
+      "id": "T-0302"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Global Marketing",
+      "name": "Cultural Sensitivity in Marketing",
+      "id": "T-0303"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Global Marketing",
+      "name": "Global Brand Consistency",
+      "id": "T-0304"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Global Marketing",
+      "name": "International Market Entry Strategy",
+      "id": "T-0305"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Global Marketing",
+      "name": "Trade Barriers and Marketing Impact",
+      "id": "T-0306"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Journey",
+      "name": "Post-Purchase Reinforcement",
+      "id": "T-0307"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Journey",
+      "name": "Pre-Purchase Influence Factors",
+      "id": "T-0308"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Journey",
+      "name": "Touchpoint Optimization",
+      "id": "T-0309"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Marketing Careers",
+      "name": "Entrepreneurial Marketing Mindset",
+      "id": "T-0310"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Marketing Careers",
+      "name": "Freelance and Agency Marketing Roles",
+      "id": "T-0311"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Marketing Careers",
+      "name": "Marketing Career Pathways",
+      "id": "T-0312"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Merchandising",
+      "name": "Category Management",
+      "id": "T-0313"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Merchandising",
+      "name": "Point-of-Purchase Marketing",
+      "id": "T-0314"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Merchandising",
+      "name": "Seasonal Merchandising Planning",
+      "id": "T-0315"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Merchandising",
+      "name": "Store Layout Planning",
+      "id": "T-0316"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Metrics",
+      "name": "Brand Awareness Tracking",
+      "id": "T-0317"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Metrics",
+      "name": "Conversion Rate Analysis",
+      "id": "T-0318"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Metrics",
+      "name": "Market Share Analysis",
+      "id": "T-0319"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Metrics",
+      "name": "Return on Marketing Investment",
+      "id": "T-0320"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Place",
+      "name": "Direct-to-Consumer Distribution",
+      "id": "T-0321"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Place",
+      "name": "E-commerce Channel Strategy",
+      "id": "T-0322"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Place",
+      "name": "Physical Distribution and Logistics Awareness",
+      "id": "T-0323"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Place",
+      "name": "Retail Format Selection",
+      "id": "T-0324"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Place",
+      "name": "Wholesale and Intermediary Roles",
+      "id": "T-0325"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Planning",
+      "name": "Contingency Planning in Marketing",
+      "id": "T-0326"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Planning",
+      "name": "Marketing Budgeting",
+      "id": "T-0327"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Planning",
+      "name": "Marketing Mix Coordination",
+      "id": "T-0328"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Planning",
+      "name": "SWOT Analysis for Marketing",
+      "id": "T-0329"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Positioning",
+      "name": "Competitive Positioning Statements",
+      "id": "T-0330"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Positioning",
+      "name": "Perceptual Mapping",
+      "id": "T-0331"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Positioning",
+      "name": "Repositioning Strategy",
+      "id": "T-0332"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Price",
+      "name": "Break-even Pricing Analysis",
+      "id": "T-0333"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Price",
+      "name": "Discount and Allowance Structures",
+      "id": "T-0334"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Price",
+      "name": "Price Elasticity Awareness",
+      "id": "T-0335"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Price",
+      "name": "Psychological Pricing Cues",
+      "id": "T-0336"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "name": "Branding Extensions and Line Extensions",
+      "id": "T-0337"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "name": "Co-Creation with Customers",
+      "id": "T-0338"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "name": "Product Bundling",
+      "id": "T-0339"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "name": "Product Elimination Decisions",
+      "id": "T-0340"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "name": "Service Quality Design",
+      "id": "T-0341"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "name": "Warranty and Guarantee Policy",
+      "id": "T-0342"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Coupon and Rebate Programs",
+      "id": "T-0343"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Email and Mobile Marketing",
+      "id": "T-0344"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Guerrilla Marketing Tactics",
+      "id": "T-0345"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Influencer Marketing",
+      "id": "T-0346"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Integrated Marketing Communications",
+      "id": "T-0347"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Promotional Budgeting",
+      "id": "T-0348"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Sampling and Product Trial Offers",
+      "id": "T-0349"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Search Engine and Search Ad Marketing",
+      "id": "T-0350"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Sponsorship Marketing",
+      "id": "T-0351"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "name": "Trade Show and Exhibition Marketing",
+      "id": "T-0352"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Relationship",
+      "name": "Building Customer Trust",
+      "id": "T-0353"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Relationship",
+      "name": "Customer Complaint Recovery",
+      "id": "T-0354"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Relationship",
+      "name": "Managing Key Accounts",
+      "id": "T-0355"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Relationship",
+      "name": "Membership and Subscription Models",
+      "id": "T-0356"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Research",
+      "name": "Customer Feedback Analysis",
+      "id": "T-0357"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Research",
+      "name": "Focus Group Facilitation",
+      "id": "T-0358"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Research",
+      "name": "Sales Data Trend Interpretation",
+      "id": "T-0359"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Research",
+      "name": "Secondary Data Analysis",
+      "id": "T-0360"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Research",
+      "name": "Survey and Questionnaire Design",
+      "id": "T-0361"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Research",
+      "name": "Test Marketing",
+      "id": "T-0362"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Adapting the Sales Approach",
+      "id": "T-0363"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Building Rapport with Buyers",
+      "id": "T-0364"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Feature-Benefit Selling",
+      "id": "T-0365"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Negotiating the Sale",
+      "id": "T-0366"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Referral Generation in Selling",
+      "id": "T-0367"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Sales Ethics and Honesty",
+      "id": "T-0368"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Sales Forecasting for Territories",
+      "id": "T-0369"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "name": "Team and Group Selling",
+      "id": "T-0370"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Service Marketing",
+      "name": "Customer Role in Service Delivery",
+      "id": "T-0371"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Service Marketing",
+      "name": "Managing Service Intangibility",
+      "id": "T-0372"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Service Marketing",
+      "name": "Service Blueprinting",
+      "id": "T-0373"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Service Marketing",
+      "name": "Service Capacity and Demand Balancing",
+      "id": "T-0374"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Service Marketing",
+      "name": "Service Recovery Strategy",
+      "id": "T-0375"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Target Market",
+      "name": "Business-to-Business Market Identification",
+      "id": "T-0376"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Target Market",
+      "name": "Demographic and Psychographic Profiling",
+      "id": "T-0377"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Target Market",
+      "name": "Multi-Segment Targeting Strategy",
+      "id": "T-0378"
+    },
+    {
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Target Market",
+      "name": "Niche Marketing Approach",
+      "id": "T-0379"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Analysis",
+      "name": "Forecasting from Historical Data",
+      "id": "T-0380"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Analysis",
+      "name": "Spotting Patterns and Trends",
+      "id": "T-0381"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Analysis",
+      "name": "Weighing Costs and Benefits of Information",
+      "id": "T-0382"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Communication",
+      "name": "Avoiding Misleading Data Displays",
+      "id": "T-0383"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Communication",
+      "name": "Tailoring Reports to an Audience",
+      "id": "T-0384"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Communication",
+      "name": "Writing Clear Executive Summaries",
+      "id": "T-0385"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Crisis Information",
+      "name": "Communicating Uncertainty to Stakeholders",
+      "id": "T-0386"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Crisis Information",
+      "name": "Managing Information During a Crisis",
+      "id": "T-0387"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Crisis Information",
+      "name": "Verifying Information Before Acting",
+      "id": "T-0388"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Data",
+      "name": "Distinguishing Correlation from Causation",
+      "id": "T-0389"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Data",
+      "name": "Identifying Data Quality Issues",
+      "id": "T-0390"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Data",
+      "name": "Sampling for Practical Decisions",
+      "id": "T-0391"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Decision Support",
+      "name": "Building Decision-Making Frameworks",
+      "id": "T-0392"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Decision Support",
+      "name": "Prioritizing Information Needs",
+      "id": "T-0393"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Decision Support",
+      "name": "Scenario Planning with Data",
+      "id": "T-0394"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Decision Support",
+      "name": "Using Dashboards for Monitoring",
+      "id": "T-0395"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Information Ethics",
+      "name": "Avoiding Data Manipulation",
+      "id": "T-0396"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Information Ethics",
+      "name": "Respecting Intellectual Property in Research",
+      "id": "T-0397"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Information Ethics",
+      "name": "Transparency in Reporting Findings",
+      "id": "T-0398"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Knowledge",
+      "name": "Avoiding Information Silos",
+      "id": "T-0399"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Knowledge",
+      "name": "Building a Searchable Knowledge Base",
+      "id": "T-0400"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Knowledge",
+      "name": "Mentoring for Knowledge Transfer",
+      "id": "T-0401"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Records",
+      "name": "Establishing Retention Policies",
+      "id": "T-0402"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Records",
+      "name": "Maintaining Audit Trails",
+      "id": "T-0403"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Records",
+      "name": "Organizing Files for Retrieval",
+      "id": "T-0404"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Research",
+      "name": "Avoiding Bias in Research Design",
+      "id": "T-0405"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Research",
+      "name": "Competitive Intelligence Gathering",
+      "id": "T-0406"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Research",
+      "name": "Designing a Simple Survey",
+      "id": "T-0407"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Research",
+      "name": "Secondary Versus Primary Sources",
+      "id": "T-0408"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Security",
+      "name": "Complying with Data Regulations",
+      "id": "T-0409"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Security",
+      "name": "Managing Access Permissions",
+      "id": "T-0410"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Security",
+      "name": "Planning for Information Disaster Recovery",
+      "id": "T-0411"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Security",
+      "name": "Preventing Data Breaches",
+      "id": "T-0412"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Systems",
+      "name": "Evaluating Software Solutions",
+      "id": "T-0413"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Systems",
+      "name": "Integrating Information Across Departments",
+      "id": "T-0414"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Systems",
+      "name": "Standardizing Data Entry Practices",
+      "id": "T-0415"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Technology",
+      "name": "Assessing New Technology Costs and Benefits",
+      "id": "T-0416"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Technology",
+      "name": "Automating Routine Information Tasks",
+      "id": "T-0417"
+    },
+    {
+      "domain_id": "information_management",
+      "domain": "Information Management",
+      "topic": "Technology",
+      "name": "Cloud-Based Information Sharing",
+      "id": "T-0418"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Capacity",
+      "name": "Forecasting Resource Needs",
+      "id": "T-0419"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Capacity",
+      "name": "Load Balancing Across Shifts",
+      "id": "T-0420"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Capacity",
+      "name": "Managing Overtime and Surge Staffing",
+      "id": "T-0421"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Coordination",
+      "name": "Aligning Operations With Sales Forecasts",
+      "id": "T-0422"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Coordination",
+      "name": "Managing Handoffs Between Departments",
+      "id": "T-0423"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Cost",
+      "name": "Analyzing Cost Drivers",
+      "id": "T-0424"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Cost",
+      "name": "Make-or-Buy Decision Making",
+      "id": "T-0425"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Cost",
+      "name": "Reducing Overhead Expenses",
+      "id": "T-0426"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Demand Fulfillment",
+      "name": "Managing Backorders and Stockouts",
+      "id": "T-0427"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Demand Fulfillment",
+      "name": "Order Accuracy Management",
+      "id": "T-0428"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Demand Fulfillment",
+      "name": "Prioritizing Order Fulfillment Sequencing",
+      "id": "T-0429"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Facilities",
+      "name": "Equipment Maintenance Planning",
+      "id": "T-0430"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Facilities",
+      "name": "Ergonomics in Workspace Design",
+      "id": "T-0431"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Facilities",
+      "name": "Site Selection Decisions",
+      "id": "T-0432"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Innovation",
+      "name": "Benchmarking Against Industry Practice",
+      "id": "T-0433"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Innovation",
+      "name": "Piloting New Operational Methods",
+      "id": "T-0434"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Logistics",
+      "name": "Freight and Carrier Selection",
+      "id": "T-0435"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Logistics",
+      "name": "Route and Delivery Optimization",
+      "id": "T-0436"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Logistics",
+      "name": "Warehouse Layout and Slotting",
+      "id": "T-0437"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Measurement",
+      "name": "Benchmarking Operational Performance",
+      "id": "T-0438"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Measurement",
+      "name": "Setting Operational Key Performance Indicators",
+      "id": "T-0439"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Measurement",
+      "name": "Tracking Cycle Time",
+      "id": "T-0440"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Process",
+      "name": "Designing for First-Time Quality",
+      "id": "T-0441"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Process",
+      "name": "Mapping the Value Stream",
+      "id": "T-0442"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Projects",
+      "name": "Closing Out a Project",
+      "id": "T-0443"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Projects",
+      "name": "Estimating Project Timelines",
+      "id": "T-0444"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Projects",
+      "name": "Identifying the Critical Path",
+      "id": "T-0445"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Projects",
+      "name": "Managing Project Budgets",
+      "id": "T-0446"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Quality",
+      "name": "Building a Quality Culture",
+      "id": "T-0447"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Quality",
+      "name": "Setting Acceptable Tolerance Levels",
+      "id": "T-0448"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Quality",
+      "name": "Statistical Sampling for Inspection",
+      "id": "T-0449"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Risk",
+      "name": "Assessing Supplier Risk Exposure",
+      "id": "T-0450"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Risk",
+      "name": "Identifying Single Points of Failure",
+      "id": "T-0451"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Safety",
+      "name": "Conducting Safety Audits",
+      "id": "T-0452"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Safety",
+      "name": "Employee Safety Training Programs",
+      "id": "T-0453"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Safety",
+      "name": "Incident Reporting Systems",
+      "id": "T-0454"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Scaling",
+      "name": "Franchise Operations Consistency",
+      "id": "T-0455"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Scaling",
+      "name": "Standardizing Operations Across Locations",
+      "id": "T-0456"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Service Ops",
+      "name": "Designing Service Recovery Procedures",
+      "id": "T-0457"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Service Ops",
+      "name": "Managing Customer Wait Times",
+      "id": "T-0458"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Service Ops",
+      "name": "Matching Service Capacity to Demand",
+      "id": "T-0459"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Adapting Operations to Local Regulations",
+      "id": "T-0460"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Diversifying the Supplier Base",
+      "id": "T-0461"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Just-in-Time Inventory Practices",
+      "id": "T-0462"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Managing Cross-Border Logistics",
+      "id": "T-0463"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Managing Lead Times",
+      "id": "T-0464"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Negotiating Supply Contracts",
+      "id": "T-0465"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "name": "Supplier Qualification and Onboarding",
+      "id": "T-0466"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Sustainability",
+      "name": "Reducing Energy Consumption",
+      "id": "T-0467"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Sustainability",
+      "name": "Sourcing Ethically and Responsibly",
+      "id": "T-0468"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Sustainability",
+      "name": "Waste Diversion and Recycling Programs",
+      "id": "T-0469"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Technology",
+      "name": "Cybersecurity in Operational Systems",
+      "id": "T-0470"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Technology",
+      "name": "Selecting Operations Software Systems",
+      "id": "T-0471"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Technology",
+      "name": "Using Data Dashboards for Operations",
+      "id": "T-0472"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Vendor Relations",
+      "name": "Building Long-Term Supplier Partnerships",
+      "id": "T-0473"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Vendor Relations",
+      "name": "Monitoring Vendor Performance",
+      "id": "T-0474"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Vendor Relations",
+      "name": "Resolving Vendor Disputes",
+      "id": "T-0475"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Workforce Ops",
+      "name": "Cross-Training Operational Staff",
+      "id": "T-0476"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Workforce Ops",
+      "name": "Designing Standard Operating Procedures for Staff",
+      "id": "T-0477"
+    },
+    {
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Workforce Ops",
+      "name": "Managing Frontline Supervisor Roles",
+      "id": "T-0478"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Career",
+      "name": "Researching Career Pathways",
+      "id": "T-0479"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Career",
+      "name": "Resume and Cover Letter Basics",
+      "id": "T-0480"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Career",
+      "name": "Understanding Industry Trends",
+      "id": "T-0481"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Demeanor",
+      "name": "Dressing for the Workplace",
+      "id": "T-0482"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Demeanor",
+      "name": "Professional Communication Style",
+      "id": "T-0483"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ethics",
+      "name": "Honesty in Professional Dealings",
+      "id": "T-0484"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ethics",
+      "name": "Maintaining Confidentiality",
+      "id": "T-0485"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Goals",
+      "name": "Balancing Competing Deadlines",
+      "id": "T-0487"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Growth",
+      "name": "Seeking Out Mentorship",
+      "id": "T-0488"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Growth",
+      "name": "Self-Assessment of Strengths and Weaknesses",
+      "id": "T-0489"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Leadership",
+      "name": "Delegating Tasks Effectively",
+      "id": "T-0490"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Leadership",
+      "name": "Leading Without Formal Authority",
+      "id": "T-0491"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Leadership",
+      "name": "Motivating Peers",
+      "id": "T-0492"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Networking",
+      "name": "Building a Professional Support Network",
+      "id": "T-0493"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Networking",
+      "name": "Following Up After Professional Contacts",
+      "id": "T-0494"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Networking",
+      "name": "Maintaining Professional Relationships",
+      "id": "T-0495"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ownership",
+      "name": "Accountability for Mistakes",
+      "id": "T-0496"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ownership",
+      "name": "Following Through on Commitments",
+      "id": "T-0497"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ownership",
+      "name": "Public Speaking Confidence",
+      "id": "T-0498"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ownership",
+      "name": "Self-Motivation Without Supervision",
+      "id": "T-0499"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Ownership",
+      "name": "Structuring a Professional Presentation",
+      "id": "T-0500"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Self-Management",
+      "name": "Building Personal Resilience",
+      "id": "T-0501"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Self-Management",
+      "name": "Maintaining Work-Life Balance",
+      "id": "T-0502"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Self-Management",
+      "name": "Managing Stress and Burnout",
+      "id": "T-0503"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Skills",
+      "name": "Active Listening in the Workplace",
+      "id": "T-0504"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Skills",
+      "name": "Critical Thinking on the Job",
+      "id": "T-0505"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Skills",
+      "name": "Giving Constructive Feedback",
+      "id": "T-0506"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Teamwork",
+      "name": "Collaborating Across Teams",
+      "id": "T-0507"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Teamwork",
+      "name": "Contributing in Group Settings",
+      "id": "T-0508"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Teamwork",
+      "name": "Resolving Interpersonal Conflict",
+      "id": "T-0509"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Teamwork",
+      "name": "Respecting Diverse Perspectives",
+      "id": "T-0510"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Workplace Adaptability",
+      "name": "Adjusting to Organizational Change",
+      "id": "T-0511"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Workplace Adaptability",
+      "name": "Navigating Remote and Hybrid Work",
+      "id": "T-0512"
+    },
+    {
+      "domain_id": "professional_development",
+      "domain": "Professional Development",
+      "topic": "Workplace Adaptability",
+      "name": "Working Across Generational Differences",
+      "id": "T-0513"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Analysis",
+      "name": "Benchmarking Against Competitors",
+      "id": "T-0514"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Analysis",
+      "name": "Core Competency Identification",
+      "id": "T-0515"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Analysis",
+      "name": "Industry Life Cycle Analysis",
+      "id": "T-0516"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Analysis",
+      "name": "SWOT Analysis Application",
+      "id": "T-0517"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Change",
+      "name": "Innovation as Strategic Response",
+      "id": "T-0518"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Change",
+      "name": "Overcoming Organizational Resistance",
+      "id": "T-0519"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Competitive Dynamics",
+      "name": "Anticipating Competitor Moves",
+      "id": "T-0520"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Competitive Dynamics",
+      "name": "Defensive Strategy Tactics",
+      "id": "T-0521"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Competitive Dynamics",
+      "name": "First-Mover Versus Follower Strategy",
+      "id": "T-0522"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Direction",
+      "name": "Crafting a Value Proposition",
+      "id": "T-0523"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Direction",
+      "name": "Setting Organizational Culture",
+      "id": "T-0524"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Execution",
+      "name": "Cross-Functional Coordination",
+      "id": "T-0525"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Execution",
+      "name": "Setting Accountability Structures",
+      "id": "T-0526"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Globalization",
+      "name": "Adapting Strategy Across Markets",
+      "id": "T-0527"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Globalization",
+      "name": "Global Expansion Strategy",
+      "id": "T-0528"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Globalization",
+      "name": "Managing Cross-Border Complexity",
+      "id": "T-0529"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Goals",
+      "name": "Balancing Short and Long-Term Goals",
+      "id": "T-0530"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Growth",
+      "name": "Diversification Strategy",
+      "id": "T-0531"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Growth",
+      "name": "Mergers and Acquisitions Strategy",
+      "id": "T-0532"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Growth",
+      "name": "Vertical Integration Strategy",
+      "id": "T-0533"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Leadership",
+      "name": "Building Stakeholder Buy-In",
+      "id": "T-0534"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Leadership",
+      "name": "Delegation of Strategic Authority",
+      "id": "T-0535"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Leadership",
+      "name": "Strategic Leadership Style",
+      "id": "T-0536"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Long-term",
+      "name": "Building Sustainable Competitive Advantage",
+      "id": "T-0537"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Long-term",
+      "name": "Corporate Social Responsibility Strategy",
+      "id": "T-0538"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Measurement",
+      "name": "Key Performance Indicator Selection",
+      "id": "T-0539"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Measurement",
+      "name": "Strategic Scorecarding",
+      "id": "T-0540"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Resources",
+      "name": "Capacity Planning for Strategy",
+      "id": "T-0541"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Resources",
+      "name": "Resource Allocation Trade-Offs",
+      "id": "T-0542"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Risk",
+      "name": "Contingency Planning",
+      "id": "T-0543"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Risk",
+      "name": "Crisis Response Planning",
+      "id": "T-0544"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Stakeholders",
+      "name": "Managing Competing Stakeholder Interests",
+      "id": "T-0545"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Stakeholders",
+      "name": "Negotiating Strategic Trade-Offs",
+      "id": "T-0546"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Stakeholders",
+      "name": "Stakeholder Analysis",
+      "id": "T-0547"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Structure",
+      "name": "Aligning Structure to Strategy",
+      "id": "T-0548"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Structure",
+      "name": "Centralization Versus Decentralization",
+      "id": "T-0549"
+    },
+    {
+      "domain_id": "strategic_management",
+      "domain": "Strategic Management",
+      "topic": "Structure",
+      "name": "Strategic Planning Process Design",
+      "id": "T-0550"
+    }
+  ]
+}

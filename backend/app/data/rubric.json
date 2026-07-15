@@ -1,7 +1,12 @@
 {
   "version": "framework-1.0",
-  "_note": "Scoring scale for the independent framework. Each selected criterion is scored on the same four quality levels against its own strong_looks_like / weak_looks_like bar, on a 0-10 band. These are generic rubric quality levels (widely used everywhere), not any organization's proprietary rubric. Level descriptions are worded generically around 'the criterion' so they apply to any criterion in framework.json. The overall result is the sum across the selected criteria, shown as a percentage — practice coaching, never an official or predicted competition score.",
-  "levels": ["novice", "developing", "proficient", "exemplary"],
+  "_note": "Scoring scale for the independent framework. Each selected criterion is scored on the same four quality levels against its own strong_looks_like / weak_looks_like bar, on a 0-10 band. These are generic rubric quality levels (widely used everywhere), not any organization's proprietary rubric. Level descriptions are worded generically around 'the criterion' so they apply to any criterion in framework.json. The overall result is the sum across the selected criteria, shown as a percentage: practice coaching, never an official or predicted competition score.",
+  "levels": [
+    "novice",
+    "developing",
+    "proficient",
+    "exemplary"
+  ],
   "level_labels": {
     "novice": "Novice",
     "developing": "Developing",
@@ -16,15 +21,39 @@
   },
   "criterion_max_points": 10,
   "bands": {
-    "novice": [0, 3],
-    "developing": [4, 6],
-    "proficient": [7, 8],
-    "exemplary": [9, 10]
+    "novice": [
+      0,
+      3
+    ],
+    "developing": [
+      4,
+      6
+    ],
+    "proficient": [
+      7,
+      8
+    ],
+    "exemplary": [
+      9,
+      10
+    ]
   },
   "overall_bands": {
-    "novice": [0, 39],
-    "developing": [40, 69],
-    "proficient": [70, 89],
-    "exemplary": [90, 100]
+    "novice": [
+      0,
+      39
+    ],
+    "developing": [
+      40,
+      69
+    ],
+    "proficient": [
+      70,
+      89
+    ],
+    "exemplary": [
+      90,
+      100
+    ]
   }
 }

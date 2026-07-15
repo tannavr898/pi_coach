@@ -12,6 +12,7 @@ import {
   type ScenarioResponse,
   type ScoreResponse,
   type SubScore,
+  type Term,
   type Utterance,
   adminVerify,
   getEvents,
@@ -25,8 +26,9 @@ import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE 
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
-import { clearSamples, getSession, saveSession, seedSamples, type SaveSessionBody } from "./progress";
+import { clearSamples, getSession, markStudy, saveSession, seedSamples, type SaveSessionBody } from "./progress";
 import { HomePage } from "./home";
+import { StudyCourse } from "./course";
 import { Flashcards, FlashcardLibrary } from "./flashcards";
 import { MasteryBlitz } from "./blitz";
 import { useFlags } from "./flags";
@@ -57,10 +59,10 @@ function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
 // "home" is the scroll-based marketing landing page (the default). "practice" is
 // the role-play flow, whose first screen is now just the setup form — the hero and
 // how-it-works copy moved to the landing page.
-type View = "home" | "practice" | "tips" | "faq" | "flashcards";
+type View = "home" | "practice" | "tips" | "faq" | "flashcards" | "course";
 // What the flashcard study overlay is showing: either ids to fetch, or preloaded
 // cards (from the library), optionally opened at a specific card.
-type FlashcardTarget = { ids?: string[]; cards?: Criterion[]; startId?: string; title?: string };
+type FlashcardTarget = { ids?: string[]; cards?: Term[]; startId?: string; title?: string };
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 
 // Presentation timing now comes per-event from scenario.timing (team events get a
@@ -173,7 +175,7 @@ export default function App() {
   // per-account flag store shared by the overlay and the library.
   const [flashcard, setFlashcard] = useState<FlashcardTarget | null>(null);
   // Mastery Blitz (Phase 5): the term set to drill, or null when closed.
-  const [blitzCards, setBlitzCards] = useState<Criterion[] | null>(null);
+  const [blitzCards, setBlitzCards] = useState<Term[] | null>(null);
   const flags = useFlags(authUser?.id ?? null);
 
   // Open a stored session's feedback (from the home "recent sessions" list).
@@ -248,6 +250,14 @@ export default function App() {
         setCurrentSessionId(saved.id);
       } catch {
         /* saving is best-effort — never block the feedback screen on it */
+      }
+      // Terms the grader confirmed were genuinely APPLIED in a graded role-play —
+      // the strongest evidence of mastery there is, so it outranks a Blitz verdict
+      // in study progress. Only credited terms arrive here: the bonus is zeroed
+      // server-side unless a real quote backs it, so this can't be gamed.
+      const applied = body.score.analytical?.depth?.terms ?? [];
+      if (applied.length) {
+        void markStudy(applied.map((term_id) => ({ term_id, evidence: "roleplay", verdict: "correct" })));
       }
     } else if (authReady) {
       setPendingSession(body);
@@ -387,7 +397,7 @@ export default function App() {
     if (prefetchRef.current?.key === key) return; // already prefetching this exact combo
     const t = window.setTimeout(() => {
       const promise = postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId) });
-      promise.catch(() => {}); // speculative — swallow; generate() re-requests on demand
+      promise.catch(() => {}); // speculative: swallow; generate() re-requests on demand
       prefetchRef.current = { key, promise };
     }, 500);
     return () => window.clearTimeout(t);
@@ -513,11 +523,11 @@ export default function App() {
     // and grade the content in the background (Phase 2a).
     if (mode === "speak") {
       if (!audioBlob) {
-        setError("No recording found — record your response first, then submit.");
+        setError("No recording found: record your response first, then submit.");
         setStage("respond");
         return;
       }
-      setStage("scoring"); // transcription loader — delivery metrics aren't ready yet
+      setStage("scoring"); // transcription loader: delivery metrics aren't ready yet
       let d: DeliveryResponse;
       try {
         d = await postDelivery(audioBlob, sc.timing.target_seconds, sc.team);
@@ -534,7 +544,7 @@ export default function App() {
       if (!d.transcript.trim()) {
         // Valid audio the provider heard as silence — comes back as empty text.
         track("recording_silent", { event: eventId });
-        setError("We couldn't hear anything in that recording — it came through silent. Check your mic, then record again.");
+        setError("We couldn't hear anything in that recording. It came through silent. Check your mic, then record again.");
         setStage("respond");
         return;
       }
@@ -614,7 +624,7 @@ export default function App() {
         />
       )}
       {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => setBlitzCards(null)} />}
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : view === "course" ? "max-w-5xl" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -646,6 +656,12 @@ export default function App() {
             flags={flags}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards) => { track("blitz_started", { count: cards.length }); setBlitzCards(cards); }}
+          />
+        ) : view === "course" ? (
+          <StudyCourse
+            authed={!!authUser}
+            onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
+            onBlitz={(cards, title) => { track("blitz_started", { count: cards.length, from: "course", unit: title }); setBlitzCards(cards); }}
           />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />
@@ -1018,7 +1034,7 @@ export function AdminApp() {
         {tab === "live" && (
           <div className="mx-auto max-w-2xl space-y-4">
             <Card>
-              <Eyebrow>Live data — your account</Eyebrow>
+              <Eyebrow>Live data. Your account</Eyebrow>
               <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Seed sample sessions, then view the real Home</h2>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                 This writes 6 backdated, canned sessions into your account (no LLM tokens) so the real delivery trend,
@@ -1244,7 +1260,7 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
               <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">Send feedback</h3>
               <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" aria-label="Close">✕</button>
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Bugs, ideas, what felt off — all welcome. No account needed.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Bugs, ideas, what felt off: all welcome. No account needed.</p>
 
             <div className="mt-4">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">How's it working for you?</span>
@@ -1274,13 +1290,13 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
             />
             <input
               className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 dark:text-slate-100"
-              placeholder="Email (optional — only if you want a reply)"
+              placeholder="Email (optional: only if you want a reply)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
 
             {state === "error" && (
-              <p className="mt-2 text-xs text-red-600">Couldn't send — check your connection and try again.</p>
+              <p className="mt-2 text-xs text-red-600">Couldn't send: check your connection and try again.</p>
             )}
 
             <div className="mt-4 flex justify-end gap-2">
@@ -1357,6 +1373,9 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           ) : (
             <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
           )}
+          {/* Study is open to everyone: browsing your event's path is the whole
+              pitch for making an account, so gating it behind one is backwards. */}
+          <NavLink active={view === "course"} onClick={() => onView("course")}>Study</NavLink>
           {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Flashcards</NavLink>}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ</NavLink>
@@ -1415,6 +1434,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
             ) : (
               <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
             )}
+            <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study</MobileNavItem>
             {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Flashcards</MobileNavItem>}
             <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips</MobileNavItem>
             <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ</MobileNavItem>
@@ -1735,7 +1755,7 @@ function scenarioSubtitle(s: ScenarioResponse): string {
   if (s.event && s.event !== s.topic) parts.push(s.event);
   if (s.industry) parts.push(s.industry);
   if (s.domain_focus.length) parts.push(s.domain_focus.join(" · "));
-  return parts.join(" — ");
+  return parts.join(": ");
 }
 
 function ProcessStrip() {
@@ -1791,7 +1811,7 @@ function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onSt
         </h2>
         <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">
           Free account. We save your sessions and show how your delivery and your weakest skills improve over time.
-          You can keep practicing without one — signing up just remembers your reps.
+          You can keep practicing without one: signing up just remembers your reps.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <button onClick={onSignup} className={`${BTN_PRIMARY} px-6 py-3`}>
@@ -1980,7 +2000,7 @@ function FeedbackExplainerSection() {
       </div>
 
       {/* The revealed panel renders the app's ACTUAL feedback component for the
-          selected section, fed with the sample session's real graded data — so this
+          selected section, fed with the sample session's real graded data, so this
           is exactly what a competitor sees after a run, not a mockup. */}
       <div className="mt-6">
         <div className="mb-3 flex items-baseline gap-2">
@@ -2067,7 +2087,7 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
           </form>
         )}
         {state === "error" && (
-          <p className="mt-2 text-xs text-red-600 dark:text-red-400">Couldn't sign you up — check your connection and try again.</p>
+          <p className="mt-2 text-xs text-red-600 dark:text-red-400">Couldn't sign you up: check your connection and try again.</p>
         )}
 
         <div className="mt-8 border-t border-indigo-100 pt-6 dark:border-indigo-900/50">
@@ -2098,39 +2118,39 @@ function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void })
         </h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{scenarioSubtitle(s)}</p>
         <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Your scenario is written. Take a breath — the prep clock only starts when you press the button.
+          Your scenario is written. Take a breath: the prep clock only starts when you press the button.
         </p>
         {s.team && (
           <p className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200">
-            <strong className="font-semibold">Team event:</strong> you get more time — {prepMin} minutes to prep and {presentMin} to present.
+            <strong className="font-semibold">Team event:</strong> you get more time: {prepMin} minutes to prep and {presentMin} to present.
             If you record, we'll pick up both partners' voices and show how the talking was split.
           </p>
         )}
         {s.quantitative && (
           <p className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
             <strong className="font-semibold">🧮 Numbers matter here:</strong> show your calculations. Any math you do is
-            recomputed on our server — exactly — so your figures get checked, not guessed at.
+            recomputed on our server, exactly, so your figures get checked, not guessed at.
           </p>
         )}
 
         <h3 className="mt-6 font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Before you start</h3>
         <ul className="mt-2 space-y-2 text-sm text-slate-700 dark:text-slate-200">
-          <Tip icon="✏️">Grab a pen and paper (or open notes) — you'll outline your plan during prep.</Tip>
+          <Tip icon="✏️">Grab a pen and paper (or open notes). You'll outline your plan during prep.</Tip>
           <Tip icon="⏱️">
             <strong className="font-semibold">{prepMin} minutes</strong> to read and plan, then{" "}
-            <strong className="font-semibold">{presentMin} to present</strong> — that window includes the judge's questions.
+            <strong className="font-semibold">{presentMin} to present</strong>, that window includes the judge's questions.
           </Tip>
           <Tip icon="🎯">
             Aim to wrap your pitch in about <strong className="font-semibold">{targetMin} minutes</strong>, leaving the rest for the follow-up.
           </Tip>
-          <Tip icon="🗣️">Find a quiet spot and present out loud — type or use 🎙️ Speak.</Tip>
+          <Tip icon="🗣️">Find a quiet spot and present out loud: type or use 🎙️ Speak.</Tip>
           <Tip icon="❓">
-            At the end the judge asks {s.followup_questions.length === 1 ? "a follow-up question" : `${s.followup_questions.length} follow-up questions`} — you'll answer {s.followup_questions.length === 1 ? "it" : "those"} too.
+            At the end the judge asks {s.followup_questions.length === 1 ? "a follow-up question" : `${s.followup_questions.length} follow-up questions`}. You'll answer {s.followup_questions.length === 1 ? "it" : "those"} too.
           </Tip>
         </ul>
 
         <button className={`mt-6 ${BTN_PRIMARY}`} onClick={props.onStart}>
-          I'm ready — start prep ({fmt(s.timing.prep_seconds)}) →
+          I'm ready: start prep ({fmt(s.timing.prep_seconds)}) →
         </button>
       </Card>
       <RubricNote scenario={s} />
@@ -2156,7 +2176,7 @@ function PrepScreen(props: { scenario: ScenarioResponse; onStart: () => void }) 
       <CoverSheet scenario={props.scenario} />
       <SituationSheet text={props.scenario.situation} />
       <button className={BTN_PRIMARY} onClick={props.onStart}>
-        I'm done prepping — I'm ready to present →
+        I'm done prepping. I'm ready to present →
       </button>
     </div>
   );
@@ -2172,11 +2192,11 @@ function PresentClock({ remaining, running, total, autoCountdown }: {
   const label = !running
     ? autoCountdown !== null
       ? `Starting in ${autoCountdown}… (begin now to take control)`
-      : "Clock paused — it starts the moment you begin"
+      : "Clock paused. It starts the moment you begin"
     : remaining === 0
-      ? "Time's up — you can still finish"
+      ? "Time's up. You can still finish"
       : wrapUp
-        ? "Wrap up soon — leave time for the questions"
+        ? "Wrap up soon: leave time for the questions"
         : "Presentation time (shared with the judge's questions)";
   const tone = !running
     ? autoCountdown !== null ? "amber" : "indigo"
@@ -2199,7 +2219,7 @@ function WalkinScreen(props: { scenario: ScenarioResponse; onEnter: () => void }
         </h2>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-300">
           Prep's done. Take a breath, gather your notes, and walk in when you're ready. The presentation clock
-          <strong className="font-semibold text-slate-800 dark:text-slate-200"> won't start until you begin speaking or typing</strong> — so there's no rush to press this.
+          <strong className="font-semibold text-slate-800 dark:text-slate-200"> won't start until you begin speaking or typing</strong>, so there's no rush to press this.
         </p>
         <div className="mx-auto mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
           Open with a greeting and a firm handshake energy, state who you are and your recommendation up front, then
@@ -2256,7 +2276,7 @@ function RespondScreen(props: {
           <>
             <textarea
               className={`mt-3 h-64 ${TEXTAREA_CLS}`}
-              placeholder="Open with a greeting, address the situation and every skill you're assessed on, propose your solution, and close. Speak it out loud as you type — that's the rep."
+              placeholder="Open with a greeting, address the situation and every skill you're assessed on, propose your solution, and close. Speak it out loud as you type. That's the rep."
               value={props.value}
               onChange={(e) => handleType(e.target.value)}
             />
@@ -2266,8 +2286,8 @@ function RespondScreen(props: {
           <div className="mt-3">
             <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
             <p className="mt-3 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
-              Present out loud as if the judge is in front of you. We transcribe the audio and measure delivery —
-              pace, fillers, pauses, time — alongside the content score. Delivery covers timing only, not tone or
+              Present out loud as if the judge is in front of you. We transcribe the audio and measure delivery
+              pace, fillers, pauses, time: alongside the content score. Delivery covers timing only, not tone or
               confidence. Your recording stays on your device unless you keep it.
             </p>
           </div>
@@ -2392,7 +2412,7 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | n
       )}
       {state === "recorded" && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">✓ Recorded — listen back below.</div>
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">✓ Recorded: listen back below.</div>
           {previewUrl && <audio controls src={previewUrl} className="w-full" />}
           <button onClick={reset} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 font-mono text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200">↺ Re-record</button>
         </div>
@@ -2457,7 +2477,7 @@ function FollowupScreen(props: {
               <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
             </div>
             <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
-              We transcribe your answer for grading. Delivery isn't scored on the follow-up — only your content.
+              We transcribe your answer for grading. Delivery isn't scored on the follow-up: only your content.
             </p>
           </div>
         )}
@@ -2482,7 +2502,7 @@ function DeliveryFirstScreen({ scenario, delivery, audioBlob }: { scenario: Scen
   return (
     <div className="space-y-5">
       <Card>
-        <Eyebrow>Delivery — ready now</Eyebrow>
+        <Eyebrow>Delivery: ready now</Eyebrow>
         <h2 className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100">
           {scenario.topic}
         </h2>
@@ -2554,7 +2574,7 @@ function FeedbackScreen(props: {
 
   return (
     <div className="lg:grid lg:grid-cols-[300px_1fr] lg:items-start lg:gap-6">
-      {/* Score rail — sticks alongside the detail on wide screens. */}
+      {/* Score rail: sticks alongside the detail on wide screens. */}
       <div className="lg:sticky lg:top-24">
         <Card>
           <Eyebrow>Framework feedback</Eyebrow>
@@ -2611,7 +2631,7 @@ function FeedbackScreen(props: {
           your <strong className="font-semibold text-slate-700 dark:text-slate-200">analytical problem-solving</strong> (25%), and
           your <strong className="font-semibold text-slate-700 dark:text-slate-200">presentation</strong> (15%).{" "}
           {props.delivery ? (
-            <>Presentation blends measured delivery — pace, fillers, pauses, timing — with how you handled the follow-up. It never judges tone, confidence, or charisma.</>
+            <>Presentation blends measured delivery, pace, fillers, pauses, timing, with how you handled the follow-up. It never judges tone, confidence, or charisma.</>
           ) : (
             <>Typed practice scores presentation from your written structure and follow-up. Switch to{" "}
               <strong className="font-semibold text-slate-700 dark:text-slate-200">🎙️ Speak</strong> to fold your voice delivery in too.</>
@@ -2624,7 +2644,7 @@ function FeedbackScreen(props: {
               Want to see if you improve next time?
             </p>
             <p className="mt-1 text-sm text-indigo-800/90 dark:text-indigo-300/90">
-              Create a free account and we'll track your delivery and your weakest skills across sessions — and save this one.
+              Create a free account and we'll track your delivery and your weakest skills across sessions, and save this one.
             </p>
             <button className={`mt-3 ${BTN_PRIMARY}`} onClick={props.onSignIn}>
               Sign in to track my progress →
@@ -2672,7 +2692,7 @@ function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSna
   return (
     <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
       <div className="flex items-center justify-between">
-        <Eyebrow>Same scenario — before → after</Eyebrow>
+        <Eyebrow>Same scenario, before → after</Eyebrow>
         <span className={`font-mono text-sm font-semibold ${deltaTone}`}>
           {delta > 0 ? `+${delta}` : delta} pts
         </span>
@@ -2687,14 +2707,14 @@ function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSna
         />
         <BeforeAfterStat
           label="Fillers/min"
-          before={before.fillerPerMin != null ? before.fillerPerMin.toFixed(1) : "—"}
-          after={after.fillerPerMin != null ? after.fillerPerMin.toFixed(1) : "—"}
+          before={before.fillerPerMin != null ? before.fillerPerMin.toFixed(1) : ": "}
+          after={after.fillerPerMin != null ? after.fillerPerMin.toFixed(1) : ": "}
           improved={after.fillerPerMin != null && before.fillerPerMin != null ? after.fillerPerMin <= before.fillerPerMin : true}
         />
         <BeforeAfterStat
           label="Pace (WPM)"
-          before={before.wpm != null ? String(before.wpm) : "—"}
-          after={after.wpm != null ? String(after.wpm) : "—"}
+          before={before.wpm != null ? String(before.wpm) : ": "}
+          after={after.wpm != null ? String(after.wpm) : ": "}
           improved
         />
       </div>
@@ -2874,6 +2894,8 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
     );
   }
   const c = a.creativity;
+  // Optional: sessions stored before the depth award have no `depth` in their jsonb.
+  const d = a.depth;
   return (
     <div className="space-y-4">
       <Card>
@@ -2910,6 +2932,30 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
           </p>
         )}
       </Card>
+
+      {d && (
+        <Card className={d.bonus > 0 ? "border-emerald-200 dark:border-emerald-900/60" : ""}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">📚 Depth bonus</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                Bonus only: for bringing in a related term and actually using it: naming one earns nothing
+              </p>
+            </div>
+            <span className={`font-mono text-sm font-semibold ${d.bonus > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>
+              {d.bonus > 0 ? `+${fmtNum(d.bonus)}` : "+0"}
+            </span>
+          </div>
+          {d.justification && (
+            <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{d.justification}</p>
+          )}
+          {d.evidence && (
+            <p className="mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic text-slate-500 dark:border-emerald-900/60 dark:text-slate-400">
+              “{d.evidence}”
+            </p>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
@@ -2932,7 +2978,7 @@ function MathChecksCard({ checks }: { checks: MathCheck[] }) {
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Every calculation is recomputed by our server — not the AI — so this is exact.
+        Every calculation is recomputed by our server, not the AI, so this is exact.
       </p>
       <div className="mt-3 space-y-2">
         {checks.map((c, i) => {
@@ -2960,11 +3006,11 @@ function MathChecksCard({ checks }: { checks: MathCheck[] }) {
                       c.note || "Couldn't verify this one."
                     ) : bad ? (
                       <>
-                        You said <span className="font-semibold text-red-700 dark:text-red-300">{c.claimed}{unit}</span> — the correct value is{" "}
+                        You said <span className="font-semibold text-red-700 dark:text-red-300">{c.claimed}{unit}</span>: the correct value is{" "}
                         <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fmtNum(c.computed)}{unit}</span>.
                       </>
                     ) : good ? (
-                      <>Correct — <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fmtNum(c.computed)}{unit}</span>.</>
+                      <>Correct: <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fmtNum(c.computed)}{unit}</span>.</>
                     ) : (
                       <>Verified value: <span className="font-semibold">{fmtNum(c.computed)}{unit}</span>.</>
                     )}
@@ -3244,7 +3290,7 @@ function TranscriptNotes({ scores, activeId, onSelect }: {
           <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{scores.length} skills</span>
         </div>
         <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-          Open any indicator — or tap a highlight in your transcript — to see what it earned, what was missing, and a
+          Open any indicator, or tap a highlight in your transcript, to see what it earned, what was missing, and a
           stronger line you could’ve said.
         </p>
         <div className="mt-3 space-y-2">
@@ -3383,8 +3429,8 @@ function TranscriptTab(props: {
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your presentation</h3>
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             {hasTurns
-              ? "Split by speaker so you can see who said what. Highlighted phrases are where an indicator earned credit — color shows the level. Tap one to open its note."
-              : "Highlighted phrases are where an indicator earned credit — the color is the level it reached. Tap one to open its note on the right."}
+              ? "Split by speaker so you can see who said what. Highlighted phrases are where an indicator earned credit: color shows the level. Tap one to open its note."
+              : "Highlighted phrases are where an indicator earned credit: the color is the level it reached. Tap one to open its note on the right."}
           </p>
           {hasTurns ? (
             <div className="mt-3 space-y-3">
@@ -3524,8 +3570,8 @@ function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedd
         </div>
         <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           {learn
-            ? "The business skills this role-play assesses — with what a strong answer looks like, so you can aim for it."
-            : "The business skills this role-play assesses, by name — just like a real role-play sheet. You supply the substance."}
+            ? "The business skills this role-play assesses, with what a strong answer looks like, so you can aim for it."
+            : "The business skills this role-play assesses, by name, just like a real role-play sheet. You supply the substance."}
         </p>
         <ul className="mt-3 space-y-2.5">
           {s.criteria.map((c) => (
@@ -3587,7 +3633,7 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
       <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
         You'll be graded on {scenario.criteria.length} business skills for this role-play, each scored
         Novice → Exemplary with specific feedback and the exact phrases that earned credit. Practice coaching
-        against our own evaluation framework — not an official competition score.
+        against our own evaluation framework, not an official competition score.
       </p>
     </Card>
   );
@@ -3679,7 +3725,7 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
           <div className="pic-sweep h-full w-1/3 rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
         </div>
 
-        {/* Staged checklist — done steps check off, the current one spins. */}
+        {/* Staged checklist: done steps check off, the current one spins. */}
         <ul className="w-full max-w-xs space-y-2.5">
           {steps.map((s, i) => {
             const done = i < active;
@@ -3760,31 +3806,31 @@ function FAQPage({ onStart }: { onStart: () => void }) {
           <p>
             Two steps. When you pick an event and (optionally) a focus, an AI model writes an <strong className="font-semibold text-slate-800 dark:text-slate-200">original</strong> role-play
             built to exercise a handful of specific business skills. After you present, a second pass grades your
-            response against those exact skills — quoting the phrases that earned credit and naming what was missing.
+            response against those exact skills: quoting the phrases that earned credit and naming what was missing.
           </p>
           <p>
             If you speak your answer, your audio is transcribed and we compute delivery metrics (pace, fillers, pauses,
-            timing) with plain arithmetic — no AI opinion involved there.
+            timing) with plain arithmetic, no AI opinion involved there.
           </p>
         </FAQItem>
         <FAQItem q="Can I trust the score? Is the AI just making things up?">
           <p>
-            The score is <strong className="font-semibold text-slate-800 dark:text-slate-200">practice coaching, not an official or predicted competition score</strong> — no tool
+            The score is <strong className="font-semibold text-slate-800 dark:text-slate-200">practice coaching, not an official or predicted competition score</strong>, no tool
             can promise your real judge's number. We keep it honest in a few concrete ways: every skill is graded
             against a written “strong vs. weak” bar so name-dropping a term doesn't earn full marks, and the feedback
             has to cite exact quotes from what you said.
           </p>
           <p>
             For finance and accounting events, we go further: the AI is <em>not trusted to do arithmetic</em>. It hands
-            each calculation to our server as a formula, and Python computes it — so a “Math check” either confirms your
+            each calculation to our server as a formula, and Python computes it, so a “Math check” either confirms your
             number or shows the correct one. It can't tell you you're wrong when you're right.
           </p>
         </FAQItem>
         <FAQItem q="What about my voice recording and privacy?">
           <p>
-            Recordings are sent to a transcription service to measure delivery, then discarded on our servers — we keep
+            Recordings are sent to a transcription service to measure delivery, then discarded on our servers. We keep
             only the transcript and the numbers. Your audio stays on your device unless you choose to keep it. Delivery
-            covers timing only (pace, fillers, pauses) — never tone, confidence, accent, or “charisma.”
+            covers timing only (pace, fillers, pauses), never tone, confidence, accent, or “charisma.”
           </p>
         </FAQItem>
       </FAQGroup>
@@ -3798,32 +3844,32 @@ function FAQPage({ onStart }: { onStart: () => void }) {
           <ul className="ml-4 list-disc space-y-1.5">
             <li>
               <strong className="font-semibold text-slate-800 dark:text-slate-200">Phrase-level grading.</strong> We transcribe your presentation and grade the actual phrases you
-              said — highlighting the exact words that earned credit, and showing <em>“what you could have said”</em>
+              said: highlighting the exact words that earned credit, and showing <em>“what you could have said”</em>
               right in your transcript where a stronger line would have raised your score.
             </li>
             <li>
               <strong className="font-semibold text-slate-800 dark:text-slate-200">Skill by skill, with the gaps.</strong> Every indicator is scored against a written “strong vs. weak”
-              bar, so name-dropping a term doesn't fool it — and you get the concrete thing that was missing.
+              bar, so name-dropping a term doesn't fool it, and you get the concrete thing that was missing.
             </li>
             <li>
               <strong className="font-semibold text-slate-800 dark:text-slate-200">Delivery that counts.</strong> Present out loud and your pace, fillers, pauses, and timing are
-              measured and folded into your score — for team events we even show who dominated the talking.
+              measured and folded into your score, for team events we even show who dominated the talking.
             </li>
             <li>
               <strong className="font-semibold text-slate-800 dark:text-slate-200">Math you can trust.</strong> On finance events, every calculation is recomputed on our server, so a
-              wrong number is caught with the right one — never guessed at.
+              wrong number is caught with the right one, never guessed at.
             </li>
           </ul>
           <p>
             It's all built on our own evaluation framework, authored from public business fundamentals (more on why
-            below) — so the coaching is ours, end to end.
+            below), so the coaching is ours, end to end.
           </p>
         </FAQItem>
         <FAQItem q="Why build your own framework instead of using DECA's performance indicators?">
           <p>
             DECA / MBA Research's performance-indicator lists are <strong className="font-semibold text-slate-800 dark:text-slate-200">licensed intellectual property</strong>. Rather than
             ship their exact wording, codes, and event-to-PI mapping, we authored our own framework of business skills
-            from the underlying public concepts — the same fundamentals taught in any business course. It's the right
+            from the underlying public concepts: the same fundamentals taught in any business course. It's the right
             thing legally and lets us keep improving the rubric ourselves. It also means the framework can travel beyond
             DECA later (FBLA, interview prep, and so on).
           </p>
@@ -3837,7 +3883,7 @@ function FAQPage({ onStart }: { onStart: () => void }) {
             Inc.</strong> We use the name “DECA” only to describe the competition we help you prepare for.
           </p>
           <p>
-            Practicing your own skills with original scenarios is ordinary prep — like a mock interview. What isn't okay
+            Practicing your own skills with original scenarios is ordinary prep, like a mock interview. What isn't okay
             is bringing prepared materials or outside help into the actual competition room. Use this to <em>train</em>
             beforehand, then compete on your own. When in doubt, follow your chapter advisor and DECA's guidelines.
           </p>
@@ -3850,7 +3896,7 @@ function FAQPage({ onStart }: { onStart: () => void }) {
             <li>Practice your <strong className="font-semibold text-slate-800 dark:text-slate-200">real event</strong>, and rotate the focus box so you hit different skills across sessions.</li>
             <li>Start in <strong className="font-semibold text-slate-800 dark:text-slate-200">Learn mode</strong> to see what “good” looks like; switch to <strong className="font-semibold text-slate-800 dark:text-slate-200">Competition mode</strong> once you want the real, blind test.</li>
             <li><strong className="font-semibold text-slate-800 dark:text-slate-200">Speak your answers.</strong> Reading in your head hides pace and filler habits the judge will notice.</li>
-            <li>Use the prep timer for real — the pressure is the point — and always answer the follow-up questions.</li>
+            <li>Use the prep timer for real, the pressure is the point, and always answer the follow-up questions.</li>
             <li>Read the <strong className="font-semibold text-slate-800 dark:text-slate-200">gaps</strong> in each criterion; they're the exact things that would raise your level next time.</li>
             <li>Climb the levels: <strong className="font-semibold text-slate-800 dark:text-slate-200">District → State → ICDC</strong> as the scenarios get harder.</li>
           </ul>
@@ -3858,7 +3904,7 @@ function FAQPage({ onStart }: { onStart: () => void }) {
         <FAQItem q="How do team events work here?">
           <p>
             Pick any “(Team)” event and you get a longer prep and presentation window, matching how team decision-making
-            runs. If you record, we pick up both partners' voices and show a <strong className="font-semibold text-slate-800 dark:text-slate-200">talk-time balance</strong> — so you can see if
+            runs. If you record, we pick up both partners' voices and show a <strong className="font-semibold text-slate-800 dark:text-slate-200">talk-time balance</strong>, so you can see if
             one person dominated, and read the transcript split by speaker. Right now you present together on one
             device; there's no separate second-competitor simulation.
           </p>
@@ -3869,7 +3915,7 @@ function FAQPage({ onStart }: { onStart: () => void }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Still have a question?</h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Use the 💬 Feedback button up top — we read everything.</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Use the 💬 Feedback button up top. We read everything.</p>
           </div>
           <button className={BTN_PRIMARY} onClick={onStart}>Start practicing →</button>
         </div>
@@ -3890,7 +3936,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
           <span className="text-indigo-600 dark:text-indigo-400">Own it.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-          The competitors who place run every skill they're assessed on through the same four beats — and back it with a
+          The competitors who place run every skill they're assessed on through the same four beats, and back it with a
           visual the judge can't forget. Here's the method, with a worked example you can copy.
         </p>
       </section>
@@ -3898,46 +3944,46 @@ function TipsPage({ onStart }: { onStart: () => void }) {
       {/* The DECA method */}
       <section>
         <SectionHead eyebrow="The core skill" title="The method for nailing a skill">
-          One running example — <strong className="font-semibold text-slate-700 dark:text-slate-200">channel strategy</strong> for
-          BrightBean, a small coffee roaster — carried through all four beats.
+          One running example: <strong className="font-semibold text-slate-700 dark:text-slate-200">channel strategy</strong> for
+          BrightBean, a small coffee roaster: carried through all four beats.
         </SectionHead>
         <div className="mt-7 grid gap-4 md:grid-cols-2">
           <MethodCard
             n="1" accent="indigo" title="Define"
-            todo="Clearly and confidently define the skill or any key terms right away. Skip the textbook jargon — keep it simple and conversational so the judge knows you grasp the core concept."
-            example={<>“Channel strategy is just <em>how our product gets from us into the customer's hands</em> — the path it travels to reach them.”</>}
+            todo="Clearly and confidently define the skill or any key terms right away. Skip the textbook jargon: keep it simple and conversational so the judge knows you grasp the core concept."
+            example={<>“Channel strategy is just <em>how our product gets from us into the customer's hands</em>: the path it travels to reach them.”</>}
           />
           <MethodCard
             n="2" accent="violet" title="Explain"
-            todo="Elaborate on why this skill matters to a business — its broader impact, what it does, and why a company has to pay attention to it in the real world."
+            todo="Elaborate on why this skill matters to a business. Its broader impact, what it does, and why a company has to pay attention to it in the real world."
             example={<>“Get the mix right and you control both your <em>margins</em> and how many customers you can reach. Lean on one channel and you're exposed; spread too thin and you lose focus.”</>}
           />
           <MethodCard
             n="3" accent="fuchsia" title="Connect" highlight="Earns the most points"
-            todo="Directly apply the skill to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy — that's the systems thinking judges reward."
-            example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar — it captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
+            todo="Directly apply the skill to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy. That's the systems thinking judges reward."
+            example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar. It captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
           />
           <MethodCard
             n="4" accent="amber" title="Above & Beyond"
             todo="Differentiate yourself. Add a creative element beyond the prompt: a quick chart, a real-world statistic, a famous brand case, or a niche business term."
-            example={<>“Quick math — 200 regulars at $20/mo is <em>~$48K/yr recurring</em>, about what a second wholesale account brings but at double the margin. (then I'd sketch a bar comparing the two.)”</>}
+            example={<>“Quick math: 200 regulars at $20/mo is <em>~$48K/yr recurring</em>, about what a second wholesale account brings but at double the margin. (then I'd sketch a bar comparing the two.)”</>}
           />
         </div>
         <p className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3.5 text-sm leading-relaxed text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
           <span className="mt-0.5 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-indigo-500">Tip</span>
-          <span>If your sentence about the skill could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong> — tie it to the scenario in front of you.</span>
+          <span>If your sentence about the skill could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong>: tie it to the scenario in front of you.</span>
         </p>
       </section>
 
       {/* Visuals */}
       <section>
         <SectionHead eyebrow="Make it stick" title="Use visuals to your advantage">
-          You get pen and paper in prep — most competitors only scribble notes. Draw <em>one</em> clean visual, turn it
+          You get pen and paper in prep: most competitors only scribble notes. Draw <em>one</em> clean visual, turn it
           toward the judge, and reference it out loud. Here's what to reach for and when.
         </SectionHead>
         <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <VisualCard chart={<ChartBars />} title="Bar chart" when="Comparing 2–3 options on cost, margin, or risk to justify your pick." />
-          <VisualCard chart={<ChartLine />} title="Trend line" when="Anchoring the problem in data — a sales dip, a target, a before/after." />
+          <VisualCard chart={<ChartLine />} title="Trend line" when="Anchoring the problem in data: a sales dip, a target, a before/after." />
           <VisualCard chart={<ChartMatrix />} title="2×2 matrix" when="Positioning choices on two axes (effort vs impact) to defend priorities." />
           <VisualCard chart={<ChartTimeline />} title="Timeline" when="Laying a rollout over weeks or quarters so the judge sees execution." />
         </div>
@@ -3954,7 +4000,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
           <TipCard eyebrow="Prep time" title="Own your 10 minutes" items={[
             "Read the situation twice; underline the actual ask.",
             "Map each assessed skill to a moment in your plan.",
-            "Draft your visual early — not at the last minute.",
+            "Draft your visual early, not at the last minute.",
             "Outline your open and close so you bookend strong.",
           ]} />
           <TipCard eyebrow="Structure" title="A shape judges reward" items={[
@@ -3963,7 +4009,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
             <><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> restate the recommendation, invite questions.</>,
           ]} />
           <TipCard eyebrow="Follow-up" title="Handle the questions" items={[
-            "Take a beat — a short pause beats rambling.",
+            "Take a beat: a short pause beats rambling.",
             "Answer directly, then tie back to your recommendation.",
             "If unsure, reason out loud; judges reward sound thinking.",
           ]} />
@@ -3978,16 +4024,16 @@ function TipsPage({ onStart }: { onStart: () => void }) {
       {/* Notebook */}
       <section>
         <SectionHead eyebrow="Prep like a pro" title="How to lay out your notebook page">
-          Your prep paper is a map you'll present from — not an essay. Set it up the same way every time so, under
+          Your prep paper is a map you'll present from, not an essay. Set it up the same way every time so, under
           pressure, your eyes always know where to look. Here's a layout that works.
         </SectionHead>
         <div className="mt-7 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
           <NotebookMock />
           <div className="space-y-3">
             <NotebookStep n="1" title="Company & your role" body="Top of the page: the company name and the exact role you're playing. It anchors everything and stops you slipping out of character." />
-            <NotebookStep n="2" title="The problem, in one line" body="Force yourself to write the actual ask in a single sentence. If you can't, you haven't found it yet — reread the situation." />
-            <NotebookStep n="3" title="Each indicator + your own definition" body="List the skills you're assessed on. Next to each, write a short definition in YOUR words — that's your Define beat, ready to go." />
-            <NotebookStep n="4" title="A tie-back bullet per indicator" body="Under each, one bullet on how it applies to THIS scenario. That bullet is your Connect beat — where the points live." />
+            <NotebookStep n="2" title="The problem, in one line" body="Force yourself to write the actual ask in a single sentence. If you can't, you haven't found it yet: reread the situation." />
+            <NotebookStep n="3" title="Each indicator + your own definition" body="List the skills you're assessed on. Next to each, write a short definition in YOUR words. That's your Define beat, ready to go." />
+            <NotebookStep n="4" title="A tie-back bullet per indicator" body="Under each, one bullet on how it applies to THIS scenario. That bullet is your Connect beat, where the points live." />
             <NotebookStep n="5" title="Open & close" body="Jot your first line and last line. Bookending strong is half the impression, and it saves you when nerves hit." />
           </div>
         </div>
@@ -4008,7 +4054,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
               organized, helps the judge follow, and makes your answer memorable when they score you afterward.
             </p>
             <p className="mt-3 rounded-xl bg-slate-50 px-3.5 py-3 text-sm text-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
-              “My retention plan follows <strong className="font-semibold">R.A.M.P.</strong> — <strong className="font-semibold">R</strong>eward loyalty,
+              “My retention plan follows <strong className="font-semibold">R.A.M.P.</strong>: <strong className="font-semibold">R</strong>eward loyalty,
               <strong className="font-semibold"> A</strong>utomate the outreach, <strong className="font-semibold">M</strong>easure repeat visits,
               <strong className="font-semibold"> P</strong>ilot before rollout.”
             </p>
@@ -4020,14 +4066,14 @@ function TipsPage({ onStart }: { onStart: () => void }) {
             <Eyebrow>Fill the time with substance</Eyebrow>
             <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Add depth, not padding</h3>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Running short? Don't slow down or repeat — add another layer. Each of these buys real time and earns points:
+              Running short? Don't slow down or repeat: add another layer. Each of these buys real time and earns points:
             </p>
             <ul className="mt-3 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
               <Tip icon="④">Run every skill through all four beats (Define → Explain → Connect → Above &amp; Beyond).</Tip>
               <Tip icon="⚖️">Name a second option you considered and why you rejected it.</Tip>
-              <Tip icon="🔢">Quantify — a rough number, a cost, or a target makes it concrete.</Tip>
+              <Tip icon="🔢">Quantify: a rough number, a cost, or a target makes it concrete.</Tip>
               <Tip icon="🗓️">Add an implementation timeline (first 30 days, then 90).</Tip>
-              <Tip icon="⚠️">Raise a risk and how you'd handle it — judges love foresight.</Tip>
+              <Tip icon="⚠️">Raise a risk and how you'd handle it: judges love foresight.</Tip>
               <Tip icon="🏆">Drop a real brand example or a quick stat as proof.</Tip>
             </ul>
           </Card>
@@ -4130,7 +4176,7 @@ function NotebookMock() {
       {/* margin line */}
       <div className="pointer-events-none absolute inset-y-0 left-9 w-px bg-rose-300/60 dark:bg-rose-500/30" />
       <div className="relative pl-6 font-mono text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
-        <p className="font-bold text-slate-900 dark:text-slate-100">FreshBrew Coffee Co. — Marketing Consultant</p>
+        <p className="font-bold text-slate-900 dark:text-slate-100">FreshBrew Coffee Co. : Marketing Consultant</p>
         <p className="mt-1 text-slate-500 dark:text-slate-400">Problem: afternoons are dead + first-timers don't return.</p>
         <div className="mt-3 space-y-2.5">
           {[
@@ -4145,7 +4191,7 @@ function NotebookMock() {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-slate-500 dark:text-slate-400">Open: “Thanks for having me — here's how we win back the afternoon.”</p>
+        <p className="mt-3 text-slate-500 dark:text-slate-400">Open: “Thanks for having me: here's how we win back the afternoon.”</p>
         <p className="text-slate-500 dark:text-slate-400">Close: “Pilot 3 stores, prove the lift, then scale.”</p>
       </div>
     </div>

@@ -5,11 +5,15 @@ Endpoints:
 - GET  /api/config         client-safe runtime config
 - GET  /api/framework      our business domains (for UI hints)
 - GET  /api/rubric         the scoring levels (labels + descriptions) for the UI
+- GET  /api/terms          the study corpus (flashcards / course units)
 - POST /api/feedback       record a piece of user feedback
 - POST /api/scenario       interpret a free-text request, select framework
                            criteria, and generate an original scenario
 - POST /api/score-content  grade a response against the selected criteria
 - POST /api/score-delivery transcribe audio + compute deterministic delivery metrics
+- GET  /api/course/{id}    an event's study path (anonymous-friendly)
+- POST /api/course/enroll  start/switch the signed-in user's path
+- POST /api/study/mark     fold a flip/blitz/role-play result into progress
 
 The Vite dev server proxies /api/* here, so no CORS in development. Provider keys
 stay server-side; the frontend only ever talks to /api/*. The judge's instructions
@@ -27,8 +31,8 @@ import logging
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import admin_samples, blitz, config, db, delivery, events, flashcards, framework, interpret, llm, notify, progress, prompts, rubric, taxonomy, transcription
-from .auth import current_user
+from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, study, taxonomy, terms, transcription
+from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, rate_limit
 from .schemas import (
@@ -50,7 +54,12 @@ from .schemas import (
     BlitzResult,
     BlitzScoreRequest,
     BlitzScoreResponse,
+    CourseResponse,
+    DepthScore,
+    EnrollRequest,
     Sampling,
+    StudyMarkRequest,
+    StudyMarkResponse,
     ScenarioRequest,
     ScenarioResponse,
     ScoreRequest,
@@ -60,6 +69,7 @@ from .schemas import (
     SessionSaved,
     SessionSummary,
     SubScore,
+    Term,
     Timing,
     TranscribeResponse,
     Utterance,
@@ -111,29 +121,19 @@ def get_events() -> list[EventSummary]:
     return [EventSummary(**e) for e in events.event_summaries()]
 
 
-@app.get("/api/criteria", response_model=list[Criterion])
-def get_criteria(ids: str = "") -> list[Criterion]:
-    """Flashcard content for framework criteria. With `ids` (comma list) returns just
-    those (a user's weak-criterion deck); with no `ids` returns the WHOLE framework
-    (the library). Each card carries a plain definition, a term-specific worked
-    example run through the four DECA beats, and one common-mistake line (Phase 4);
-    the old strong/weak fields are still sent for back-compat but no longer shown."""
-    fields = ("id", "domain", "topic", "name", "definition", "strong_looks_like", "weak_looks_like", "coaches")
+@app.get("/api/terms", response_model=list[Term])
+def get_terms(ids: str = "") -> list[Term]:
+    """Study terms. With `ids` (comma list) returns just those (a weak-term deck, a
+    flagged set, or a course unit); with no `ids` returns the whole corpus (the
+    library). Each term carries a plain definition, a worked example run through the
+    four DECA beats, and one term-specific common mistake.
+
+    These are study content, NOT the grading criteria — see app/terms.py. Terms that
+    map to a graded criterion carry `criterion_id` and tier="core"; the rest are
+    study-only. Grading reads framework.json and never touches this path."""
     wanted = [x.strip() for x in ids.split(",") if x.strip()]
-    source = framework.get_criteria(wanted) if wanted else framework.all_criteria()
-    out: list[Criterion] = []
-    for c in source:
-        base = {k: c.get(k, "") for k in fields}
-        content = flashcards.content_for(c["id"])
-        if content:
-            # The flashcard definition is the plain, student-facing one — it overrides
-            # the grading-question definition on this (display-only) path.
-            base["definition"] = content.get("definition") or base["definition"]
-            ex = content.get("example") or {}
-            base["example"] = {k: ex.get(k, "") for k in ("define", "explain", "connect", "above")}
-            base["mistake"] = content.get("mistake", "")
-        out.append(Criterion(**base))
-    return out
+    source = terms.get_terms(wanted) if wanted else terms.all_terms()
+    return [Term(**t) for t in source]
 
 
 @app.get("/api/rubric")
@@ -288,10 +288,56 @@ def _sub_score(raw: dict) -> SubScore:
     return SubScore(score=int(_clamp(s, 1, 4)), justification=str(raw.get("justification", "")).strip(), evidence=ev)
 
 
-def _build_analytical(raw: dict) -> AnalyticalSection:
-    """Section 2: take the model's 1-4 sub-scores + creativity bonus, then compute
-    the roll-up arithmetic DETERMINISTICALLY (the model is never trusted to do the
-    weighting or the min())."""
+def _quoted(evidence: str | None, haystack: str) -> bool:
+    """Whether a cited quote actually appears in the participant's own words.
+
+    The model is asked for verbatim substrings; this checks it. Loose on whitespace
+    and case (transcripts and the model both normalize unpredictably) but strict
+    about the words themselves — a quote we can't find is a quote they didn't say.
+    """
+    if not evidence:
+        return False
+    norm = lambda s: " ".join(s.lower().split())  # noqa: E731
+    return norm(evidence) in norm(haystack)
+
+
+def _build_depth(raw: dict, response_text: str, offered: dict[str, dict]) -> DepthScore:
+    """Section 2's depth bonus: credit for genuinely APPLYING a related study term.
+
+    Three deterministic gates, because the prompt alone can't be trusted with the
+    one rule that matters here — mention must not pay:
+      1. the cited terms must be ones we actually offered (no inventing);
+      2. the quote must be findable in the participant's own text (no hallucinating
+         the evidence for a term they never used);
+      3. no surviving term or no quote => no bonus.
+    Bonus-only and capped by the caller, so the worst case is a lost +0.5, never a
+    penalty on an honest answer.
+    """
+    if not offered:
+        return DepthScore()
+    try:
+        bonus = float(raw.get("bonus", 0.0))
+    except (TypeError, ValueError):
+        bonus = 0.0
+    bonus = min((0.0, 0.25, 0.5), key=lambda b: abs(b - bonus))
+
+    cited = [str(t).strip() for t in raw.get("terms", []) if str(t).strip() in offered]
+    ev = raw.get("evidence")
+    ev = str(ev).strip() if ev not in (None, "", "null") else None
+    if not cited or not _quoted(ev, response_text):
+        return DepthScore(terms=cited, justification=str(raw.get("justification", "")).strip())
+    return DepthScore(
+        bonus=bonus,
+        terms=cited,
+        justification=str(raw.get("justification", "")).strip(),
+        evidence=ev,
+    )
+
+
+def _build_analytical(raw: dict, response_text: str = "", depth_offered: dict[str, dict] | None = None) -> AnalyticalSection:
+    """Section 2: take the model's 1-4 sub-scores + creativity/depth bonuses, then
+    compute the roll-up arithmetic DETERMINISTICALLY (the model is never trusted to
+    do the weighting or the min())."""
     framing = _sub_score(raw.get("framing", {}))
     solution = _sub_score(raw.get("solution_quality", {}))
     pi_app = _sub_score(raw.get("pi_application", {}))
@@ -308,14 +354,19 @@ def _build_analytical(raw: dict) -> AnalyticalSection:
     cev = craw.get("evidence")
     cev = str(cev).strip() if cev not in (None, "", "null") else None
     creativity = CreativityScore(bonus=bonus, justification=str(craw.get("justification", "")).strip(), evidence=cev)
+    depth = _build_depth(raw.get("depth", {}) or {}, response_text, depth_offered or {})
 
     core = framing.score * 0.30 + solution.score * 0.45 + pi_app.score * 0.25
-    section = _clamp(core + bonus, 0.0, 4.0)
+    # The clamp is what makes both bonuses safe: they can lift a good answer toward
+    # the ceiling but can never push it past one, so vocabulary cannot paper over
+    # weak analysis.
+    section = _clamp(core + bonus + depth.bonus, 0.0, 4.0)
     return AnalyticalSection(
         framing=framing,
         solution_quality=solution,
         pi_application=pi_app,
         creativity=creativity,
+        depth=depth,
         core_score=round(core, 3),
         section_score=round(section, 3),
         section_percent=round(section / 4 * 100, 1),
@@ -356,9 +407,13 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     # Re-derive server-side whether this event needs deterministic math checks.
     quantitative = events.is_quantitative(events.get_event(req.event)) if req.event else False
 
+    # Related study terms this role-play does NOT grade, offered so that reaching
+    # beyond the criteria can be credited (Section 2 depth bonus, bonus-only).
+    depth_vocab = terms.depth_vocab_for(criteria)
+
     system, user = prompts.build_scoring_prompt(
         req.scenario, criteria, req.response, req.followup_questions, req.followup_answer,
-        quantitative, req.spoken, req.delivery_score,
+        quantitative, req.spoken, req.delivery_score, depth_vocab=depth_vocab,
     )
     try:
         raw = llm.complete(system, user, model=config.SCORING_MODEL, max_tokens=4096)
@@ -376,7 +431,10 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     pi_percent = (total / max_points) * 100 if max_points else 0.0
 
     # --- Section 2: Analytical & Problem-Solving (25%) ---
-    analytical = _build_analytical(data.get("analytical", {}) or {})
+    # Evidence for the depth bonus is checked against what the participant actually
+    # said — main response and follow-up both count, since either can carry it.
+    said = f"{req.response}\n{req.followup_answer}"
+    analytical = _build_analytical(data.get("analytical", {}) or {}, said, {t["id"]: t for t in depth_vocab})
 
     # --- Section 3: Professional Presentation (15%) ---
     presentation = _build_presentation(data.get("presentation", {}) or {}, req.spoken, req.delivery_score)
@@ -502,22 +560,20 @@ def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
 @app.post("/api/blitz-score", response_model=BlitzScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
     """Grade a whole drill in ONE batched call: for each term, 'used correctly and
-    in context?' -> correct | partial | missed + a one-line note. Criterion text is
+    in context?' -> correct | partial | missed + a one-line note. Term text is
     re-pinned server-side by id (never trusted from the client)."""
-    # Resolve each answer's term server-side: plain definition + the flashcard's
-    # 'Connect' beat as the gold-standard "correct use" reference.
+    # Resolve each answer's term server-side: plain definition + the card's 'Connect'
+    # beat as the gold-standard "correct use" reference. Drills run over study terms,
+    # so this reads terms.json — a drilled term may have no graded criterion at all.
     items: list[dict] = []
     order: list[str] = []
     for a in req.answers:
-        crit = framework.get_criteria([a.criterion_id])
-        if not crit:
+        t = terms.get_term(a.term_id)
+        if not t:
             continue  # unknown id — skip rather than fail the whole drill
-        c = crit[0]
-        content = flashcards.content_for(a.criterion_id) or {}
-        definition = content.get("definition") or c.get("definition", "")
-        good = (content.get("example") or {}).get("connect", "")
-        items.append({"name": c["name"], "definition": definition, "good_example": good, "response": a.response})
-        order.append(a.criterion_id)
+        good = (t.get("example") or {}).get("connect", "")
+        items.append({"name": t["name"], "definition": t.get("definition", ""), "good_example": good, "response": a.response})
+        order.append(a.term_id)
 
     if not items:
         raise HTTPException(status_code=400, detail="No known terms to grade.")
@@ -541,11 +597,11 @@ def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
             continue
     valid = {"correct", "partial", "missed"}
     results: list[BlitzResult] = []
-    for i, cid in enumerate(order):
+    for i, tid in enumerate(order):
         r = by_index.get(i, {})
         verdict = str(r.get("verdict", "missed")).lower()
         results.append(BlitzResult(
-            criterion_id=cid,
+            term_id=tid,
             verdict=verdict if verdict in valid else "missed",  # type: ignore[arg-type]
             note=str(r.get("note", "")).strip(),
         ))
@@ -645,6 +701,91 @@ async def get_progress(user: dict = Depends(current_user)) -> ProgressResponse:
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="Couldn't load your progress.") from exc
     return ProgressResponse(**progress.compute_progress(rows))
+
+
+# --- study courses ---------------------------------------------------------
+# The course is the summer half of the funnel: pick your event, work an ordered path
+# through the terms it exercises, arrive in the fall knowing them. GET is
+# deliberately anonymous-friendly (browse any event's path without an account);
+# only remembering your place needs a login.
+
+@app.get("/api/course/{event_id}", response_model=CourseResponse)
+async def get_course(event_id: str, user: dict | None = Depends(optional_user)) -> CourseResponse:
+    """One event's study path, with the user's progress overlaid when signed in.
+
+    Renders fully for anonymous visitors — every term shows as "new" — so a student
+    can see exactly what they'd be committing to before making an account."""
+    course = courses.course_for(event_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Unknown event.")
+
+    marks: dict[str, str] = {}
+    enrolled = False
+    if user and config.has_supabase():
+        try:
+            rows = await db.list_study_progress(user["id"])
+            marks = {r["term_id"]: r["status"] for r in rows}
+            prof = await db.get_study_profile(user["id"])
+            enrolled = bool(prof and prof.get("event_id") == event_id)
+        except httpx.HTTPError as exc:
+            # Progress is an overlay, not the point — show the path rather than 502.
+            log.warning("course progress load failed: %s", exc)
+
+    return CourseResponse(**courses.summarize(course, marks), enrolled=enrolled)
+
+
+@app.get("/api/course", response_model=CourseResponse)
+async def get_my_course(user: dict = Depends(current_user)) -> CourseResponse:
+    """The course the signed-in user enrolled in. 404 until they pick an event."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    try:
+        prof = await db.get_study_profile(user["id"])
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't load your course.") from exc
+    if not prof:
+        raise HTTPException(status_code=404, detail="No course yet — pick an event to start one.")
+    return await get_course(prof["event_id"], user)
+
+
+@app.post("/api/course/enroll", response_model=CourseResponse)
+async def enroll_course(req: EnrollRequest, user: dict = Depends(current_user)) -> CourseResponse:
+    """Start (or switch) the signed-in user's study path.
+
+    Switching events never clears study_progress: progress is per TERM, and events
+    share domains, so a student who moves from one marketing event to another keeps
+    everything they already proved."""
+    if not events.get_event(req.event_id):
+        raise HTTPException(status_code=404, detail="Unknown event.")
+    try:
+        await db.set_study_profile(user["id"], req.event_id)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't start your course.") from exc
+    return await get_course(req.event_id, user)
+
+
+@app.post("/api/study/mark", response_model=StudyMarkResponse)
+async def mark_study(req: StudyMarkRequest, user: dict = Depends(current_user)) -> StudyMarkResponse:
+    """Fold study events (a flip, a Blitz round, a graded role-play) into progress.
+
+    Read-modify-write: the transition rules are a pure function (app/study.py) and
+    mastery can go DOWN, so we need the current row to fold onto. Unknown term ids
+    are dropped rather than 400 — a stale client shouldn't fail a whole Blitz."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+
+    known = [m for m in req.marks if terms.get_term(m.term_id)]
+    if not known:
+        return StudyMarkResponse(updated=0)
+
+    ids = [m.term_id for m in known]
+    try:
+        current = {r["term_id"]: r for r in await db.list_study_progress(user["id"], ids)}
+        rows = [study.apply(current.get(m.term_id), m.term_id, m.evidence, m.verdict) for m in known]
+        updated = await db.upsert_study_progress(user["id"], rows)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't save your progress.") from exc
+    return StudyMarkResponse(updated=updated)
 
 
 # --- admin QA page (owner-only, secret passphrase) -------------------------

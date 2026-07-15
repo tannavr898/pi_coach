@@ -17,7 +17,7 @@ export async function initAnalytics(): Promise<void> {
     const res = await fetch("/api/config");
     if (!res.ok) return;
     const cfg = (await res.json()) as { posthog_key?: string; posthog_host?: string };
-    if (!cfg.posthog_key) return; // analytics disabled — posthog-js never loads
+    if (!cfg.posthog_key) return; // analytics disabled: posthog-js never loads
     const mod = await import("posthog-js");
     mod.default.init(cfg.posthog_key, {
       api_host: cfg.posthog_host || "https://us.i.posthog.com",

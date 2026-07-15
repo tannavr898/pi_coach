@@ -12,8 +12,9 @@ import {
   postTranscribe,
   type BlitzResult,
   type BlitzScenario,
-  type Criterion,
+  type Term,
 } from "./api";
+import { markStudy } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY } from "./ui";
 
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
@@ -51,7 +52,7 @@ function sample<T>(arr: T[], n: number): T[] {
   return a.slice(0, Math.min(n, a.length));
 }
 
-export function MasteryBlitz({ cards, onClose }: { cards: Criterion[]; onClose: () => void }) {
+export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () => void }) {
   const terms = useMemo(() => sample(cards, TERMS_PER_BLITZ), [cards]);
   const [scenario, setScenario] = useState<BlitzScenario | null>(null);
   const [scenarioErr, setScenarioErr] = useState<string | null>(null);
@@ -114,7 +115,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Criterion[]; onClose: 
       setRecording(true);
     } catch (e) {
       const name = e instanceof DOMException ? e.name : "";
-      setMicErr(name === "NotAllowedError" ? "Mic blocked — allow access or switch to Type." : "Couldn't start the mic — switch to Type mode.");
+      setMicErr(name === "NotAllowedError" ? "Mic blocked, allow access or switch to Type." : "Couldn't start the mic, switch to Type mode.");
     }
   }
   function stopRec() {
@@ -153,19 +154,24 @@ export function MasteryBlitz({ cards, onClose }: { cards: Criterion[]; onClose: 
     scoredRef.current = true;
     postBlitzScore({
       scenario: scenario.text,
-      answers: terms.map((t, k) => ({ criterion_id: t.id, response: answers[k] })),
+      answers: terms.map((t, k) => ({ term_id: t.id, response: answers[k] })),
     })
       .then((r) => {
         setResults(r.results);
         // Update the session streak/score in scenario order.
         const s = loadStats();
         for (const t of terms) {
-          const res = r.results.find((x) => x.criterion_id === t.id);
+          const res = r.results.find((x) => x.term_id === t.id);
           s.answered += 1;
           if (res?.verdict === "correct") { s.correct += 1; s.streak += 1; s.best = Math.max(s.best, s.streak); }
           else { s.streak = 0; }
         }
         saveStats(s);
+        // Feed the verdicts into study progress. Until now a drill's result died in
+        // sessionStorage, so you could blitz a term correct ten times and the app
+        // still called it weak. Fire-and-forget: markStudy no-ops when signed out
+        // and never throws, so recording can't break the results screen.
+        void markStudy(r.results.map((x) => ({ term_id: x.term_id, evidence: "blitz", verdict: x.verdict })));
         setPhase("results");
       })
       .catch((e) => { setScoreErr(e instanceof Error ? e.message : String(e)); setPhase("results"); });
@@ -265,7 +271,7 @@ function IntroPanel({ scenario, scenarioErr, count, mode, onMode, onStart }: {
       <div>
         <h2 className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Ready to drill {count} terms?</h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-          You'll get one scenario, then each term with {SECONDS_PER_TERM}s to apply it — Define it, then Connect it to the scenario. Fast rounds; we grade the whole set at the end.
+          You'll get one scenario, then each term with {SECONDS_PER_TERM}s to apply it: Define it, then Connect it to the scenario. Fast rounds; we grade the whole set at the end.
         </p>
       </div>
       {scenarioErr ? (
@@ -286,7 +292,7 @@ function IntroPanel({ scenario, scenarioErr, count, mode, onMode, onStart }: {
 
 function DrillPanel(props: {
   scenario: string;
-  term: Criterion;
+  term: Term;
   index: number;
   total: number;
   secondsLeft: number;
@@ -353,7 +359,7 @@ function DrillPanel(props: {
 }
 
 function ResultsPanel({ terms, results, scoreErr, stats, onAgain }: {
-  terms: Criterion[];
+  terms: Term[];
   results: BlitzResult[] | null;
   scoreErr: string | null;
   stats: Stats | null;
@@ -391,7 +397,7 @@ function ResultsPanel({ terms, results, scoreErr, stats, onAgain }: {
 
       <div className="max-h-72 space-y-2 overflow-y-auto">
         {terms.map((t) => {
-          const r = results.find((x) => x.criterion_id === t.id);
+          const r = results.find((x) => x.term_id === t.id);
           const v = r?.verdict ?? "missed";
           return (
             <div key={t.id} className={`rounded-xl border p-3 ${tone[v]}`}>

@@ -22,7 +22,7 @@ export function PreSessionScreen(props: {
   return (
     <div className="mx-auto max-w-2xl space-y-4 pt-4">
       <Card>
-        <Eyebrow>Your first rep — 2 minutes</Eyebrow>
+        <Eyebrow>Your first rep: 2 minutes</Eyebrow>
         <h1 className="mt-2 font-display text-2xl font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
           Let's do one quick round so you can see how this works.
         </h1>
@@ -31,7 +31,7 @@ export function PreSessionScreen(props: {
         </p>
         <ol className="mt-3 space-y-2.5 text-sm text-slate-700 dark:text-slate-200">
           <Step n={1}>
-            You'll get a short, everyday business situation — a friend's coffee cart.
+            You'll get a short, everyday business situation: a friend's coffee cart.
           </Step>
           <Step n={2}>
             You get <strong className="font-semibold">{prepMin} minutes</strong> to think and jot a few notes.
@@ -40,13 +40,13 @@ export function PreSessionScreen(props: {
             You give a <strong className="font-semibold">60–90 second</strong> recommendation out loud (or typed).
           </Step>
           <Step n={4}>
-            You get real feedback: how your ideas scored on three business skills, and — if you speak — your delivery.
+            You get real feedback: how your ideas scored on three business skills, and, if you speak, your delivery.
           </Step>
         </ol>
 
         <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-          🎙️ If you speak, your audio is transcribed to measure delivery — pace, filler
-          words, and pauses — and then <strong className="font-semibold">discarded</strong>. It's never stored or
+          🎙️ If you speak, your audio is transcribed to measure delivery: pace, filler
+          words, and pauses, and then <strong className="font-semibold">discarded</strong>. It's never stored or
           judged for tone or confidence.
         </p>
 
@@ -55,9 +55,9 @@ export function PreSessionScreen(props: {
             className={`${BTN_PRIMARY} sm:flex-1`}
             onClick={() => props.onStart("speak")}
             disabled={!props.canRecord}
-            title={props.canRecord ? undefined : "Your browser can't record audio here — try typing instead."}
+            title={props.canRecord ? undefined : "Your browser can't record audio here: try typing instead."}
           >
-            🎙️ Start out loud — recommended
+            🎙️ Start out loud: recommended
           </button>
           <button className={`${BTN_SECONDARY} sm:flex-1`} onClick={() => props.onStart("type")}>
             ⌨️ Type it instead
@@ -73,7 +73,7 @@ export function PreSessionScreen(props: {
           onClick={props.onSkip}
           className="mt-4 text-sm font-medium text-indigo-600 underline decoration-indigo-400/60 decoration-1 underline-offset-2 transition hover:text-indigo-700 hover:decoration-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
         >
-          Skip the intro — set up a full role-play instead →
+          Skip the intro: set up a full role-play instead →
         </button>
       </Card>
     </div>

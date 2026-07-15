@@ -6,7 +6,7 @@
 // highlighted; any card can be flagged to study later (persisted via useFlags).
 
 import { useEffect, useMemo, useState } from "react";
-import { getAllCriteria, getCriteria, type Criterion, type FlashcardExample } from "./api";
+import { getAllTerms, getTerms, type FlashcardExample, type Term } from "./api";
 import { getProgress } from "./progress";
 import type { FlagsApi } from "./flags";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
@@ -33,13 +33,13 @@ export function Flashcards({
   onClose,
 }: {
   ids?: string[];
-  cards?: Criterion[];
+  cards?: Term[];
   startId?: string;
   title?: string;
   flags: FlagsApi;
   onClose: () => void;
 }) {
-  const [fetched, setFetched] = useState<Criterion[] | null>(preloaded ?? null);
+  const [fetched, setFetched] = useState<Term[] | null>(preloaded ?? null);
   const [error, setError] = useState<string | null>(null);
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -50,7 +50,7 @@ export function Flashcards({
       return;
     }
     let active = true;
-    getCriteria(ids ?? [])
+    getTerms(ids ?? [])
       .then((c) => active && setFetched(c))
       .catch((e) => active && setError(e instanceof Error ? e.message : String(e)));
     return () => {
@@ -117,7 +117,7 @@ export function Flashcards({
 }
 
 // A single 3D-flip card. Fixed height; the back scrolls if long.
-function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Criterion; flipped: boolean; onFlip: () => void; flagged: boolean; onFlag: () => void }) {
+function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flipped: boolean; onFlip: () => void; flagged: boolean; onFlag: () => void }) {
   return (
     <div style={{ perspective: 1400 }}>
       <div
@@ -153,7 +153,7 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Criterion;
             )}
             {card.example && (
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">In a response — run it through the four beats</div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">In a response: run it through the four beats</div>
                 <ol className="mt-2 space-y-2">
                   {BEATS.map((b) => (
                     <li key={b.key} className="leading-relaxed">
@@ -161,7 +161,7 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Criterion;
                       {b.note && (
                         <span className="ml-1.5 rounded bg-fuchsia-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-fuchsia-600 dark:bg-fuchsia-950/40 dark:text-fuchsia-300">{b.note}</span>
                       )}
-                      <span className="text-slate-700 dark:text-slate-200"> — {card.example?.[b.key]}</span>
+                      <span className="text-slate-700 dark:text-slate-200">: {card.example?.[b.key]}</span>
                     </li>
                   ))}
                 </ol>
@@ -185,7 +185,7 @@ function FlagButton({ flagged, onFlag }: { flagged: boolean; onFlag: () => void 
     <button
       onClick={(e) => { e.stopPropagation(); onFlag(); }}
       aria-label={flagged ? "Unflag" : "Flag to study later"}
-      title={flagged ? "Flagged — click to remove" : "Flag to study later"}
+      title={flagged ? "Flagged: click to remove" : "Flag to study later"}
       className={`rounded-lg px-2 py-1 text-lg leading-none transition ${flagged ? "text-amber-500" : "text-slate-300 hover:text-amber-400 dark:text-slate-600"}`}
     >
       {flagged ? "★" : "☆"}
@@ -205,17 +205,17 @@ export function FlashcardLibrary({
   onBlitz,
 }: {
   flags: FlagsApi;
-  onStudy: (cards: Criterion[], startId?: string, title?: string) => void;
-  onBlitz: (cards: Criterion[], title?: string) => void;
+  onStudy: (cards: Term[], startId?: string, title?: string) => void;
+  onBlitz: (cards: Term[], title?: string) => void;
 }) {
-  const [all, setAll] = useState<Criterion[] | null>(null);
+  const [all, setAll] = useState<Term[] | null>(null);
   const [weakIds, setWeakIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     let active = true;
-    getAllCriteria()
+    getAllTerms()
       .then((c) => active && setAll(c))
       .catch((e) => active && setError(e instanceof Error ? e.message : String(e)));
     // Weak criteria come from progress; failure is non-fatal (no highlights).
@@ -233,15 +233,19 @@ export function FlashcardLibrary({
     };
   }, []);
 
+  // Weakness comes from graded sessions, so only terms with a criterion can be weak
+  // — study-only terms have nothing to be weak against.
+  const isWeak = (t: Term) => !!t.criterion_id && weakIds.has(t.criterion_id);
+
   const flaggedCards = useMemo(() => (all ?? []).filter((c) => flags.flags.has(c.id)), [all, flags.flags]);
-  const recommended = useMemo(() => (all ?? []).filter((c) => weakIds.has(c.id)), [all, weakIds]);
+  const recommended = useMemo(() => (all ?? []).filter(isWeak), [all, weakIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group by domain, honoring the search filter.
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = (all ?? []).filter((c) => !q || c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q));
     const order: string[] = [];
-    const by: Record<string, Criterion[]> = {};
+    const by: Record<string, Term[]> = {};
     for (const c of filtered) {
       if (!by[c.domain]) {
         by[c.domain] = [];
@@ -271,12 +275,12 @@ export function FlashcardLibrary({
         />
       </div>
 
-      {/* Mastery Blitz launcher — rapid, timed drill over a set of terms. */}
+      {/* Mastery Blitz launcher: rapid, timed drill over a set of terms. */}
       <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30 sm:flex-row sm:items-center">
         <div>
           <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Mastery Blitz</h3>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Rapid drill: one scenario, {5} terms, {45}s each — apply each term in DECA format, graded instantly at the end.
+            Rapid drill: one scenario, {5} terms, {45}s each: apply each term in DECA format, graded instantly at the end.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -309,7 +313,7 @@ export function FlashcardLibrary({
 
       {/* Domains */}
       {groups.map(({ domain, cards }) => {
-        const weakHere = cards.filter((c) => weakIds.has(c.id)).length;
+        const weakHere = cards.filter(isWeak).length;
         return (
           <Card key={domain}>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -327,7 +331,7 @@ export function FlashcardLibrary({
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {cards.map((c) => {
-                const weak = weakIds.has(c.id);
+                const weak = isWeak(c);
                 const flagged = flags.flags.has(c.id);
                 return (
                   <button
@@ -371,7 +375,7 @@ function SetCard({ tone, title, subtitle, count, onStudy, onBlitz }: { tone: "in
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{subtitle}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <button className={`${BTN_PRIMARY} disabled:opacity-40`} disabled={count === 0} onClick={onStudy}>
-          Study {count > 0 ? `${count} card${count === 1 ? "" : "s"}` : "—"} →
+          Study {count > 0 ? `${count} card${count === 1 ? "" : "s"}` : ": "} →
         </button>
         <button className={`${BTN_SECONDARY} disabled:opacity-40`} disabled={count === 0} onClick={onBlitz}>⚡ Blitz</button>
       </div>

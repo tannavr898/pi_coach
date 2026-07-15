@@ -26,6 +26,8 @@ class FlashcardExample(BaseModel):
 class Criterion(BaseModel):
     """One evaluation criterion, as shown to the participant on the cover sheet.
 
+    This is what the app GRADES (framework.json). Study content lives on Term.
+
     In Competition mode the teaching fields (definition / strong_looks_like /
     weak_looks_like) are blanked server-side so the participant sees only the
     names — the criteria are still graded by id from the framework. In Learn mode
@@ -36,12 +38,37 @@ class Criterion(BaseModel):
     domain: str = ""
     topic: str = ""
     name: str
+    # A grading QUESTION ("does the response…"), not a student-facing definition —
+    # a deliberate structural choice; see data/framework-notes.md.
     definition: str = ""
     strong_looks_like: str = ""
     weak_looks_like: str = ""
     coaches: str = ""
-    # Flashcard display content (Phase 4). Populated only on the /api/criteria
-    # (flashcard) path; scenario cover-sheets leave these empty.
+
+
+class Term(BaseModel):
+    """One study term — the unit of flashcard and course content (terms.json).
+
+    A term is what a student STUDIES; a Criterion is what the app GRADES. They were
+    the same object while the corpus matched the framework 1-to-1; splitting them is
+    what lets the library grow past the 282 graded criteria without touching grading.
+
+    `criterion_id` is set when the term maps to a graded framework criterion — that
+    join drives weak-term highlighting, the Section 2 depth award, and the core tier.
+    Study-only terms have `criterion_id=None` and are never graded directly.
+    """
+
+    id: str
+    criterion_id: str | None = None
+    tier: Literal["core", "extended"] = "extended"
+    domain_id: str = ""
+    domain: str = ""
+    topic: str = ""
+    name: str
+    coaches: str = ""
+    # The plain, student-facing definition. Distinct from a Criterion.definition,
+    # which is a grading question ("does the response…") and never shown on a card.
+    definition: str = ""
     example: FlashcardExample | None = None
     mistake: str = ""
 
@@ -225,6 +252,29 @@ class CreativityScore(BaseModel):
     evidence: str | None = None
 
 
+class DepthScore(BaseModel):
+    """Bonus-only depth award for Section 2 (0, +0.25, +0.5) — the same rail as
+    CreativityScore, and never a penalty.
+
+    Rewards a competitor who brings in a RELEVANT business term the scenario didn't
+    require and genuinely uses it. Deliberately parked in Section 2 (application),
+    never Section 1: Section 1's strong/weak bar is the app's anti-inflation
+    mechanism, and paying out there for vocabulary would undo the one thing the
+    grader is strictest about.
+
+    The bonus is zeroed unless the model cites a verbatim quote that we can find in
+    the participant's own text (main.py checks). So "we should segment the market",
+    said and dropped, earns nothing — mention is not application.
+    """
+
+    bonus: float = 0.0
+    # Study-term ids the model judged genuinely applied. Feeds study progress as
+    # roleplay-grade evidence — the strongest kind.
+    terms: list[str] = []
+    justification: str = ""
+    evidence: str | None = None
+
+
 class AnalyticalSection(BaseModel):
     """Section 2 — how well the competitor APPLIES business thinking to solve the
     scenario. Sub-scores come from the model; the roll-up arithmetic is computed
@@ -235,8 +285,10 @@ class AnalyticalSection(BaseModel):
     solution_quality: SubScore
     pi_application: SubScore
     creativity: CreativityScore
+    # Default so sessions stored before the depth award still parse.
+    depth: DepthScore = Field(default_factory=DepthScore)
     core_score: float = 0.0  # (2a×0.30)+(2b×0.45)+(2c×0.25)
-    section_score: float = 0.0  # min(4, core + creativity)
+    section_score: float = 0.0  # min(4, core + creativity + depth)
     section_percent: float = 0.0  # section_score / 4 × 100
 
 
@@ -464,6 +516,73 @@ class ProgressResponse(BaseModel):
     score_trend: ScoreTrend
 
 
+# --- Study courses --------------------------------------------------------
+
+
+class CourseUnit(BaseModel):
+    """One topic's worth of terms — the chunk a student finishes in a sitting.
+
+    Progress fields are zero for anonymous visitors: the path renders for anyone,
+    it just doesn't remember them.
+    """
+
+    id: str
+    domain_id: str = ""
+    domain: str = ""
+    topic: str = ""
+    core_ids: list[str] = []
+    extended_ids: list[str] = []
+    known: int = 0
+    learning: int = 0
+    total: int = 0
+    # Core counted separately: the UI shows one tier at a time, and on the Core path
+    # a unit's progress has to be out of its core terms to ever reach 100%.
+    core_known: int = 0
+    core_total: int = 0
+    done: bool = False
+
+
+class CourseResponse(BaseModel):
+    """An event's full study path, newest progress folded in."""
+
+    event_id: str
+    event: str
+    cluster: str = ""
+    units: list[CourseUnit] = []
+    core_count: int = 0
+    extended_count: int = 0
+    total: int = 0
+    known_count: int = 0
+    core_known: int = 0
+    # The Core path is the promise ("every skill we grade you on for this event"),
+    # so it gets its own number instead of being averaged into the whole corpus.
+    core_percent: int = 0
+    percent: int = 0
+    # Whether this is the event the user enrolled in (false when just browsing).
+    enrolled: bool = False
+
+
+class EnrollRequest(BaseModel):
+    event_id: str = Field(min_length=1, max_length=80)
+
+
+class StudyMark(BaseModel):
+    """One study event to fold into a term's progress. `verdict` is required for
+    blitz/roleplay evidence and ignored for a flip (seeing a card proves nothing)."""
+
+    term_id: str = Field(min_length=1, max_length=40)
+    evidence: Literal["flip", "blitz", "roleplay"] = "flip"
+    verdict: Literal["correct", "partial", "missed", ""] = ""
+
+
+class StudyMarkRequest(BaseModel):
+    marks: list[StudyMark] = Field(min_length=1, max_length=60)
+
+
+class StudyMarkResponse(BaseModel):
+    updated: int = 0
+
+
 # --- Mastery Blitz (Phase 5) ----------------------------------------------
 
 
@@ -475,7 +594,7 @@ class BlitzScenario(BaseModel):
 
 class BlitzAnswer(BaseModel):
     """One drilled term + the student's quick (typed or transcribed) answer."""
-    criterion_id: str
+    term_id: str
     response: str = ""
 
 
@@ -485,7 +604,7 @@ class BlitzScoreRequest(BaseModel):
 
 
 class BlitzResult(BaseModel):
-    criterion_id: str
+    term_id: str
     verdict: Literal["correct", "partial", "missed"] = "missed"
     note: str = ""
 

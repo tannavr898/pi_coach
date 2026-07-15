@@ -101,7 +101,7 @@ export function HomePage(props: {
 
   return (
     <div className="mx-auto max-w-[84rem] space-y-5">
-      {/* 1 — Start, always at the top */}
+      {/* 1: Start, always at the top */}
       <Card>
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
@@ -111,7 +111,7 @@ export function HomePage(props: {
             </h1>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               {count > 0
-                ? `${count} session${count === 1 ? "" : "s"} in. Keep showing up — that's how the numbers below move.`
+                ? `${count} session${count === 1 ? "" : "s"} in. Keep showing up. That's how the numbers below move.`
                 : "Pick your event, present out loud, and get honest per-criterion feedback."}
             </p>
           </div>
@@ -128,9 +128,9 @@ export function HomePage(props: {
       )}
 
       <div className="grid gap-5 lg:grid-cols-3">
-        {/* 2 — Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
+        {/* 2: Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
         <Card className="lg:col-span-2">
-          <ChartFrame title="Your skills across the 13 domains" hint="Higher is stronger — 0 Novice → 3 Exemplary, averaged over the criteria you've been graded on in each domain.">
+          <ChartFrame title="Your skills across the 13 domains" hint="Higher is stronger: 0 Novice → 3 Exemplary, averaged over the criteria you've been graded on in each domain.">
             {radarData.length >= 3 && count > 0 ? (
               <div className="grid items-center gap-6 sm:grid-cols-[1.4fr_1fr]">
                 <SkillRadar data={radarData} max={3} />
@@ -147,7 +147,7 @@ export function HomePage(props: {
               </div>
             ) : (
               <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                Finish a session and your skill map fills in here — one spoke per domain, {domains.length || 13} in all.
+                Finish a session and your skill map fills in here: one spoke per domain, {domains.length || 13} in all.
               </p>
             )}
           </ChartFrame>
@@ -213,7 +213,7 @@ export function HomePage(props: {
 
         {/* Delivery trend (fillers/min) */}
         <Card className="lg:col-span-1">
-          <ChartFrame title="Delivery — fillers per minute" hint={trend?.note}>
+          <ChartFrame title="Delivery: fillers per minute" hint={trend?.note}>
             {deliveryPoints.length >= 2 ? (
               <TrendLine points={deliveryPoints} color="emerald" yMin={0} valueSuffix="/min" />
             ) : (
@@ -224,7 +224,7 @@ export function HomePage(props: {
 
         {/* Consistency / volume */}
         <Card className="lg:col-span-1">
-          <ChartFrame title="Your consistency" hint={count > 0 ? `${count} session${count === 1 ? "" : "s"} total — sessions per week.` : "Sessions per week."}>
+          <ChartFrame title="Your consistency" hint={count > 0 ? `${count} session${count === 1 ? "" : "s"} total: sessions per week.` : "Sessions per week."}>
             {sessions && sessions.length > 0 ? (
               <VolumeBars bars={volume} />
             ) : (
@@ -243,7 +243,7 @@ export function HomePage(props: {
               </h3>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 {allCriterionIds.length > 0
-                  ? `Flip through the ${allCriterionIds.length} criteria you've been graded on — definition, what strong vs. weak looks like, and the DECA method.`
+                  ? `Flip through the ${allCriterionIds.length} criteria you've been graded on: definition, what strong vs. weak looks like, and the DECA method.`
                   : "Finish a session and the criteria you were graded on become a study deck here."}
               </p>
             </div>

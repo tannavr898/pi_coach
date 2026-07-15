@@ -73,6 +73,18 @@ _LEVEL_GUIDE = {
 }
 
 
+# House style for every model-written string a student can read. Em dashes are
+# banned outright: they're the tell that gives away machine-written copy, and no
+# amount of cleaning the data files matters if the grader reinstates them in the
+# feedback it writes on every run. Kept as one constant so the rule can't drift
+# between prompts.
+_STYLE_RULE = (
+    "STYLE: never use an em dash (—) or an en dash (–) in any text you write. Use a "
+    "comma, a colon, or start a new sentence instead. Plain, spoken, student-facing "
+    "English.\n\n"
+)
+
+
 # ---------------------------------------------------------------------------
 # 1. Interpret the free-text request
 # ---------------------------------------------------------------------------
@@ -118,12 +130,13 @@ SCENARIO_SYSTEM = (
     "hundreds of practice events. You write ORIGINAL practice scenarios in the "
     "style of a competitive business role-play. You never copy published "
     "scenarios and never reproduce any real organization's branding, event "
-    "codes, copyright lines, or logos — these are original practice materials.\n\n"
+    "codes, copyright lines, or logos. These are original practice materials.\n\n"
     "You are given a set of evaluation criteria (our own framework) and must (a) "
     "choose the ones that genuinely fit the requested topic and can all be "
     "demonstrated together in a single ~10-minute role-play, and (b) write a "
-    "scenario whose task naturally requires every criterion you chose — woven "
+    "scenario whose task naturally requires every criterion you chose, woven "
     "into one coherent business situation, never as a visible checklist.\n\n"
+    f"{_STYLE_RULE}"
     "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
@@ -277,6 +290,7 @@ SCORING_SYSTEM = (
     "requires is absent, say so and score accordingly.\n\n"
     "Be specific and honest; cite verbatim quotes as evidence; never inflate; never "
     "invent criteria beyond the ones given.\n\n"
+    f"{_STYLE_RULE}"
     "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
 )
 
@@ -354,6 +368,21 @@ def _delivery_block(spoken: bool, delivery_score: int | None) -> str:
     )
 
 
+def _depth_block(vocab: list[dict]) -> str:
+    """The optional depth vocabulary: related study terms the scenario did NOT
+    require, offered so a competitor who brings one in and uses it well can be
+    rewarded for it. Empty string when there's nothing to offer."""
+    if not vocab:
+        return ""
+    lines = "\n".join(f"- {t['id']} — {t['name']}: {t['definition']}" for t in vocab)
+    return f"""
+DEPTH VOCABULARY — related business terms this role-play does NOT require and does
+NOT grade. They exist ONLY so that a competitor who brings one in AND genuinely
+applies it can be credited in Section 2's "depth" bonus:
+{lines}
+"""
+
+
 def build_scoring_prompt(
     scenario: str,
     criteria: list[dict],
@@ -363,9 +392,11 @@ def build_scoring_prompt(
     quantitative: bool = False,
     spoken: bool = False,
     delivery_score: int | None = None,
+    depth_vocab: list[dict] | None = None,
 ) -> tuple[str, str]:
     """Build the (system, user) messages for the weighted 3-section scoring."""
     fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
+    depth_block = _depth_block(depth_vocab or [])
     math_instructions = _MATH_BLOCK if quantitative else ""
     math_key = '\n  "math_checks": [{"label": "...", "expression": "...", "claimed": <number or omit>, "unit": "..."}],' if quantitative else ""
     user = f"""{_levels_brief()}
@@ -374,7 +405,7 @@ def build_scoring_prompt(
 THE EVALUATION CRITERIA (the "performance indicators") for this role-play — grade
 against these and ONLY these:
 {_criteria_block(criteria)}
-
+{depth_block}
 BUSINESS SITUATION the participant responded to:
 {scenario}
 
@@ -429,6 +460,16 @@ the creative element makes the response genuinely clearer, more persuasive, or m
 effective. +0.0 none · +0.25 one clear beneficial creative element (an apt acronym,
 a referenced visual that aids clarity, a memorable framing) · +0.5 creativity is a
 consistent, defining strength that materially elevates the response.
+Then "depth" — also a BONUS ONLY, NEVER a penalty, for reaching beyond the graded
+criteria into the DEPTH VOCABULARY above. An answer that uses none earns +0.0 and
+loses nothing. Award ONLY for a term that is (a) listed in the depth vocabulary,
+(b) genuinely APPLIED to this scenario — driving a recommendation, a trade-off, or a
+number — and (c) correct. MENTIONING A TERM EARNS NOTHING: "we'd look at our break-
+even" is a name-drop, while "break-even is 500 units a month, so the kiosk clears it
+at our current 30/day" is application. If you cannot quote the participant actually
+using the term, the bonus is +0.0. Do not reward a term used wrongly, and never
+invent a term they did not say. +0.25 one relevant term genuinely applied · +0.5 two
+or more, or one used to real analytical effect. List the ids you credited in "terms".
 
 SECTION 3 — PROFESSIONAL PRESENTATION
 Give ONE integer score 1-4 for professional presentation, using DELIVERY_METRICS
@@ -447,7 +488,8 @@ Return a JSON object with EXACTLY this shape:
     "framing": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
     "solution_quality": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
     "pi_application": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
-    "creativity": {{"bonus": <0.0|0.25|0.5>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}}
+    "creativity": {{"bonus": <0.0|0.25|0.5>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
+    "depth": {{"bonus": <0.0|0.25|0.5>, "terms": ["<depth vocabulary id>"], "justification": "<one sentence>", "evidence": "<exact quote showing the term APPLIED, or null>"}}
   }},
   "presentation": {{"score": <1-4>, "notes": "<one sentence on pace/delivery/follow-up>"}},
   "final": {{
@@ -478,8 +520,9 @@ BLITZ_SYSTEM = (
     "- correct  = clearly applied the right idea to THIS scenario.\n"
     "- partial  = touched the skill but stayed vague, generic, or not tied to the scenario.\n"
     "- missed   = wrong, absent, off-topic, or empty.\n\n"
-    "Give ONE short, specific coaching note per item (max ~20 words) — say what would "
+    "Give ONE short, specific coaching note per item (max ~20 words): say what would "
     "have made it correct. Be quick and decisive.\n\n"
+    f"{_STYLE_RULE}"
     "Return ONLY a JSON object, no markdown."
 )
 

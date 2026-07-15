@@ -1,117 +1,349 @@
 {
   "version": 2,
-  "note": "Independently authored scenario-variety dimensions — general business/marketing categories only. This is OUR own taxonomy for forcing scenario diversity from the input side; it is NOT DECA/MBA Research performance indicators, event blueprints, or any copyrighted DECA material. Each value has a stable `id` (used for the recent-combo signature) and a `label` (the phrase injected into the generation prompt). An event's pool = shared, overlaid with its cluster's overrides, overlaid with the event's own entry; a dimension set to [] is opted out for that event.",
-  "dimension_order": ["subtopic", "business_type", "company_size", "stakeholder", "problem", "constraint"],
+  "note": "Independently authored scenario-variety dimensions: general business/marketing categories only. This is OUR own taxonomy for forcing scenario diversity from the input side; it is NOT DECA/MBA Research performance indicators, event blueprints, or any copyrighted DECA material. Each value has a stable `id` (used for the recent-combo signature) and a `label` (the phrase injected into the generation prompt). An event's pool = shared, overlaid with its cluster's overrides, overlaid with the event's own entry; a dimension set to [] is opted out for that event.",
+  "dimension_order": [
+    "subtopic",
+    "business_type",
+    "company_size",
+    "stakeholder",
+    "problem",
+    "constraint"
+  ],
   "shared": {
     "company_size": [
-      { "id": "startup", "label": "an early-stage startup — a handful of employees, still finding its footing" },
-      { "id": "small-local", "label": "a small local business — one or two locations, owner-operated" },
-      { "id": "midsize", "label": "a mid-size regional company — established, a few hundred employees" },
-      { "id": "national-brand", "label": "a well-known national brand — large, with a recognizable name" }
+      {
+        "id": "startup",
+        "label": "an early-stage startup: a handful of employees, still finding its footing"
+      },
+      {
+        "id": "small-local",
+        "label": "a small local business: one or two locations, owner-operated"
+      },
+      {
+        "id": "midsize",
+        "label": "a mid-size regional company: established, a few hundred employees"
+      },
+      {
+        "id": "national-brand",
+        "label": "a well-known national brand: large, with a recognizable name"
+      }
     ],
     "stakeholder": [
-      { "id": "store-manager", "label": "a store or branch manager" },
-      { "id": "owner", "label": "the business owner" },
-      { "id": "executive", "label": "a senior executive (a VP or someone in the C-suite)" },
-      { "id": "client", "label": "an external client whose account you handle" },
-      { "id": "investor", "label": "a prospective investor or lender" },
-      { "id": "team-lead", "label": "a team lead or department head" }
+      {
+        "id": "store-manager",
+        "label": "a store or branch manager"
+      },
+      {
+        "id": "owner",
+        "label": "the business owner"
+      },
+      {
+        "id": "executive",
+        "label": "a senior executive (a VP or someone in the C-suite)"
+      },
+      {
+        "id": "client",
+        "label": "an external client whose account you handle"
+      },
+      {
+        "id": "investor",
+        "label": "a prospective investor or lender"
+      },
+      {
+        "id": "team-lead",
+        "label": "a team lead or department head"
+      }
     ],
     "problem": [
-      { "id": "declining-sales", "label": "sales have been sliding and need to be turned around" },
-      { "id": "launch", "label": "a new product, service, or location is about to launch" },
-      { "id": "crisis", "label": "a public-image or reputation problem has to be handled" },
-      { "id": "expansion", "label": "the business wants to expand into a new market or segment" },
-      { "id": "retention", "label": "keeping customers (or staff) from leaving has become a problem" },
-      { "id": "cost-overrun", "label": "costs have crept up and margins are getting squeezed" },
-      { "id": "competitor-threat", "label": "a competitor has just made an aggressive move" }
+      {
+        "id": "declining-sales",
+        "label": "sales have been sliding and need to be turned around"
+      },
+      {
+        "id": "launch",
+        "label": "a new product, service, or location is about to launch"
+      },
+      {
+        "id": "crisis",
+        "label": "a public-image or reputation problem has to be handled"
+      },
+      {
+        "id": "expansion",
+        "label": "the business wants to expand into a new market or segment"
+      },
+      {
+        "id": "retention",
+        "label": "keeping customers (or staff) from leaving has become a problem"
+      },
+      {
+        "id": "cost-overrun",
+        "label": "costs have crept up and margins are getting squeezed"
+      },
+      {
+        "id": "competitor-threat",
+        "label": "a competitor has just made an aggressive move"
+      }
     ],
     "constraint": [
-      { "id": "tight-budget", "label": "a tight budget with little room for new spending" },
-      { "id": "hard-deadline", "label": "a hard, near-term deadline" },
-      { "id": "limited-staff", "label": "limited staff and stretched capacity" },
-      { "id": "first-mover-competitor", "label": "a competitor who moved first and set the pace" },
-      { "id": "brand-risk", "label": "the need to protect the brand's reputation while acting fast" },
-      { "id": "data-gap", "label": "incomplete information — some numbers aren't available yet" }
+      {
+        "id": "tight-budget",
+        "label": "a tight budget with little room for new spending"
+      },
+      {
+        "id": "hard-deadline",
+        "label": "a hard, near-term deadline"
+      },
+      {
+        "id": "limited-staff",
+        "label": "limited staff and stretched capacity"
+      },
+      {
+        "id": "first-mover-competitor",
+        "label": "a competitor who moved first and set the pace"
+      },
+      {
+        "id": "brand-risk",
+        "label": "the need to protect the brand's reputation while acting fast"
+      },
+      {
+        "id": "data-gap",
+        "label": "incomplete information: some numbers aren't available yet"
+      }
     ]
   },
   "clusters": {
     "Finance": {
       "stakeholder": [
-        { "id": "owner", "label": "the business owner" },
-        { "id": "controller", "label": "a controller or accounting manager" },
-        { "id": "cfo", "label": "a senior finance executive (a CFO or VP of Finance)" },
-        { "id": "client", "label": "a client the firm advises" },
-        { "id": "loan-officer", "label": "a loan officer or bank branch manager" },
-        { "id": "investor", "label": "a prospective investor or lender" }
+        {
+          "id": "owner",
+          "label": "the business owner"
+        },
+        {
+          "id": "controller",
+          "label": "a controller or accounting manager"
+        },
+        {
+          "id": "cfo",
+          "label": "a senior finance executive (a CFO or VP of Finance)"
+        },
+        {
+          "id": "client",
+          "label": "a client the firm advises"
+        },
+        {
+          "id": "loan-officer",
+          "label": "a loan officer or bank branch manager"
+        },
+        {
+          "id": "investor",
+          "label": "a prospective investor or lender"
+        }
       ],
       "problem": [
-        { "id": "financing-decision", "label": "a financing decision has to be made (borrow, save, or fund it another way)" },
-        { "id": "cash-flow", "label": "cash flow is tight and needs to be managed" },
-        { "id": "margin-squeeze", "label": "margins are being squeezed and the numbers need analysis" },
-        { "id": "investment-justify", "label": "a major purchase or investment must be justified" },
-        { "id": "budget-rework", "label": "the budget needs to be reworked" },
-        { "id": "risk-manage", "label": "a financial risk (credit, rate, or liquidity) needs to be managed" }
+        {
+          "id": "financing-decision",
+          "label": "a financing decision has to be made (borrow, save, or fund it another way)"
+        },
+        {
+          "id": "cash-flow",
+          "label": "cash flow is tight and needs to be managed"
+        },
+        {
+          "id": "margin-squeeze",
+          "label": "margins are being squeezed and the numbers need analysis"
+        },
+        {
+          "id": "investment-justify",
+          "label": "a major purchase or investment must be justified"
+        },
+        {
+          "id": "budget-rework",
+          "label": "the budget needs to be reworked"
+        },
+        {
+          "id": "risk-manage",
+          "label": "a financial risk (credit, rate, or liquidity) needs to be managed"
+        }
       ]
     },
     "Hospitality & Tourism": {
       "stakeholder": [
-        { "id": "gm", "label": "the general manager" },
-        { "id": "guest", "label": "a guest or customer" },
-        { "id": "owner", "label": "the owner" },
-        { "id": "regional", "label": "a district or regional manager" },
-        { "id": "event-client", "label": "an event or group-booking client" },
-        { "id": "supervisor", "label": "a front-line supervisor" }
+        {
+          "id": "gm",
+          "label": "the general manager"
+        },
+        {
+          "id": "guest",
+          "label": "a guest or customer"
+        },
+        {
+          "id": "owner",
+          "label": "the owner"
+        },
+        {
+          "id": "regional",
+          "label": "a district or regional manager"
+        },
+        {
+          "id": "event-client",
+          "label": "an event or group-booking client"
+        },
+        {
+          "id": "supervisor",
+          "label": "a front-line supervisor"
+        }
       ],
       "problem": [
-        { "id": "service-failure", "label": "a service failure or complaint has to be resolved" },
-        { "id": "slow-season", "label": "a slow season needs to be filled" },
-        { "id": "launch", "label": "a new location, renovation, or offering is launching" },
-        { "id": "turnover", "label": "staff turnover is hurting service" },
-        { "id": "reputation", "label": "a bad review or reputation problem needs repair" },
-        { "id": "competitor-threat", "label": "a competitor is pulling guests away" }
+        {
+          "id": "service-failure",
+          "label": "a service failure or complaint has to be resolved"
+        },
+        {
+          "id": "slow-season",
+          "label": "a slow season needs to be filled"
+        },
+        {
+          "id": "launch",
+          "label": "a new location, renovation, or offering is launching"
+        },
+        {
+          "id": "turnover",
+          "label": "staff turnover is hurting service"
+        },
+        {
+          "id": "reputation",
+          "label": "a bad review or reputation problem needs repair"
+        },
+        {
+          "id": "competitor-threat",
+          "label": "a competitor is pulling guests away"
+        }
       ]
     },
     "Business Management & Administration": {
       "stakeholder": [
-        { "id": "your-manager", "label": "your manager" },
-        { "id": "employee", "label": "an employee on the team" },
-        { "id": "dept-head", "label": "a department head" },
-        { "id": "executive", "label": "a senior executive" },
-        { "id": "colleague", "label": "a colleague from another department" },
-        { "id": "owner", "label": "the business owner" }
+        {
+          "id": "your-manager",
+          "label": "your manager"
+        },
+        {
+          "id": "employee",
+          "label": "an employee on the team"
+        },
+        {
+          "id": "dept-head",
+          "label": "a department head"
+        },
+        {
+          "id": "executive",
+          "label": "a senior executive"
+        },
+        {
+          "id": "colleague",
+          "label": "a colleague from another department"
+        },
+        {
+          "id": "owner",
+          "label": "the business owner"
+        }
       ],
       "problem": [
-        { "id": "performance", "label": "a performance or productivity problem needs fixing" },
-        { "id": "process", "label": "an inefficient process needs improving" },
-        { "id": "change", "label": "a change has to be rolled out to the team" },
-        { "id": "conflict", "label": "a workplace conflict needs resolving" },
-        { "id": "staffing-gap", "label": "a staffing or scheduling gap has surfaced" },
-        { "id": "cost-target", "label": "a cost or efficiency target has to be met" }
+        {
+          "id": "performance",
+          "label": "a performance or productivity problem needs fixing"
+        },
+        {
+          "id": "process",
+          "label": "an inefficient process needs improving"
+        },
+        {
+          "id": "change",
+          "label": "a change has to be rolled out to the team"
+        },
+        {
+          "id": "conflict",
+          "label": "a workplace conflict needs resolving"
+        },
+        {
+          "id": "staffing-gap",
+          "label": "a staffing or scheduling gap has surfaced"
+        },
+        {
+          "id": "cost-target",
+          "label": "a cost or efficiency target has to be met"
+        }
       ]
     },
     "Entrepreneurship": {
       "company_size": [
-        { "id": "pre-revenue", "label": "a brand-new, pre-revenue venture" },
-        { "id": "first-customers", "label": "an early-stage startup with its first customers" },
-        { "id": "finding-footing", "label": "a small business still finding its footing" },
-        { "id": "scaling", "label": "a young company just starting to scale" }
+        {
+          "id": "pre-revenue",
+          "label": "a brand-new, pre-revenue venture"
+        },
+        {
+          "id": "first-customers",
+          "label": "an early-stage startup with its first customers"
+        },
+        {
+          "id": "finding-footing",
+          "label": "a small business still finding its footing"
+        },
+        {
+          "id": "scaling",
+          "label": "a young company just starting to scale"
+        }
       ],
       "stakeholder": [
-        { "id": "investor", "label": "a prospective investor" },
-        { "id": "lender", "label": "a bank or lender" },
-        { "id": "cofounder", "label": "a potential co-founder or partner" },
-        { "id": "mentor", "label": "a mentor or advisor" },
-        { "id": "first-customer", "label": "a first major customer" },
-        { "id": "founding-team", "label": "your small founding team" }
+        {
+          "id": "investor",
+          "label": "a prospective investor"
+        },
+        {
+          "id": "lender",
+          "label": "a bank or lender"
+        },
+        {
+          "id": "cofounder",
+          "label": "a potential co-founder or partner"
+        },
+        {
+          "id": "mentor",
+          "label": "a mentor or advisor"
+        },
+        {
+          "id": "first-customer",
+          "label": "a first major customer"
+        },
+        {
+          "id": "founding-team",
+          "label": "your small founding team"
+        }
       ],
       "problem": [
-        { "id": "launch-venture", "label": "getting the venture off the ground" },
-        { "id": "first-customers", "label": "finding the first paying customers" },
-        { "id": "runway", "label": "the business is running low on cash and runway" },
-        { "id": "pivot", "label": "deciding whether to pivot the idea" },
-        { "id": "scale-strain", "label": "the business is scaling faster than it can handle" },
-        { "id": "new-competitor", "label": "a competitor is entering the space" }
+        {
+          "id": "launch-venture",
+          "label": "getting the venture off the ground"
+        },
+        {
+          "id": "first-customers",
+          "label": "finding the first paying customers"
+        },
+        {
+          "id": "runway",
+          "label": "the business is running low on cash and runway"
+        },
+        {
+          "id": "pivot",
+          "label": "deciding whether to pivot the idea"
+        },
+        {
+          "id": "scale-strain",
+          "label": "the business is scaling faster than it can handle"
+        },
+        {
+          "id": "new-competitor",
+          "label": "a competitor is entering the space"
+        }
       ]
     }
   },
@@ -119,844 +351,2740 @@
     "principles-marketing": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "positioning", "label": "sharpening how the offering is positioned against the alternatives" },
-        { "id": "new-segment", "label": "reaching a new customer segment that isn't buying yet" },
-        { "id": "promotion", "label": "designing a promotion that actually converts, not just draws eyeballs" },
-        { "id": "pricing", "label": "setting the right price for a product or service" },
-        { "id": "go-to-market", "label": "planning the go-to-market push for a new item" },
-        { "id": "brand-identity", "label": "building a brand identity that stands out" },
-        { "id": "channel-mix", "label": "choosing the right mix of marketing channels for the budget" },
-        { "id": "loyalty", "label": "turning one-time buyers into repeat customers" },
-        { "id": "messaging", "label": "crafting a message that resonates with the target audience" },
-        { "id": "research-driven", "label": "using customer research to steer a marketing decision" }
+        {
+          "id": "positioning",
+          "label": "sharpening how the offering is positioned against the alternatives"
+        },
+        {
+          "id": "new-segment",
+          "label": "reaching a new customer segment that isn't buying yet"
+        },
+        {
+          "id": "promotion",
+          "label": "designing a promotion that actually converts, not just draws eyeballs"
+        },
+        {
+          "id": "pricing",
+          "label": "setting the right price for a product or service"
+        },
+        {
+          "id": "go-to-market",
+          "label": "planning the go-to-market push for a new item"
+        },
+        {
+          "id": "brand-identity",
+          "label": "building a brand identity that stands out"
+        },
+        {
+          "id": "channel-mix",
+          "label": "choosing the right mix of marketing channels for the budget"
+        },
+        {
+          "id": "loyalty",
+          "label": "turning one-time buyers into repeat customers"
+        },
+        {
+          "id": "messaging",
+          "label": "crafting a message that resonates with the target audience"
+        },
+        {
+          "id": "research-driven",
+          "label": "using customer research to steer a marketing decision"
+        }
       ],
       "business_type": [
-        { "id": "coffee-shop", "label": "a specialty coffee shop" },
-        { "id": "fitness-studio", "label": "a boutique fitness studio" },
-        { "id": "online-apparel", "label": "an online apparel retailer" },
-        { "id": "meal-kit", "label": "a meal-kit delivery service" },
-        { "id": "pet-supplies", "label": "a pet-supplies store" },
-        { "id": "home-goods", "label": "a home-goods and decor brand" },
-        { "id": "mobile-app", "label": "a consumer mobile app" },
-        { "id": "landscaping", "label": "a landscaping and lawn-care service" },
-        { "id": "bookstore", "label": "an independent bookstore" },
-        { "id": "skincare", "label": "a skincare and beauty brand" },
-        { "id": "food-truck", "label": "a gourmet food-truck business" },
-        { "id": "bike-shop", "label": "a neighborhood bike shop" }
+        {
+          "id": "coffee-shop",
+          "label": "a specialty coffee shop"
+        },
+        {
+          "id": "fitness-studio",
+          "label": "a boutique fitness studio"
+        },
+        {
+          "id": "online-apparel",
+          "label": "an online apparel retailer"
+        },
+        {
+          "id": "meal-kit",
+          "label": "a meal-kit delivery service"
+        },
+        {
+          "id": "pet-supplies",
+          "label": "a pet-supplies store"
+        },
+        {
+          "id": "home-goods",
+          "label": "a home-goods and decor brand"
+        },
+        {
+          "id": "mobile-app",
+          "label": "a consumer mobile app"
+        },
+        {
+          "id": "landscaping",
+          "label": "a landscaping and lawn-care service"
+        },
+        {
+          "id": "bookstore",
+          "label": "an independent bookstore"
+        },
+        {
+          "id": "skincare",
+          "label": "a skincare and beauty brand"
+        },
+        {
+          "id": "food-truck",
+          "label": "a gourmet food-truck business"
+        },
+        {
+          "id": "bike-shop",
+          "label": "a neighborhood bike shop"
+        }
       ]
     },
     "apparel-accessories-marketing": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "collection-launch", "label": "launching a seasonal collection" },
-        { "id": "visual-merch", "label": "using visual merchandising to lift sales" },
-        { "id": "collab", "label": "a brand collaboration or capsule drop" },
-        { "id": "fit-messaging", "label": "getting sizing and fit messaging right" },
-        { "id": "sustainable-fashion", "label": "positioning around sustainable fashion" },
-        { "id": "loyalty", "label": "a loyalty or membership program" },
-        { "id": "influencer", "label": "an influencer or creator campaign" },
-        { "id": "clearance", "label": "moving through end-of-season inventory" },
-        { "id": "omnichannel", "label": "connecting the online and in-store experience" },
-        { "id": "new-demographic", "label": "reaching a new age group or demographic" }
+        {
+          "id": "collection-launch",
+          "label": "launching a seasonal collection"
+        },
+        {
+          "id": "visual-merch",
+          "label": "using visual merchandising to lift sales"
+        },
+        {
+          "id": "collab",
+          "label": "a brand collaboration or capsule drop"
+        },
+        {
+          "id": "fit-messaging",
+          "label": "getting sizing and fit messaging right"
+        },
+        {
+          "id": "sustainable-fashion",
+          "label": "positioning around sustainable fashion"
+        },
+        {
+          "id": "loyalty",
+          "label": "a loyalty or membership program"
+        },
+        {
+          "id": "influencer",
+          "label": "an influencer or creator campaign"
+        },
+        {
+          "id": "clearance",
+          "label": "moving through end-of-season inventory"
+        },
+        {
+          "id": "omnichannel",
+          "label": "connecting the online and in-store experience"
+        },
+        {
+          "id": "new-demographic",
+          "label": "reaching a new age group or demographic"
+        }
       ],
       "business_type": [
-        { "id": "streetwear", "label": "a streetwear label" },
-        { "id": "shoe-boutique", "label": "a shoe boutique" },
-        { "id": "activewear", "label": "an activewear brand" },
-        { "id": "jewelry", "label": "a jewelry line" },
-        { "id": "handbags", "label": "a handbag and leather-goods brand" },
-        { "id": "online-vintage", "label": "an online vintage-clothing shop" },
-        { "id": "kids-clothing", "label": "a children's clothing brand" },
-        { "id": "eyewear", "label": "a sunglasses and eyewear brand" },
-        { "id": "denim", "label": "a denim brand" },
-        { "id": "formalwear-rental", "label": "a formalwear rental service" },
-        { "id": "outdoor-apparel", "label": "an outdoor and hiking apparel brand" },
-        { "id": "department-apparel", "label": "the apparel section of a department store" }
+        {
+          "id": "streetwear",
+          "label": "a streetwear label"
+        },
+        {
+          "id": "shoe-boutique",
+          "label": "a shoe boutique"
+        },
+        {
+          "id": "activewear",
+          "label": "an activewear brand"
+        },
+        {
+          "id": "jewelry",
+          "label": "a jewelry line"
+        },
+        {
+          "id": "handbags",
+          "label": "a handbag and leather-goods brand"
+        },
+        {
+          "id": "online-vintage",
+          "label": "an online vintage-clothing shop"
+        },
+        {
+          "id": "kids-clothing",
+          "label": "a children's clothing brand"
+        },
+        {
+          "id": "eyewear",
+          "label": "a sunglasses and eyewear brand"
+        },
+        {
+          "id": "denim",
+          "label": "a denim brand"
+        },
+        {
+          "id": "formalwear-rental",
+          "label": "a formalwear rental service"
+        },
+        {
+          "id": "outdoor-apparel",
+          "label": "an outdoor and hiking apparel brand"
+        },
+        {
+          "id": "department-apparel",
+          "label": "the apparel section of a department store"
+        }
       ]
     },
     "automotive-services-marketing": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "service-promo", "label": "promoting the service department" },
-        { "id": "repeat-service", "label": "building a base of repeat service customers" },
-        { "id": "new-drivers", "label": "reaching first-time or younger drivers" },
-        { "id": "maintenance-plan", "label": "selling a maintenance or membership plan" },
-        { "id": "reviews", "label": "managing reputation and online reviews" },
-        { "id": "seasonal-service", "label": "a seasonal service push (tires, A/C, winter prep)" },
-        { "id": "upsell-packages", "label": "upselling service packages at check-in" },
-        { "id": "referral", "label": "a customer referral program" },
-        { "id": "vs-chain", "label": "differentiating from a national chain competitor" },
-        { "id": "ev-positioning", "label": "positioning for electric-vehicle service" }
+        {
+          "id": "service-promo",
+          "label": "promoting the service department"
+        },
+        {
+          "id": "repeat-service",
+          "label": "building a base of repeat service customers"
+        },
+        {
+          "id": "new-drivers",
+          "label": "reaching first-time or younger drivers"
+        },
+        {
+          "id": "maintenance-plan",
+          "label": "selling a maintenance or membership plan"
+        },
+        {
+          "id": "reviews",
+          "label": "managing reputation and online reviews"
+        },
+        {
+          "id": "seasonal-service",
+          "label": "a seasonal service push (tires, A/C, winter prep)"
+        },
+        {
+          "id": "upsell-packages",
+          "label": "upselling service packages at check-in"
+        },
+        {
+          "id": "referral",
+          "label": "a customer referral program"
+        },
+        {
+          "id": "vs-chain",
+          "label": "differentiating from a national chain competitor"
+        },
+        {
+          "id": "ev-positioning",
+          "label": "positioning for electric-vehicle service"
+        }
       ],
       "business_type": [
-        { "id": "repair-shop", "label": "an independent auto-repair shop" },
-        { "id": "dealer-service", "label": "a car dealership's service center" },
-        { "id": "tire-store", "label": "a tire-and-wheel store" },
-        { "id": "oil-change", "label": "a quick oil-change chain" },
-        { "id": "car-wash", "label": "a car-wash and detailing business" },
-        { "id": "auto-parts", "label": "an auto-parts retailer" },
-        { "id": "mobile-mechanic", "label": "a mobile-mechanic service" },
-        { "id": "body-shop", "label": "a body and collision-repair shop" },
-        { "id": "fleet-maintenance", "label": "a fleet-maintenance provider" },
-        { "id": "ev-service", "label": "an EV-charging and service startup" }
+        {
+          "id": "repair-shop",
+          "label": "an independent auto-repair shop"
+        },
+        {
+          "id": "dealer-service",
+          "label": "a car dealership's service center"
+        },
+        {
+          "id": "tire-store",
+          "label": "a tire-and-wheel store"
+        },
+        {
+          "id": "oil-change",
+          "label": "a quick oil-change chain"
+        },
+        {
+          "id": "car-wash",
+          "label": "a car-wash and detailing business"
+        },
+        {
+          "id": "auto-parts",
+          "label": "an auto-parts retailer"
+        },
+        {
+          "id": "mobile-mechanic",
+          "label": "a mobile-mechanic service"
+        },
+        {
+          "id": "body-shop",
+          "label": "a body and collision-repair shop"
+        },
+        {
+          "id": "fleet-maintenance",
+          "label": "a fleet-maintenance provider"
+        },
+        {
+          "id": "ev-service",
+          "label": "an EV-charging and service startup"
+        }
       ]
     },
     "business-services-marketing": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "lead-gen", "label": "generating qualified sales leads" },
-        { "id": "vs-bigger", "label": "positioning against a bigger competitor" },
-        { "id": "partner-program", "label": "a referral or channel-partner program" },
-        { "id": "content-marketing", "label": "a content-marketing strategy" },
-        { "id": "package-pricing", "label": "pricing and packaging a service" },
-        { "id": "client-retention", "label": "a client-retention program" },
-        { "id": "new-vertical", "label": "entering a new industry vertical" },
-        { "id": "rebrand", "label": "rebranding the service" },
-        { "id": "case-study", "label": "a case-study or proof-of-results campaign" },
-        { "id": "small-biz-target", "label": "targeting small-business clients" }
+        {
+          "id": "lead-gen",
+          "label": "generating qualified sales leads"
+        },
+        {
+          "id": "vs-bigger",
+          "label": "positioning against a bigger competitor"
+        },
+        {
+          "id": "partner-program",
+          "label": "a referral or channel-partner program"
+        },
+        {
+          "id": "content-marketing",
+          "label": "a content-marketing strategy"
+        },
+        {
+          "id": "package-pricing",
+          "label": "pricing and packaging a service"
+        },
+        {
+          "id": "client-retention",
+          "label": "a client-retention program"
+        },
+        {
+          "id": "new-vertical",
+          "label": "entering a new industry vertical"
+        },
+        {
+          "id": "rebrand",
+          "label": "rebranding the service"
+        },
+        {
+          "id": "case-study",
+          "label": "a case-study or proof-of-results campaign"
+        },
+        {
+          "id": "small-biz-target",
+          "label": "targeting small-business clients"
+        }
       ],
       "business_type": [
-        { "id": "cleaning", "label": "a commercial cleaning company" },
-        { "id": "it-support", "label": "an IT-support firm" },
-        { "id": "bookkeeping", "label": "a payroll and bookkeeping service" },
-        { "id": "marketing-agency", "label": "a digital-marketing agency" },
-        { "id": "staffing", "label": "a staffing agency" },
-        { "id": "print-signage", "label": "a print-and-signage shop" },
-        { "id": "security-systems", "label": "a security-systems provider" },
-        { "id": "insurance-broker", "label": "a business-insurance broker" },
-        { "id": "commercial-landscaping", "label": "a commercial landscaping firm" },
-        { "id": "coworking", "label": "a coworking space" },
-        { "id": "equipment-leasing", "label": "an office-equipment leasing company" },
-        { "id": "translation", "label": "a translation and localization service" }
+        {
+          "id": "cleaning",
+          "label": "a commercial cleaning company"
+        },
+        {
+          "id": "it-support",
+          "label": "an IT-support firm"
+        },
+        {
+          "id": "bookkeeping",
+          "label": "a payroll and bookkeeping service"
+        },
+        {
+          "id": "marketing-agency",
+          "label": "a digital-marketing agency"
+        },
+        {
+          "id": "staffing",
+          "label": "a staffing agency"
+        },
+        {
+          "id": "print-signage",
+          "label": "a print-and-signage shop"
+        },
+        {
+          "id": "security-systems",
+          "label": "a security-systems provider"
+        },
+        {
+          "id": "insurance-broker",
+          "label": "a business-insurance broker"
+        },
+        {
+          "id": "commercial-landscaping",
+          "label": "a commercial landscaping firm"
+        },
+        {
+          "id": "coworking",
+          "label": "a coworking space"
+        },
+        {
+          "id": "equipment-leasing",
+          "label": "an office-equipment leasing company"
+        },
+        {
+          "id": "translation",
+          "label": "a translation and localization service"
+        }
       ]
     },
     "food-marketing": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "product-launch", "label": "launching a new product" },
-        { "id": "retail-placement", "label": "winning better shelf placement in stores" },
-        { "id": "health-positioning", "label": "a health or nutrition positioning" },
-        { "id": "limited-edition", "label": "a seasonal or limited-edition item" },
-        { "id": "sampling", "label": "a sampling or trial campaign" },
-        { "id": "brand-refresh", "label": "a brand refresh" },
-        { "id": "diet-segment", "label": "targeting a new dietary segment (vegan, gluten-free, high-protein)" },
-        { "id": "price-promo", "label": "a price promotion" },
-        { "id": "packaging", "label": "a packaging redesign" },
-        { "id": "local-sourcing", "label": "telling a local-sourcing story" }
+        {
+          "id": "product-launch",
+          "label": "launching a new product"
+        },
+        {
+          "id": "retail-placement",
+          "label": "winning better shelf placement in stores"
+        },
+        {
+          "id": "health-positioning",
+          "label": "a health or nutrition positioning"
+        },
+        {
+          "id": "limited-edition",
+          "label": "a seasonal or limited-edition item"
+        },
+        {
+          "id": "sampling",
+          "label": "a sampling or trial campaign"
+        },
+        {
+          "id": "brand-refresh",
+          "label": "a brand refresh"
+        },
+        {
+          "id": "diet-segment",
+          "label": "targeting a new dietary segment (vegan, gluten-free, high-protein)"
+        },
+        {
+          "id": "price-promo",
+          "label": "a price promotion"
+        },
+        {
+          "id": "packaging",
+          "label": "a packaging redesign"
+        },
+        {
+          "id": "local-sourcing",
+          "label": "telling a local-sourcing story"
+        }
       ],
       "business_type": [
-        { "id": "snack-brand", "label": "a snack-food brand" },
-        { "id": "craft-beverage", "label": "a craft-beverage company" },
-        { "id": "frozen-meals", "label": "a frozen-meals brand" },
-        { "id": "sauce-maker", "label": "a sauce and condiment maker" },
-        { "id": "bakery-brand", "label": "a packaged-bakery brand" },
-        { "id": "coffee-roaster", "label": "a coffee roaster" },
-        { "id": "plant-based", "label": "a plant-based food startup" },
-        { "id": "cheese", "label": "a specialty-cheese producer" },
-        { "id": "energy-bar", "label": "an energy-bar brand" },
-        { "id": "hot-sauce", "label": "a hot-sauce company" },
-        { "id": "cereal", "label": "a breakfast-cereal brand" },
-        { "id": "juice", "label": "a cold-pressed-juice company" }
+        {
+          "id": "snack-brand",
+          "label": "a snack-food brand"
+        },
+        {
+          "id": "craft-beverage",
+          "label": "a craft-beverage company"
+        },
+        {
+          "id": "frozen-meals",
+          "label": "a frozen-meals brand"
+        },
+        {
+          "id": "sauce-maker",
+          "label": "a sauce and condiment maker"
+        },
+        {
+          "id": "bakery-brand",
+          "label": "a packaged-bakery brand"
+        },
+        {
+          "id": "coffee-roaster",
+          "label": "a coffee roaster"
+        },
+        {
+          "id": "plant-based",
+          "label": "a plant-based food startup"
+        },
+        {
+          "id": "cheese",
+          "label": "a specialty-cheese producer"
+        },
+        {
+          "id": "energy-bar",
+          "label": "an energy-bar brand"
+        },
+        {
+          "id": "hot-sauce",
+          "label": "a hot-sauce company"
+        },
+        {
+          "id": "cereal",
+          "label": "a breakfast-cereal brand"
+        },
+        {
+          "id": "juice",
+          "label": "a cold-pressed-juice company"
+        }
       ]
     },
     "marketing-communications": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "campaign-concept", "label": "developing a campaign concept" },
-        { "id": "media-mix", "label": "choosing the media mix" },
-        { "id": "social-strategy", "label": "a social-media strategy" },
-        { "id": "crisis-comms", "label": "crisis communications" },
-        { "id": "influencer", "label": "an influencer or creator partnership" },
-        { "id": "rebrand-rollout", "label": "rolling out a rebrand" },
-        { "id": "measure-roi", "label": "measuring campaign performance and ROI" },
-        { "id": "cause-marketing", "label": "a cause-marketing campaign" },
-        { "id": "email-crm", "label": "an email and CRM strategy" },
-        { "id": "launch-event", "label": "promoting a launch event" }
+        {
+          "id": "campaign-concept",
+          "label": "developing a campaign concept"
+        },
+        {
+          "id": "media-mix",
+          "label": "choosing the media mix"
+        },
+        {
+          "id": "social-strategy",
+          "label": "a social-media strategy"
+        },
+        {
+          "id": "crisis-comms",
+          "label": "crisis communications"
+        },
+        {
+          "id": "influencer",
+          "label": "an influencer or creator partnership"
+        },
+        {
+          "id": "rebrand-rollout",
+          "label": "rolling out a rebrand"
+        },
+        {
+          "id": "measure-roi",
+          "label": "measuring campaign performance and ROI"
+        },
+        {
+          "id": "cause-marketing",
+          "label": "a cause-marketing campaign"
+        },
+        {
+          "id": "email-crm",
+          "label": "an email and CRM strategy"
+        },
+        {
+          "id": "launch-event",
+          "label": "promoting a launch event"
+        }
       ],
       "business_type": [
-        { "id": "fitness-studio", "label": "a fitness studio" },
-        { "id": "restaurant-chain", "label": "a restaurant chain" },
-        { "id": "mobile-app", "label": "a consumer mobile app" },
-        { "id": "nonprofit", "label": "a nonprofit" },
-        { "id": "local-festival", "label": "a local festival" },
-        { "id": "online-retailer", "label": "an online retailer" },
-        { "id": "car-dealership", "label": "a car dealership" },
-        { "id": "bank", "label": "a community bank" },
-        { "id": "healthcare-clinic", "label": "a healthcare clinic" },
-        { "id": "streaming", "label": "a streaming service" },
-        { "id": "theme-park", "label": "a theme park" },
-        { "id": "subscription-box", "label": "a subscription-box service" }
+        {
+          "id": "fitness-studio",
+          "label": "a fitness studio"
+        },
+        {
+          "id": "restaurant-chain",
+          "label": "a restaurant chain"
+        },
+        {
+          "id": "mobile-app",
+          "label": "a consumer mobile app"
+        },
+        {
+          "id": "nonprofit",
+          "label": "a nonprofit"
+        },
+        {
+          "id": "local-festival",
+          "label": "a local festival"
+        },
+        {
+          "id": "online-retailer",
+          "label": "an online retailer"
+        },
+        {
+          "id": "car-dealership",
+          "label": "a car dealership"
+        },
+        {
+          "id": "bank",
+          "label": "a community bank"
+        },
+        {
+          "id": "healthcare-clinic",
+          "label": "a healthcare clinic"
+        },
+        {
+          "id": "streaming",
+          "label": "a streaming service"
+        },
+        {
+          "id": "theme-park",
+          "label": "a theme park"
+        },
+        {
+          "id": "subscription-box",
+          "label": "a subscription-box service"
+        }
       ]
     },
     "retail-merchandising": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "store-layout", "label": "a store-layout and floor-plan change" },
-        { "id": "promo-display", "label": "a promotional display or endcap" },
-        { "id": "assortment", "label": "inventory and assortment planning" },
-        { "id": "shrinkage", "label": "reducing shrinkage and loss" },
-        { "id": "loyalty", "label": "a loyalty program" },
-        { "id": "in-store-event", "label": "an in-store event" },
-        { "id": "markdown", "label": "a markdown and clearance strategy" },
-        { "id": "cross-sell", "label": "cross-selling and add-on sales" },
-        { "id": "seasonal-merch", "label": "seasonal merchandising" },
-        { "id": "conversion", "label": "improving the rate that browsers become buyers" }
+        {
+          "id": "store-layout",
+          "label": "a store-layout and floor-plan change"
+        },
+        {
+          "id": "promo-display",
+          "label": "a promotional display or endcap"
+        },
+        {
+          "id": "assortment",
+          "label": "inventory and assortment planning"
+        },
+        {
+          "id": "shrinkage",
+          "label": "reducing shrinkage and loss"
+        },
+        {
+          "id": "loyalty",
+          "label": "a loyalty program"
+        },
+        {
+          "id": "in-store-event",
+          "label": "an in-store event"
+        },
+        {
+          "id": "markdown",
+          "label": "a markdown and clearance strategy"
+        },
+        {
+          "id": "cross-sell",
+          "label": "cross-selling and add-on sales"
+        },
+        {
+          "id": "seasonal-merch",
+          "label": "seasonal merchandising"
+        },
+        {
+          "id": "conversion",
+          "label": "improving the rate that browsers become buyers"
+        }
       ],
       "business_type": [
-        { "id": "hardware-store", "label": "a hardware store" },
-        { "id": "grocery", "label": "a grocery store" },
-        { "id": "electronics", "label": "an electronics retailer" },
-        { "id": "toy-store", "label": "a toy store" },
-        { "id": "sporting-goods", "label": "a sporting-goods store" },
-        { "id": "pharmacy", "label": "a pharmacy and drugstore" },
-        { "id": "home-improvement", "label": "a home-improvement store" },
-        { "id": "convenience", "label": "a convenience store" },
-        { "id": "department-store", "label": "a department store" },
-        { "id": "pet-store", "label": "a pet store" },
-        { "id": "garden-center", "label": "a garden center" },
-        { "id": "bookstore", "label": "a bookstore" }
+        {
+          "id": "hardware-store",
+          "label": "a hardware store"
+        },
+        {
+          "id": "grocery",
+          "label": "a grocery store"
+        },
+        {
+          "id": "electronics",
+          "label": "an electronics retailer"
+        },
+        {
+          "id": "toy-store",
+          "label": "a toy store"
+        },
+        {
+          "id": "sporting-goods",
+          "label": "a sporting-goods store"
+        },
+        {
+          "id": "pharmacy",
+          "label": "a pharmacy and drugstore"
+        },
+        {
+          "id": "home-improvement",
+          "label": "a home-improvement store"
+        },
+        {
+          "id": "convenience",
+          "label": "a convenience store"
+        },
+        {
+          "id": "department-store",
+          "label": "a department store"
+        },
+        {
+          "id": "pet-store",
+          "label": "a pet store"
+        },
+        {
+          "id": "garden-center",
+          "label": "a garden center"
+        },
+        {
+          "id": "bookstore",
+          "label": "a bookstore"
+        }
       ]
     },
     "sports-entertainment-marketing": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "ticket-sales", "label": "boosting ticket sales" },
-        { "id": "sponsorship", "label": "a sponsorship pitch" },
-        { "id": "fan-engagement", "label": "a fan-engagement campaign" },
-        { "id": "season-tickets", "label": "a season-ticket or membership program" },
-        { "id": "merch", "label": "a merchandising push" },
-        { "id": "venue-launch", "label": "launching a new venue or event" },
-        { "id": "promo-night", "label": "a themed promotional night" },
-        { "id": "social-content", "label": "a social-media fan-content strategy" },
-        { "id": "younger-audience", "label": "reaching a younger audience" },
-        { "id": "community", "label": "a community-outreach program" }
+        {
+          "id": "ticket-sales",
+          "label": "boosting ticket sales"
+        },
+        {
+          "id": "sponsorship",
+          "label": "a sponsorship pitch"
+        },
+        {
+          "id": "fan-engagement",
+          "label": "a fan-engagement campaign"
+        },
+        {
+          "id": "season-tickets",
+          "label": "a season-ticket or membership program"
+        },
+        {
+          "id": "merch",
+          "label": "a merchandising push"
+        },
+        {
+          "id": "venue-launch",
+          "label": "launching a new venue or event"
+        },
+        {
+          "id": "promo-night",
+          "label": "a themed promotional night"
+        },
+        {
+          "id": "social-content",
+          "label": "a social-media fan-content strategy"
+        },
+        {
+          "id": "younger-audience",
+          "label": "reaching a younger audience"
+        },
+        {
+          "id": "community",
+          "label": "a community-outreach program"
+        }
       ],
       "business_type": [
-        { "id": "minor-league", "label": "a minor-league baseball team" },
-        { "id": "concert-venue", "label": "a concert venue" },
-        { "id": "esports", "label": "an esports team" },
-        { "id": "rec-center", "label": "a fitness and recreation center" },
-        { "id": "movie-theater", "label": "a movie theater" },
-        { "id": "music-festival", "label": "a music festival" },
-        { "id": "college-athletics", "label": "a college athletics department" },
-        { "id": "bowling-entertainment", "label": "a bowling-and-entertainment center" },
-        { "id": "soccer-club", "label": "a professional soccer club" },
-        { "id": "comedy-club", "label": "a comedy club" },
-        { "id": "water-park", "label": "a water park" },
-        { "id": "arcade", "label": "a mini-golf and arcade" }
+        {
+          "id": "minor-league",
+          "label": "a minor-league baseball team"
+        },
+        {
+          "id": "concert-venue",
+          "label": "a concert venue"
+        },
+        {
+          "id": "esports",
+          "label": "an esports team"
+        },
+        {
+          "id": "rec-center",
+          "label": "a fitness and recreation center"
+        },
+        {
+          "id": "movie-theater",
+          "label": "a movie theater"
+        },
+        {
+          "id": "music-festival",
+          "label": "a music festival"
+        },
+        {
+          "id": "college-athletics",
+          "label": "a college athletics department"
+        },
+        {
+          "id": "bowling-entertainment",
+          "label": "a bowling-and-entertainment center"
+        },
+        {
+          "id": "soccer-club",
+          "label": "a professional soccer club"
+        },
+        {
+          "id": "comedy-club",
+          "label": "a comedy club"
+        },
+        {
+          "id": "water-park",
+          "label": "a water park"
+        },
+        {
+          "id": "arcade",
+          "label": "a mini-golf and arcade"
+        }
       ]
     },
     "buying-merchandising-team": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "vendor-selection", "label": "a vendor-selection decision" },
-        { "id": "seasonal-buy", "label": "planning a seasonal buy" },
-        { "id": "assortment-mix", "label": "an assortment and product-mix decision" },
-        { "id": "open-to-buy", "label": "an open-to-buy and markdown plan" },
-        { "id": "private-label", "label": "a private-label opportunity" },
-        { "id": "trend-response", "label": "responding to a sales trend" },
-        { "id": "supplier-negotiation", "label": "a supplier-negotiation approach" },
-        { "id": "new-category", "label": "launching a new product category" },
-        { "id": "excess-inventory", "label": "clearing excess inventory" },
-        { "id": "sourcing-sustainability", "label": "a sustainable-sourcing decision" }
+        {
+          "id": "vendor-selection",
+          "label": "a vendor-selection decision"
+        },
+        {
+          "id": "seasonal-buy",
+          "label": "planning a seasonal buy"
+        },
+        {
+          "id": "assortment-mix",
+          "label": "an assortment and product-mix decision"
+        },
+        {
+          "id": "open-to-buy",
+          "label": "an open-to-buy and markdown plan"
+        },
+        {
+          "id": "private-label",
+          "label": "a private-label opportunity"
+        },
+        {
+          "id": "trend-response",
+          "label": "responding to a sales trend"
+        },
+        {
+          "id": "supplier-negotiation",
+          "label": "a supplier-negotiation approach"
+        },
+        {
+          "id": "new-category",
+          "label": "launching a new product category"
+        },
+        {
+          "id": "excess-inventory",
+          "label": "clearing excess inventory"
+        },
+        {
+          "id": "sourcing-sustainability",
+          "label": "a sustainable-sourcing decision"
+        }
       ],
       "business_type": [
-        { "id": "fashion-retailer", "label": "a fashion retailer" },
-        { "id": "grocery-chain", "label": "a grocery chain" },
-        { "id": "department-store", "label": "a department store" },
-        { "id": "online-marketplace", "label": "an online-marketplace seller" },
-        { "id": "sporting-goods-chain", "label": "a sporting-goods chain" },
-        { "id": "home-goods-retailer", "label": "a home-goods retailer" },
-        { "id": "toy-retailer", "label": "a toy retailer" },
-        { "id": "electronics-chain", "label": "an electronics chain" },
-        { "id": "beauty-retailer", "label": "a beauty retailer" },
-        { "id": "off-price", "label": "a discount and off-price store" }
+        {
+          "id": "fashion-retailer",
+          "label": "a fashion retailer"
+        },
+        {
+          "id": "grocery-chain",
+          "label": "a grocery chain"
+        },
+        {
+          "id": "department-store",
+          "label": "a department store"
+        },
+        {
+          "id": "online-marketplace",
+          "label": "an online-marketplace seller"
+        },
+        {
+          "id": "sporting-goods-chain",
+          "label": "a sporting-goods chain"
+        },
+        {
+          "id": "home-goods-retailer",
+          "label": "a home-goods retailer"
+        },
+        {
+          "id": "toy-retailer",
+          "label": "a toy retailer"
+        },
+        {
+          "id": "electronics-chain",
+          "label": "an electronics chain"
+        },
+        {
+          "id": "beauty-retailer",
+          "label": "a beauty retailer"
+        },
+        {
+          "id": "off-price",
+          "label": "a discount and off-price store"
+        }
       ]
     },
     "marketing-management-team": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "marketing-plan", "label": "building a full marketing plan" },
-        { "id": "new-market", "label": "entering a new market" },
-        { "id": "line-extension", "label": "a product-line-extension decision" },
-        { "id": "budget-reallocation", "label": "reallocating the marketing budget" },
-        { "id": "repositioning", "label": "repositioning the brand" },
-        { "id": "competitor-response", "label": "responding to a competitor's move" },
-        { "id": "co-branding", "label": "a partnership or co-branding decision" },
-        { "id": "digital-transformation", "label": "modernizing marketing for digital channels" },
-        { "id": "segmentation", "label": "a customer-segmentation strategy" },
-        { "id": "brand-portfolio", "label": "a brand-portfolio decision" }
+        {
+          "id": "marketing-plan",
+          "label": "building a full marketing plan"
+        },
+        {
+          "id": "new-market",
+          "label": "entering a new market"
+        },
+        {
+          "id": "line-extension",
+          "label": "a product-line-extension decision"
+        },
+        {
+          "id": "budget-reallocation",
+          "label": "reallocating the marketing budget"
+        },
+        {
+          "id": "repositioning",
+          "label": "repositioning the brand"
+        },
+        {
+          "id": "competitor-response",
+          "label": "responding to a competitor's move"
+        },
+        {
+          "id": "co-branding",
+          "label": "a partnership or co-branding decision"
+        },
+        {
+          "id": "digital-transformation",
+          "label": "modernizing marketing for digital channels"
+        },
+        {
+          "id": "segmentation",
+          "label": "a customer-segmentation strategy"
+        },
+        {
+          "id": "brand-portfolio",
+          "label": "a brand-portfolio decision"
+        }
       ],
       "business_type": [
-        { "id": "beverage-company", "label": "a beverage company" },
-        { "id": "electronics-brand", "label": "a consumer-electronics brand" },
-        { "id": "restaurant-franchise", "label": "a restaurant franchise" },
-        { "id": "fitness-app", "label": "a fitness-app company" },
-        { "id": "national-retailer", "label": "a national retailer" },
-        { "id": "hotel-chain", "label": "a hotel chain" },
-        { "id": "subscription-service", "label": "a subscription service" },
-        { "id": "cosmetics-brand", "label": "a cosmetics brand" },
-        { "id": "sporting-goods-brand", "label": "a sporting-goods brand" },
-        { "id": "home-services-franchise", "label": "a home-services franchise" }
+        {
+          "id": "beverage-company",
+          "label": "a beverage company"
+        },
+        {
+          "id": "electronics-brand",
+          "label": "a consumer-electronics brand"
+        },
+        {
+          "id": "restaurant-franchise",
+          "label": "a restaurant franchise"
+        },
+        {
+          "id": "fitness-app",
+          "label": "a fitness-app company"
+        },
+        {
+          "id": "national-retailer",
+          "label": "a national retailer"
+        },
+        {
+          "id": "hotel-chain",
+          "label": "a hotel chain"
+        },
+        {
+          "id": "subscription-service",
+          "label": "a subscription service"
+        },
+        {
+          "id": "cosmetics-brand",
+          "label": "a cosmetics brand"
+        },
+        {
+          "id": "sporting-goods-brand",
+          "label": "a sporting-goods brand"
+        },
+        {
+          "id": "home-services-franchise",
+          "label": "a home-services franchise"
+        }
       ]
     },
     "sports-entertainment-marketing-team": {
       "cluster": "Marketing",
       "subtopic": [
-        { "id": "sponsorship-package", "label": "a sponsorship-package pitch" },
-        { "id": "season-engagement", "label": "a season-long fan-engagement plan" },
-        { "id": "event-launch", "label": "launching a new event" },
-        { "id": "brand-partnership", "label": "a brand-partnership deal" },
-        { "id": "ticketing-pricing", "label": "a ticketing and pricing strategy" },
-        { "id": "media-deal", "label": "a media or broadcast angle" },
-        { "id": "community-program", "label": "a community program" },
-        { "id": "merch-line", "label": "a merchandising line" },
-        { "id": "fan-platform", "label": "a digital fan platform" },
-        { "id": "naming-rights", "label": "a naming-rights pitch" }
+        {
+          "id": "sponsorship-package",
+          "label": "a sponsorship-package pitch"
+        },
+        {
+          "id": "season-engagement",
+          "label": "a season-long fan-engagement plan"
+        },
+        {
+          "id": "event-launch",
+          "label": "launching a new event"
+        },
+        {
+          "id": "brand-partnership",
+          "label": "a brand-partnership deal"
+        },
+        {
+          "id": "ticketing-pricing",
+          "label": "a ticketing and pricing strategy"
+        },
+        {
+          "id": "media-deal",
+          "label": "a media or broadcast angle"
+        },
+        {
+          "id": "community-program",
+          "label": "a community program"
+        },
+        {
+          "id": "merch-line",
+          "label": "a merchandising line"
+        },
+        {
+          "id": "fan-platform",
+          "label": "a digital fan platform"
+        },
+        {
+          "id": "naming-rights",
+          "label": "a naming-rights pitch"
+        }
       ],
       "business_type": [
-        { "id": "pro-franchise", "label": "a professional sports franchise" },
-        { "id": "arena", "label": "a large arena or concert venue" },
-        { "id": "esports-league", "label": "a national esports league" },
-        { "id": "major-festival", "label": "a major music festival" },
-        { "id": "athletic-conference", "label": "a college athletic conference" },
-        { "id": "theme-park-resort", "label": "a theme-park resort" },
-        { "id": "apparel-sponsor", "label": "a sports-apparel sponsor" },
-        { "id": "stadium-operator", "label": "a stadium operator" },
-        { "id": "streaming-sports", "label": "a streaming sports service" },
-        { "id": "race-event", "label": "a marathon or race event" }
+        {
+          "id": "pro-franchise",
+          "label": "a professional sports franchise"
+        },
+        {
+          "id": "arena",
+          "label": "a large arena or concert venue"
+        },
+        {
+          "id": "esports-league",
+          "label": "a national esports league"
+        },
+        {
+          "id": "major-festival",
+          "label": "a major music festival"
+        },
+        {
+          "id": "athletic-conference",
+          "label": "a college athletic conference"
+        },
+        {
+          "id": "theme-park-resort",
+          "label": "a theme-park resort"
+        },
+        {
+          "id": "apparel-sponsor",
+          "label": "a sports-apparel sponsor"
+        },
+        {
+          "id": "stadium-operator",
+          "label": "a stadium operator"
+        },
+        {
+          "id": "streaming-sports",
+          "label": "a streaming sports service"
+        },
+        {
+          "id": "race-event",
+          "label": "a marathon or race event"
+        }
       ]
     },
     "principles-finance": {
       "cluster": "Finance",
       "subtopic": [
-        { "id": "budgeting", "label": "creating a budget" },
-        { "id": "borrow-vs-save", "label": "a financing decision — borrow now or save for it" },
-        { "id": "cash-flow", "label": "managing cash flow" },
-        { "id": "investment-basics", "label": "a basic investment decision" },
-        { "id": "credit", "label": "using and building credit wisely" },
-        { "id": "cost-cutting", "label": "a cost-cutting plan" },
-        { "id": "buy-vs-lease", "label": "evaluating a purchase — buy or lease" },
-        { "id": "savings-goal", "label": "planning toward a savings goal" },
-        { "id": "risk-insurance", "label": "a risk and insurance basics decision" },
-        { "id": "read-statement", "label": "reading and acting on a simple financial statement" }
+        {
+          "id": "budgeting",
+          "label": "creating a budget"
+        },
+        {
+          "id": "borrow-vs-save",
+          "label": "a financing decision: borrow now or save for it"
+        },
+        {
+          "id": "cash-flow",
+          "label": "managing cash flow"
+        },
+        {
+          "id": "investment-basics",
+          "label": "a basic investment decision"
+        },
+        {
+          "id": "credit",
+          "label": "using and building credit wisely"
+        },
+        {
+          "id": "cost-cutting",
+          "label": "a cost-cutting plan"
+        },
+        {
+          "id": "buy-vs-lease",
+          "label": "evaluating a purchase: buy or lease"
+        },
+        {
+          "id": "savings-goal",
+          "label": "planning toward a savings goal"
+        },
+        {
+          "id": "risk-insurance",
+          "label": "a risk and insurance basics decision"
+        },
+        {
+          "id": "read-statement",
+          "label": "reading and acting on a simple financial statement"
+        }
       ],
       "business_type": [
-        { "id": "retail-shop", "label": "a small retail shop" },
-        { "id": "food-truck", "label": "a food truck" },
-        { "id": "family-business", "label": "a family-owned business" },
-        { "id": "startup", "label": "a startup" },
-        { "id": "freelancer", "label": "a solo freelance business" },
-        { "id": "landscaping", "label": "a landscaping company" },
-        { "id": "fitness-studio", "label": "a fitness studio" },
-        { "id": "coffee-shop", "label": "a coffee shop" },
-        { "id": "online-store", "label": "an online store" },
-        { "id": "repair-service", "label": "a repair service" }
+        {
+          "id": "retail-shop",
+          "label": "a small retail shop"
+        },
+        {
+          "id": "food-truck",
+          "label": "a food truck"
+        },
+        {
+          "id": "family-business",
+          "label": "a family-owned business"
+        },
+        {
+          "id": "startup",
+          "label": "a startup"
+        },
+        {
+          "id": "freelancer",
+          "label": "a solo freelance business"
+        },
+        {
+          "id": "landscaping",
+          "label": "a landscaping company"
+        },
+        {
+          "id": "fitness-studio",
+          "label": "a fitness studio"
+        },
+        {
+          "id": "coffee-shop",
+          "label": "a coffee shop"
+        },
+        {
+          "id": "online-store",
+          "label": "an online store"
+        },
+        {
+          "id": "repair-service",
+          "label": "a repair service"
+        }
       ]
     },
     "accounting-applications": {
       "cluster": "Finance",
       "subtopic": [
-        { "id": "analyze-statement", "label": "analyzing a financial statement" },
-        { "id": "budget-variance", "label": "a budget-variance analysis" },
-        { "id": "cost-classification", "label": "classifying and controlling costs" },
-        { "id": "receivables", "label": "an accounts-receivable problem" },
-        { "id": "break-even", "label": "a break-even analysis" },
-        { "id": "payroll-tax", "label": "a payroll or tax question" },
-        { "id": "accounting-method", "label": "choosing an accounting method or treatment" },
-        { "id": "inventory-valuation", "label": "an inventory-valuation decision" },
-        { "id": "cash-projection", "label": "a cash-flow projection" },
-        { "id": "internal-controls", "label": "an internal-controls or fraud concern" }
+        {
+          "id": "analyze-statement",
+          "label": "analyzing a financial statement"
+        },
+        {
+          "id": "budget-variance",
+          "label": "a budget-variance analysis"
+        },
+        {
+          "id": "cost-classification",
+          "label": "classifying and controlling costs"
+        },
+        {
+          "id": "receivables",
+          "label": "an accounts-receivable problem"
+        },
+        {
+          "id": "break-even",
+          "label": "a break-even analysis"
+        },
+        {
+          "id": "payroll-tax",
+          "label": "a payroll or tax question"
+        },
+        {
+          "id": "accounting-method",
+          "label": "choosing an accounting method or treatment"
+        },
+        {
+          "id": "inventory-valuation",
+          "label": "an inventory-valuation decision"
+        },
+        {
+          "id": "cash-projection",
+          "label": "a cash-flow projection"
+        },
+        {
+          "id": "internal-controls",
+          "label": "an internal-controls or fraud concern"
+        }
       ],
       "business_type": [
-        { "id": "small-manufacturer", "label": "a small manufacturer" },
-        { "id": "retail-store", "label": "a retail store" },
-        { "id": "service-business", "label": "a professional-service business" },
-        { "id": "nonprofit", "label": "a nonprofit" },
-        { "id": "restaurant", "label": "a restaurant" },
-        { "id": "contractor", "label": "a construction contractor" },
-        { "id": "medical-practice", "label": "a medical practice" },
-        { "id": "wholesaler", "label": "a wholesale distributor" },
-        { "id": "saas", "label": "a subscription-software company" },
-        { "id": "farm", "label": "a farm or agriculture business" }
+        {
+          "id": "small-manufacturer",
+          "label": "a small manufacturer"
+        },
+        {
+          "id": "retail-store",
+          "label": "a retail store"
+        },
+        {
+          "id": "service-business",
+          "label": "a professional-service business"
+        },
+        {
+          "id": "nonprofit",
+          "label": "a nonprofit"
+        },
+        {
+          "id": "restaurant",
+          "label": "a restaurant"
+        },
+        {
+          "id": "contractor",
+          "label": "a construction contractor"
+        },
+        {
+          "id": "medical-practice",
+          "label": "a medical practice"
+        },
+        {
+          "id": "wholesaler",
+          "label": "a wholesale distributor"
+        },
+        {
+          "id": "saas",
+          "label": "a subscription-software company"
+        },
+        {
+          "id": "farm",
+          "label": "a farm or agriculture business"
+        }
       ]
     },
     "business-finance": {
       "cluster": "Finance",
       "subtopic": [
-        { "id": "capital-investment", "label": "a capital-investment decision" },
-        { "id": "debt-vs-equity", "label": "financing growth — debt or equity" },
-        { "id": "working-capital", "label": "managing working capital" },
-        { "id": "pricing-margin", "label": "a pricing and margin decision" },
-        { "id": "cost-reduction", "label": "a cost-reduction analysis" },
-        { "id": "acquisition", "label": "evaluating an acquisition" },
-        { "id": "roi-analysis", "label": "an ROI or payback analysis" },
-        { "id": "budget-decision", "label": "a budgeting decision" },
-        { "id": "financial-risk", "label": "managing a financial risk" },
-        { "id": "reinvest-vs-return", "label": "a reinvest-or-return-cash decision" }
+        {
+          "id": "capital-investment",
+          "label": "a capital-investment decision"
+        },
+        {
+          "id": "debt-vs-equity",
+          "label": "financing growth: debt or equity"
+        },
+        {
+          "id": "working-capital",
+          "label": "managing working capital"
+        },
+        {
+          "id": "pricing-margin",
+          "label": "a pricing and margin decision"
+        },
+        {
+          "id": "cost-reduction",
+          "label": "a cost-reduction analysis"
+        },
+        {
+          "id": "acquisition",
+          "label": "evaluating an acquisition"
+        },
+        {
+          "id": "roi-analysis",
+          "label": "an ROI or payback analysis"
+        },
+        {
+          "id": "budget-decision",
+          "label": "a budgeting decision"
+        },
+        {
+          "id": "financial-risk",
+          "label": "managing a financial risk"
+        },
+        {
+          "id": "reinvest-vs-return",
+          "label": "a reinvest-or-return-cash decision"
+        }
       ],
       "business_type": [
-        { "id": "manufacturer", "label": "a mid-size manufacturer" },
-        { "id": "tech-company", "label": "a growing tech company" },
-        { "id": "retail-chain", "label": "a retail chain" },
-        { "id": "regional-bank", "label": "a regional bank" },
-        { "id": "real-estate", "label": "a real-estate firm" },
-        { "id": "logistics", "label": "a logistics company" },
-        { "id": "healthcare-provider", "label": "a healthcare provider" },
-        { "id": "consumer-goods", "label": "a consumer-goods company" },
-        { "id": "energy-company", "label": "an energy company" },
-        { "id": "franchise-operator", "label": "a multi-unit franchise operator" }
+        {
+          "id": "manufacturer",
+          "label": "a mid-size manufacturer"
+        },
+        {
+          "id": "tech-company",
+          "label": "a growing tech company"
+        },
+        {
+          "id": "retail-chain",
+          "label": "a retail chain"
+        },
+        {
+          "id": "regional-bank",
+          "label": "a regional bank"
+        },
+        {
+          "id": "real-estate",
+          "label": "a real-estate firm"
+        },
+        {
+          "id": "logistics",
+          "label": "a logistics company"
+        },
+        {
+          "id": "healthcare-provider",
+          "label": "a healthcare provider"
+        },
+        {
+          "id": "consumer-goods",
+          "label": "a consumer-goods company"
+        },
+        {
+          "id": "energy-company",
+          "label": "an energy company"
+        },
+        {
+          "id": "franchise-operator",
+          "label": "a multi-unit franchise operator"
+        }
       ]
     },
     "financial-services-team": {
       "cluster": "Finance",
       "subtopic": [
-        { "id": "product-recommendation", "label": "recommending the right financial product" },
-        { "id": "onboarding-retention", "label": "a client-onboarding and retention plan" },
-        { "id": "cross-sell", "label": "cross-selling additional services" },
-        { "id": "risk-compliance", "label": "a risk or compliance approach" },
-        { "id": "digital-banking", "label": "a digital-banking initiative" },
-        { "id": "small-biz-client", "label": "serving a small-business client" },
-        { "id": "wealth-plan", "label": "a wealth-management plan" },
-        { "id": "vs-competitor-bank", "label": "responding to a competitor bank" },
-        { "id": "build-trust", "label": "rebuilding customer trust" },
-        { "id": "fee-pricing", "label": "a fee or pricing decision" }
+        {
+          "id": "product-recommendation",
+          "label": "recommending the right financial product"
+        },
+        {
+          "id": "onboarding-retention",
+          "label": "a client-onboarding and retention plan"
+        },
+        {
+          "id": "cross-sell",
+          "label": "cross-selling additional services"
+        },
+        {
+          "id": "risk-compliance",
+          "label": "a risk or compliance approach"
+        },
+        {
+          "id": "digital-banking",
+          "label": "a digital-banking initiative"
+        },
+        {
+          "id": "small-biz-client",
+          "label": "serving a small-business client"
+        },
+        {
+          "id": "wealth-plan",
+          "label": "a wealth-management plan"
+        },
+        {
+          "id": "vs-competitor-bank",
+          "label": "responding to a competitor bank"
+        },
+        {
+          "id": "build-trust",
+          "label": "rebuilding customer trust"
+        },
+        {
+          "id": "fee-pricing",
+          "label": "a fee or pricing decision"
+        }
       ],
       "business_type": [
-        { "id": "community-bank", "label": "a community bank" },
-        { "id": "credit-union", "label": "a credit union" },
-        { "id": "wealth-firm", "label": "a wealth-management firm" },
-        { "id": "insurance-agency", "label": "an insurance agency" },
-        { "id": "fintech", "label": "a fintech startup" },
-        { "id": "mortgage-lender", "label": "a mortgage lender" },
-        { "id": "brokerage", "label": "a brokerage" },
-        { "id": "payments", "label": "a payment-processing company" },
-        { "id": "planning-firm", "label": "a financial-planning firm" },
-        { "id": "online-bank", "label": "an online bank" }
+        {
+          "id": "community-bank",
+          "label": "a community bank"
+        },
+        {
+          "id": "credit-union",
+          "label": "a credit union"
+        },
+        {
+          "id": "wealth-firm",
+          "label": "a wealth-management firm"
+        },
+        {
+          "id": "insurance-agency",
+          "label": "an insurance agency"
+        },
+        {
+          "id": "fintech",
+          "label": "a fintech startup"
+        },
+        {
+          "id": "mortgage-lender",
+          "label": "a mortgage lender"
+        },
+        {
+          "id": "brokerage",
+          "label": "a brokerage"
+        },
+        {
+          "id": "payments",
+          "label": "a payment-processing company"
+        },
+        {
+          "id": "planning-firm",
+          "label": "a financial-planning firm"
+        },
+        {
+          "id": "online-bank",
+          "label": "an online bank"
+        }
       ]
     },
     "personal-financial-literacy": {
       "cluster": "Finance",
       "company_size": [],
       "subtopic": [
-        { "id": "budget", "label": "building a personal budget" },
-        { "id": "debt-payoff", "label": "paying down debt" },
-        { "id": "start-saving", "label": "starting to save and invest" },
-        { "id": "credit-score", "label": "understanding and improving a credit score" },
-        { "id": "insurance", "label": "choosing the right insurance" },
-        { "id": "big-purchase", "label": "planning a large purchase" },
-        { "id": "emergency-fund", "label": "building an emergency fund" },
-        { "id": "paycheck-taxes", "label": "understanding a paycheck and taxes" },
-        { "id": "first-car-apartment", "label": "a first-car or first-apartment decision" },
-        { "id": "long-term-goal", "label": "setting a long-term goal (college, home, retirement)" }
+        {
+          "id": "budget",
+          "label": "building a personal budget"
+        },
+        {
+          "id": "debt-payoff",
+          "label": "paying down debt"
+        },
+        {
+          "id": "start-saving",
+          "label": "starting to save and invest"
+        },
+        {
+          "id": "credit-score",
+          "label": "understanding and improving a credit score"
+        },
+        {
+          "id": "insurance",
+          "label": "choosing the right insurance"
+        },
+        {
+          "id": "big-purchase",
+          "label": "planning a large purchase"
+        },
+        {
+          "id": "emergency-fund",
+          "label": "building an emergency fund"
+        },
+        {
+          "id": "paycheck-taxes",
+          "label": "understanding a paycheck and taxes"
+        },
+        {
+          "id": "first-car-apartment",
+          "label": "a first-car or first-apartment decision"
+        },
+        {
+          "id": "long-term-goal",
+          "label": "setting a long-term goal (college, home, retirement)"
+        }
       ],
       "business_type": [
-        { "id": "recent-grad", "label": "a recent high-school graduate on their first budget" },
-        { "id": "college-student", "label": "a college student juggling expenses" },
-        { "id": "young-couple", "label": "a young couple starting out together" },
-        { "id": "new-parent", "label": "a new parent on a single income" },
-        { "id": "first-job", "label": "someone starting their first full-time job" },
-        { "id": "paying-student-debt", "label": "a young worker paying down student debt" },
-        { "id": "tight-family", "label": "a family on a tight budget" },
-        { "id": "first-renter", "label": "a first-time renter" },
-        { "id": "gig-worker", "label": "a gig worker with irregular income" },
-        { "id": "first-part-time", "label": "a teen with a first part-time job" }
+        {
+          "id": "recent-grad",
+          "label": "a recent high-school graduate on their first budget"
+        },
+        {
+          "id": "college-student",
+          "label": "a college student juggling expenses"
+        },
+        {
+          "id": "young-couple",
+          "label": "a young couple starting out together"
+        },
+        {
+          "id": "new-parent",
+          "label": "a new parent on a single income"
+        },
+        {
+          "id": "first-job",
+          "label": "someone starting their first full-time job"
+        },
+        {
+          "id": "paying-student-debt",
+          "label": "a young worker paying down student debt"
+        },
+        {
+          "id": "tight-family",
+          "label": "a family on a tight budget"
+        },
+        {
+          "id": "first-renter",
+          "label": "a first-time renter"
+        },
+        {
+          "id": "gig-worker",
+          "label": "a gig worker with irregular income"
+        },
+        {
+          "id": "first-part-time",
+          "label": "a teen with a first part-time job"
+        }
       ],
       "stakeholder": [
-        { "id": "the-person", "label": "the person you're advising" },
-        { "id": "parent-teen", "label": "a parent helping their teen with money" },
-        { "id": "friend", "label": "a friend who asked for advice" },
-        { "id": "new-worker", "label": "a young adult starting their first job" },
-        { "id": "bank-client", "label": "a client at a bank or credit union" },
-        { "id": "coworker", "label": "a coworker planning a big purchase" }
+        {
+          "id": "the-person",
+          "label": "the person you're advising"
+        },
+        {
+          "id": "parent-teen",
+          "label": "a parent helping their teen with money"
+        },
+        {
+          "id": "friend",
+          "label": "a friend who asked for advice"
+        },
+        {
+          "id": "new-worker",
+          "label": "a young adult starting their first job"
+        },
+        {
+          "id": "bank-client",
+          "label": "a client at a bank or credit union"
+        },
+        {
+          "id": "coworker",
+          "label": "a coworker planning a big purchase"
+        }
       ],
       "problem": [
-        { "id": "tight-money", "label": "money is tight and a budget is needed" },
-        { "id": "debt-piling", "label": "debt is piling up and needs a payoff plan" },
-        { "id": "start-investing", "label": "it's time to start saving or investing" },
-        { "id": "big-purchase-looms", "label": "a big purchase decision is coming up" },
-        { "id": "no-emergency-fund", "label": "an unexpected expense hit with no emergency fund" },
-        { "id": "goal-needs-plan", "label": "a long-term goal needs a real plan" }
+        {
+          "id": "tight-money",
+          "label": "money is tight and a budget is needed"
+        },
+        {
+          "id": "debt-piling",
+          "label": "debt is piling up and needs a payoff plan"
+        },
+        {
+          "id": "start-investing",
+          "label": "it's time to start saving or investing"
+        },
+        {
+          "id": "big-purchase-looms",
+          "label": "a big purchase decision is coming up"
+        },
+        {
+          "id": "no-emergency-fund",
+          "label": "an unexpected expense hit with no emergency fund"
+        },
+        {
+          "id": "goal-needs-plan",
+          "label": "a long-term goal needs a real plan"
+        }
       ],
       "constraint": [
-        { "id": "limited-income", "label": "a limited income to work with" },
-        { "id": "tight-timeline", "label": "a tight timeline before the money is needed" },
-        { "id": "competing-priorities", "label": "competing priorities pulling at the same dollars" },
-        { "id": "low-experience", "label": "little financial experience to draw on" },
-        { "id": "unexpected-expense", "label": "an unexpected expense that just came up" },
-        { "id": "no-safety-net", "label": "no financial safety net yet" }
+        {
+          "id": "limited-income",
+          "label": "a limited income to work with"
+        },
+        {
+          "id": "tight-timeline",
+          "label": "a tight timeline before the money is needed"
+        },
+        {
+          "id": "competing-priorities",
+          "label": "competing priorities pulling at the same dollars"
+        },
+        {
+          "id": "low-experience",
+          "label": "little financial experience to draw on"
+        },
+        {
+          "id": "unexpected-expense",
+          "label": "an unexpected expense that just came up"
+        },
+        {
+          "id": "no-safety-net",
+          "label": "no financial safety net yet"
+        }
       ]
     },
     "principles-hospitality-tourism": {
       "cluster": "Hospitality & Tourism",
       "subtopic": [
-        { "id": "guest-service", "label": "improving guest service" },
-        { "id": "handle-complaint", "label": "handling a guest complaint" },
-        { "id": "drive-traffic", "label": "a promotion to drive traffic" },
-        { "id": "upsell", "label": "an upselling opportunity" },
-        { "id": "service-standards", "label": "staff training and service standards" },
-        { "id": "loyalty", "label": "a loyalty program" },
-        { "id": "local-partnership", "label": "a local-partnership idea" },
-        { "id": "slow-season", "label": "managing a slow season" },
-        { "id": "sustainability", "label": "a sustainability initiative" },
-        { "id": "reviews", "label": "an online-reviews strategy" }
+        {
+          "id": "guest-service",
+          "label": "improving guest service"
+        },
+        {
+          "id": "handle-complaint",
+          "label": "handling a guest complaint"
+        },
+        {
+          "id": "drive-traffic",
+          "label": "a promotion to drive traffic"
+        },
+        {
+          "id": "upsell",
+          "label": "an upselling opportunity"
+        },
+        {
+          "id": "service-standards",
+          "label": "staff training and service standards"
+        },
+        {
+          "id": "loyalty",
+          "label": "a loyalty program"
+        },
+        {
+          "id": "local-partnership",
+          "label": "a local-partnership idea"
+        },
+        {
+          "id": "slow-season",
+          "label": "managing a slow season"
+        },
+        {
+          "id": "sustainability",
+          "label": "a sustainability initiative"
+        },
+        {
+          "id": "reviews",
+          "label": "an online-reviews strategy"
+        }
       ],
       "business_type": [
-        { "id": "boutique-hotel", "label": "a boutique hotel" },
-        { "id": "family-restaurant", "label": "a family restaurant" },
-        { "id": "cafe", "label": "a coffee cafe" },
-        { "id": "tour-company", "label": "a tour company" },
-        { "id": "bnb", "label": "a bed-and-breakfast" },
-        { "id": "resort", "label": "a resort" },
-        { "id": "food-truck", "label": "a food truck" },
-        { "id": "catering", "label": "a catering company" },
-        { "id": "theme-park", "label": "a theme park" },
-        { "id": "travel-agency", "label": "a travel agency" },
-        { "id": "event-venue", "label": "an event venue" },
-        { "id": "ski-lodge", "label": "a ski lodge" }
+        {
+          "id": "boutique-hotel",
+          "label": "a boutique hotel"
+        },
+        {
+          "id": "family-restaurant",
+          "label": "a family restaurant"
+        },
+        {
+          "id": "cafe",
+          "label": "a coffee cafe"
+        },
+        {
+          "id": "tour-company",
+          "label": "a tour company"
+        },
+        {
+          "id": "bnb",
+          "label": "a bed-and-breakfast"
+        },
+        {
+          "id": "resort",
+          "label": "a resort"
+        },
+        {
+          "id": "food-truck",
+          "label": "a food truck"
+        },
+        {
+          "id": "catering",
+          "label": "a catering company"
+        },
+        {
+          "id": "theme-park",
+          "label": "a theme park"
+        },
+        {
+          "id": "travel-agency",
+          "label": "a travel agency"
+        },
+        {
+          "id": "event-venue",
+          "label": "an event venue"
+        },
+        {
+          "id": "ski-lodge",
+          "label": "a ski lodge"
+        }
       ]
     },
     "hotel-lodging-management": {
       "cluster": "Hospitality & Tourism",
       "subtopic": [
-        { "id": "occupancy", "label": "increasing occupancy" },
-        { "id": "room-upsell", "label": "a room-upgrade or upselling program" },
-        { "id": "loyalty", "label": "a guest-loyalty strategy" },
-        { "id": "service-recovery", "label": "handling a service failure" },
-        { "id": "revenue-pricing", "label": "a revenue and room-pricing decision" },
-        { "id": "staffing-service", "label": "staffing and service consistency" },
-        { "id": "renovation-rebrand", "label": "a renovation or rebrand" },
-        { "id": "group-events", "label": "group-booking and events sales" },
-        { "id": "amenities", "label": "an amenities decision" },
-        { "id": "reputation", "label": "an online-reputation plan" }
+        {
+          "id": "occupancy",
+          "label": "increasing occupancy"
+        },
+        {
+          "id": "room-upsell",
+          "label": "a room-upgrade or upselling program"
+        },
+        {
+          "id": "loyalty",
+          "label": "a guest-loyalty strategy"
+        },
+        {
+          "id": "service-recovery",
+          "label": "handling a service failure"
+        },
+        {
+          "id": "revenue-pricing",
+          "label": "a revenue and room-pricing decision"
+        },
+        {
+          "id": "staffing-service",
+          "label": "staffing and service consistency"
+        },
+        {
+          "id": "renovation-rebrand",
+          "label": "a renovation or rebrand"
+        },
+        {
+          "id": "group-events",
+          "label": "group-booking and events sales"
+        },
+        {
+          "id": "amenities",
+          "label": "an amenities decision"
+        },
+        {
+          "id": "reputation",
+          "label": "an online-reputation plan"
+        }
       ],
       "business_type": [
-        { "id": "business-hotel", "label": "a downtown business hotel" },
-        { "id": "beach-resort", "label": "a beach resort" },
-        { "id": "boutique-inn", "label": "a boutique inn" },
-        { "id": "extended-stay", "label": "an extended-stay hotel" },
-        { "id": "budget-motel", "label": "a budget-motel chain" },
-        { "id": "mountain-lodge", "label": "a mountain lodge" },
-        { "id": "airport-hotel", "label": "an airport hotel" },
-        { "id": "bnb", "label": "a bed-and-breakfast" },
-        { "id": "casino-hotel", "label": "a casino hotel" },
-        { "id": "all-inclusive", "label": "an all-inclusive resort" },
-        { "id": "hostel", "label": "a hostel" },
-        { "id": "vacation-rental", "label": "a vacation-rental company" }
+        {
+          "id": "business-hotel",
+          "label": "a downtown business hotel"
+        },
+        {
+          "id": "beach-resort",
+          "label": "a beach resort"
+        },
+        {
+          "id": "boutique-inn",
+          "label": "a boutique inn"
+        },
+        {
+          "id": "extended-stay",
+          "label": "an extended-stay hotel"
+        },
+        {
+          "id": "budget-motel",
+          "label": "a budget-motel chain"
+        },
+        {
+          "id": "mountain-lodge",
+          "label": "a mountain lodge"
+        },
+        {
+          "id": "airport-hotel",
+          "label": "an airport hotel"
+        },
+        {
+          "id": "bnb",
+          "label": "a bed-and-breakfast"
+        },
+        {
+          "id": "casino-hotel",
+          "label": "a casino hotel"
+        },
+        {
+          "id": "all-inclusive",
+          "label": "an all-inclusive resort"
+        },
+        {
+          "id": "hostel",
+          "label": "a hostel"
+        },
+        {
+          "id": "vacation-rental",
+          "label": "a vacation-rental company"
+        }
       ]
     },
     "quick-serve-restaurant-management": {
       "cluster": "Hospitality & Tourism",
       "subtopic": [
-        { "id": "speed", "label": "speeding up service" },
-        { "id": "lto", "label": "a limited-time-offer launch" },
-        { "id": "order-accuracy", "label": "improving order accuracy" },
-        { "id": "drive-thru-mobile", "label": "a drive-thru or mobile-order push" },
-        { "id": "staff-retention", "label": "staff retention" },
-        { "id": "upsell", "label": "an upselling program" },
-        { "id": "quality-issue", "label": "a cleanliness or quality issue" },
-        { "id": "value-pricing", "label": "a value-menu or pricing decision" },
-        { "id": "local-promo", "label": "a local-marketing promotion" },
-        { "id": "franchise-standards", "label": "a franchise-standards issue" }
+        {
+          "id": "speed",
+          "label": "speeding up service"
+        },
+        {
+          "id": "lto",
+          "label": "a limited-time-offer launch"
+        },
+        {
+          "id": "order-accuracy",
+          "label": "improving order accuracy"
+        },
+        {
+          "id": "drive-thru-mobile",
+          "label": "a drive-thru or mobile-order push"
+        },
+        {
+          "id": "staff-retention",
+          "label": "staff retention"
+        },
+        {
+          "id": "upsell",
+          "label": "an upselling program"
+        },
+        {
+          "id": "quality-issue",
+          "label": "a cleanliness or quality issue"
+        },
+        {
+          "id": "value-pricing",
+          "label": "a value-menu or pricing decision"
+        },
+        {
+          "id": "local-promo",
+          "label": "a local-marketing promotion"
+        },
+        {
+          "id": "franchise-standards",
+          "label": "a franchise-standards issue"
+        }
       ],
       "business_type": [
-        { "id": "burger", "label": "a burger chain" },
-        { "id": "taco", "label": "a taco quick-serve" },
-        { "id": "coffee-donut", "label": "a coffee-and-donut shop" },
-        { "id": "pizza-slice", "label": "a pizza-by-the-slice spot" },
-        { "id": "smoothie", "label": "a smoothie and juice bar" },
-        { "id": "chicken", "label": "a fried-chicken franchise" },
-        { "id": "sandwich", "label": "a sandwich shop" },
-        { "id": "ice-cream", "label": "an ice-cream stand" },
-        { "id": "bubble-tea", "label": "a bubble-tea shop" },
-        { "id": "bowl-salad", "label": "a build-your-own bowl and salad concept" },
-        { "id": "bakery-cafe", "label": "a bakery cafe" },
-        { "id": "hot-dog", "label": "a hot-dog stand" }
+        {
+          "id": "burger",
+          "label": "a burger chain"
+        },
+        {
+          "id": "taco",
+          "label": "a taco quick-serve"
+        },
+        {
+          "id": "coffee-donut",
+          "label": "a coffee-and-donut shop"
+        },
+        {
+          "id": "pizza-slice",
+          "label": "a pizza-by-the-slice spot"
+        },
+        {
+          "id": "smoothie",
+          "label": "a smoothie and juice bar"
+        },
+        {
+          "id": "chicken",
+          "label": "a fried-chicken franchise"
+        },
+        {
+          "id": "sandwich",
+          "label": "a sandwich shop"
+        },
+        {
+          "id": "ice-cream",
+          "label": "an ice-cream stand"
+        },
+        {
+          "id": "bubble-tea",
+          "label": "a bubble-tea shop"
+        },
+        {
+          "id": "bowl-salad",
+          "label": "a build-your-own bowl and salad concept"
+        },
+        {
+          "id": "bakery-cafe",
+          "label": "a bakery cafe"
+        },
+        {
+          "id": "hot-dog",
+          "label": "a hot-dog stand"
+        }
       ]
     },
     "restaurant-food-service-management": {
       "cluster": "Hospitality & Tourism",
       "subtopic": [
-        { "id": "menu-revision", "label": "a menu revision" },
-        { "id": "table-turnover", "label": "improving table turnover" },
-        { "id": "catering-events", "label": "a catering and private-events push" },
-        { "id": "food-cost-waste", "label": "reducing food cost and waste" },
-        { "id": "service-standards", "label": "a service-standards issue" },
-        { "id": "concept-launch", "label": "launching a new concept" },
-        { "id": "reservations-noshow", "label": "a reservations and no-show problem" },
-        { "id": "seasonal-menu", "label": "a seasonal-menu promotion" },
-        { "id": "staff-training", "label": "staff training" },
-        { "id": "reputation", "label": "a reviews and reputation plan" }
+        {
+          "id": "menu-revision",
+          "label": "a menu revision"
+        },
+        {
+          "id": "table-turnover",
+          "label": "improving table turnover"
+        },
+        {
+          "id": "catering-events",
+          "label": "a catering and private-events push"
+        },
+        {
+          "id": "food-cost-waste",
+          "label": "reducing food cost and waste"
+        },
+        {
+          "id": "service-standards",
+          "label": "a service-standards issue"
+        },
+        {
+          "id": "concept-launch",
+          "label": "launching a new concept"
+        },
+        {
+          "id": "reservations-noshow",
+          "label": "a reservations and no-show problem"
+        },
+        {
+          "id": "seasonal-menu",
+          "label": "a seasonal-menu promotion"
+        },
+        {
+          "id": "staff-training",
+          "label": "staff training"
+        },
+        {
+          "id": "reputation",
+          "label": "a reviews and reputation plan"
+        }
       ],
       "business_type": [
-        { "id": "farm-to-table", "label": "a farm-to-table bistro" },
-        { "id": "diner", "label": "a family diner" },
-        { "id": "steakhouse", "label": "an upscale steakhouse" },
-        { "id": "sushi", "label": "a sushi restaurant" },
-        { "id": "brewpub", "label": "a brewpub" },
-        { "id": "cantina", "label": "a Mexican cantina" },
-        { "id": "pizzeria", "label": "a pizzeria" },
-        { "id": "seafood", "label": "a seafood restaurant" },
-        { "id": "vegan", "label": "a vegan restaurant" },
-        { "id": "brunch", "label": "a breakfast-and-brunch spot" },
-        { "id": "food-hall", "label": "a food-hall vendor" },
-        { "id": "banquet", "label": "a banquet and catering hall" }
+        {
+          "id": "farm-to-table",
+          "label": "a farm-to-table bistro"
+        },
+        {
+          "id": "diner",
+          "label": "a family diner"
+        },
+        {
+          "id": "steakhouse",
+          "label": "an upscale steakhouse"
+        },
+        {
+          "id": "sushi",
+          "label": "a sushi restaurant"
+        },
+        {
+          "id": "brewpub",
+          "label": "a brewpub"
+        },
+        {
+          "id": "cantina",
+          "label": "a Mexican cantina"
+        },
+        {
+          "id": "pizzeria",
+          "label": "a pizzeria"
+        },
+        {
+          "id": "seafood",
+          "label": "a seafood restaurant"
+        },
+        {
+          "id": "vegan",
+          "label": "a vegan restaurant"
+        },
+        {
+          "id": "brunch",
+          "label": "a breakfast-and-brunch spot"
+        },
+        {
+          "id": "food-hall",
+          "label": "a food-hall vendor"
+        },
+        {
+          "id": "banquet",
+          "label": "a banquet and catering hall"
+        }
       ]
     },
     "hospitality-services-team": {
       "cluster": "Hospitality & Tourism",
       "subtopic": [
-        { "id": "experience-overhaul", "label": "a guest-experience overhaul" },
-        { "id": "venue-launch", "label": "a new-venue launch plan" },
-        { "id": "loyalty-design", "label": "designing a loyalty program" },
-        { "id": "service-recovery", "label": "a service-recovery strategy" },
-        { "id": "seasonal-plan", "label": "a seasonal-business plan" },
-        { "id": "partnership-package", "label": "a partnership or package deal" },
-        { "id": "staffing-training", "label": "a staffing and training program" },
-        { "id": "sustainability", "label": "a sustainability initiative" },
-        { "id": "reputation-plan", "label": "a reputation-management plan" },
-        { "id": "group-sales", "label": "an event and group-sales strategy" }
+        {
+          "id": "experience-overhaul",
+          "label": "a guest-experience overhaul"
+        },
+        {
+          "id": "venue-launch",
+          "label": "a new-venue launch plan"
+        },
+        {
+          "id": "loyalty-design",
+          "label": "designing a loyalty program"
+        },
+        {
+          "id": "service-recovery",
+          "label": "a service-recovery strategy"
+        },
+        {
+          "id": "seasonal-plan",
+          "label": "a seasonal-business plan"
+        },
+        {
+          "id": "partnership-package",
+          "label": "a partnership or package deal"
+        },
+        {
+          "id": "staffing-training",
+          "label": "a staffing and training program"
+        },
+        {
+          "id": "sustainability",
+          "label": "a sustainability initiative"
+        },
+        {
+          "id": "reputation-plan",
+          "label": "a reputation-management plan"
+        },
+        {
+          "id": "group-sales",
+          "label": "an event and group-sales strategy"
+        }
       ],
       "business_type": [
-        { "id": "hotel-group", "label": "a hotel group" },
-        { "id": "restaurant-chain", "label": "a restaurant chain" },
-        { "id": "resort", "label": "a resort" },
-        { "id": "cruise-line", "label": "a cruise line" },
-        { "id": "theme-park", "label": "a theme-park operator" },
-        { "id": "catering", "label": "a catering company" },
-        { "id": "conference-center", "label": "a conference center" },
-        { "id": "spa-resort", "label": "a spa-and-wellness resort" },
-        { "id": "vacation-rental", "label": "a vacation-rental platform" },
-        { "id": "entertainment-complex", "label": "an entertainment complex" }
+        {
+          "id": "hotel-group",
+          "label": "a hotel group"
+        },
+        {
+          "id": "restaurant-chain",
+          "label": "a restaurant chain"
+        },
+        {
+          "id": "resort",
+          "label": "a resort"
+        },
+        {
+          "id": "cruise-line",
+          "label": "a cruise line"
+        },
+        {
+          "id": "theme-park",
+          "label": "a theme-park operator"
+        },
+        {
+          "id": "catering",
+          "label": "a catering company"
+        },
+        {
+          "id": "conference-center",
+          "label": "a conference center"
+        },
+        {
+          "id": "spa-resort",
+          "label": "a spa-and-wellness resort"
+        },
+        {
+          "id": "vacation-rental",
+          "label": "a vacation-rental platform"
+        },
+        {
+          "id": "entertainment-complex",
+          "label": "an entertainment complex"
+        }
       ]
     },
     "travel-tourism-team": {
       "cluster": "Hospitality & Tourism",
       "subtopic": [
-        { "id": "promote-destination", "label": "promoting a destination" },
-        { "id": "package-launch", "label": "a new tour or package launch" },
-        { "id": "off-season", "label": "an off-season demand plan" },
-        { "id": "local-partnerships", "label": "partnerships with local businesses" },
-        { "id": "sustainable-tourism", "label": "a sustainable-tourism initiative" },
-        { "id": "digital-booking", "label": "a digital-booking strategy" },
-        { "id": "new-traveler-segment", "label": "targeting a new traveler segment" },
-        { "id": "reputation", "label": "a reputation and reviews plan" },
-        { "id": "experiential", "label": "an experiential-travel offering" },
-        { "id": "corporate-travel", "label": "a group or corporate-travel push" }
+        {
+          "id": "promote-destination",
+          "label": "promoting a destination"
+        },
+        {
+          "id": "package-launch",
+          "label": "a new tour or package launch"
+        },
+        {
+          "id": "off-season",
+          "label": "an off-season demand plan"
+        },
+        {
+          "id": "local-partnerships",
+          "label": "partnerships with local businesses"
+        },
+        {
+          "id": "sustainable-tourism",
+          "label": "a sustainable-tourism initiative"
+        },
+        {
+          "id": "digital-booking",
+          "label": "a digital-booking strategy"
+        },
+        {
+          "id": "new-traveler-segment",
+          "label": "targeting a new traveler segment"
+        },
+        {
+          "id": "reputation",
+          "label": "a reputation and reviews plan"
+        },
+        {
+          "id": "experiential",
+          "label": "an experiential-travel offering"
+        },
+        {
+          "id": "corporate-travel",
+          "label": "a group or corporate-travel push"
+        }
       ],
       "business_type": [
-        { "id": "dmo", "label": "a destination-marketing organization" },
-        { "id": "tour-operator", "label": "a tour operator" },
-        { "id": "travel-agency", "label": "a travel agency" },
-        { "id": "cruise-line", "label": "a cruise line" },
-        { "id": "park-concession", "label": "a national-park concessionaire" },
-        { "id": "adventure-travel", "label": "an adventure-travel company" },
-        { "id": "visitors-bureau", "label": "a city visitors' bureau" },
-        { "id": "resort-destination", "label": "a resort destination" },
-        { "id": "airline-leisure", "label": "an airline's leisure division" },
-        { "id": "vacation-packages", "label": "a vacation-package company" }
+        {
+          "id": "dmo",
+          "label": "a destination-marketing organization"
+        },
+        {
+          "id": "tour-operator",
+          "label": "a tour operator"
+        },
+        {
+          "id": "travel-agency",
+          "label": "a travel agency"
+        },
+        {
+          "id": "cruise-line",
+          "label": "a cruise line"
+        },
+        {
+          "id": "park-concession",
+          "label": "a national-park concessionaire"
+        },
+        {
+          "id": "adventure-travel",
+          "label": "an adventure-travel company"
+        },
+        {
+          "id": "visitors-bureau",
+          "label": "a city visitors' bureau"
+        },
+        {
+          "id": "resort-destination",
+          "label": "a resort destination"
+        },
+        {
+          "id": "airline-leisure",
+          "label": "an airline's leisure division"
+        },
+        {
+          "id": "vacation-packages",
+          "label": "a vacation-package company"
+        }
       ],
       "stakeholder": [
-        { "id": "tourism-director", "label": "a destination or tourism-board director" },
-        { "id": "traveler-client", "label": "a travel client" },
-        { "id": "local-partner", "label": "a local-business partner" },
-        { "id": "executive", "label": "a senior executive" },
-        { "id": "tour-group", "label": "a prospective tour group" },
-        { "id": "owner", "label": "the owner" }
+        {
+          "id": "tourism-director",
+          "label": "a destination or tourism-board director"
+        },
+        {
+          "id": "traveler-client",
+          "label": "a travel client"
+        },
+        {
+          "id": "local-partner",
+          "label": "a local-business partner"
+        },
+        {
+          "id": "executive",
+          "label": "a senior executive"
+        },
+        {
+          "id": "tour-group",
+          "label": "a prospective tour group"
+        },
+        {
+          "id": "owner",
+          "label": "the owner"
+        }
       ]
     },
     "principles-business-management": {
       "cluster": "Business Management & Administration",
       "subtopic": [
-        { "id": "productivity", "label": "improving team productivity" },
-        { "id": "process-improvement", "label": "a process-improvement idea" },
-        { "id": "communication", "label": "fixing a communication breakdown" },
-        { "id": "delegation", "label": "a delegation or staffing decision" },
-        { "id": "change-rollout", "label": "rolling out a change" },
-        { "id": "service-standard", "label": "a customer-service standard" },
-        { "id": "scheduling-ops", "label": "a scheduling or operations problem" },
-        { "id": "team-conflict", "label": "a conflict between team members" },
-        { "id": "goals-kpis", "label": "setting goals and KPIs" },
-        { "id": "cost-efficiency", "label": "a cost-efficiency plan" }
+        {
+          "id": "productivity",
+          "label": "improving team productivity"
+        },
+        {
+          "id": "process-improvement",
+          "label": "a process-improvement idea"
+        },
+        {
+          "id": "communication",
+          "label": "fixing a communication breakdown"
+        },
+        {
+          "id": "delegation",
+          "label": "a delegation or staffing decision"
+        },
+        {
+          "id": "change-rollout",
+          "label": "rolling out a change"
+        },
+        {
+          "id": "service-standard",
+          "label": "a customer-service standard"
+        },
+        {
+          "id": "scheduling-ops",
+          "label": "a scheduling or operations problem"
+        },
+        {
+          "id": "team-conflict",
+          "label": "a conflict between team members"
+        },
+        {
+          "id": "goals-kpis",
+          "label": "setting goals and KPIs"
+        },
+        {
+          "id": "cost-efficiency",
+          "label": "a cost-efficiency plan"
+        }
       ],
       "business_type": [
-        { "id": "retail-store", "label": "a retail store" },
-        { "id": "call-center", "label": "a call center" },
-        { "id": "warehouse", "label": "a warehouse" },
-        { "id": "restaurant", "label": "a restaurant" },
-        { "id": "small-office", "label": "a small office" },
-        { "id": "manufacturing", "label": "a manufacturing plant" },
-        { "id": "fitness-club", "label": "a fitness club" },
-        { "id": "hotel", "label": "a hotel" },
-        { "id": "delivery", "label": "a delivery and logistics company" },
-        { "id": "nonprofit", "label": "a nonprofit" },
-        { "id": "medical-office", "label": "a medical office" },
-        { "id": "landscaping-crew", "label": "a landscaping company" }
+        {
+          "id": "retail-store",
+          "label": "a retail store"
+        },
+        {
+          "id": "call-center",
+          "label": "a call center"
+        },
+        {
+          "id": "warehouse",
+          "label": "a warehouse"
+        },
+        {
+          "id": "restaurant",
+          "label": "a restaurant"
+        },
+        {
+          "id": "small-office",
+          "label": "a small office"
+        },
+        {
+          "id": "manufacturing",
+          "label": "a manufacturing plant"
+        },
+        {
+          "id": "fitness-club",
+          "label": "a fitness club"
+        },
+        {
+          "id": "hotel",
+          "label": "a hotel"
+        },
+        {
+          "id": "delivery",
+          "label": "a delivery and logistics company"
+        },
+        {
+          "id": "nonprofit",
+          "label": "a nonprofit"
+        },
+        {
+          "id": "medical-office",
+          "label": "a medical office"
+        },
+        {
+          "id": "landscaping-crew",
+          "label": "a landscaping company"
+        }
       ]
     },
     "human-resources-management": {
       "cluster": "Business Management & Administration",
       "subtopic": [
-        { "id": "recruiting", "label": "a hiring and recruiting plan" },
-        { "id": "retention", "label": "an employee-retention problem" },
-        { "id": "performance", "label": "a performance-management issue" },
-        { "id": "training", "label": "a training and development program" },
-        { "id": "conflict", "label": "a workplace-conflict resolution" },
-        { "id": "comp-benefits", "label": "a compensation or benefits decision" },
-        { "id": "inclusion", "label": "a diversity and inclusion initiative" },
-        { "id": "onboarding", "label": "an onboarding redesign" },
-        { "id": "policy", "label": "a policy or handbook update" },
-        { "id": "engagement", "label": "an engagement and morale plan" }
+        {
+          "id": "recruiting",
+          "label": "a hiring and recruiting plan"
+        },
+        {
+          "id": "retention",
+          "label": "an employee-retention problem"
+        },
+        {
+          "id": "performance",
+          "label": "a performance-management issue"
+        },
+        {
+          "id": "training",
+          "label": "a training and development program"
+        },
+        {
+          "id": "conflict",
+          "label": "a workplace-conflict resolution"
+        },
+        {
+          "id": "comp-benefits",
+          "label": "a compensation or benefits decision"
+        },
+        {
+          "id": "inclusion",
+          "label": "a diversity and inclusion initiative"
+        },
+        {
+          "id": "onboarding",
+          "label": "an onboarding redesign"
+        },
+        {
+          "id": "policy",
+          "label": "a policy or handbook update"
+        },
+        {
+          "id": "engagement",
+          "label": "an engagement and morale plan"
+        }
       ],
       "business_type": [
-        { "id": "tech-company", "label": "a tech company" },
-        { "id": "hospital", "label": "a hospital" },
-        { "id": "retail-chain", "label": "a retail chain" },
-        { "id": "manufacturing", "label": "a manufacturing firm" },
-        { "id": "restaurant-group", "label": "a restaurant group" },
-        { "id": "call-center", "label": "a call center" },
-        { "id": "logistics", "label": "a logistics company" },
-        { "id": "school-district", "label": "a school district" },
-        { "id": "hotel-chain", "label": "a hotel chain" },
-        { "id": "nonprofit", "label": "a nonprofit" },
-        { "id": "construction", "label": "a construction company" },
-        { "id": "bank", "label": "a bank" }
+        {
+          "id": "tech-company",
+          "label": "a tech company"
+        },
+        {
+          "id": "hospital",
+          "label": "a hospital"
+        },
+        {
+          "id": "retail-chain",
+          "label": "a retail chain"
+        },
+        {
+          "id": "manufacturing",
+          "label": "a manufacturing firm"
+        },
+        {
+          "id": "restaurant-group",
+          "label": "a restaurant group"
+        },
+        {
+          "id": "call-center",
+          "label": "a call center"
+        },
+        {
+          "id": "logistics",
+          "label": "a logistics company"
+        },
+        {
+          "id": "school-district",
+          "label": "a school district"
+        },
+        {
+          "id": "hotel-chain",
+          "label": "a hotel chain"
+        },
+        {
+          "id": "nonprofit",
+          "label": "a nonprofit"
+        },
+        {
+          "id": "construction",
+          "label": "a construction company"
+        },
+        {
+          "id": "bank",
+          "label": "a bank"
+        }
       ],
       "problem": [
-        { "id": "role-to-fill", "label": "a key role needs filling" },
-        { "id": "good-people-leaving", "label": "good employees are leaving" },
-        { "id": "performance-issue", "label": "a performance issue must be handled" },
-        { "id": "morale-drop", "label": "morale and engagement have dropped" },
-        { "id": "conflict", "label": "a workplace conflict needs resolving" },
-        { "id": "training-policy-gap", "label": "a training or policy gap has surfaced" }
+        {
+          "id": "role-to-fill",
+          "label": "a key role needs filling"
+        },
+        {
+          "id": "good-people-leaving",
+          "label": "good employees are leaving"
+        },
+        {
+          "id": "performance-issue",
+          "label": "a performance issue must be handled"
+        },
+        {
+          "id": "morale-drop",
+          "label": "morale and engagement have dropped"
+        },
+        {
+          "id": "conflict",
+          "label": "a workplace conflict needs resolving"
+        },
+        {
+          "id": "training-policy-gap",
+          "label": "a training or policy gap has surfaced"
+        }
       ]
     },
     "business-law-ethics-team": {
       "cluster": "Business Management & Administration",
       "subtopic": [
-        { "id": "ethical-dilemma", "label": "an ethical dilemma" },
-        { "id": "contract", "label": "a contract or agreement decision" },
-        { "id": "compliance", "label": "a compliance question" },
-        { "id": "ip", "label": "an intellectual-property issue" },
-        { "id": "privacy-data", "label": "a privacy or data-handling concern" },
-        { "id": "employment-law", "label": "an employment-law situation" },
-        { "id": "consumer-protection", "label": "a consumer-protection issue" },
-        { "id": "conflict-of-interest", "label": "a conflict-of-interest case" },
-        { "id": "liability-risk", "label": "a liability or risk decision" },
-        { "id": "csr", "label": "a corporate-social-responsibility policy" }
+        {
+          "id": "ethical-dilemma",
+          "label": "an ethical dilemma"
+        },
+        {
+          "id": "contract",
+          "label": "a contract or agreement decision"
+        },
+        {
+          "id": "compliance",
+          "label": "a compliance question"
+        },
+        {
+          "id": "ip",
+          "label": "an intellectual-property issue"
+        },
+        {
+          "id": "privacy-data",
+          "label": "a privacy or data-handling concern"
+        },
+        {
+          "id": "employment-law",
+          "label": "an employment-law situation"
+        },
+        {
+          "id": "consumer-protection",
+          "label": "a consumer-protection issue"
+        },
+        {
+          "id": "conflict-of-interest",
+          "label": "a conflict-of-interest case"
+        },
+        {
+          "id": "liability-risk",
+          "label": "a liability or risk decision"
+        },
+        {
+          "id": "csr",
+          "label": "a corporate-social-responsibility policy"
+        }
       ],
       "business_type": [
-        { "id": "tech-startup", "label": "a tech startup" },
-        { "id": "retail-chain", "label": "a retail chain" },
-        { "id": "manufacturer", "label": "a manufacturer" },
-        { "id": "marketing-agency", "label": "a marketing agency" },
-        { "id": "healthcare-provider", "label": "a healthcare provider" },
-        { "id": "financial-firm", "label": "a financial firm" },
-        { "id": "food-company", "label": "a food company" },
-        { "id": "construction", "label": "a construction company" },
-        { "id": "social-platform", "label": "a social-media platform" },
-        { "id": "consumer-products", "label": "a consumer-products company" }
+        {
+          "id": "tech-startup",
+          "label": "a tech startup"
+        },
+        {
+          "id": "retail-chain",
+          "label": "a retail chain"
+        },
+        {
+          "id": "manufacturer",
+          "label": "a manufacturer"
+        },
+        {
+          "id": "marketing-agency",
+          "label": "a marketing agency"
+        },
+        {
+          "id": "healthcare-provider",
+          "label": "a healthcare provider"
+        },
+        {
+          "id": "financial-firm",
+          "label": "a financial firm"
+        },
+        {
+          "id": "food-company",
+          "label": "a food company"
+        },
+        {
+          "id": "construction",
+          "label": "a construction company"
+        },
+        {
+          "id": "social-platform",
+          "label": "a social-media platform"
+        },
+        {
+          "id": "consumer-products",
+          "label": "a consumer-products company"
+        }
       ],
       "stakeholder": [
-        { "id": "executive", "label": "a senior executive" },
-        { "id": "compliance-officer", "label": "the legal or compliance officer" },
-        { "id": "owner", "label": "the business owner" },
-        { "id": "client-partner", "label": "a client or business partner" },
-        { "id": "affected-employee", "label": "an affected employee" },
-        { "id": "board", "label": "the board" }
+        {
+          "id": "executive",
+          "label": "a senior executive"
+        },
+        {
+          "id": "compliance-officer",
+          "label": "the legal or compliance officer"
+        },
+        {
+          "id": "owner",
+          "label": "the business owner"
+        },
+        {
+          "id": "client-partner",
+          "label": "a client or business partner"
+        },
+        {
+          "id": "affected-employee",
+          "label": "an affected employee"
+        },
+        {
+          "id": "board",
+          "label": "the board"
+        }
       ],
       "problem": [
-        { "id": "ethical-line", "label": "an ethical line has been crossed and must be addressed" },
-        { "id": "contract-risk", "label": "a contract decision carries legal risk" },
-        { "id": "compliance-gap", "label": "a compliance requirement isn't being met" },
-        { "id": "ip-data-issue", "label": "an intellectual-property or data issue has surfaced" },
-        { "id": "conflict-interest", "label": "a conflict of interest has to be handled" },
-        { "id": "profit-vs-responsibility", "label": "a decision pits short-term profit against doing the right thing" }
+        {
+          "id": "ethical-line",
+          "label": "an ethical line has been crossed and must be addressed"
+        },
+        {
+          "id": "contract-risk",
+          "label": "a contract decision carries legal risk"
+        },
+        {
+          "id": "compliance-gap",
+          "label": "a compliance requirement isn't being met"
+        },
+        {
+          "id": "ip-data-issue",
+          "label": "an intellectual-property or data issue has surfaced"
+        },
+        {
+          "id": "conflict-interest",
+          "label": "a conflict of interest has to be handled"
+        },
+        {
+          "id": "profit-vs-responsibility",
+          "label": "a decision pits short-term profit against doing the right thing"
+        }
       ]
     },
     "principles-entrepreneurship": {
       "cluster": "Entrepreneurship",
       "subtopic": [
-        { "id": "validate-idea", "label": "validating a business idea" },
-        { "id": "pricing", "label": "a pricing decision for a new product" },
-        { "id": "first-customers", "label": "finding the first customers" },
-        { "id": "funding-decision", "label": "a bootstrapping or funding decision" },
-        { "id": "no-budget-marketing", "label": "a marketing plan on almost no budget" },
-        { "id": "make-vs-buy", "label": "a make-or-buy or supplier decision" },
-        { "id": "location", "label": "choosing a business location" },
-        { "id": "grow-vs-focus", "label": "a grow-vs-stay-focused decision" },
-        { "id": "small-team", "label": "building a small team" },
-        { "id": "break-even", "label": "a break-even or profitability question" }
+        {
+          "id": "validate-idea",
+          "label": "validating a business idea"
+        },
+        {
+          "id": "pricing",
+          "label": "a pricing decision for a new product"
+        },
+        {
+          "id": "first-customers",
+          "label": "finding the first customers"
+        },
+        {
+          "id": "funding-decision",
+          "label": "a bootstrapping or funding decision"
+        },
+        {
+          "id": "no-budget-marketing",
+          "label": "a marketing plan on almost no budget"
+        },
+        {
+          "id": "make-vs-buy",
+          "label": "a make-or-buy or supplier decision"
+        },
+        {
+          "id": "location",
+          "label": "choosing a business location"
+        },
+        {
+          "id": "grow-vs-focus",
+          "label": "a grow-vs-stay-focused decision"
+        },
+        {
+          "id": "small-team",
+          "label": "building a small team"
+        },
+        {
+          "id": "break-even",
+          "label": "a break-even or profitability question"
+        }
       ],
       "business_type": [
-        { "id": "food-truck", "label": "a food truck" },
-        { "id": "handmade-crafts", "label": "a handmade-crafts business" },
-        { "id": "tutoring", "label": "a tutoring service" },
-        { "id": "lawn-care", "label": "a lawn-care startup" },
-        { "id": "mobile-app", "label": "a mobile app" },
-        { "id": "subscription-box", "label": "a subscription box" },
-        { "id": "pop-up", "label": "a pop-up shop" },
-        { "id": "photography", "label": "a photography business" },
-        { "id": "bakery", "label": "a specialty bakery" },
-        { "id": "pet-sitting", "label": "a pet-sitting service" },
-        { "id": "ecommerce", "label": "an e-commerce store" },
-        { "id": "fitness-coaching", "label": "a fitness-coaching business" }
+        {
+          "id": "food-truck",
+          "label": "a food truck"
+        },
+        {
+          "id": "handmade-crafts",
+          "label": "a handmade-crafts business"
+        },
+        {
+          "id": "tutoring",
+          "label": "a tutoring service"
+        },
+        {
+          "id": "lawn-care",
+          "label": "a lawn-care startup"
+        },
+        {
+          "id": "mobile-app",
+          "label": "a mobile app"
+        },
+        {
+          "id": "subscription-box",
+          "label": "a subscription box"
+        },
+        {
+          "id": "pop-up",
+          "label": "a pop-up shop"
+        },
+        {
+          "id": "photography",
+          "label": "a photography business"
+        },
+        {
+          "id": "bakery",
+          "label": "a specialty bakery"
+        },
+        {
+          "id": "pet-sitting",
+          "label": "a pet-sitting service"
+        },
+        {
+          "id": "ecommerce",
+          "label": "an e-commerce store"
+        },
+        {
+          "id": "fitness-coaching",
+          "label": "a fitness-coaching business"
+        }
       ]
     },
     "entrepreneurship-individual": {
       "cluster": "Entrepreneurship",
       "subtopic": [
-        { "id": "investor-pitch", "label": "an investor pitch" },
-        { "id": "market-entry", "label": "a market-entry decision" },
-        { "id": "scaling-plan", "label": "a scaling plan" },
-        { "id": "pivot", "label": "a pivot decision" },
-        { "id": "funding-strategy", "label": "a funding strategy" },
-        { "id": "customer-acquisition", "label": "a customer-acquisition plan" },
-        { "id": "product-roadmap", "label": "a product-roadmap decision" },
-        { "id": "partnership", "label": "a partnership opportunity" },
-        { "id": "first-hire", "label": "a first-employee hiring decision" },
-        { "id": "unit-economics", "label": "a profitability and unit-economics problem" }
+        {
+          "id": "investor-pitch",
+          "label": "an investor pitch"
+        },
+        {
+          "id": "market-entry",
+          "label": "a market-entry decision"
+        },
+        {
+          "id": "scaling-plan",
+          "label": "a scaling plan"
+        },
+        {
+          "id": "pivot",
+          "label": "a pivot decision"
+        },
+        {
+          "id": "funding-strategy",
+          "label": "a funding strategy"
+        },
+        {
+          "id": "customer-acquisition",
+          "label": "a customer-acquisition plan"
+        },
+        {
+          "id": "product-roadmap",
+          "label": "a product-roadmap decision"
+        },
+        {
+          "id": "partnership",
+          "label": "a partnership opportunity"
+        },
+        {
+          "id": "first-hire",
+          "label": "a first-employee hiring decision"
+        },
+        {
+          "id": "unit-economics",
+          "label": "a profitability and unit-economics problem"
+        }
       ],
       "business_type": [
-        { "id": "saas", "label": "a SaaS startup" },
-        { "id": "dtc-brand", "label": "a direct-to-consumer product brand" },
-        { "id": "food-beverage", "label": "a food-and-beverage startup" },
-        { "id": "marketplace", "label": "a services marketplace" },
-        { "id": "hardware", "label": "a hardware or gadget startup" },
-        { "id": "wellness", "label": "a health-and-wellness startup" },
-        { "id": "edtech", "label": "an ed-tech company" },
-        { "id": "sustainable-products", "label": "a sustainable-products company" },
-        { "id": "franchise-concept", "label": "a local-services franchise concept" },
-        { "id": "mobile-app", "label": "a mobile-app startup" },
-        { "id": "subscription", "label": "a subscription service" },
-        { "id": "specialty-retail", "label": "a specialty-retail concept" }
+        {
+          "id": "saas",
+          "label": "a SaaS startup"
+        },
+        {
+          "id": "dtc-brand",
+          "label": "a direct-to-consumer product brand"
+        },
+        {
+          "id": "food-beverage",
+          "label": "a food-and-beverage startup"
+        },
+        {
+          "id": "marketplace",
+          "label": "a services marketplace"
+        },
+        {
+          "id": "hardware",
+          "label": "a hardware or gadget startup"
+        },
+        {
+          "id": "wellness",
+          "label": "a health-and-wellness startup"
+        },
+        {
+          "id": "edtech",
+          "label": "an ed-tech company"
+        },
+        {
+          "id": "sustainable-products",
+          "label": "a sustainable-products company"
+        },
+        {
+          "id": "franchise-concept",
+          "label": "a local-services franchise concept"
+        },
+        {
+          "id": "mobile-app",
+          "label": "a mobile-app startup"
+        },
+        {
+          "id": "subscription",
+          "label": "a subscription service"
+        },
+        {
+          "id": "specialty-retail",
+          "label": "a specialty-retail concept"
+        }
       ]
     },
     "entrepreneurship-team": {
       "cluster": "Entrepreneurship",
       "subtopic": [
-        { "id": "business-plan", "label": "a full business plan" },
-        { "id": "go-to-market", "label": "a go-to-market strategy" },
-        { "id": "fundraising", "label": "a fundraising round" },
-        { "id": "scaling-ops", "label": "a scaling and operations plan" },
-        { "id": "market-expansion", "label": "a market-expansion decision" },
-        { "id": "competitive-response", "label": "a competitive-response strategy" },
-        { "id": "product-launch", "label": "a product-launch plan" },
-        { "id": "joint-venture", "label": "a partnership or joint-venture decision" },
-        { "id": "revenue-model", "label": "a pricing and revenue-model decision" },
-        { "id": "org-growth", "label": "a team-and-org-growth plan" }
+        {
+          "id": "business-plan",
+          "label": "a full business plan"
+        },
+        {
+          "id": "go-to-market",
+          "label": "a go-to-market strategy"
+        },
+        {
+          "id": "fundraising",
+          "label": "a fundraising round"
+        },
+        {
+          "id": "scaling-ops",
+          "label": "a scaling and operations plan"
+        },
+        {
+          "id": "market-expansion",
+          "label": "a market-expansion decision"
+        },
+        {
+          "id": "competitive-response",
+          "label": "a competitive-response strategy"
+        },
+        {
+          "id": "product-launch",
+          "label": "a product-launch plan"
+        },
+        {
+          "id": "joint-venture",
+          "label": "a partnership or joint-venture decision"
+        },
+        {
+          "id": "revenue-model",
+          "label": "a pricing and revenue-model decision"
+        },
+        {
+          "id": "org-growth",
+          "label": "a team-and-org-growth plan"
+        }
       ],
       "business_type": [
-        { "id": "saas", "label": "a SaaS startup" },
-        { "id": "dtc-brand", "label": "a direct-to-consumer product brand" },
-        { "id": "food-beverage", "label": "a food-and-beverage startup" },
-        { "id": "marketplace", "label": "a two-sided marketplace" },
-        { "id": "hardware", "label": "a hardware startup" },
-        { "id": "wellness", "label": "a health-and-wellness startup" },
-        { "id": "edtech", "label": "an ed-tech company" },
-        { "id": "clean-tech", "label": "a clean-tech startup" },
-        { "id": "logistics-startup", "label": "a logistics startup" },
-        { "id": "consumer-app", "label": "a consumer-app company" }
+        {
+          "id": "saas",
+          "label": "a SaaS startup"
+        },
+        {
+          "id": "dtc-brand",
+          "label": "a direct-to-consumer product brand"
+        },
+        {
+          "id": "food-beverage",
+          "label": "a food-and-beverage startup"
+        },
+        {
+          "id": "marketplace",
+          "label": "a two-sided marketplace"
+        },
+        {
+          "id": "hardware",
+          "label": "a hardware startup"
+        },
+        {
+          "id": "wellness",
+          "label": "a health-and-wellness startup"
+        },
+        {
+          "id": "edtech",
+          "label": "an ed-tech company"
+        },
+        {
+          "id": "clean-tech",
+          "label": "a clean-tech startup"
+        },
+        {
+          "id": "logistics-startup",
+          "label": "a logistics startup"
+        },
+        {
+          "id": "consumer-app",
+          "label": "a consumer-app company"
+        }
       ]
     }
   }

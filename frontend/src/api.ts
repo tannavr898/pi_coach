@@ -5,6 +5,7 @@
 export type Level = "district" | "state" | "icdc";
 export type Mode = "learn" | "competition";
 
+// What the app GRADES: one criterion on a scenario's cover sheet (/api/scenario).
 export type Criterion = {
   id: string;
   domain: string;
@@ -15,7 +16,23 @@ export type Criterion = {
   strong_looks_like: string;
   weak_looks_like: string;
   coaches: string;
-  // Flashcard content (Phase 4) — populated on the /api/criteria path only.
+};
+
+// What a student STUDIES: one flashcard / course term (/api/terms). Distinct from
+// Criterion — the study corpus is larger than the framework we grade against, so a
+// term need not have a criterion at all. `criterion_id` is set on the graded ones
+// (tier "core"), which is what weak-term highlighting keys off.
+export type Term = {
+  id: string;
+  criterion_id: string | null;
+  tier: "core" | "extended";
+  domain_id: string;
+  domain: string;
+  topic: string;
+  name: string;
+  coaches: string;
+  // The plain, student-facing definition (not Criterion's grading question).
+  definition: string;
   example?: FlashcardExample | null;
   mistake?: string;
 };
@@ -120,12 +137,23 @@ export type CreativityScore = {
   evidence: string | null;
 };
 
+// Bonus-only credit for bringing in a related study term and actually applying it.
+// `terms` are the study-term ids the grader credited — they feed study progress as
+// the strongest evidence there is.
+export type DepthScore = {
+  bonus: number; // 0, 0.25, 0.5
+  terms: string[];
+  justification: string;
+  evidence: string | null;
+};
+
 export type AnalyticalSection = {
   weight: number;
   framing: SubScore;
   solution_quality: SubScore;
   pi_application: SubScore;
   creativity: CreativityScore;
+  depth: DepthScore;
   core_score: number;
   section_score: number; // 0-4
   section_percent: number;
@@ -250,15 +278,16 @@ export function getEvents(): Promise<EventSummary[]> {
   return request<EventSummary[]>("/api/events");
 }
 
-// Full teaching fields for specific criteria (by id) — powers the flashcards.
-export function getCriteria(ids: string[]): Promise<Criterion[]> {
+// Study terms by id — a weak-term deck, a flagged set, or a course unit. Graded
+// terms share their criterion's id, so a criterion id resolves here directly.
+export function getTerms(ids: string[]): Promise<Term[]> {
   if (ids.length === 0) return Promise.resolve([]);
-  return request<Criterion[]>(`/api/criteria?ids=${encodeURIComponent(ids.join(","))}`);
+  return request<Term[]>(`/api/terms?ids=${encodeURIComponent(ids.join(","))}`);
 }
 
-// The whole framework (all 282 criteria) — powers the flashcard library.
-export function getAllCriteria(): Promise<Criterion[]> {
-  return request<Criterion[]>("/api/criteria");
+// The whole study corpus — powers the flashcard library.
+export function getAllTerms(): Promise<Term[]> {
+  return request<Term[]>("/api/terms");
 }
 
 // Admin QA page: verify the secret passphrase server-side (throws 404 when the
@@ -318,7 +347,7 @@ export function postScore(body: {
 
 export type BlitzScenario = { id: string; text: string };
 export type BlitzVerdict = "correct" | "partial" | "missed";
-export type BlitzResult = { criterion_id: string; verdict: BlitzVerdict; note: string };
+export type BlitzResult = { term_id: string; verdict: BlitzVerdict; note: string };
 
 export function getBlitzScenarios(): Promise<BlitzScenario[]> {
   return request<BlitzScenario[]>("/api/blitz/scenarios");
@@ -326,7 +355,7 @@ export function getBlitzScenarios(): Promise<BlitzScenario[]> {
 
 export function postBlitzScore(body: {
   scenario: string;
-  answers: { criterion_id: string; response: string }[];
+  answers: { term_id: string; response: string }[];
 }): Promise<{ results: BlitzResult[] }> {
   return request<{ results: BlitzResult[] }>("/api/blitz-score", {
     method: "POST",
@@ -377,7 +406,7 @@ export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = f
     }
     throw new Error(
       detail ||
-        "We couldn't process your recording — it may have been silent, too short, or unclear. Find a quiet spot and record again.",
+        "We couldn't process your recording. It may have been silent, too short, or unclear. Find a quiet spot and record again.",
     );
   }
   return res.json() as Promise<DeliveryResponse>;

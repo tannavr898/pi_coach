@@ -49,3 +49,22 @@ async def current_user(authorization: str = Header(default="")) -> dict[str, str
     if not uid:
         raise HTTPException(status_code=401, detail="Your session expired — sign in again.")
     return {"id": uid, "email": data.get("email") or ""}
+
+
+async def optional_user(authorization: str = Header(default="")) -> dict[str, str] | None:
+    """FastAPI dependency: the signed-in user, or None if there isn't one.
+
+    For endpoints that work logged-out but get richer with an account — the study
+    course renders its path for anyone, and only overlays progress when we know who
+    is asking. Deliberately never raises: on these paths a missing, expired, or
+    unverifiable token just means "anonymous", because there is nothing here to
+    protect, only something to add. Anything that reads or writes a user's rows must
+    use ``current_user`` instead, so a bad token fails loudly rather than silently
+    reading as a different (empty) user.
+    """
+    if not config.has_supabase() or not authorization.lower().startswith("bearer "):
+        return None
+    try:
+        return await current_user(authorization)
+    except HTTPException:
+        return None

@@ -122,7 +122,7 @@ export const DEMO_SCORE: ScoreResponse = {
   total_points: 37,
   max_points: 50,
   // Final weighted score: 74% indicators × 0.60 + 92.5% analysis × 0.25 + 84% present × 0.15 = 80.1.
-  overall_percent: 80,
+  overall_percent: 82,
   overall_level: "proficient",
   pi_section_score: 2.96,
   pi_section_percent: 74,
@@ -152,9 +152,17 @@ export const DEMO_SCORE: ScoreResponse = {
         "The '3 to 5pm power hour' is a memorable, apt framing that makes the off-peak tactic instantly clear and sellable to the owner.",
       evidence: "A 3 to 5pm power hour discount fills our slowest window",
     },
+    depth: {
+      bonus: 0.25,
+      terms: ["T-0346"],
+      justification:
+        "Reaches past the graded skills to influencer marketing and actually uses it: the micro-influencer shift is justified by where the target audience already spends its attention, not just named.",
+      evidence: "local micro-influencers, because our 18 to 28 core lives on their phones",
+    },
+    // core 3.45 + creativity 0.25 + depth 0.25 = 3.95, under the 4.0 ceiling.
     core_score: 3.45,
-    section_score: 3.7,
-    section_percent: 92.5,
+    section_score: 3.95,
+    section_percent: 98.8,
   },
   presentation: {
     weight: 0.15,
@@ -164,7 +172,7 @@ export const DEMO_SCORE: ScoreResponse = {
       "Steady 129 WPM with only six fillers reads as conversational, not memorized, and the follow-up answer stayed composed and specific.",
   },
   final: {
-    percent: 80.1,
+    percent: 81.7,
     top_strength:
       "A realistic, well-sequenced solution: loyalty program, targeted promo, and a pilot to prove it before rollout.",
     biggest_weakness:
