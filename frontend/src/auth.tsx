@@ -233,7 +233,7 @@ export function AuthModal({
                 </>
               )}
             </p>
-            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-400 dark:text-slate-500">
+            <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
               We only store your email and your practice sessions: nothing else. Signing in is optional; you can keep practicing without an account.
             </p>
           </>

@@ -1136,7 +1136,7 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
       <Card>
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{s.topic}</h2>
-          <span className="font-mono text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">District · Learn mode</span>
+          <span className="font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">District · Learn mode</span>
         </div>
         <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{scenarioSubtitle(s)}</p>
         <div className="mt-4">
@@ -1173,10 +1173,10 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
       </Card>
 
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+        <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
           Now see how PI Coach grades it, as a percentage, skill by skill.
         </p>
-        <button className={`${BTN_PRIMARY} w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`} onClick={onNext}>
+        <button className={`${BTN_PRIMARY} w-full sm:w-auto`} onClick={onNext}>
           See the graded feedback →
         </button>
       </div>
@@ -1204,7 +1204,7 @@ function useTheme() {
 function SiteFooter() {
   return (
     <footer className="border-t border-slate-200/80 bg-white/50 dark:border-slate-800/80 dark:bg-slate-950/40">
-      <div className="mx-auto max-w-5xl px-5 py-6 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+      <div className="mx-auto max-w-5xl px-5 py-6 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
         <div className="mb-3">
           <span className="font-display text-sm font-semibold text-slate-600 dark:text-slate-300">PI Coach</span>
         </div>
@@ -1362,7 +1362,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           <BrandMark />
           <div className="min-w-0 leading-none">
             <div className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">PI Coach</div>
-            <div className="mt-1 truncate font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">DECA role-play practice</div>
+            <div className="mt-1 truncate font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">DECA role-play practice</div>
           </div>
         </button>
 
@@ -1581,6 +1581,9 @@ function Eyebrow({ children }: { children: ReactNode }) {
 const BTN_PRIMARY =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-40";
 
+const BTN_SECONDARY =
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800";
+
 // --- screens ---------------------------------------------------------------
 
 function PickScreen(props: {
@@ -1663,7 +1666,7 @@ function PickScreen(props: {
                 {selected.blurb}
               </p>
             ) : (
-              <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                 {props.events.length ? "Grouped by cluster. Pick the one you compete in." : "Loading events…"}
               </p>
             )}
@@ -1699,7 +1702,7 @@ function PickScreen(props: {
                 ))}
               </div>
             )}
-            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               Leave it blank and we'll write a realistic scenario for your event. Add a focus to steer it.
             </p>
           </Field>
@@ -1713,7 +1716,7 @@ function PickScreen(props: {
                 { value: "learn", label: "Learn" },
               ]}
             />
-            <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
               {props.practiceMode === "competition"
                 ? "Like the real room: you see the skill names being assessed, but not the answer key."
                 : "Teaches as you go: see each skill, what “good” looks like, and coaching in your feedback."}
@@ -1735,7 +1738,7 @@ function PickScreen(props: {
           <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
             <HonestyNote />
             <button
-              className={`${BTN_PRIMARY} w-full whitespace-nowrap bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 sm:w-auto`}
+              className={`${BTN_PRIMARY} w-full whitespace-nowrap sm:w-auto`}
               onClick={props.onGenerate}
               disabled={!props.eventId}
             >
@@ -1764,18 +1767,30 @@ function ProcessStrip() {
     { n: "02", label: "Present", desc: "Type or speak it out loud" },
     { n: "03", label: "Feedback", desc: "Per-criterion score + fixes" },
   ];
+  // A connected sequence, not three cards: numbered nodes threaded on a single
+  // line (the order carries meaning, so the numbers earn their place). Horizontal
+  // on desktop, a vertical thread on mobile.
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <ol className="relative grid gap-8 sm:grid-cols-3 sm:gap-6">
+      {/* The connector spans only between the first and last node centers (each
+          node is centered in its column on sm+), so the line terminates on the
+          nodes instead of trailing past the last one. */}
+      <div
+        aria-hidden
+        className="absolute left-[16.667%] right-[16.667%] top-5 hidden h-px bg-slate-200 dark:bg-slate-700 sm:block"
+      />
       {steps.map((s) => (
-        <div key={s.n} className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3 transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-800/60 dark:hover:border-indigo-900/60">
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-sm font-medium text-indigo-500">{s.n}</span>
-            <span className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{s.label}</span>
+        <li key={s.n} className="relative flex flex-col sm:items-center sm:text-center">
+          <div className="flex items-center gap-3 sm:flex-col sm:gap-4">
+            <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white font-mono text-sm font-semibold text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-400">
+              {s.n}
+            </span>
+            <span className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{s.label}</span>
           </div>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{s.desc}</p>
-        </div>
+          <p className="mt-2 max-w-[15rem] text-sm leading-relaxed text-slate-600 dark:text-slate-300 sm:mx-auto">{s.desc}</p>
+        </li>
       ))}
-    </div>
+    </ol>
   );
 }
 
@@ -1786,15 +1801,23 @@ function ProcessStrip() {
 
 function LandingPage({ onStart, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
-    <div className="space-y-20 pb-10 sm:space-y-24">
+    <div className="pb-10">
       <HeroSection onStart={onStart} onTips={onTips} />
-      <HowItWorksSection />
-      <FeedbackExplainerSection />
-      {supabaseEnabled && onSignup ? (
-        <SignupCTA onSignup={onSignup} onStart={onStart} onSignIn={onSignIn} />
-      ) : (
-        <WaitlistCTA onStart={onStart} />
-      )}
+      {/* Rhythm varies around an 8rem base (6 → 8 → 10 → 8rem) so the page feels
+          paced by hand rather than stamped on a uniform grid. */}
+      <div className="mt-24 sm:mt-32">
+        <HowItWorksSection />
+      </div>
+      <div className="mt-28 sm:mt-40">
+        <FeedbackExplainerSection />
+      </div>
+      <div className="mt-24 sm:mt-32">
+        {supabaseEnabled && onSignup ? (
+          <SignupCTA onSignup={onSignup} onStart={onStart} onSignIn={onSignIn} />
+        ) : (
+          <WaitlistCTA onStart={onStart} />
+        )}
+      </div>
     </div>
   );
 }
@@ -1803,18 +1826,17 @@ function LandingPage({ onStart, onTips, supabaseEnabled, onSignIn, onSignup }: {
 // email waitlist once accounts are live).
 function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onStart: () => void; onSignIn?: () => void }) {
   return (
-    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 px-6 py-10 dark:border-indigo-900/50 dark:from-indigo-950/40 dark:to-violet-950/30 sm:px-10">
-      <div className="mx-auto max-w-xl text-center">
-        <Eyebrow>Track your progress</Eyebrow>
-        <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-          Sign up to start tracking your progress today!
+    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-indigo-50/70 px-6 py-12 dark:border-indigo-900/50 dark:bg-indigo-950/30 sm:px-10 sm:py-14">
+      <div className="max-w-xl">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
+          Keep every rep — and watch yourself get ready.
         </h2>
-        <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Free account. We save your sessions and show how your delivery and your weakest skills improve over time.
-          You can keep practicing without one: signing up just remembers your reps.
+        <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          A free account saves your sessions and shows how your delivery and your weakest skills improve over time.
+          You can keep practicing without one — signing up just remembers your reps.
         </p>
-        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <button onClick={onSignup} className={`${BTN_PRIMARY} px-6 py-3`}>
+        <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <button onClick={onSignup} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
             Sign up free →
           </button>
           <button onClick={onStart} className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
@@ -1834,14 +1856,15 @@ function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onSt
   );
 }
 
-function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: string; blurb?: string }) {
+// No eyebrow: a section heading carries itself. Kickers are rationed to one
+// deliberate spot (the hero), so H2s here lead with the headline.
+function SectionHeading({ title, blurb }: { title: string; blurb?: string }) {
   return (
     <div className="max-w-2xl">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+      <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
         {title}
       </h2>
-      {blurb && <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{blurb}</p>}
+      {blurb && <p className="mt-4 text-base leading-relaxed text-pretty text-slate-600 dark:text-slate-300">{blurb}</p>}
     </div>
   );
 }
@@ -1852,49 +1875,82 @@ const HERO_POSTER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e0e7ff'/%3E%3Cstop offset='1' stop-color='%23ede9fe'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23g)'/%3E%3Ctext x='960' y='520' font-family='system-ui,sans-serif' font-size='64' font-weight='600' fill='%234f46e5' text-anchor='middle'%3EPI Coach demo%3C/text%3E%3Ctext x='960' y='600' font-family='system-ui,sans-serif' font-size='38' fill='%236366f1' text-anchor='middle'%3Ea scenario, presented, and graded%3C/text%3E%3C/svg%3E";
 
 function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
+  // Honor prefers-reduced-motion like the rest of the app: don't autoplay the
+  // looping demo; show the poster and expose native controls so a reduced-motion
+  // viewer can still choose to play it.
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener?.("change", sync);
+    return () => mq.removeEventListener?.("change", sync);
+  }, []);
   return (
-    <section className="grid items-center gap-10 pt-6 lg:grid-cols-[6fr_14fr] lg:gap-8">
-      {/* Copy is first in the DOM so on mobile it stacks ABOVE the video; lg:order
-          puts the copy left and the video right on desktop, where the video takes
-          ~70% of the row so the mockup's fine UI detail is shown large enough to read.
-          It's a native 16:9 mockup with no letterbox, so object-cover fills the frame
-          with no crop. Kept under ~960px CSS so even at 2x DPR it downscales from the
-          1920px source (stays crisp) rather than upscaling. */}
-      <div className="lg:order-1">
+    // Asymmetric, left-aligned composition: a narrower copy column (5/12) paired
+    // with a wider media column (7/12), and the two are deliberately staggered on
+    // the vertical axis — copy nudged down, media held at the top — so the hero
+    // reads as hand-placed rather than centered on a symmetric grid.
+    <section className="grid items-start gap-12 pt-2 lg:grid-cols-12 lg:gap-10">
+      <div className="lg:col-span-5 lg:pt-10">
         <Eyebrow>DECA role-play practice</Eyebrow>
-        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Practice DECA role-plays out loud and{" "}
-          <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            get scored like the real thing.
+        <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.06] tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-5xl">
+          Practice DECA role-plays out loud, then{" "}
+          {/* Emphasis by a real mark, not a gradient fill: a concise straight
+              underline with a thinner, lighter second rule beneath it. Painted as
+              two stacked linear-gradient layers so both follow the phrase onto a
+              second line (box-decoration-break: clone) instead of detaching when
+              the text wraps. */}
+          <span
+            className="text-indigo-600 dark:text-indigo-400"
+            style={{
+              WebkitBoxDecorationBreak: "clone",
+              boxDecorationBreak: "clone",
+              backgroundImage:
+                "linear-gradient(#6366f1, #6366f1), linear-gradient(#a5b4fc, #a5b4fc)",
+              backgroundRepeat: "no-repeat, no-repeat",
+              backgroundPosition: "left 100%, left calc(100% - 3px)",
+              backgroundSize: "100% 2px, 100% 1px",
+              paddingBottom: "0.1em",
+            }}
+          >
+            see exactly where you stand
           </span>
+          .
         </h1>
-        <p className="mt-4 font-display text-lg font-medium text-slate-500 dark:text-slate-400">
+        <p className="mt-5 font-display text-lg font-medium text-slate-500 dark:text-slate-400">
           Rehearse the room before you're in it.
         </p>
-        <p className="mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
+        <p className="mt-4 max-w-md text-base leading-relaxed text-slate-600 dark:text-slate-300">
           Pick your event, get an original scenario built around it, prep against a real timer,
-          present out loud, and get honest, per-criterion feedback on both content and delivery.
+          present out loud, and get honest, per-criterion feedback on content and delivery.
         </p>
-        <div className="mt-7">
-          <button
-            onClick={onStart}
-            className={`${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
-          >
+        <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <button onClick={onStart} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
             Ready to practice? →
+          </button>
+          <button
+            onClick={onTips}
+            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            New to DECA role-plays? Read the tips →
           </button>
         </div>
       </div>
 
-      <div className="lg:order-2">
+      {/* Native 16:9 mockup, no letterbox, so object-cover fills with no crop.
+          Kept under ~960px CSS so at 2x DPR it downscales from the 1920px source. */}
+      <div className="lg:col-span-7">
         <div
-          className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-xl shadow-indigo-500/10 dark:border-slate-800"
+          className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-[0_20px_45px_-15px_rgba(79,70,229,0.35)] dark:border-slate-800"
           style={{ aspectRatio: "16 / 9" }}
         >
           <video
             className="absolute inset-0 h-full w-full object-cover"
             src="/demo-loop.mp4"
             poster={HERO_POSTER}
-            autoPlay
+            autoPlay={!reduceMotion}
+            controls={reduceMotion}
             loop
             muted
             playsInline
@@ -1902,12 +1958,6 @@ function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => v
             aria-label="A short, silent demo of PI Coach: an original role-play scenario and its graded feedback"
           />
         </div>
-        <button
-          onClick={onTips}
-          className="mt-4 inline-flex w-full items-center justify-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-        >
-          New to DECA role-plays? Read the competition tips →
-        </button>
       </div>
     </section>
   );
@@ -1917,11 +1967,10 @@ function HowItWorksSection() {
   return (
     <section>
       <SectionHeading
-        eyebrow="How it works"
         title="Three steps, start to score"
         blurb="The same shape as the real event: prep against the clock, present it live, then read exactly where you stood."
       />
-      <div className="mt-6">
+      <div className="mt-10 sm:mt-12">
         <ProcessStrip />
       </div>
     </section>
@@ -1932,24 +1981,27 @@ type FbSection = "pi" | "analysis" | "present";
 
 function FeedbackExplainerSection() {
   const [active, setActive] = useState<FbSection>("pi");
-  const blocks: { key: FbSection; weight: string; title: string; body: string; looksFor: string }[] = [
+  const blocks: { key: FbSection; weight: number; short: string; title: string; body: string; looksFor: string }[] = [
     {
       key: "pi",
-      weight: "60%",
+      weight: 60,
+      short: "Performance Indicators",
       title: "Performance Indicators",
       body: "The specific business skills the event lists. For each one we judge whether you actually demonstrated it or only name-dropped it, then score it Novice to Exemplary and highlight the exact phrase in your transcript that earned the credit.",
       looksFor: "using customer data to drive loyalty, not just saying “good service”",
     },
     {
       key: "analysis",
-      weight: "25%",
+      weight: 25,
+      short: "Analytical",
       title: "Analytical & Problem-Solving",
       body: "How you think, not just what you cite. We look at how sharply you framed the real problem, whether your solution is specific and realistic, and whether you de-risked it instead of hand-waving.",
       looksFor: "a clear target audience, a sound plan, a pilot before a full rollout",
     },
     {
       key: "present",
-      weight: "15%",
+      weight: 15,
+      short: "Presentation",
       title: "Professional Presentation",
       body: "How it lands as a presentation. When you speak, we measure objective delivery signals against the clock. We never judge tone, confidence, or charisma.",
       looksFor: "structure, pace, filler words, and using your time well",
@@ -1959,54 +2011,63 @@ function FeedbackExplainerSection() {
   return (
     <section>
       <SectionHeading
-        eyebrow="What the feedback looks like"
         title="Graded on the same weighted rubric a judge uses"
-        blurb="Most tools hand you a vibe. PI Coach breaks your score into the three things that actually decide a role-play, and shows its work on each. Tap any one to see the real feedback it produces."
+        blurb="Most tools hand you a vibe. PI Coach splits your score into the three things that actually decide a role-play — weighted exactly like the real sheet — and shows its work on each. Tap a band to see the feedback it produces."
       />
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {blocks.map((b) => {
+
+      {/* The weighting IS the story, so the control shows the proportion: one bar
+          split 60 / 25 / 15 that doubles as the selector. No repeated card grid —
+          the segment widths carry the data. */}
+      <div
+        className="mt-8 flex h-16 w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800"
+        role="group"
+        aria-label="Rubric weighting — pick a band to see its feedback"
+      >
+        {blocks.map((b, i) => {
           const on = b.key === active;
           return (
             <button
               key={b.key}
+              aria-pressed={on}
               onClick={() => {
                 setActive(b.key);
                 track("feedback_section_viewed", { section: b.key });
               }}
-              aria-pressed={on}
-              className={`flex flex-col rounded-2xl border p-5 text-left shadow-sm transition ${
+              style={{ flexBasis: `${b.weight}%` }}
+              className={`flex min-w-[4.5rem] flex-col items-start justify-center gap-0.5 px-3 text-left transition sm:min-w-0 sm:px-5 ${
+                i > 0 ? "border-l border-slate-200 dark:border-slate-800" : ""
+              } ${
                 on
-                  ? "border-indigo-400 bg-indigo-50/50 ring-1 ring-indigo-400 dark:border-indigo-500 dark:bg-indigo-950/40 dark:ring-indigo-500"
-                  : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-900/60"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               }`}
             >
-              <span className="font-mono text-3xl font-bold leading-none text-indigo-600 dark:text-indigo-400">{b.weight}</span>
-              <h3 className="mt-3 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{b.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{b.body}</p>
-              <p className="mt-3 flex gap-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Looks for</span>
-                <span>{b.looksFor}</span>
-              </p>
-              <span
-                className={`mt-4 inline-flex items-center gap-1 text-xs font-semibold ${
-                  on ? "text-indigo-600 dark:text-indigo-300" : "text-slate-400 dark:text-slate-500"
-                }`}
-              >
-                {on ? "Showing below ↓" : "See real feedback →"}
+              <span className="font-mono text-lg font-bold leading-none sm:text-2xl">{b.weight}%</span>
+              <span className={`w-full truncate text-[11px] font-medium sm:text-xs ${on ? "text-indigo-100" : "text-slate-500 dark:text-slate-400"}`}>
+                {b.short}
               </span>
             </button>
           );
         })}
       </div>
 
+      {/* Detail for the selected band. */}
+      <div className="mt-6 max-w-2xl">
+        <h3 className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">{activeBlock.title}</h3>
+        <p className="mt-2 text-base leading-relaxed text-slate-600 dark:text-slate-300">{activeBlock.body}</p>
+        <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Looks for</span>
+          <span>{activeBlock.looksFor}</span>
+        </p>
+      </div>
+
       {/* The revealed panel renders the app's ACTUAL feedback component for the
           selected section, fed with the sample session's real graded data, so this
           is exactly what a competitor sees after a run, not a mockup. */}
-      <div className="mt-6">
-        <div className="mb-3 flex items-baseline gap-2">
-          <Eyebrow>Real feedback</Eyebrow>
-          <span className="text-xs text-slate-400 dark:text-slate-500">the {activeBlock.title} section, from the sample session</span>
-        </div>
+      <div className="mt-8" aria-live="polite">
+        <p className="mb-3 text-sm font-medium text-slate-500 dark:text-slate-400">
+          The real {activeBlock.title} feedback, from a sample session:
+        </p>
         {active === "pi" && <CriteriaTab scores={DEMO_SCORE.scores} />}
         {active === "analysis" && <AnalysisTab score={DEMO_SCORE} />}
         {active === "present" && <DeliveryTab metrics={DEMO_DELIVERY} audioBlob={null} />}
@@ -2020,7 +2081,7 @@ function FeedbackExplainerSection() {
         >
           See exactly what the feedback looks like →
         </a>
-        <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           A full sample session. Click through the scenario and every graded tab, no account needed.
         </p>
       </div>
@@ -2052,52 +2113,52 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 px-6 py-10 dark:border-indigo-900/50 dark:from-indigo-950/40 dark:to-violet-950/30 sm:px-10">
-      <div className="mx-auto max-w-xl text-center">
-        <Eyebrow>New feature coming</Eyebrow>
-        <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-          Get notified when it lands
+    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-indigo-50/70 px-6 py-12 dark:border-indigo-900/50 dark:bg-indigo-950/30 sm:px-10 sm:py-14">
+      <div className="max-w-xl">
+        <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
+          Walk in ready.
         </h2>
-        <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Drop your email and we'll tell you the moment the next feature ships. No spam, just the launch.
+        <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+          Pick an event, get an original scenario, and find out exactly where you stand — no account needed.
         </p>
-
-        {state === "done" ? (
-          <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300">
-            You're on the list. 🎉 We'll be in touch.
-          </p>
-        ) : (
-          <form onSubmit={submit} className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@school.edu"
-              aria-label="Email address"
-              className="w-full flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            />
-            <button
-              type="submit"
-              disabled={!email.trim() || state === "sending"}
-              className={`${BTN_PRIMARY} shrink-0 px-6 py-3`}
-            >
-              {state === "sending" ? "Signing up…" : "Notify me"}
-            </button>
-          </form>
-        )}
-        {state === "error" && (
-          <p className="mt-2 text-xs text-red-600 dark:text-red-400">Couldn't sign you up: check your connection and try again.</p>
-        )}
-
-        <div className="mt-8 border-t border-indigo-100 pt-6 dark:border-indigo-900/50">
-          <p className="text-sm text-slate-500 dark:text-slate-400">Or start practicing right now:</p>
-          <button
-            onClick={onStart}
-            className={`mt-3 ${BTN_PRIMARY} bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-base hover:from-indigo-700 hover:to-violet-700`}
-          >
+        <div className="mt-7">
+          <button onClick={onStart} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
             Ready to practice? →
           </button>
+        </div>
+
+        {/* Secondary: launch updates, deliberately quieter than the practice CTA. */}
+        <div className="mt-10 border-t border-indigo-100 pt-6 dark:border-indigo-900/50">
+          {state === "done" ? (
+            <p className="rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm font-medium text-indigo-800 dark:border-indigo-900/60 dark:bg-slate-900 dark:text-indigo-300">
+              You're on the list. We'll email you the moment it ships.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Want launch updates? Drop your email — no spam, just the launch.</p>
+              <form onSubmit={submit} className="mt-3 flex flex-col gap-2.5 sm:max-w-md sm:flex-row">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@school.edu"
+                  aria-label="Email address"
+                  className="w-full flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+                <button
+                  type="submit"
+                  disabled={!email.trim() || state === "sending"}
+                  className={`${BTN_SECONDARY} shrink-0 px-6 py-3`}
+                >
+                  {state === "sending" ? "Signing up…" : "Notify me"}
+                </button>
+              </form>
+              {state === "error" && (
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">Couldn't sign you up: check your connection and try again.</p>
+              )}
+            </>
+          )}
         </div>
       </div>
     </section>
@@ -2280,12 +2341,12 @@ function RespondScreen(props: {
               value={props.value}
               onChange={(e) => handleType(e.target.value)}
             />
-            <div className="mt-2 font-mono text-xs text-slate-400 dark:text-slate-500">{words} words</div>
+            <div className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{words} words</div>
           </>
         ) : (
           <div className="mt-3">
             <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
-            <p className="mt-3 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+            <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Present out loud as if the judge is in front of you. We transcribe the audio and measure delivery
               pace, fillers, pauses, time: alongside the content score. Delivery covers timing only, not tone or
               confidence. Your recording stays on your device unless you keep it.
@@ -2468,7 +2529,7 @@ function FollowupScreen(props: {
               value={props.value}
               onChange={(e) => handleType(e.target.value)}
             />
-            <div className="mt-2 font-mono text-xs text-slate-400 dark:text-slate-500">{wordCount(props.value)} words</div>
+            <div className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{wordCount(props.value)} words</div>
           </>
         ) : (
           <div className="mt-4">
@@ -2476,7 +2537,7 @@ function FollowupScreen(props: {
             <div className="mt-2">
               <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
             </div>
-            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               We transcribe your answer for grading. Delivery isn't scored on the follow-up: only your content.
             </p>
           </div>
@@ -2524,12 +2585,12 @@ function DeliveryFirstScreen({ scenario, delivery, audioBlob }: { scenario: Scen
 function ScorePill({ label, value, weight }: { label: string; value: number; weight: string }) {
   return (
     <div className="rounded-lg border border-slate-200 px-2 py-1.5 dark:border-slate-800">
-      <div className="font-mono text-[9px] uppercase tracking-wide text-slate-400 dark:text-slate-500 truncate">{label}</div>
+      <div className="font-mono text-[9px] uppercase tracking-wide text-slate-500 dark:text-slate-400 truncate">{label}</div>
       <div className="mt-0.5 flex items-baseline justify-between gap-1">
         <span className="font-mono text-lg font-bold leading-none text-slate-900 dark:text-slate-100">
           {value}<span className="text-xs font-medium text-slate-400">%</span>
         </span>
-        <span className="font-mono text-[9px] leading-none text-slate-400 dark:text-slate-500">{weight}</span>
+        <span className="font-mono text-[9px] leading-none text-slate-500 dark:text-slate-400">{weight}</span>
       </div>
     </div>
   );
@@ -2666,7 +2727,7 @@ function FeedbackScreen(props: {
           </button>
         </div>
         {props.onTryAgain && (
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
             Re-running the same scenario is the fastest way to see your feedback pay off.
           </p>
         )}
@@ -2725,7 +2786,7 @@ function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSna
 function BeforeAfterStat({ label, before, after, improved }: { label: string; before: string; after: string; improved: boolean }) {
   return (
     <div className="rounded-lg bg-white/70 px-3 py-2 dark:bg-slate-900/50">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</div>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-0.5 flex items-baseline gap-1.5 text-sm">
         <span className="text-slate-400 line-through dark:text-slate-500">{before}</span>
         <span className="text-slate-300 dark:text-slate-600">→</span>
@@ -2867,7 +2928,7 @@ function AnalysisRow(props: { label: string; blurb: string; sub: SubScore }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{props.label}</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">{props.blurb}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{props.blurb}</p>
         </div>
         <ScaleMeter score={props.sub.score} />
       </div>
@@ -2902,7 +2963,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
           <div>
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Analytical &amp; problem-solving</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">How well you applied the skills to actually solve the scenario · 25% of the score</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">How well you applied the skills to actually solve the scenario · 25% of the score</p>
           </div>
           <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{Math.round(a.section_percent)}%</span>
         </div>
@@ -2917,9 +2978,9 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">✨ Creativity bonus</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Bonus only: a plain, correct answer never loses points here</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Bonus only: a plain, correct answer never loses points here</p>
           </div>
-          <span className={`font-mono text-sm font-semibold ${c.bonus > 0 ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-slate-400 dark:text-slate-500"}`}>
+          <span className={`font-mono text-sm font-semibold ${c.bonus > 0 ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-slate-500 dark:text-slate-400"}`}>
             {c.bonus > 0 ? `+${fmtNum(c.bonus)}` : "+0"}
           </span>
         </div>
@@ -2938,11 +2999,11 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">📚 Depth bonus</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Bonus only: for bringing in a related term and actually using it: naming one earns nothing
               </p>
             </div>
-            <span className={`font-mono text-sm font-semibold ${d.bonus > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>
+            <span className={`font-mono text-sm font-semibold ${d.bonus > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
               {d.bonus > 0 ? `+${fmtNum(d.bonus)}` : "+0"}
             </span>
           </div>
@@ -2973,7 +3034,7 @@ function MathChecksCard({ checks }: { checks: MathCheck[] }) {
         <h3 className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
           🧮 Math check
         </h3>
-        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {wrong === 0 ? "all verified" : `${wrong} to fix`}
         </span>
       </div>
@@ -3060,7 +3121,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
         <Card>
           <div className="flex items-center justify-between">
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Delivery score</h3>
-            <span className="font-mono text-xs text-slate-400 dark:text-slate-500">folds into your 15% presentation score</span>
+            <span className="font-mono text-xs text-slate-500 dark:text-slate-400">folds into your 15% presentation score</span>
           </div>
           <div className="mt-2 flex items-end gap-1.5">
             <span className="font-mono text-4xl font-bold leading-none text-slate-900 dark:text-slate-100">{m.delivery_score}</span>
@@ -3071,7 +3132,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
               <div key={c.label}>
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-medium text-slate-700 dark:text-slate-200">{c.label}</span>
-                  <span className="text-slate-400 dark:text-slate-500">{c.hint}</span>
+                  <span className="text-slate-500 dark:text-slate-400">{c.hint}</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div
@@ -3115,7 +3176,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Words to trim</h3>
           {m.fillers.length > 0 && (
             <div className="mt-2">
-              <span className="font-mono text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">Fillers</span>
+              <span className="font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Fillers</span>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {m.fillers.map((f) => <Chip key={f.word}>{f.word} ×{f.count}</Chip>)}
               </div>
@@ -3123,7 +3184,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
           )}
           {m.crutch_phrases.length > 0 && (
             <div className="mt-3">
-              <span className="font-mono text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500">Crutch phrases (advisory)</span>
+              <span className="font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Crutch phrases (advisory)</span>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {m.crutch_phrases.map((f) => <Chip key={f.phrase}>{f.phrase} ×{f.count}</Chip>)}
               </div>
@@ -3150,7 +3211,7 @@ function TalkBalance({ metrics: m }: { metrics: DeliveryMetrics }) {
         <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">
           🎙️ Talk-time balance
         </h3>
-        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">team event</span>
+        <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">team event</span>
       </div>
 
       {/* Single stacked bar showing each speaker's share of the talking. */}
@@ -3174,7 +3235,7 @@ function TalkBalance({ metrics: m }: { metrics: DeliveryMetrics }) {
                 Speaker {s.speaker}
                 <span className="ml-1.5 font-mono text-xs font-semibold text-slate-500 dark:text-slate-400">{Math.round(s.talk_share * 100)}%</span>
               </p>
-              <p className="font-mono text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
                 {fmt(Math.round(s.talk_seconds))} · {s.word_count} words · {s.pace_wpm} wpm · {s.filler_count} fillers
               </p>
             </div>
@@ -3230,14 +3291,14 @@ function CriterionRow({ r }: { r: CriterionScore }) {
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
             {r.name}
-            {r.topic && <span className="ml-1 font-mono text-xs font-normal text-slate-400 dark:text-slate-500">· {r.topic}</span>}
+            {r.topic && <span className="ml-1 font-mono text-xs font-normal text-slate-500 dark:text-slate-400">· {r.topic}</span>}
           </p>
           {headline && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{headline}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
           <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
-          {hasDetail && <span className="text-xs text-slate-400 dark:text-slate-500">{open ? "▾" : "▸"}</span>}
+          {hasDetail && <span className="text-xs text-slate-500 dark:text-slate-400">{open ? "▾" : "▸"}</span>}
         </div>
       </button>
       {open && hasDetail && (
@@ -3287,9 +3348,9 @@ function TranscriptNotes({ scores, activeId, onSelect }: {
       <Card>
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Indicator notes</h3>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{scores.length} skills</span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{scores.length} skills</span>
         </div>
-        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           Open any indicator, or tap a highlight in your transcript, to see what it earned, what was missing, and a
           stronger line you could’ve said.
         </p>
@@ -3337,14 +3398,14 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
             {r.name}
-            {r.topic && <span className="ml-1 font-mono text-[11px] font-normal text-slate-400 dark:text-slate-500">· {r.topic}</span>}
+            {r.topic && <span className="ml-1 font-mono text-[11px] font-normal text-slate-500 dark:text-slate-400">· {r.topic}</span>}
           </p>
           {!open && headline && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{headline}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone.badge}`}>{tone.label}</span>
           <span className="font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
-          <span className="text-xs text-slate-400 dark:text-slate-500">{open ? "▾" : "▸"}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{open ? "▾" : "▸"}</span>
         </div>
       </button>
       {open && (
@@ -3427,7 +3488,7 @@ function TranscriptTab(props: {
       <div className="space-y-4">
         <Card>
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your presentation</h3>
-          <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {hasTurns
               ? "Split by speaker so you can see who said what. Highlighted phrases are where an indicator earned credit: color shows the level. Tap one to open its note."
               : "Highlighted phrases are where an indicator earned credit: the color is the level it reached. Tap one to open its note on the right."}
@@ -3502,9 +3563,19 @@ function highlight(text: string, marks: Mark[], active: string | null, onSelect:
     nodes.push(
       <mark
         key={`m${i}`}
+        role="button"
+        tabIndex={0}
+        aria-pressed={on}
+        aria-label={`${f.mark.label}: ${LEVEL_TONE[f.mark.level].label}. ${text.slice(f.start, f.end)}`}
         onClick={() => onSelect(on ? null : f.mark.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect(on ? null : f.mark.id);
+          }
+        }}
         title={`${f.mark.label} · ${LEVEL_TONE[f.mark.level].label}`}
-        className={`cursor-pointer rounded px-0.5 underline decoration-dotted underline-offset-2 ${LEVEL_TONE[f.mark.level].mark} ${on ? "ring-2 ring-indigo-500/50" : ""}`}
+        className={`cursor-pointer rounded px-0.5 underline decoration-dotted underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${LEVEL_TONE[f.mark.level].mark} ${on ? "ring-2 ring-indigo-500/50" : ""}`}
       >
         {text.slice(f.start, f.end)}
       </mark>,
@@ -3522,7 +3593,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <label className="block">
       <div className="mb-1.5 flex items-baseline justify-between">
         <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
-        {hint && <span className="font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{hint}</span>}
+        {hint && <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{hint}</span>}
       </div>
       {children}
     </label>
@@ -3568,7 +3639,7 @@ function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedd
             {learn ? "Learn mode" : "Competition mode"}
           </span>
         </div>
-        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           {learn
             ? "The business skills this role-play assesses, with what a strong answer looks like, so you can aim for it."
             : "The business skills this role-play assesses, by name, just like a real role-play sheet. You supply the substance."}
@@ -3600,7 +3671,7 @@ function CriterionBrief({ c, learn }: { c: Criterion; learn: boolean }) {
     <li className="rounded-xl border border-slate-200 bg-white/60 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900/50">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{c.name}</span>
-        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {c.domain}{c.topic ? ` · ${c.topic}` : ""}
         </span>
       </div>
@@ -3641,7 +3712,7 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
 
 function HonestyNote() {
   return (
-    <p className="max-w-xs text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+    <p className="max-w-xs text-xs leading-relaxed text-slate-500 dark:text-slate-400">
       Original practice scenarios that train the skills DECA role-plays reward, not official DECA materials.
     </p>
   );
@@ -3655,17 +3726,44 @@ function TimerBar({ label, left, total, tone, sticky = false }: { label: string;
     red: { box: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200", num: "text-red-600 dark:text-red-300", bar: "bg-red-500" },
   }[tone];
   const pct = total > 0 ? Math.max(0, Math.min(100, (left / total) * 100)) : 0;
+  const announce = useTimerMilestone(label, left);
   return (
-    <div className={`rounded-2xl border px-4 py-3 shadow-sm ${tones.box} ${sticky ? "sticky top-[68px] z-10" : ""}`}>
+    <div
+      className={`rounded-2xl border px-4 py-3 shadow-sm ${tones.box} ${sticky ? "sticky top-[68px] z-10" : ""}`}
+      role="timer"
+      aria-label={`${label}: ${fmt(left)} remaining`}
+    >
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{label}</div>
-        <div className={`font-mono text-2xl font-bold tabular-nums ${tones.num}`}>{fmt(left)}</div>
+        <div className={`font-mono text-2xl font-bold tabular-nums ${tones.num}`} aria-hidden="true">{fmt(left)}</div>
       </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-black/5">
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-black/5" aria-hidden="true">
         <div className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${tones.bar}`} style={{ width: `${pct}%` }} />
       </div>
+      {/* Coarse spoken checkpoints: a per-second live region would flood a
+          screen reader, so we only announce as the clock crosses a threshold. */}
+      <span className="sr-only" role="status" aria-live="polite">{announce}</span>
     </div>
   );
+}
+
+// Emits a spoken string only when a countdown crosses 60s / 30s / 10s / 0,
+// so assistive tech hears meaningful checkpoints instead of every tick.
+function useTimerMilestone(label: string, left: number) {
+  const [msg, setMsg] = useState("");
+  const lastBucket = useRef<number | null>(null);
+  useEffect(() => {
+    const bucket = left <= 0 ? 0 : left <= 10 ? 10 : left <= 30 ? 30 : left <= 60 ? 60 : 999;
+    if (bucket === lastBucket.current) return;
+    lastBucket.current = bucket;
+    if (bucket === 999) return; // still early; nothing to say yet
+    setMsg(
+      bucket === 0
+        ? `${label}: time's up.`
+        : `${label}: ${bucket} seconds left.`,
+    );
+  }, [label, left]);
+  return msg;
 }
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -3911,7 +4009,7 @@ function FAQPage({ onStart }: { onStart: () => void }) {
         </FAQItem>
       </FAQGroup>
 
-      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30">
+      <Card className="border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Still have a question?</h3>
@@ -3947,28 +4045,31 @@ function TipsPage({ onStart }: { onStart: () => void }) {
           One running example: <strong className="font-semibold text-slate-700 dark:text-slate-200">channel strategy</strong> for
           BrightBean, a small coffee roaster: carried through all four beats.
         </SectionHead>
-        <div className="mt-7 grid gap-4 md:grid-cols-2">
-          <MethodCard
+        {/* The four beats read as one connected sequence, not a wall of identical
+            cards — a spine runs down through the numbered nodes so it's clear each
+            beat builds on the last, and Connect (where the points live) is lifted. */}
+        <ol className="relative mt-7 space-y-5 before:absolute before:bottom-5 before:left-[19px] before:top-5 before:w-px before:bg-slate-200 dark:before:bg-slate-800">
+          <MethodStep
             n="1" accent="indigo" title="Define"
             todo="Clearly and confidently define the skill or any key terms right away. Skip the textbook jargon: keep it simple and conversational so the judge knows you grasp the core concept."
             example={<>“Channel strategy is just <em>how our product gets from us into the customer's hands</em>: the path it travels to reach them.”</>}
           />
-          <MethodCard
+          <MethodStep
             n="2" accent="violet" title="Explain"
             todo="Elaborate on why this skill matters to a business. Its broader impact, what it does, and why a company has to pay attention to it in the real world."
             example={<>“Get the mix right and you control both your <em>margins</em> and how many customers you can reach. Lean on one channel and you're exposed; spread too thin and you lose focus.”</>}
           />
-          <MethodCard
+          <MethodStep
             n="3" accent="fuchsia" title="Connect" highlight="Earns the most points"
             todo="Directly apply the skill to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy. That's the systems thinking judges reward."
             example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar. It captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
           />
-          <MethodCard
+          <MethodStep
             n="4" accent="amber" title="Above & Beyond"
             todo="Differentiate yourself. Add a creative element beyond the prompt: a quick chart, a real-world statistic, a famous brand case, or a niche business term."
             example={<>“Quick math: 200 regulars at $20/mo is <em>~$48K/yr recurring</em>, about what a second wholesale account brings but at double the margin. (then I'd sketch a bar comparing the two.)”</>}
           />
-        </div>
+        </ol>
         <p className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3.5 text-sm leading-relaxed text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
           <span className="mt-0.5 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-indigo-500">Tip</span>
           <span>If your sentence about the skill could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong>: tie it to the scenario in front of you.</span>
@@ -3977,7 +4078,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
 
       {/* Visuals */}
       <section>
-        <SectionHead eyebrow="Make it stick" title="Use visuals to your advantage">
+        <SectionHead title="Use visuals to your advantage">
           You get pen and paper in prep: most competitors only scribble notes. Draw <em>one</em> clean visual, turn it
           toward the judge, and reference it out loud. Here's what to reach for and when.
         </SectionHead>
@@ -3996,24 +4097,27 @@ function TipsPage({ onStart }: { onStart: () => void }) {
       {/* Before & during */}
       <section>
         <SectionHead eyebrow="The playbook" title="Before & during the role-play" />
-        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <TipCard eyebrow="Prep time" title="Own your 10 minutes" items={[
+        {/* A numbered four-phase playbook (Prep → Delivery), not a wall of four
+            identical feature cards: leading numbers + varied heights read as a
+            sequence you move through. */}
+        <div className="mt-7 grid items-start gap-4 sm:grid-cols-2">
+          <TipCard n="01" phase="Prep time" title="Own your 10 minutes" items={[
             "Read the situation twice; underline the actual ask.",
             "Map each assessed skill to a moment in your plan.",
             "Draft your visual early, not at the last minute.",
             "Outline your open and close so you bookend strong.",
           ]} />
-          <TipCard eyebrow="Structure" title="A shape judges reward" items={[
+          <TipCard n="02" phase="Structure" title="A shape judges reward" items={[
             <><strong className="font-semibold text-slate-900 dark:text-slate-100">Open:</strong> greet, confirm your role, preview.</>,
             <><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk the solution, hit every assessed skill through all four beats.</>,
             <><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> restate the recommendation, invite questions.</>,
           ]} />
-          <TipCard eyebrow="Follow-up" title="Handle the questions" items={[
+          <TipCard n="03" phase="Follow-up" title="Handle the questions" items={[
             "Take a beat: a short pause beats rambling.",
             "Answer directly, then tie back to your recommendation.",
             "If unsure, reason out loud; judges reward sound thinking.",
           ]} />
-          <TipCard eyebrow="Delivery" title="Sound like a pro" items={[
+          <TipCard n="04" phase="Delivery" title="Sound like a pro" items={[
             "Steady pace (~130–160 wpm); trade “um” for a pause.",
             "Make eye contact and use the judge's name.",
             "Use the time, but leave room for the questions.",
@@ -4023,7 +4127,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
 
       {/* Notebook */}
       <section>
-        <SectionHead eyebrow="Prep like a pro" title="How to lay out your notebook page">
+        <SectionHead title="How to lay out your notebook page">
           Your prep paper is a map you'll present from, not an essay. Set it up the same way every time so, under
           pressure, your eyes always know where to look. Here's a layout that works.
         </SectionHead>
@@ -4041,7 +4145,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
 
       {/* Fill the time */}
       <section>
-        <SectionHead eyebrow="Command the room" title="Acronyms, and how to fill the time">
+        <SectionHead title="Acronyms, and how to fill the time">
           Two things separate a thin four-minute answer from a full, confident one: giving the judge a structure they
           can follow, and having enough depth to actually use the window.
         </SectionHead>
@@ -4058,7 +4162,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
               <strong className="font-semibold"> A</strong>utomate the outreach, <strong className="font-semibold">M</strong>easure repeat visits,
               <strong className="font-semibold"> P</strong>ilot before rollout.”
             </p>
-            <p className="mt-3 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+            <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Keep it to 3–5 letters and make each one real. A clear structure beats a clever-but-empty one.
             </p>
           </Card>
@@ -4081,7 +4185,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
       </section>
 
       {/* CTA */}
-      <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30">
+      <Card className="border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Ready to put it into reps?</h3>
@@ -4094,11 +4198,11 @@ function TipsPage({ onStart }: { onStart: () => void }) {
   );
 }
 
-function SectionHead({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
+function SectionHead({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: ReactNode }) {
   return (
     <div className="max-w-2xl">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">{title}</h2>
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+      <h2 className={`font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl ${eyebrow ? "mt-2" : ""}`}>{title}</h2>
       {children && <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{children}</p>}
     </div>
   );
@@ -4111,25 +4215,27 @@ const METHOD_ACCENT = {
   amber: { badge: "bg-amber-500", rule: "border-l-amber-400 dark:border-l-amber-500", tag: "text-amber-600 dark:text-amber-500" },
 } as const;
 
-function MethodCard({ n, title, accent, todo, example, highlight }: {
+function MethodStep({ n, title, accent, todo, example, highlight }: {
   n: string; title: string; accent: keyof typeof METHOD_ACCENT; todo: ReactNode; example: ReactNode; highlight?: string;
 }) {
   const a = METHOD_ACCENT[accent];
   return (
-    <div className={`group flex h-full flex-col rounded-2xl border bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${highlight ? "border-fuchsia-300 dark:border-fuchsia-800/70" : "border-slate-200 dark:border-slate-800"}`}>
-      <div className="flex items-center gap-3">
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold text-white ${a.badge}`}>{n}</span>
-        <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h3>
-        {highlight && (
-          <span className="ml-auto rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700 dark:bg-fuchsia-950/60 dark:text-fuchsia-300">{highlight}</span>
-        )}
+    <li className="relative flex gap-4 sm:gap-5">
+      <span className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold text-white shadow-sm ${a.badge}`}>{n}</span>
+      <div className="min-w-0 flex-1 pb-1">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h3>
+          {highlight && (
+            <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700 dark:bg-fuchsia-950/60 dark:text-fuchsia-300">{highlight}</span>
+          )}
+        </div>
+        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{todo}</p>
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-800/40">
+          <span className={`font-mono text-[10px] font-semibold uppercase tracking-[0.15em] ${a.tag}`}>Example</span>
+          <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{example}</p>
+        </div>
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{todo}</p>
-      <div className={`mt-4 rounded-r-lg border-l-2 bg-slate-50 px-3.5 py-2.5 dark:bg-slate-800/40 ${a.rule}`}>
-        <span className={`font-mono text-[10px] font-semibold uppercase tracking-[0.15em] ${a.tag}`}>Example</span>
-        <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{example}</p>
-      </div>
-    </div>
+    </li>
   );
 }
 
@@ -4143,11 +4249,16 @@ function VisualCard({ chart, title, when }: { chart: ReactNode; title: string; w
   );
 }
 
-function TipCard({ eyebrow, title, items }: { eyebrow: string; title: string; items: ReactNode[] }) {
+function TipCard({ n, phase, title, items }: { n: string; phase: string; title: string; items: ReactNode[] }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      <div className="flex items-center gap-3">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-indigo-100 font-mono text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">{n}</span>
+        <div className="min-w-0">
+          <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">{phase}</div>
+          <h3 className="font-display text-base font-semibold leading-tight text-slate-900 dark:text-slate-100">{title}</h3>
+        </div>
+      </div>
       <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
         {items.map((it, i) => (
           <li key={i} className="flex gap-2"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-indigo-400" />{it}</li>
@@ -4186,7 +4297,7 @@ function NotebookMock() {
             { pi: "Measuring success", def: "= how we'll know it worked", tie: "→ repeat-visit rate, +15% / 2 qtrs" },
           ].map((r) => (
             <div key={r.pi}>
-              <p><span className="font-semibold text-indigo-700 dark:text-indigo-300">▸ {r.pi}</span> <span className="text-slate-400 dark:text-slate-500">{r.def}</span></p>
+              <p><span className="font-semibold text-indigo-700 dark:text-indigo-300">▸ {r.pi}</span> <span className="text-slate-500 dark:text-slate-400">{r.def}</span></p>
               <p className="pl-4 text-emerald-700 dark:text-emerald-400">{r.tie}</p>
             </div>
           ))}
@@ -4305,7 +4416,7 @@ function LevelLegend() {
           {LEVEL_TONE[lv].label}
         </span>
       ))}
-      <span className="text-slate-400 dark:text-slate-500">· green = top band, not a perfect score</span>
+      <span className="text-slate-500 dark:text-slate-400">· green = top band, not a perfect score</span>
     </div>
   );
 }

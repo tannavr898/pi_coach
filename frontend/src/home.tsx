@@ -152,7 +152,7 @@ export function HomePage(props: {
             )}
           </ChartFrame>
           {practicedDomains > 0 && (
-            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">You've touched {practicedDomains} of {domains.length || 13} domains. Spokes at 0 are ones you haven't practiced yet.</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">You've touched {practicedDomains} of {domains.length || 13} domains. Spokes at 0 are ones you haven't practiced yet.</p>
           )}
 
           {weak && (
@@ -172,7 +172,7 @@ export function HomePage(props: {
         <Card className="lg:col-span-1">
           <Eyebrow>Recent sessions</Eyebrow>
           {sessions === null ? (
-            <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">Loading…</p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
           ) : sessions.length === 0 ? (
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your completed role-plays show up here.</p>
           ) : (
@@ -187,7 +187,7 @@ export function HomePage(props: {
                           <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">retry</span>
                         )}
                       </div>
-                      <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                      <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                         {fmtDate(s.created_at)}
                         {s.filler_per_min != null ? ` · ${s.filler_per_min.toFixed(1)} fillers/min` : " · typed"}
                       </div>

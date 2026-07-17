@@ -179,12 +179,54 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
 
   const stats = phase === "results" ? loadStats() : null;
 
+  // Closing mid-drill discards the round, so guard it. Kept in a ref so the Esc
+  // handler (bound once on mount) always sees the current phase.
+  const requestCloseRef = useRef<() => void>(() => {});
+  requestCloseRef.current = () => {
+    if (phase === "drill" || phase === "scoring") {
+      if (!window.confirm("End the blitz now? This round won't be saved.")) return;
+    }
+    onClose();
+  };
+
+  // Modal a11y: focus the dialog on open, trap Tab inside it, close on Esc, and
+  // restore focus to wherever the user was when it closes.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    const prev = document.activeElement as HTMLElement | null;
+    node.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); requestCloseRef.current(); return; }
+      if (e.key !== "Tab") return;
+      const f = node.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      );
+      if (f.length === 0) { e.preventDefault(); node.focus(); return; }
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" onClick={() => requestCloseRef.current()}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mastery Blitz"
+        tabIndex={-1}
+        className="w-full max-w-xl focus:outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-3 flex items-center justify-between">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/85">⚡ Mastery Blitz</span>
-          <button onClick={onClose} aria-label="Close" className="rounded-lg px-2 py-1 text-white/70 transition hover:bg-white/10 hover:text-white">✕</button>
+          <button onClick={() => requestCloseRef.current()} aria-label="Close Mastery Blitz" className="rounded-lg px-2 py-1 text-white/70 transition hover:bg-white/10 hover:text-white">✕</button>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
@@ -222,7 +264,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
             <div className="flex flex-col items-center py-10 text-center">
               <span className="pic-spin h-6 w-6 rounded-full border-2 border-indigo-300 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-300" aria-hidden />
               <p className="mt-4 text-sm font-medium text-slate-700 dark:text-slate-200">Grading your round…</p>
-              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{pending > 0 ? "Finishing transcription…" : "One quick pass over all your answers."}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{pending > 0 ? "Finishing transcription…" : "One quick pass over all your answers."}</p>
             </div>
           )}
 
@@ -310,10 +352,20 @@ function DrillPanel(props: {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs tabular-nums text-slate-400 dark:text-slate-500">Term {props.index + 1} / {props.total}</span>
-        <span className={`font-mono text-sm font-bold tabular-nums ${low ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-300"}`}>{props.secondsLeft}s</span>
+        <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">Term {props.index + 1} / {props.total}</span>
+        <span
+          role="timer"
+          aria-label={`${props.secondsLeft} seconds left for this term`}
+          className={`font-mono text-sm font-bold tabular-nums ${low ? "text-red-600 dark:text-red-400" : "text-slate-500 dark:text-slate-300"}`}
+        >{props.secondsLeft}s</span>
       </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      {/* Announce each new term as the drill auto-advances (keyed so screen
+          readers re-read it on change); the countdown itself stays queryable
+          via role="timer" rather than announced every second. */}
+      <span className="sr-only" role="status" aria-live="polite" key={props.index}>
+        Term {props.index + 1} of {props.total}: {props.term.name}.
+      </span>
+      <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
         <div className={`h-full rounded-full transition-all duration-1000 ease-linear ${low ? "bg-red-500" : "bg-indigo-500"}`} style={{ width: `${(props.secondsLeft / SECONDS_PER_TERM) * 100}%` }} />
       </div>
 

@@ -170,7 +170,7 @@ export function StudyCourse({
       </Card>
 
       {/* Blitz the whole course: the drill picks its own 5 from whatever it's given. */}
-      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30 sm:flex-row sm:items-center">
         <div>
           <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Blitz this course</h3>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -194,7 +194,7 @@ export function StudyCourse({
           <Card key={u.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {u.domain}
                 </div>
                 <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export function StudyCourse({
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="font-mono text-xs tabular-nums text-slate-400 dark:text-slate-500">
+                <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">
                   {done}/{total}
                 </span>
                 <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
@@ -248,12 +248,20 @@ function TierTab({ active, onClick, label }: { active: boolean; onClick: () => v
   );
 }
 
-function Bar({ percent, className = "" }: { percent: number; className?: string }) {
+function Bar({ percent, label, className = "" }: { percent: number; label?: string; className?: string }) {
+  const pct = Math.round(Math.min(100, Math.max(0, percent)));
   return (
-    <div className={`h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}>
+    <div
+      className={`h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}
+      role="progressbar"
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={label ? `${label}: ${pct}% complete` : `${pct}% complete`}
+    >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-[width] duration-500"
-        style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+        className="h-full rounded-full bg-indigo-500 transition-[width] duration-500"
+        style={{ width: `${pct}%` }}
       />
     </div>
   );
@@ -282,7 +290,7 @@ function EventPicker({
   }, [events]);
 
   if (!events) {
-    return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-slate-400 dark:text-slate-500">Loading events…</p>;
+    return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-slate-500 dark:text-slate-400">Loading events…</p>;
   }
 
   return (

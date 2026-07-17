@@ -121,9 +121,19 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
   return (
     <div style={{ perspective: 1400 }}>
       <div
-        className="relative cursor-pointer"
+        className="relative cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
         style={{ height: "24rem", transformStyle: "preserve-3d", transition: "transform 0.5s", transform: flipped ? "rotateY(180deg)" : "none" }}
+        role="button"
+        tabIndex={0}
+        aria-pressed={flipped}
+        aria-label={flipped ? `${card.name}: showing the worked example. Activate to flip back.` : `${card.name}: flashcard front. Activate to reveal a worked example.`}
         onClick={onFlip}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onFlip();
+          }
+        }}
       >
         {/* Front */}
         <div className="absolute inset-0 flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900" style={{ backfaceVisibility: "hidden" }}>
@@ -135,7 +145,7 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
             <h2 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-100">{card.name}</h2>
             {card.coaches && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{card.coaches}</p>}
           </div>
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500">Tap for a worked example →</p>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">Tap for a worked example →</p>
         </div>
 
         {/* Back */}
@@ -147,13 +157,13 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
           <div className="mt-3 space-y-3.5 text-sm">
             {card.definition && (
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">Definition</div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">Definition</div>
                 <p className="mt-1 text-slate-700 dark:text-slate-200">{card.definition}</p>
               </div>
             )}
             {card.example && (
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">In a response: run it through the four beats</div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">In a response: run it through the four beats</div>
                 <ol className="mt-2 space-y-2">
                   {BEATS.map((b) => (
                     <li key={b.key} className="leading-relaxed">
@@ -212,6 +222,15 @@ export function FlashcardLibrary({
   const [weakIds, setWeakIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  // Domains collapse by default so the whole library fits on a screen or two;
+  // open the one you want. A live search auto-expands every match.
+  const [openDomains, setOpenDomains] = useState<Set<string>>(new Set());
+  const toggleDomain = (d: string) =>
+    setOpenDomains((s) => {
+      const n = new Set(s);
+      n.has(d) ? n.delete(d) : n.add(d);
+      return n;
+    });
 
   useEffect(() => {
     let active = true;
@@ -256,8 +275,11 @@ export function FlashcardLibrary({
     return order.sort((a, b) => a.localeCompare(b)).map((d) => ({ domain: d, cards: by[d] }));
   }, [all, query]);
 
+  const searching = query.trim().length > 0;
+  const allOpen = groups.length > 0 && groups.every((g) => openDomains.has(g.domain));
+
   if (error) return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-red-600 dark:text-red-400">Couldn't load the library: {error}</p>;
-  if (!all) return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-slate-400 dark:text-slate-500">Loading the library…</p>;
+  if (!all) return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-slate-500 dark:text-slate-400">Loading the library…</p>;
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
@@ -276,7 +298,7 @@ export function FlashcardLibrary({
       </div>
 
       {/* Mastery Blitz launcher: rapid, timed drill over a set of terms. */}
-      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 dark:border-indigo-900/60 dark:from-indigo-950/40 dark:to-violet-950/30 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30 sm:flex-row sm:items-center">
         <div>
           <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Mastery Blitz</h3>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -311,51 +333,87 @@ export function FlashcardLibrary({
         />
       </div>
 
-      {/* Domains */}
+      {/* Domains — collapsed by default so the full library fits on a screen;
+          open the one you want. A live search auto-expands every match. */}
+      <div className="flex items-center justify-between px-1 pt-1">
+        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+          {groups.length} domain{groups.length === 1 ? "" : "s"}
+        </div>
+        {!searching && groups.length > 0 && (
+          <button
+            onClick={() => setOpenDomains(allOpen ? new Set() : new Set(groups.map((g) => g.domain)))}
+            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            {allOpen ? "Collapse all" : "Expand all"}
+          </button>
+        )}
+      </div>
+
       {groups.map(({ domain, cards }) => {
         const weakHere = cards.filter(isWeak).length;
+        const open = searching || openDomains.has(domain);
+        const panelId = `domain-${domain.replace(/\s+/g, "-")}`;
         return (
           <Card key={domain}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{domain}</h2>
-                <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{cards.length}</span>
-                {weakHere > 0 && (
-                  <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">{weakHere} to drill</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
+              <h2 className="min-w-0 flex-1">
+                <button
+                  onClick={() => !searching && toggleDomain(domain)}
+                  aria-expanded={open}
+                  aria-controls={panelId}
+                  disabled={searching}
+                  className="flex w-full items-center gap-2 text-left"
+                >
+                  <svg
+                    viewBox="0 0 12 12"
+                    width="12"
+                    height="12"
+                    aria-hidden="true"
+                    className={`shrink-0 text-slate-400 transition-transform duration-200 dark:text-slate-500 ${open ? "rotate-90" : ""} ${searching ? "opacity-0" : ""}`}
+                  >
+                    <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{domain}</span>
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{cards.length}</span>
+                  {weakHere > 0 && (
+                    <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">{weakHere} to drill</span>
+                  )}
+                </button>
+              </h2>
+              <div className="flex shrink-0 items-center gap-2">
                 <button className={BTN_SECONDARY} onClick={() => onBlitz(cards, domain)}>⚡ Blitz</button>
                 <button className={BTN_SECONDARY} onClick={() => onStudy(cards, undefined, domain)}>Study domain →</button>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {cards.map((c) => {
-                const weak = isWeak(c);
-                const flagged = flags.flags.has(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => onStudy(cards, c.id, domain)}
-                    className={`group inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                      weak
-                        ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-800"
-                    }`}
-                  >
-                    <span
-                      role="button"
-                      tabIndex={-1}
-                      onClick={(e) => { e.stopPropagation(); flags.toggle(c.id); }}
-                      className={flagged ? "text-amber-500" : "text-slate-300 group-hover:text-amber-400 dark:text-slate-600"}
+            {open && (
+              <div id={panelId} className="mt-3 flex flex-wrap gap-2">
+                {cards.map((c) => {
+                  const weak = isWeak(c);
+                  const flagged = flags.flags.has(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => onStudy(cards, c.id, domain)}
+                      className={`group inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                        weak
+                          ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-800"
+                      }`}
                     >
-                      {flagged ? "★" : "☆"}
-                    </span>
-                    {c.name}
-                  </button>
-                );
-              })}
-            </div>
+                      <span
+                        role="button"
+                        tabIndex={-1}
+                        onClick={(e) => { e.stopPropagation(); flags.toggle(c.id); }}
+                        className={flagged ? "text-amber-500" : "text-slate-300 group-hover:text-amber-400 dark:text-slate-600"}
+                      >
+                        {flagged ? "★" : "☆"}
+                      </span>
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </Card>
         );
       })}
