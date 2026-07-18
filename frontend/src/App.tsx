@@ -76,6 +76,11 @@ type Stage = "presession" | "pick" | "loading" | "ready" | "prep" | "walkin" | "
 // starting before the 5-second auto-start countdown kicks in.
 const IDLE_GRACE_MS = 40000;
 
+// Signed-out visitors get this many free graded role-plays (the landing "2-minute
+// rep" counts too) before we ask them to make a free account. Every graded run
+// spends LLM tokens, so this caps anonymous spend; logged-in users are unlimited.
+const FREE_ROLEPLAYS = 3;
+
 // Phase 3: remember the last few scenario-variety combinations per event (locally,
 // per browser) so the backend can avoid handing the same user immediate repeats.
 // Session-local only — no backend/account involved.
@@ -178,6 +183,67 @@ export default function App() {
   const [blitzCards, setBlitzCards] = useState<Term[] | null>(null);
   const flags = useFlags(authUser?.id ?? null);
 
+  // --- Signed-out usage cap ------------------------------------------------
+  // Every graded role-play (scenario gen + transcription + grading) spends LLM
+  // tokens, so signed-out visitors get FREE_ROLEPLAYS reps before we ask them to
+  // make a free account. Tracked per-browser; the per-IP limiter in the backend
+  // is the abuse backstop. Only enforced when accounts are actually available
+  // (authReady) — with Supabase off there's nothing to upgrade to, so we fall
+  // back to the backend limiter instead of walling everyone.
+  const [anonRoleplays, setAnonRoleplays] = useState<number>(() => {
+    try {
+      return Math.max(0, Number(localStorage.getItem("pic-anon-roleplays")) || 0);
+    } catch {
+      return 0;
+    }
+  });
+  // True when a signed-out visitor has spent all their free reps (and accounts
+  // are available to upgrade to). Also suppresses the speculative prefetch so a
+  // capped visitor never pays for a scenario they can't run.
+  const roleplayCapReached = authReady && !authUser && anonRoleplays >= FREE_ROLEPLAYS;
+  // Consume one free rep (no-op for logged-in users / when accounts are off).
+  function bumpAnonRoleplays() {
+    if (authUser || !authReady) return;
+    setAnonRoleplays((n) => {
+      const next = n + 1;
+      try {
+        localStorage.setItem("pic-anon-roleplays", String(next));
+      } catch {
+        /* private mode — the in-memory count still gates this session */
+      }
+      return next;
+    });
+  }
+  // Gate the start of a graded role-play. Returns true if it may proceed;
+  // otherwise opens the sign-up wall and returns false.
+  function guardRoleplay(): boolean {
+    if (authUser || !authReady) return true;
+    if (anonRoleplays >= FREE_ROLEPLAYS) {
+      track("roleplay_cap_hit", { used: anonRoleplays });
+      openAuth(
+        "signup",
+        `You've used your ${FREE_ROLEPLAYS} free role-plays. Create a free account to keep practicing — it's unlimited and saves your progress.`,
+      );
+      return false;
+    }
+    return true;
+  }
+  // Mastery Blitz is account-only (it also spends grading tokens). Gate every
+  // entry point centrally; when accounts are off there's no login to require, so
+  // it stays open.
+  function startBlitz(cards: Term[], extra?: Record<string, unknown>) {
+    if (!authUser && authReady) {
+      track("blitz_gated", { ...extra });
+      openAuth(
+        "login",
+        "Mastery Blitz is free with an account. Log in or sign up to drill your terms against the clock.",
+      );
+      return;
+    }
+    track("blitz_started", { count: cards.length, ...extra });
+    setBlitzCards(cards);
+  }
+
   // Open a stored session's feedback (from the home "recent sessions" list).
   async function loadSession(id: string) {
     setError(null);
@@ -212,7 +278,9 @@ export default function App() {
   // Re-run the SAME scenario so the user can apply the feedback immediately.
   function tryAgain() {
     if (!scenario || !score) return;
+    if (!guardRoleplay()) return; // re-running the same scenario is still a graded (paid) run
     scoreRunRef.current++; // cancel any background grade in flight
+    bumpAnonRoleplays();
     track("try_again", { event: eventId });
     setPriorSnapshot(snapshotOf(score, delivery));
     setRetryOf(currentSessionId); // link the retry to the saved run (null if anon/unsaved)
@@ -299,8 +367,11 @@ export default function App() {
   const [onboarding, setOnboarding] = useState(false);
 
   // Enter the practice flow at the normal setup form. Everyone uses this now —
-  // anonymous visitors included — so nobody is forced through the intro.
+  // anonymous visitors included — so nobody is forced through the intro. Guarded
+  // by the signed-out cap so a capped visitor hits the sign-up wall here, before
+  // the setup screen speculatively prefetches (and pays for) a scenario.
   function enterPractice() {
+    if (!guardRoleplay()) return;
     setError(null);
     setOnboarding(false);
     setView("practice");
@@ -310,6 +381,7 @@ export default function App() {
   // The guided first-rep intro (pre-session screen → hardcoded rep) is shown
   // ONLY to people who just created an account.
   function startFirstRep() {
+    if (!guardRoleplay()) return; // signed-out cap: the 2-minute rep counts too
     setError(null);
     setOnboarding(true);
     setView("practice");
@@ -320,6 +392,7 @@ export default function App() {
   // the same session flow the full app uses.
   function startOnboardingRep(respMode: ResponseMode) {
     track("onboarding_started", { mode: respMode });
+    bumpAnonRoleplays(); // the 2-minute rep is a graded run — counts against the cap
     setScenario(ONBOARDING_SCENARIO);
     setMode(respMode);
     setFollowupMode(respMode);
@@ -392,7 +465,7 @@ export default function App() {
   // the no-focus combo is prefetched; adding focus text simply isn't reused (see
   // generate). Debounced so flipping through events doesn't fire a request each.
   useEffect(() => {
-    if (stage !== "pick" || !eventId) return;
+    if (stage !== "pick" || !eventId || roleplayCapReached) return;
     const key = prefetchKey(eventId, level, practiceMode);
     if (prefetchRef.current?.key === key) return; // already prefetching this exact combo
     const t = window.setTimeout(() => {
@@ -405,6 +478,7 @@ export default function App() {
 
   async function generate() {
     if (!eventId) return;
+    if (!guardRoleplay()) return; // signed-out cap: spending starts here (scenario gen)
     setError(null);
     scoreRunRef.current++; // cancel any background grade still in flight from a prior run
     setStage("loading");
@@ -425,6 +499,7 @@ export default function App() {
       }
       prefetchRef.current = null; // consumed
       if (s.sampling) recordCombo(eventId, s.sampling.signature); // remember this combo to vary the next
+      bumpAnonRoleplays(); // this graded run counts against the signed-out cap
       track("scenario_generated", { level, mode: practiceMode, event: eventId, focused: !!focus });
       setScenario(s);
       setResponseText("");
@@ -646,6 +721,10 @@ export default function App() {
               track("practice_cta_clicked", { from: "landing" });
               enterPractice();
             }}
+            onQuickRep={() => {
+              track("quick_rep_clicked", { from: "landing" });
+              startFirstRep();
+            }}
             onTips={() => setView("tips")}
             supabaseEnabled={authReady}
             onSignIn={() => openAuth("login", "Log in to pick up your progress and session history.")}
@@ -655,13 +734,13 @@ export default function App() {
           <FlashcardLibrary
             flags={flags}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
-            onBlitz={(cards) => { track("blitz_started", { count: cards.length }); setBlitzCards(cards); }}
+            onBlitz={(cards) => startBlitz(cards)}
           />
         ) : view === "course" ? (
           <StudyCourse
             authed={!!authUser}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
-            onBlitz={(cards, title) => { track("blitz_started", { count: cards.length, from: "course", unit: title }); setBlitzCards(cards); }}
+            onBlitz={(cards, title) => startBlitz(cards, { from: "course", unit: title })}
           />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />
@@ -1799,10 +1878,10 @@ function ProcessStrip() {
 // what the feedback looks like, then an email capture — and is one click away from
 // the setup form (onStart → view="practice").
 
-function LandingPage({ onStart, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
+function LandingPage({ onStart, onQuickRep, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onQuickRep: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
     <div className="pb-10">
-      <HeroSection onStart={onStart} onTips={onTips} />
+      <HeroSection onStart={onStart} onQuickRep={onQuickRep} onTips={onTips} />
       {/* Rhythm varies around an 8rem base (6 → 8 → 10 → 8rem) so the page feels
           paced by hand rather than stamped on a uniform grid. */}
       <div className="mt-24 sm:mt-32">
@@ -1874,7 +1953,7 @@ function SectionHeading({ title, blurb }: { title: string; blurb?: string }) {
 const HERO_POSTER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e0e7ff'/%3E%3Cstop offset='1' stop-color='%23ede9fe'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23g)'/%3E%3Ctext x='960' y='520' font-family='system-ui,sans-serif' font-size='64' font-weight='600' fill='%234f46e5' text-anchor='middle'%3EPI Coach demo%3C/text%3E%3Ctext x='960' y='600' font-family='system-ui,sans-serif' font-size='38' fill='%236366f1' text-anchor='middle'%3Ea scenario, presented, and graded%3C/text%3E%3C/svg%3E";
 
-function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => void }) {
+function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQuickRep: () => void; onTips: () => void }) {
   // Honor prefers-reduced-motion like the rest of the app: don't autoplay the
   // looping demo; show the poster and expose native controls so a reduced-motion
   // viewer can still choose to play it.
@@ -1925,17 +2004,23 @@ function HeroSection({ onStart, onTips }: { onStart: () => void; onTips: () => v
           Pick your event, get an original scenario built around it, prep against a real timer,
           present out loud, and get honest, per-criterion feedback on content and delivery.
         </p>
-        <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <button onClick={onStart} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
             Ready to practice? →
           </button>
-          <button
-            onClick={onTips}
-            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            New to DECA role-plays? Read the tips →
+          <button onClick={onQuickRep} className={`${BTN_SECONDARY} px-6 py-3 text-base`}>
+            Try a 2-minute rep →
           </button>
         </div>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+          No account needed — your first {FREE_ROLEPLAYS} role-plays are free.{" "}
+          <button
+            onClick={onTips}
+            className="font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          >
+            New to DECA role-plays? →
+          </button>
+        </p>
       </div>
 
       {/* Native 16:9 mockup, no letterbox, so object-cover fills with no crop.
