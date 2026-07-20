@@ -88,6 +88,9 @@ export type ScenarioResponse = {
   // Phase 3: the scenario-variety combination the backend sampled + injected
   // (null when the event has no taxonomy yet or a free-text focus was used).
   sampling?: Sampling | null;
+  // Shared-pool id when this scenario came from (or was added to) the scenario
+  // cache. Recorded locally so we're never served the same role-play twice.
+  scenario_id?: string | null;
 };
 
 // The variety combo that shaped a scenario. `signature` is an opaque id the client
@@ -319,6 +322,9 @@ export function postScenario(body: {
   // Recent variety-combo signatures for this user+event (newest last) so the
   // backend can skip immediate repeats. Ignored on the free-text focus path.
   avoid?: string[];
+  // Cached-scenario ids we've already been served, so the cache never repeats a
+  // role-play for this browser. Signed-in users are also de-duped server-side.
+  seen?: string[];
 }): Promise<ScenarioResponse> {
   return request<ScenarioResponse>("/api/scenario", {
     method: "POST",
@@ -411,3 +417,52 @@ export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = f
   }
   return res.json() as Promise<DeliveryResponse>;
 }
+
+// --- usage caps + tiers ----------------------------------------------------
+// Fetched before a session starts so the UI can show what's left up front —
+// nobody should discover a cap halfway through a rep they've already prepped for.
+
+export type Tier = "anonymous" | "free" | "pro";
+
+// `limit: -1` means unlimited (render as "Unlimited", not as a number).
+export type Allowance = { used: number; limit: number; remaining: number };
+
+export type Usage = {
+  tier: Tier;
+  period: string; // "YYYY-MM"
+  resets_on: string; // ISO date the allowance refills
+  voice: Allowance;
+  video: Allowance;
+  typed_unlimited: boolean;
+  video_beta: boolean;
+  // Founding-user reward: signed up before the cutoff AND actually used the app.
+  founder_eligible: boolean;
+  founder_reward: string;
+  founder_min_roleplays: number;
+};
+
+export const UNLIMITED = -1;
+
+// --- video analysis (beta) -------------------------------------------------
+// Observable checks only: eye contact, positive expression, off-frame. There is
+// deliberately no confidence/charisma/emotion score in this shape — those can't
+// be observed from sampled frames, and telling a nervous student they "seemed
+// unconfident" is harmful feedback, not coaching.
+
+export type VideoMetrics = {
+  checks: number;
+  eye_contact_count: number;
+  eye_contact_percent: number;
+  positive_expression_count: number;
+  positive_expression_percent: number;
+  off_frame_count: number;
+  off_frame_percent: number;
+  notes: string[];
+  disclaimer: string;
+};
+
+export type VideoFrame = { media_type: string; data: string };
+
+// The calls themselves live in progress.ts — they carry an auth token, and this
+// module is deliberately the anonymous-only surface. Only the types live here,
+// next to the rest of the response shapes.

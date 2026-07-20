@@ -33,6 +33,13 @@ SCORING_MODEL = os.getenv("ANTHROPIC_SCORING_MODEL", MODEL)
 # Mastery Blitz (Phase 5): a single "used correctly in context?" judgment, batched
 # into ONE call per drill — a fast/cheap model is the right fit, so Haiku by default.
 BLITZ_MODEL = os.getenv("ANTHROPIC_BLITZ_MODEL", "claude-haiku-4-5")
+# Video analysis (Phase 6): per sampled frame, three yes/no observations —
+# face present, looking at camera, positive expression. That is a coarse
+# perception task on deliberately downscaled frames, not a reasoning one, so the
+# fast/cheap model is the right fit and is what keeps a video session at cents
+# rather than dollars. Separate knob so it can be raised without touching the
+# scenario or scoring paths.
+VIDEO_MODEL = os.getenv("ANTHROPIC_VIDEO_MODEL", "claude-haiku-4-5")
 
 # Transcription (Phase 3, voice). Provider is swappable; default AssemblyAI —
 # simplest REST integration with word timestamps + filler/disfluency detection.

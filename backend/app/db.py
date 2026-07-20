@@ -167,3 +167,165 @@ async def upsert_study_progress(user_id: str, rows: list[dict]) -> int:
         )
     resp.raise_for_status()
     return len(payload)
+
+
+# --- scenario cache --------------------------------------------------------
+# Shared inventory of already-generated scenarios, keyed by the interpreted
+# request (see supabase/schema.sql for why the key is shaped the way it is).
+# Every function here is best-effort at the CALLER's discretion: a cache that is
+# down must degrade to "generate fresh", never to an error on the practice loop.
+
+CACHED_SELECT = "id,scenario_json,industry_hint,sampling_signature,times_served"
+
+
+async def list_cached_scenarios(cache_key: str, *, limit: int = 25) -> list[dict]:
+    """Candidate scenarios for a cache key, least-served first.
+
+    Least-served-first spreads reuse across the pool instead of hammering the
+    oldest row, so two students on the same key are unlikely to get the same
+    scenario even before the per-user `seen` filter runs."""
+    params = {
+        "cache_key": f"eq.{cache_key}",
+        "order": "times_served.asc",
+        "limit": str(limit),
+        "select": CACHED_SELECT,
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_base()}/cached_scenario", headers=_headers(), params=params)
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def count_cached_scenarios(cache_key: str) -> int:
+    """How many scenarios are already pooled under this key (for the per-key cap)."""
+    params = {"cache_key": f"eq.{cache_key}", "select": "id", "limit": "1"}
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{_base()}/cached_scenario",
+            headers={**_headers(), "Prefer": "count=exact", "Range-Unit": "items", "Range": "0-0"},
+            params=params,
+        )
+    resp.raise_for_status()
+    # PostgREST reports the exact count in Content-Range as "0-0/N".
+    total = resp.headers.get("content-range", "").split("/")[-1]
+    return int(total) if total.isdigit() else 0
+
+
+async def insert_cached_scenario(row: dict) -> dict:
+    """Add one validated scenario to the shared pool."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{_base()}/cached_scenario",
+            headers={**_headers(), "Prefer": "return=representation"},
+            json=row,
+        )
+    resp.raise_for_status()
+    data = resp.json()
+    return data[0] if isinstance(data, list) and data else data
+
+
+async def delete_cached_scenario(scenario_id: str) -> None:
+    """Remove a cached scenario (invalidation — a bad one gets amplified)."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.delete(
+            f"{_base()}/cached_scenario",
+            headers=_headers(),
+            params={"id": f"eq.{scenario_id}"},
+        )
+    resp.raise_for_status()
+
+
+async def list_seen_scenarios(user_id: str) -> list[str]:
+    """Scenario ids this signed-in user has already been served."""
+    params = {"user_id": f"eq.{user_id}", "select": "scenario_id", "limit": "5000"}
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_base()}/seen_scenario", headers=_headers(), params=params)
+    resp.raise_for_status()
+    return [r["scenario_id"] for r in resp.json()]
+
+
+async def mark_scenario_seen(user_id: str, scenario_id: str) -> None:
+    """Record that a user has seen a scenario. Idempotent (merge-duplicates), so a
+    retry can never fail the request it was attached to."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_base()}/seen_scenario",
+            headers={**_headers(), "Prefer": "return=minimal,resolution=merge-duplicates"},
+            params={"on_conflict": "user_id,scenario_id"},
+            json={"user_id": user_id, "scenario_id": scenario_id},
+        )
+    resp.raise_for_status()
+
+
+async def bump_scenario_served(scenario_id: str) -> None:
+    """Atomically increment a cached scenario's serve counter (see schema.sql)."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_base()}/rpc/bump_scenario_served",
+            headers=_headers(),
+            json={"sid": scenario_id},
+        )
+    resp.raise_for_status()
+
+
+# --- usage counters (tier caps) --------------------------------------------
+# Enforcement is server-side and ATOMIC: the cap check lives inside the SQL
+# statement that does the increment (see supabase/schema.sql), because a
+# read-then-write from here would let two concurrent requests both slip past a
+# limit they were each individually under.
+
+
+async def claim_usage(user_id: str, period: str, kind: str, limit: int) -> int | None:
+    """Claim one session against a monthly cap.
+
+    Returns the new count, or None when the cap is already reached. `limit < 0`
+    means unlimited. The decision and the write are one statement, so this is safe
+    against concurrent requests from the same user.
+    """
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_base()}/rpc/claim_usage",
+            headers=_headers(),
+            json={"p_user_id": user_id, "p_period": period, "p_kind": kind, "p_limit": limit},
+        )
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def release_usage(user_id: str, period: str, kind: str) -> None:
+    """Give a claimed session back (the work failed, so it shouldn't be charged)."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_base()}/rpc/release_usage",
+            headers=_headers(),
+            json={"p_user_id": user_id, "p_period": period, "p_kind": kind},
+        )
+    resp.raise_for_status()
+
+
+async def get_usage(user_id: str, period: str) -> dict[str, int]:
+    """This user's counts for a period, as ``{kind: count}``."""
+    params = {
+        "user_id": f"eq.{user_id}",
+        "period": f"eq.{period}",
+        "select": "kind,count",
+        "limit": "20",
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_base()}/usage_counter", headers=_headers(), params=params)
+    resp.raise_for_status()
+    return {r["kind"]: int(r["count"]) for r in resp.json()}
+
+
+async def count_sessions(user_id: str) -> int:
+    """Total completed role-plays for a user (drives the founding-user reward)."""
+    params = {"user_id": f"eq.{user_id}", "select": "id", "limit": "1"}
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{_base()}/sessions",
+            headers={**_headers(), "Prefer": "count=exact", "Range-Unit": "items", "Range": "0-0"},
+            params=params,
+        )
+    resp.raise_for_status()
+    total = resp.headers.get("content-range", "").split("/")[-1]
+    return int(total) if total.isdigit() else 0

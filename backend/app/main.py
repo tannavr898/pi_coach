@@ -11,6 +11,8 @@ Endpoints:
                            criteria, and generate an original scenario
 - POST /api/score-content  grade a response against the selected criteria
 - POST /api/score-delivery transcribe audio + compute deterministic delivery metrics
+- POST /api/score-video    observable eye-contact/expression checks on sampled frames
+- GET  /api/usage          this caller's tier + remaining monthly allowance
 - GET  /api/course/{id}    an event's study path (anonymous-friendly)
 - POST /api/course/enroll  start/switch the signed-in user's path
 - POST /api/study/mark     fold a flip/blitz/role-play result into progress
@@ -31,7 +33,7 @@ import logging
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, study, taxonomy, terms, transcription
+from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, scenario_cache, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, rate_limit
@@ -73,6 +75,8 @@ from .schemas import (
     Timing,
     TranscribeResponse,
     Utterance,
+    VideoMetrics,
+    VideoRequest,
 )
 from . import mathcheck
 
@@ -177,9 +181,20 @@ def _criterion_view(c: dict, mode: Mode) -> Criterion:
 
 
 @app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
-def scenario(req: ScenarioRequest) -> ScenarioResponse:
+async def scenario(
+    req: ScenarioRequest,
+    background: BackgroundTasks,
+    user: dict | None = Depends(optional_user),
+) -> ScenarioResponse:
     """Plan the session from the chosen event (+ optional focus), select framework
-    criteria, and generate an original scenario built to require exactly those."""
+    criteria, and generate an original scenario built to require exactly those.
+
+    Generation is attempted only on a cache MISS. On a hit we return a scenario
+    another user already paid for, instantly and for free — see app/scenario_cache.py
+    for how the key is built and when a cached scenario is allowed to be served.
+    `optional_user` is used (not `current_user`) because the practice loop stays
+    fully anonymous; knowing who is asking only makes the never-repeat guarantee
+    survive a device change."""
     # 0) Resolve the chosen event (if any) from our catalog.
     event = events.get_event(req.event) if req.event else None
     if req.event and event is None:
@@ -210,6 +225,47 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
 
     pool = interpret.candidate_pool(interp["domain_ids"])
 
+    # 1c) Cache lookup, BEFORE we spend anything on generation.
+    #
+    # The key is built from the interpreted plan, not the raw request text, so
+    # "marketing for a restaurant" and "restaurant marketing" land on the same key
+    # (see app/scenario_cache.py). `strict_context` encodes the quality rule: when
+    # the user typed a focus we only reuse an industry-matching scenario, because
+    # answering a restaurant question with a gym scenario is a regression no cost
+    # saving justifies. With no focus, anything under the key is a correct answer.
+    focused = bool(req.request.strip())
+    cache_key = scenario_cache.build_key(req.level, interp["domain_ids"], req.event)
+    context = scenario_cache.normalize_context(interp["industry"])
+    uid = user["id"] if user else None
+
+    hit = await scenario_cache.lookup(
+        cache_key=cache_key,
+        seen_ids=req.seen,
+        user_id=uid,
+        want_context=context,
+        strict_context=focused,
+    )
+    if hit is not None:
+        # Bookkeeping (serve counter + this user's seen list) happens after the
+        # response is on the wire: the student already has their scenario, and no
+        # cache accounting should be able to slow that down or fail it.
+        background.add_task(scenario_cache.record_served, hit["id"])
+        log.info("SCENARIO cache=hit key=%s id=%s", cache_key, hit["id"])
+        cached = ScenarioResponse(**hit["scenario"])
+        cached.scenario_id = hit["id"]  # so the client records it and never re-sees it
+        # Mode is a per-request view concern, not a property of the scenario: the
+        # same situation is served to Learn and Competition users, and only the
+        # criteria's teaching fields differ. Re-derive that view from OUR framework
+        # rather than trusting whatever mode the row was cached under.
+        cached.mode = req.mode
+        cached.criteria = [
+            _criterion_view(c, req.mode)
+            for c in framework.get_criteria([c.id for c in cached.criteria])
+        ]
+        return cached
+
+    log.info("SCENARIO cache=miss key=%s focused=%s", cache_key, focused)
+
     # 2) Generate: the model selects the criteria from the pool AND writes the scenario.
     system, user = prompts.build_scenario_prompt(
         interp["topic"], interp["industry"], req.level, pool, event,
@@ -235,7 +291,7 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
     followups = [str(q).strip() for q in data.get("followup_questions", []) if str(q).strip()]
     domain_focus = sorted({c["domain"] for c in criteria})
 
-    return ScenarioResponse(
+    built = ScenarioResponse(
         topic=interp["topic"],
         industry=interp["industry"],
         event=event["name"] if event else "",
@@ -252,6 +308,34 @@ def scenario(req: ScenarioRequest) -> ScenarioResponse:
         followup_questions=followups,
         sampling=Sampling(signature=sampled["signature"], labels=sampled["labels"]) if sampled else None,
     )
+
+    # 3) Pool it, so the next student with this key gets it instantly and free.
+    #
+    # Only scenarios that reached this point are stored: a non-empty situation and
+    # exactly the required criteria count are both already enforced above. That
+    # matters more here than elsewhere because a cached scenario is served to many
+    # users — a bad one gets amplified instead of absorbed.
+    #
+    # We cache the LEARN view of the criteria (teaching fields populated) and
+    # re-derive the mode-specific view on the way out. Caching the Competition
+    # view would bake blanked fields into the row and quietly break Learn mode for
+    # everyone who hit that scenario afterwards.
+    cache_row = built.model_copy(update={
+        "mode": "learn",
+        "criteria": [_criterion_view(c, "learn") for c in criteria],
+    })
+    scenario_id = await scenario_cache.store(
+        cache_key=cache_key,
+        level=req.level,
+        event_id=req.event,
+        domain_ids=interp["domain_ids"],
+        criteria_ids=[c["id"] for c in criteria],
+        industry_hint=context,
+        sampling_signature=sampled["signature"] if sampled else "",
+        scenario_json=cache_row.model_dump(),
+    )
+    built.scenario_id = scenario_id
+    return built
 
 
 def _score_one(c: dict, raw: dict) -> CriterionScore:
@@ -475,11 +559,47 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     )
 
 
+class SeenScenario(BaseModel):
+    scenario_id: str = ""
+
+
+@app.post("/api/scenario/seen")
+async def mark_scenario_seen(
+    req: SeenScenario, user: dict | None = Depends(optional_user)
+) -> dict[str, str]:
+    """Confirm that a scenario was actually put on screen.
+
+    Separate from serving it, because the client PREFETCHES: it requests a
+    scenario the moment an event is picked, before the student has committed. If
+    serving marked it seen, every browse through the event list would burn pool
+    entries for role-plays nobody ever read — permanently, since seen is forever.
+    So the client tells us when it really showed one.
+
+    Anonymous callers are a no-op here (there is no server-side history to write);
+    their never-repeat list lives in localStorage.
+    """
+    if user and req.scenario_id:
+        await scenario_cache.mark_seen(req.scenario_id, user["id"])
+    return {"status": "ok"}
+
+
+@app.get("/api/usage")
+async def get_usage(user: dict | None = Depends(optional_user)) -> dict:
+    """This caller's tier and remaining monthly allowance.
+
+    Fetched BEFORE a session starts so the UI can show what's left up front —
+    nobody should discover a cap halfway through a rep they've already prepped
+    for. Anonymous callers get the anonymous tier's numbers, which the client
+    also enforces (see app/usage.py for why that one is client-side)."""
+    return await usage.summary(user)
+
+
 @app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
-def score_delivery(
+async def score_delivery(
     audio: UploadFile = File(...),
     target_seconds: int = Form(delivery.DEFAULT_TARGET_SECONDS),
     diarize: bool = Form(False),
+    user: dict | None = Depends(optional_user),
 ) -> DeliveryResponse:
     """Transcribe a spoken response and compute deterministic delivery metrics.
 
@@ -497,11 +617,21 @@ def score_delivery(
             status_code=422,
             detail="Nothing was recorded — no audio reached the server. Record your response, then submit again.",
         )
+
+    # Claim the voice session AFTER the empty-audio check (a failed upload must
+    # not cost the student an allowance) and BEFORE the paid transcription call.
+    # For signed-in users this is atomic and server-enforced; anonymous callers
+    # are metered client-side — see app/usage.py for that tradeoff.
+    receipt = await usage.claim(user, "voice")
+
     try:
         result = transcription.transcribe(raw, diarize=diarize)
     except transcription.TranscriptionNotConfigured as e:
+        await usage.release(receipt, "voice")
         raise HTTPException(status_code=503, detail=str(e))
     except transcription.TranscriptionError:
+        # The session produced nothing, so it shouldn't be charged for.
+        await usage.release(receipt, "voice")
         # Almost always a silent, too-short, or unintelligible clip the provider
         # can't decode. Give the likely cause and a next step, not a raw 502.
         raise HTTPException(
@@ -526,6 +656,49 @@ def score_delivery(
             for u in result.utterances if u.text
         ]
     return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics), utterances=utterances)
+
+
+@app.post("/api/score-video", response_model=VideoMetrics, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> VideoMetrics:
+    """Analyze sampled frames for observable eye contact and expression.
+
+    REQUIRES AN ACCOUNT — deliberately. Video is the cost driver (roughly 2-3x an
+    audio-only session), and an account is what makes the cap enforceable
+    server-side. It is also always optional: the audio-only path is a first-class
+    route through the whole loop and is never degraded by this endpoint existing.
+
+    Nothing is retained. Frames arrive in the request body, are analyzed, and are
+    gone when this returns; the full video is never recorded or uploaded at all
+    (the client samples stills from the live camera preview). See app/video.py for
+    the claim rules — every number here is an observable check, never an inferred
+    internal state.
+    """
+    if not req.frames:
+        raise HTTPException(
+            status_code=422,
+            detail="No frames were captured — check your camera permission and try again.",
+        )
+
+    receipt = await usage.claim(user, "video")
+    try:
+        metrics = video.analyze([(f.media_type, f.data) for f in req.frames])
+    except video.VideoNotConfigured as e:
+        await usage.release(receipt, "video")
+        raise HTTPException(status_code=503, detail=str(e))
+    except llm.LLMError:
+        # The student got nothing, so their video allowance shouldn't be spent.
+        await usage.release(receipt, "video")
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't analyze your video this time. Your voice feedback is unaffected.",
+        )
+
+    if metrics["checks"] == 0:
+        # Every batch failed to read — no usable checks means no honest numbers to
+        # report, so refund rather than show a panel of zeroes.
+        await usage.release(receipt, "video")
+
+    return VideoMetrics(**metrics, disclaimer=video.DISCLAIMER)
 
 
 # --- Mastery Blitz (Phase 5) -----------------------------------------------
@@ -629,6 +802,8 @@ async def save_session(req: SessionSaveRequest, user: dict = Depends(current_use
         "followup_answer": req.followup_answer,
         "score": req.score.model_dump(),
         "delivery": d.model_dump() if d else None,
+        # Counts + notes only; frames were never persisted anywhere.
+        "video": req.video.model_dump() if req.video else None,
         "utterances": [u.model_dump() for u in req.utterances],
         "event": req.event_id or req.scenario.event,
         "content_score": int(req.score.overall_percent),
@@ -688,6 +863,7 @@ async def get_session_endpoint(session_id: str, user: dict = Depends(current_use
         response=row.get("response", ""),
         followup_answer=row.get("followup_answer", ""),
         delivery=DeliveryMetrics(**row["delivery"]) if row.get("delivery") else None,
+        video=VideoMetrics(**row["video"]) if row.get("video") else None,
         utterances=[Utterance(**u) for u in (row.get("utterances") or [])],
         retry_of_session_id=row.get("retry_of_session_id"),
     )
@@ -804,6 +980,19 @@ def admin_verify(req: AdminVerify) -> dict:
         raise HTTPException(status_code=404, detail="Not found.")
     ok = hmac.compare_digest(req.passphrase or "", config.ADMIN_PASSPHRASE)
     return {"ok": ok}
+
+
+@app.get("/api/admin/cache-stats")
+async def admin_cache_stats(user: dict = Depends(current_user)) -> dict:
+    """Scenario-cache effectiveness since this process started.
+
+    The savings claim for the cache is only as good as this number — "we cache
+    scenarios" means nothing without a hit rate to check it against. It's also
+    the number that decides whether a background pool-warmer is ever worth
+    building: if the hit rate is already high, warming would spend money to buy
+    something the natural growth already provides.
+    """
+    return {**scenario_cache.stats(), "enabled": scenario_cache.enabled()}
 
 
 @app.post("/api/admin/seed")

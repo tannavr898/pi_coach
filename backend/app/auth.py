@@ -48,7 +48,10 @@ async def current_user(authorization: str = Header(default="")) -> dict[str, str
     uid = data.get("id")
     if not uid:
         raise HTTPException(status_code=401, detail="Your session expired — sign in again.")
-    return {"id": uid, "email": data.get("email") or ""}
+    # `created_at` is carried through for the founding-user reward: "signed up
+    # before the cutoff" is one of its two gates, and Supabase already hands it to
+    # us here, so there is no extra round-trip to pay for it.
+    return {"id": uid, "email": data.get("email") or "", "created_at": data.get("created_at") or ""}
 
 
 async def optional_user(authorization: str = Header(default="")) -> dict[str, str] | None:

@@ -13,7 +13,10 @@ import {
   type ScoreResponse,
   type SubScore,
   type Term,
+  type Usage,
   type Utterance,
+  type VideoMetrics,
+  UNLIMITED,
   adminVerify,
   getEvents,
   postDelivery,
@@ -26,7 +29,8 @@ import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE 
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
-import { clearSamples, getSession, markStudy, saveSession, seedSamples, type SaveSessionBody } from "./progress";
+import { clearSamples, confirmScenarioSeen, fetchUsage, getSession, markStudy, saveSession, scoreVideo, seedSamples, type SaveSessionBody } from "./progress";
+import { CAN_CAPTURE_VIDEO, VideoIndicator, VideoOptIn, VideoPanel, useFrameSampler, type VideoGate } from "./video";
 import { HomePage } from "./home";
 import { StudyCourse } from "./course";
 import { Flashcards, FlashcardLibrary } from "./flashcards";
@@ -106,6 +110,32 @@ function recordCombo(eventId: string, signature: string) {
   }
 }
 
+// Scenario cache: the ids this browser has already been served, so the shared
+// pool never hands the same role-play to the same person twice. Signed-in users
+// are ALSO de-duped server-side (which survives a new device) — this list is
+// what makes the guarantee hold for anonymous visitors, who have no server-side
+// history to join against. Capped to match the backend's payload limit.
+const SEEN_SCENARIOS_MAX = 200;
+function seenScenarios(): string[] {
+  try {
+    const raw = localStorage.getItem("pic-seen-scenarios");
+    const list = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(list) ? list.filter((s): s is string => typeof s === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function recordSeenScenario(id: string | null | undefined) {
+  if (!id) return;
+  try {
+    const list = seenScenarios().filter((s) => s !== id);
+    list.push(id); // newest last, so the slice below drops the oldest
+    localStorage.setItem("pic-seen-scenarios", JSON.stringify(list.slice(-SEEN_SCENARIOS_MAX)));
+  } catch {
+    /* private mode / quota — worst case we may see a scenario twice */
+  }
+}
+
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -129,6 +159,23 @@ export default function App() {
   const [followupAudio, setFollowupAudio] = useState<Blob | null>(null);
   const [score, setScore] = useState<ScoreResponse | null>(null);
   const [delivery, setDelivery] = useState<DeliveryMetrics | null>(null);
+  // Video (beta): opt-in per session. `videoOn` is the user's choice for THIS
+  // rep — it deliberately does not persist, so the camera is never on because of
+  // a decision made days ago. `videoMetrics` is null on every voice-only rep,
+  // which is the normal case and renders identically to before this shipped.
+  const [videoOn, setVideoOn] = useState(false);
+  const [videoMetrics, setVideoMetrics] = useState<VideoMetrics | null>(null);
+  // The in-flight video analysis. Video and content scoring run in parallel, so
+  // without this the save could fire first and persist the session with no video
+  // — the student would see a Video tab now and lose it when they reopened the
+  // rep from history. The save awaits this promise, which normally costs nothing
+  // (video is the faster of the two) but makes the ordering guaranteed instead
+  // of lucky.
+  const videoRunRef = useRef<Promise<VideoMetrics | null> | null>(null);
+  const sampler = useFrameSampler();
+  // Tier allowance, fetched up front so the UI can show what's left BEFORE a
+  // session starts rather than surfacing a cap mid-flow.
+  const [usage, setUsage] = useState<Usage | null>(null);
   const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>("home");
@@ -182,6 +229,29 @@ export default function App() {
   // Mastery Blitz (Phase 5): the term set to drill, or null when closed.
   const [blitzCards, setBlitzCards] = useState<Term[] | null>(null);
   const flags = useFlags(authUser?.id ?? null);
+
+  // Refresh the allowance when auth settles and after each completed session, so
+  // "2 video sessions left" is never stale by the time they act on it.
+  useEffect(() => {
+    if (!authReady) return;
+    let live = true;
+    fetchUsage()
+      .then((u) => { if (live) setUsage(u); })
+      .catch(() => { /* allowance display is additive; never block the loop on it */ });
+    return () => { live = false; };
+  }, [authReady, authUser?.id, score]);
+
+  // What the video opt-in is allowed to offer right now. Kept as one derived
+  // value so the response screen doesn't re-derive the gating rules inline.
+  const videoGate: VideoGate = !CAN_CAPTURE_VIDEO
+    ? { kind: "unsupported" }
+    : !authUser
+      // Video requires an account — that's what makes its cap enforceable
+      // server-side, and video is the expensive path.
+      ? { kind: "needs-account" }
+      : usage && usage.video.limit !== UNLIMITED && usage.video.remaining <= 0
+        ? { kind: "capped", resetsOn: usage.resets_on }
+        : { kind: "ready" };
 
   // --- Signed-out usage cap ------------------------------------------------
   // Every graded role-play (scenario gen + transcription + grading) spends LLM
@@ -255,6 +325,7 @@ export default function App() {
       setResponseText(d.response);
       setFollowupAnswer(d.followup_answer);
       setDelivery(d.delivery);
+      setVideoMetrics(d.video); // stored counts + notes; frames never were
       setUtterances(d.utterances);
       setAudioBlob(null); // audio is never persisted
       setPriorSnapshot(null);
@@ -294,6 +365,9 @@ export default function App() {
     setScore(null);
     setDelivery(null);
     setUtterances([]);
+    sampler.cancel();
+    setVideoOn(false);
+    setVideoMetrics(null); // a retry must not show the previous attempt's video
     setError(null);
     setStage("ready");
   }
@@ -469,7 +543,7 @@ export default function App() {
     const key = prefetchKey(eventId, level, practiceMode);
     if (prefetchRef.current?.key === key) return; // already prefetching this exact combo
     const t = window.setTimeout(() => {
-      const promise = postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId) });
+      const promise = postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId), seen: seenScenarios() });
       promise.catch(() => {}); // speculative: swallow; generate() re-requests on demand
       prefetchRef.current = { key, promise };
     }, 500);
@@ -492,13 +566,19 @@ export default function App() {
         try {
           s = await prefetchRef.current.promise;
         } catch {
-          s = await postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId) });
+          s = await postScenario({ event: eventId, request: "", level, mode: practiceMode, avoid: recentCombos(eventId), seen: seenScenarios() });
         }
       } else {
-        s = await postScenario({ event: eventId, request: focus, level, mode: practiceMode, avoid: recentCombos(eventId) });
+        s = await postScenario({ event: eventId, request: focus, level, mode: practiceMode, avoid: recentCombos(eventId), seen: seenScenarios() });
       }
       prefetchRef.current = null; // consumed
       if (s.sampling) recordCombo(eventId, s.sampling.signature); // remember this combo to vary the next
+      // Remember the cached-pool id so we're never served this role-play again.
+      // Locally for anonymous visitors; confirmed server-side for signed-in ones
+      // so it survives a new device. Fire-and-forget — this must not delay the
+      // scenario appearing, and a failure only risks an eventual repeat.
+      recordSeenScenario(s.scenario_id);
+      if (s.scenario_id) void confirmScenarioSeen(s.scenario_id).catch(() => {});
       bumpAnonRoleplays(); // this graded run counts against the signed-out cap
       track("scenario_generated", { level, mode: practiceMode, event: eventId, focused: !!focus });
       setScenario(s);
@@ -565,12 +645,17 @@ export default function App() {
       });
       // Persist the completed run (logged in) or stash it to attach on sign-up.
       setCurrentSessionId(null);
+      // Wait for video before saving, so a rep reopened from history keeps its
+      // Video tab. Normally instant — video analysis is the faster of the two
+      // background jobs — but awaiting makes it certain rather than probable.
+      const videoForSave = await (videoRunRef.current ?? Promise.resolve(null));
       void saveOrStash({
         scenario: sc,
         score: result,
         response: responseForScoring,
         followup_answer: followupForScoring,
         delivery: deliveryMetrics,
+        video: videoForSave,
         utterances: runUtterances,
         event_id: eventId,
         retry_of_session_id: retryOf,
@@ -603,6 +688,13 @@ export default function App() {
         return;
       }
       setStage("scoring"); // transcription loader: delivery metrics aren't ready yet
+
+      // Stop the camera the moment they submit — the rep is over, so there is no
+      // reason for it to stay on for a second longer. This also hands us the
+      // sampled frames; the analysis itself is kicked off below, deliberately
+      // NOT awaited, so video can never delay or fail the audio path.
+      const frames = videoOn && sampler.state === "running" ? sampler.stop() : [];
+
       let d: DeliveryResponse;
       try {
         d = await postDelivery(audioBlob, sc.timing.target_seconds, sc.team);
@@ -631,6 +723,27 @@ export default function App() {
       setScore(null);
       setStage("feedback");
       void runScoring(runId, sc, d.transcript, d.metrics, d.utterances);
+
+      // Video analysis runs in the background behind the already-visible
+      // delivery feedback, exactly like content scoring does. It is strictly
+      // additive: if it fails, the student keeps their full content and delivery
+      // feedback and simply doesn't get a Video tab. A bonus feature must never
+      // be able to break the rep.
+      if (frames.length > 0) {
+        track("video_submitted", { frames: frames.length, event: eventId });
+        videoRunRef.current = scoreVideo(frames)
+          .then((m) => {
+            if (scoreRunRef.current !== runId) return null; // stale run — they moved on
+            setVideoMetrics(m);
+            return m;
+          })
+          .catch((e) => {
+            track("video_failed", { reason: errMsg(e).slice(0, 120) });
+            return null; // resolve, never reject: the save awaits this
+          });
+      } else {
+        videoRunRef.current = null;
+      }
       return;
     }
 
@@ -652,6 +765,11 @@ export default function App() {
     setScenario(null);
     setScore(null);
     setDelivery(null);
+    // Release the camera and clear the opt-in: video is a per-rep choice, so a
+    // new session must start with it off rather than inheriting the last one.
+    sampler.cancel();
+    setVideoOn(false);
+    setVideoMetrics(null);
     setUtterances([]);
     setResponseText("");
     setAudioBlob(null);
@@ -779,6 +897,7 @@ export default function App() {
                 onTips={() => setView("tips")}
               />
             )}
+            {stage === "pick" && usage && <AllowanceNotice usage={usage} onSignIn={() => openAuth("signup")} />}
 
             {stage === "loading" && (
               <LoadingScreen
@@ -840,6 +959,18 @@ export default function App() {
                 onChange={setResponseText}
                 audioBlob={audioBlob}
                 onRecorded={setAudioBlob}
+                videoGate={videoGate}
+                videoSampler={sampler}
+                videoOn={videoOn}
+                videoRemaining={usage && usage.video.limit !== UNLIMITED ? usage.video.remaining : null}
+                onEnableVideo={async () => {
+                  // Only flip the opt-in once the camera actually starts — a
+                  // failed permission prompt must not leave the UI claiming to
+                  // be recording video it isn't.
+                  if (await sampler.start()) setVideoOn(true);
+                }}
+                onDisableVideo={() => { sampler.cancel(); setVideoOn(false); }}
+                onSignIn={() => openAuth("signup", "Create a free account to add video feedback to your reps — it's free while video is in beta.")}
                 onContinue={() => {
                   setClockRunning(false); // pause the window while moving to the questions
                   setStage("followup");
@@ -860,6 +991,8 @@ export default function App() {
                 onChange={setFollowupAnswer}
                 audioBlob={followupAudio}
                 onRecorded={setFollowupAudio}
+                videoSampler={videoOn && sampler.state === "running" ? sampler : null}
+                onDisableVideo={() => { sampler.cancel(); setVideoOn(false); }}
                 onSubmit={submit}
               />
             )}
@@ -900,6 +1033,7 @@ export default function App() {
                 response={responseText}
                 followupAnswer={followupAnswer}
                 delivery={delivery}
+                video={videoMetrics}
                 utterances={utterances}
                 audioBlob={audioBlob}
                 onRestart={restart}
@@ -1665,6 +1799,67 @@ const BTN_SECONDARY =
 
 // --- screens ---------------------------------------------------------------
 
+/**
+ * What's left this month, stated before the session rather than discovered
+ * inside it.
+ *
+ * The messaging here is deliberately blunt about the future: video is beta and
+ * free while it is, and paid tiers are coming. Saying that now, to someone who
+ * hasn't paid us anything, is cheaper than a surprise paywall later — the whole
+ * product trades on being honest about what it can and can't tell you, and that
+ * has to extend to what it will and won't keep giving away.
+ */
+function AllowanceNotice({ usage, onSignIn }: { usage: Usage; onSignIn: () => void }) {
+  const anon = usage.tier === "anonymous";
+  const voice = usage.voice.limit === UNLIMITED ? "Unlimited" : `${usage.voice.remaining} left`;
+  const video = usage.video.limit === UNLIMITED ? "Unlimited" : `${usage.video.remaining} left`;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <span className="font-medium text-slate-700 dark:text-slate-200">This month</span>
+        <span className="text-slate-600 dark:text-slate-300">
+          Typed practice <strong className="font-semibold text-slate-800 dark:text-slate-100">Unlimited</strong>
+        </span>
+        <span className="text-slate-600 dark:text-slate-300">
+          Voice <strong className="font-semibold text-slate-800 dark:text-slate-100">{voice}</strong>
+        </span>
+        <span className="text-slate-600 dark:text-slate-300">
+          Video <strong className="font-semibold text-slate-800 dark:text-slate-100">{anon ? "Account needed" : video}</strong>
+          <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+            Beta
+          </span>
+        </span>
+        {usage.voice.limit !== UNLIMITED && (
+          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">resets {usage.resets_on}</span>
+        )}
+      </div>
+
+      <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
+        {anon ? (
+          <>
+            <button onClick={onSignIn} className="font-semibold text-indigo-700 underline dark:text-indigo-300">
+              Create a free account
+            </button>{" "}
+            for more voice reps, video feedback, and saved progress. Typed practice stays unlimited either way.
+          </>
+        ) : (
+          <>
+            Video is a <strong className="font-semibold text-slate-800 dark:text-slate-100">beta feature</strong>, free
+            while it's in beta. Paid tiers are coming — and if you're{" "}
+            {usage.founder_eligible ? (
+              <>using it now, you've already earned <strong className="font-semibold text-slate-800 dark:text-slate-100">{usage.founder_reward}</strong> when they launch.</>
+            ) : (
+              <>here before launch and complete {usage.founder_min_roleplays} role-plays, you'll get{" "}
+                <strong className="font-semibold text-slate-800 dark:text-slate-100">{usage.founder_reward}</strong>.</>
+            )}
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
 function PickScreen(props: {
   events: EventSummary[];
   eventId: string;
@@ -2391,6 +2586,15 @@ function RespondScreen(props: {
   onChange: (v: string) => void;
   audioBlob: Blob | null;
   onRecorded: (b: Blob | null) => void;
+  // Video (beta). All optional-in-spirit: the screen is fully functional and
+  // identical to before when the gate is "unsupported" or the user declines.
+  videoGate: VideoGate;
+  videoSampler: ReturnType<typeof useFrameSampler>;
+  videoOn: boolean;
+  videoRemaining: number | null;
+  onEnableVideo: () => void;
+  onDisableVideo: () => void;
+  onSignIn: () => void;
   onContinue: () => void;
 }) {
   const words = wordCount(props.value);
@@ -2431,6 +2635,17 @@ function RespondScreen(props: {
         ) : (
           <div className="mt-3">
             <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
+            <div className="mt-3">
+              <VideoOptIn
+                gate={props.videoGate}
+                sampler={props.videoSampler}
+                enabled={props.videoOn}
+                remaining={props.videoRemaining}
+                onEnable={props.onEnableVideo}
+                onDisable={props.onDisableVideo}
+                onSignIn={props.onSignIn}
+              />
+            </div>
             <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               Present out loud as if the judge is in front of you. We transcribe the audio and measure delivery
               pace, fillers, pauses, time: alongside the content score. Delivery covers timing only, not tone or
@@ -2579,6 +2794,12 @@ function FollowupScreen(props: {
   onChange: (v: string) => void;
   audioBlob: Blob | null;
   onRecorded: (b: Blob | null) => void;
+  // The camera keeps sampling through the judge's questions — they're part of
+  // the same presentation window — so the indicator has to follow it here. A
+  // camera that's on with nothing on screen saying so would break exactly the
+  // transparency the consent screen promised. Null when video is off.
+  videoSampler: ReturnType<typeof useFrameSampler> | null;
+  onDisableVideo: () => void;
   onSubmit: () => void;
 }) {
   const qs = props.scenario.followup_questions;
@@ -2625,6 +2846,14 @@ function FollowupScreen(props: {
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
               We transcribe your answer for grading. Delivery isn't scored on the follow-up: only your content.
             </p>
+          </div>
+        )}
+
+        {/* The camera is still sampling through the judge's questions, whether
+            they answer by voice or by typing — so this shows in both modes. */}
+        {props.videoSampler && (
+          <div className="mt-4">
+            <VideoIndicator sampler={props.videoSampler} onDisable={props.onDisableVideo} />
           </div>
         )}
 
@@ -2681,7 +2910,7 @@ function ScorePill({ label, value, weight }: { label: string; value: number; wei
   );
 }
 
-type FeedbackTab = "overview" | "transcript" | "delivery" | "analysis" | "criteria";
+type FeedbackTab = "overview" | "transcript" | "delivery" | "video" | "analysis" | "criteria";
 
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
@@ -2689,6 +2918,9 @@ function FeedbackScreen(props: {
   response: string;
   followupAnswer: string;
   delivery: DeliveryMetrics | null;
+  // Present only when the student opted into video for this rep. Absent is the
+  // normal case, and the whole screen renders identically without it.
+  video?: VideoMetrics | null;
   utterances: Utterance[];
   audioBlob: Blob | null;
   onRestart: () => void;
@@ -2714,6 +2946,9 @@ function FeedbackScreen(props: {
     { key: "overview", label: "Overview" },
     { key: "transcript", label: "Transcript" },
     ...(props.delivery ? [{ key: "delivery", label: "Delivery" }] : []),
+    // Only when they opted into video — an empty Video tab on every voice rep
+    // would read as a feature they're missing rather than one they declined.
+    ...(props.video ? [{ key: "video", label: "Video", badge: "Beta" }] : []),
     { key: "analysis", label: "Analysis" },
     { key: "criteria", label: "Indicators", badge: `${score.total_points}/${score.max_points}` },
   ];
@@ -2770,6 +3005,7 @@ function FeedbackScreen(props: {
           />
         )}
         {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
+        {tab === "video" && props.video && <VideoPanel metrics={props.video} />}
         {tab === "criteria" && <CriteriaTab scores={score.scores} />}
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">

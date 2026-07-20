@@ -139,6 +139,12 @@ class ScenarioRequest(BaseModel):
     # tracks these locally; empty on the free-text / no-taxonomy paths. Capped to
     # keep the payload small.
     avoid: list[str] = Field(default_factory=list, max_length=20)
+    # Cached-scenario ids this browser has already been served, so the cache never
+    # hands the same role-play to the same person twice. Signed-in users also get
+    # their history joined server-side (which survives a new device); this list is
+    # what makes the guarantee hold for anonymous visitors too. Capped so a stale
+    # or hostile client can't post an unbounded payload.
+    seen: list[str] = Field(default_factory=list, max_length=200)
 
 
 class Sampling(BaseModel):
@@ -174,6 +180,10 @@ class ScenarioResponse(BaseModel):
     # The variety combination that shaped this scenario (Phase 3), or null when the
     # event has no taxonomy yet / a free-text focus was used.
     sampling: Sampling | None = None
+    # The shared-pool id of this scenario, when it came from (or was added to) the
+    # scenario cache. The client records it so it is never served the same
+    # role-play twice. Null when caching is disabled (no Supabase configured).
+    scenario_id: str | None = None
 
 
 # --- POST /api/score-content ----------------------------------------------
@@ -430,6 +440,9 @@ class SessionSaveRequest(BaseModel):
     response: str
     followup_answer: str = ""
     delivery: DeliveryMetrics | None = None
+    # Observable video counts, when the student opted into video for this rep.
+    # Counts and notes only — no frames, ever.
+    video: VideoMetrics | None = None
     utterances: list[Utterance] = []
     event_id: str = ""  # stable event slug (for grouping / targeted practice)
     retry_of_session_id: str | None = None
@@ -464,6 +477,9 @@ class SessionDetail(BaseModel):
     response: str
     followup_answer: str = ""
     delivery: DeliveryMetrics | None = None
+    # Observable video counts, when the student opted into video for this rep.
+    # Counts and notes only — no frames, ever.
+    video: VideoMetrics | None = None
     utterances: list[Utterance] = []
     retry_of_session_id: str | None = None
 
@@ -615,3 +631,47 @@ class BlitzScoreResponse(BaseModel):
 
 class TranscribeResponse(BaseModel):
     transcript: str
+
+
+# --- POST /api/score-video ------------------------------------------------
+
+
+class VideoFrame(BaseModel):
+    """One sampled still frame, extracted and downscaled in the browser.
+
+    The full video is never recorded or uploaded — the client grabs stills from
+    the live camera preview, so there is no video file at any point. These frames
+    are held in memory for the length of the request and discarded."""
+
+    media_type: str = Field(default="image/jpeg", max_length=32)
+    # Base64 (no data: URI prefix). Frames are downscaled to ~512px before
+    # encoding, which is all face/gaze/expression detection needs and is what
+    # keeps the image-token cost down.
+    data: str = Field(min_length=1)
+
+
+class VideoRequest(BaseModel):
+    # Capped at the server-side frame limit (app/video.py MAX_FRAMES). The client
+    # widens its sampling interval to stay under this; the cap here is the
+    # backstop, because it's the cap that protects the bill.
+    frames: list[VideoFrame] = Field(default_factory=list, max_length=60)
+
+
+class VideoMetrics(BaseModel):
+    """Observable-only video results. Every field is a count of checks or a
+    percentage derived from one — there is deliberately no confidence, charisma,
+    engagement, or emotion score anywhere in this shape, because those cannot be
+    observed from sampled frames and telling a nervous student they "seemed
+    unconfident" is harmful feedback, not coaching."""
+
+    checks: int = 0
+    eye_contact_count: int = 0
+    eye_contact_percent: float = 0.0
+    positive_expression_count: int = 0
+    positive_expression_percent: float = 0.0
+    off_frame_count: int = 0
+    off_frame_percent: float = 0.0
+    # Plain coaching lines, computed deterministically from the counts above
+    # (never model-authored) — see app/video.py.
+    notes: list[str] = []
+    disclaimer: str = ""

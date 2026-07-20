@@ -9,7 +9,10 @@ import type {
   RubricLevel,
   ScenarioResponse,
   ScoreResponse,
+  Usage,
   Utterance,
+  VideoFrame,
+  VideoMetrics,
 } from "./api";
 import { getAccessToken } from "./supabase";
 
@@ -69,6 +72,8 @@ export type SaveSessionBody = {
   response: string;
   followup_answer: string;
   delivery: DeliveryMetrics | null;
+  // Observable video counts, when they opted into video. Counts + notes only.
+  video?: VideoMetrics | null;
   utterances: Utterance[];
   event_id: string;
   retry_of_session_id?: string | null;
@@ -97,6 +102,7 @@ export type SessionDetail = {
   response: string;
   followup_answer: string;
   delivery: DeliveryMetrics | null;
+  video: VideoMetrics | null;
   utterances: Utterance[];
   retry_of_session_id: string | null;
 };
@@ -145,6 +151,22 @@ export type ProgressResponse = {
   weakest_criterion: WeakestCriterion | null;
   score_trend: ScoreTrend;
 };
+
+/**
+ * Confirm a scenario was actually shown, so it is never served to this user
+ * again — even on a different device.
+ *
+ * Deliberately separate from requesting it: the app PREFETCHES a scenario as
+ * soon as an event is picked, and marking that as seen would burn pool entries
+ * for role-plays the student never read. Anonymous is a no-op server-side (their
+ * list lives in localStorage), so this uses `maybeAuthFetch` and is fire-and-forget.
+ */
+export function confirmScenarioSeen(scenarioId: string): Promise<{ status: string }> {
+  return maybeAuthFetch<{ status: string }>("/api/scenario/seen", {
+    method: "POST",
+    body: JSON.stringify({ scenario_id: scenarioId }),
+  });
+}
 
 export function saveSession(body: SaveSessionBody): Promise<SessionSaved> {
   return authFetch<SessionSaved>("/api/sessions", { method: "POST", body: JSON.stringify(body) });
@@ -241,4 +263,34 @@ export function seedSamples(): Promise<{ seeded: number }> {
 
 export function clearSamples(): Promise<{ deleted: number }> {
   return authFetch<{ deleted: number }>("/api/admin/sample", { method: "DELETE" });
+}
+
+// --- usage caps + video (Phase 6) ------------------------------------------
+
+/**
+ * This caller's tier and remaining monthly allowance.
+ *
+ * Anonymous is a valid answer — a signed-out visitor gets the anonymous tier's
+ * numbers rather than an error — so this uses `maybeAuthFetch`. We fetch it
+ * BEFORE a session starts so the UI can show what's left up front; discovering a
+ * cap halfway through a rep you've already prepped for is exactly the surprise
+ * this is meant to prevent.
+ */
+export function fetchUsage(): Promise<Usage> {
+  return maybeAuthFetch<Usage>("/api/usage");
+}
+
+/**
+ * Analyze the frames sampled during a rep.
+ *
+ * Requires an account (`authFetch`): video is the cost driver, and an account is
+ * what makes its cap enforceable server-side. Only the already-downscaled stills
+ * go over the wire — the full video is never recorded or uploaded — and the
+ * backend discards them as soon as it has the counts.
+ */
+export function scoreVideo(frames: VideoFrame[]): Promise<VideoMetrics> {
+  return authFetch<VideoMetrics>("/api/score-video", {
+    method: "POST",
+    body: JSON.stringify({ frames }),
+  });
 }

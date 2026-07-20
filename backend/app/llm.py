@@ -59,6 +59,49 @@ def complete(system: str, user: str, *, model: str | None = None, max_tokens: in
     return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text").strip()
 
 
+def complete_vision(
+    system: str,
+    images: list[tuple[str, str]],
+    instruction: str,
+    *,
+    model: str | None = None,
+    max_tokens: int = 1024,
+) -> str:
+    """One completion over a BATCH of images plus a text instruction.
+
+    `images` is a list of ``(media_type, base64_data)`` — already downscaled by the
+    caller. Batching matters here: one call carrying 15 frames costs a fraction of
+    15 calls carrying one frame each, because the system prompt and instruction are
+    charged once instead of fifteen times, and it collapses fifteen round-trips of
+    latency into one.
+
+    Images are placed BEFORE the instruction, which is the documented ordering for
+    multi-image prompts, and each is labelled so the model can key its per-frame
+    output back to a frame index.
+    """
+    client = _get_client()
+    content: list[dict[str, Any]] = []
+    for i, (media_type, data) in enumerate(images):
+        content.append({"type": "text", "text": f"Frame {i}:"})
+        content.append({
+            "type": "image",
+            "source": {"type": "base64", "media_type": media_type, "data": data},
+        })
+    content.append({"type": "text", "text": instruction})
+
+    try:
+        msg = client.messages.create(
+            model=model or MODEL,
+            max_tokens=max_tokens,
+            thinking={"type": "disabled"},
+            system=system,
+            messages=[{"role": "user", "content": content}],
+        )
+    except anthropic.APIError as e:
+        raise LLMError(f"Anthropic API error: {e}") from e
+    return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text").strip()
+
+
 def parse_json_object(text: str) -> dict[str, Any]:
     """Parse the first JSON object out of model text.
 
