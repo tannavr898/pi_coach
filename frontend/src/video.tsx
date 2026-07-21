@@ -55,8 +55,12 @@ export type FrameSampler = {
   state: SamplerState;
   error: string | null;
   frameCount: number;
-  /** Live preview element ref — attach to a <video> so the user can see themselves. */
-  videoRef: React.MutableRefObject<HTMLVideoElement | null>;
+  /**
+   * Callback ref for a preview CONTAINER (any element). The sampler owns the
+   * <video> itself and moves it into whichever container is currently mounted.
+   * See `ensureEl` for why the element can't be a React-rendered one.
+   */
+  attachPreview: (node: HTMLElement | null) => void;
   start: () => Promise<boolean>;
   /** Stops the camera and returns the frames sampled during the session. */
   stop: () => VideoFrame[];
@@ -82,17 +86,91 @@ export function useFrameSampler(): FrameSampler {
   const timerRef = useRef<number | undefined>(undefined);
   const intervalRef = useRef<number>(BASE_INTERVAL_MS);
 
+  /**
+   * The <video> is created imperatively and owned by the sampler for the whole
+   * session, rather than rendered by React. Two bugs made that necessary:
+   *
+   *   1. MOUNT ORDER. `start()` runs while the CONSENT card is on screen. A
+   *      React-rendered preview only mounts once state is "running" — i.e.
+   *      after start() has already finished — so the ref was still null at the
+   *      moment we needed to assign `srcObject`. The stream attached to
+   *      nothing: no preview, and `capture()` bailed on its null guard every
+   *      tick, silently, for the entire rep.
+   *
+   *   2. SCREEN CHANGES. Respond and Follow-up each render their own preview.
+   *      With React owning the element, advancing to the follow-up would swap
+   *      in a fresh <video> with no srcObject and kill capture mid-session.
+   *
+   * One long-lived element sidesteps both: it parks in a hidden host and gets
+   * moved into whichever preview container is mounted right now.
+   */
+  const elRef = useRef<HTMLVideoElement | null>(null);
+  const hostRef = useRef<HTMLDivElement | null>(null);
+
+  const ensureEl = useCallback((): HTMLVideoElement => {
+    if (elRef.current) return elRef.current;
+    // Off-screen rather than display:none — a hidden video is throttled or
+    // paused by some browsers, and a paused element yields blank frames.
+    const host = document.createElement("div");
+    host.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden";
+    host.setAttribute("aria-hidden", "true");
+    const el = document.createElement("video");
+    el.muted = true;         // required for autoplay without a gesture
+    el.playsInline = true;   // iOS: don't hijack into the fullscreen player
+    el.autoplay = true;
+    el.style.cssText = "width:100%;height:auto;display:block;border-radius:0.5rem;background:#0f172a";
+    host.appendChild(el);
+    document.body.appendChild(host);
+    hostRef.current = host;
+    elRef.current = el;
+    videoRef.current = el;
+    return el;
+  }, []);
+
+  /** Move the live element into a mounted preview container, or back to the host. */
+  const attachPreview = useCallback((node: HTMLElement | null) => {
+    const el = elRef.current;
+    if (!el) return;
+    if (node) {
+      node.appendChild(el);
+      // Reparenting pauses playback in Safari; a paused element captures a
+      // frozen frame, so resume rather than trusting it survived the move.
+      void el.play().catch(() => {});
+      return;
+    }
+    // Detach. Don't reclaim the element immediately: moving between screens
+    // detaches the old preview and attaches the new one in the same commit, and
+    // reclaiming eagerly would yank the stream out of the container that just
+    // took it. Settle on a microtask and only rescue the element if it was
+    // genuinely orphaned — a detached parent no longer renders, which stops
+    // playback and would freeze every subsequent frame.
+    queueMicrotask(() => {
+      if (elRef.current !== el || el.parentElement?.isConnected) return;
+      hostRef.current?.appendChild(el);
+      void el.play().catch(() => {});
+    });
+  }, []);
+
   const teardown = useCallback(() => {
     if (timerRef.current) window.clearInterval(timerRef.current);
     timerRef.current = undefined;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (elRef.current) elRef.current.srcObject = null;
   }, []);
 
   // Releasing the camera on unmount matters for more than tidiness: a stream
   // left open keeps the device's camera light on, which is alarming and would
   // undercut every privacy promise the consent screen just made.
-  useEffect(() => () => teardown(), [teardown]);
+  useEffect(
+    () => () => {
+      teardown();
+      hostRef.current?.remove();
+      hostRef.current = null;
+      elRef.current = null;
+    },
+    [teardown],
+  );
 
   const capture = useCallback(() => {
     const video = videoRef.current;
@@ -134,10 +212,27 @@ export function useFrameSampler(): FrameSampler {
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
+      const el = ensureEl();
+      el.srcObject = stream;
+      await el.play().catch(() => {});
+
+      // Wait for the first decoded frame before sampling. `videoWidth` is 0
+      // until metadata arrives, and `capture()` treats that as "not ready" and
+      // returns — so without this the immediate frame below is silently lost on
+      // every session. Bounded, because a camera that never produces a frame
+      // must not block the rep from starting.
+      if (!el.videoWidth) {
+        await new Promise<void>((resolve) => {
+          const done = () => {
+            el.removeEventListener("loadeddata", done);
+            window.clearTimeout(timeout);
+            resolve();
+          };
+          const timeout = window.setTimeout(done, 3000);
+          el.addEventListener("loadeddata", done);
+        });
       }
+
       framesRef.current = [];
       intervalRef.current = BASE_INTERVAL_MS;
       setFrameCount(0);
@@ -161,7 +256,7 @@ export function useFrameSampler(): FrameSampler {
       teardown();
       return false;
     }
-  }, [capture, teardown]);
+  }, [capture, ensureEl, teardown]);
 
   const stop = useCallback((): VideoFrame[] => {
     teardown();
@@ -176,7 +271,7 @@ export function useFrameSampler(): FrameSampler {
     setState("idle");
   }, [teardown]);
 
-  return { state, error, frameCount, videoRef, start, stop, cancel };
+  return { state, error, frameCount, attachPreview, start, stop, cancel };
 }
 
 // --- consent ---------------------------------------------------------------
@@ -267,13 +362,106 @@ export function VideoIndicator(props: { sampler: FrameSampler; onDisable: () => 
           Turn off
         </button>
       </div>
-      <video
-        ref={sampler.videoRef}
-        muted
-        playsInline
+      {/* The sampler moves its own long-lived <video> in here — see `ensureEl`.
+          Rendering the element from React would tie the live stream to this
+          component's mount cycle, which is exactly what broke capture before. */}
+      <div
+        ref={sampler.attachPreview}
+        role="img"
         aria-label="Your camera preview"
-        className="mt-2 w-full max-w-[220px] rounded-lg bg-slate-900"
+        className="mt-2 w-full max-w-[220px] overflow-hidden rounded-lg bg-slate-900"
       />
+    </div>
+  );
+}
+
+// --- gaze anchor -----------------------------------------------------------
+
+/**
+ * The judge's face, pinned to the top edge of the screen while the camera runs.
+ *
+ * WHY IT EXISTS: eye contact is scored against the CAMERA, and the camera sits
+ * above the screen. A student watching their own preview, the timer, or their
+ * notes is looking down — correctly presenting, and correctly scored as not
+ * making eye contact. Telling them that only after the rep is a gotcha. Giving
+ * them a fixed point near the lens to present to turns the metric into something
+ * they can act on DURING the rep, which is the whole difference between a score
+ * and coaching.
+ *
+ * WHY A FACE: presenting to a dot is unnatural; presenting to a person is the
+ * skill being rehearsed. The portrait is deliberately restrained — tonal slate,
+ * business attire, adult proportions — because PRODUCT.md rules out mascots and
+ * cartoon characters, and a competitor practicing for a real event should be
+ * looking at something that reads as a judge, not a game character. It is drawn
+ * in flat tones rather than any skin color so it stands for "the judge" without
+ * casting a specific person.
+ *
+ * The eyes are the one indigo element on the screen while it's up. Indigo is
+ * this product's signal color — reserved for the single thing to act on — and
+ * here the thing to act on is exactly "look here".
+ */
+export function GazeAnchor({ frameCount }: { frameCount: number }) {
+  return (
+    // z-30: above the sticky header (z-20), below modals (z-50). It occupies the
+    // header's empty center; the label drops on small screens where the logo and
+    // menu button close that gap.
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-30 flex justify-center">
+      <div className="flex items-center gap-2.5 rounded-b-2xl border border-t-0 border-slate-200 bg-white py-1.5 pl-1.5 pr-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <svg viewBox="0 0 40 40" aria-hidden className="h-9 w-9 shrink-0">
+          <defs>
+            <clipPath id="pic-gaze-clip">
+              <circle cx="20" cy="20" r="20" />
+            </clipPath>
+          </defs>
+          <g clipPath="url(#pic-gaze-clip)">
+            <rect width="40" height="40" className="fill-slate-100 dark:fill-slate-800" />
+            {/* shoulders — a blazer, because the room this rehearses is a formal one */}
+            <path d="M4 40c0-7.4 5.6-12.8 16-12.8S36 32.6 36 40Z" className="fill-slate-500 dark:fill-slate-400" />
+            {/* collar, in the circle's own background tone so it reads as a shirt */}
+            <path
+              d="M16.2 27.8 20 32.4l3.8-4.6"
+              fill="none"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              className="stroke-slate-100 dark:stroke-slate-800"
+            />
+            <path d="M16.6 22.6h6.8v6.4h-6.8z" className="fill-slate-300 dark:fill-slate-600" />
+            <ellipse cx="20" cy="17" rx="8.2" ry="9.4" className="fill-slate-300 dark:fill-slate-600" />
+            <path
+              d="M11.8 15.4c0-5 3.7-8 8.2-8s8.2 3 8.2 8c-1.6-1.2-2.2-3.2-2.6-4.6-2 2-8.4 2.6-11.4 1.2-.8 1-1.8 2.4-2.4 3.4Z"
+              className="fill-slate-600 dark:fill-slate-300"
+            />
+            <path
+              d="M15.4 14.6c.9-.6 2.1-.6 3 0M21.6 14.6c.9-.6 2.1-.6 3 0"
+              fill="none"
+              strokeWidth="1.1"
+              strokeLinecap="round"
+              className="stroke-slate-500 dark:stroke-slate-400"
+            />
+            <g className="pic-blink">
+              <ellipse cx="16.9" cy="17.6" rx="1.25" ry="1.45" className="fill-indigo-600 dark:fill-indigo-400" />
+              <ellipse cx="23.1" cy="17.6" rx="1.25" ry="1.45" className="fill-indigo-600 dark:fill-indigo-400" />
+            </g>
+            <path
+              d="M17.4 21.8c1.5 1.4 3.7 1.4 5.2 0"
+              fill="none"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              className="stroke-slate-500 dark:stroke-slate-400"
+            />
+          </g>
+        </svg>
+
+        <div className="hidden leading-tight sm:block">
+          <div className="text-xs font-semibold text-slate-800 dark:text-slate-100">Look here</div>
+          {/* The live count sits AT the point they're being asked to look at, so
+              glancing up to check it is the behavior we want anyway. */}
+          <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-slate-500 dark:text-slate-400">
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-600" aria-hidden />
+            {frameCount} {frameCount === 1 ? "frame" : "frames"}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -331,6 +519,30 @@ export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
         />
         <Stat label="Off-frame" count={metrics.off_frame_count} total={metrics.checks} />
       </div>
+
+      {/* What video did to the delivery score, stated before the coaching notes.
+          A score that moved without an explanation is the kind of unexplained
+          number this product exists to not produce — and when the sample was too
+          small to move anything, saying THAT is the honest result, not a gap. */}
+      {metrics.adjustment_reason && (
+        <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <span
+            className={`shrink-0 font-mono text-sm font-semibold tabular-nums ${
+              metrics.delivery_adjustment > 0
+                ? "text-emerald-600 dark:text-emerald-400"
+                : metrics.delivery_adjustment < 0
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-slate-400 dark:text-slate-500"
+            }`}
+          >
+            {metrics.delivery_adjustment > 0 ? "+" : ""}
+            {metrics.delivery_adjustment.toFixed(1)}
+          </span>
+          <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+            {metrics.adjustment_reason}
+          </p>
+        </div>
+      )}
 
       {metrics.notes.length > 0 && (
         <ul className="space-y-2">

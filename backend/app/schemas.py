@@ -373,6 +373,10 @@ class DeliveryComponent(BaseModel):
     label: str
     score: int
     hint: str = ""
+    # True for components that are shown but weighted lightly (currently only the
+    # video eye-contact check, which is sampled rather than measured over the whole
+    # rep). The UI marks these so a student can tell which numbers carry weight.
+    advisory: bool = False
 
 
 class SpeakerStat(BaseModel):
@@ -655,6 +659,11 @@ class VideoRequest(BaseModel):
     # widens its sampling interval to stay under this; the cap here is the
     # backstop, because it's the cap that protects the bill.
     frames: list[VideoFrame] = Field(default_factory=list, max_length=60)
+    # The audio-only delivery score for this rep, if there was one. Sent so the
+    # server can compute the (small, capped) video adjustment in one place rather
+    # than trusting the client with grading arithmetic. Omitted on a typed rep,
+    # where there is no delivery score to adjust.
+    delivery_score: int | None = Field(default=None, ge=0, le=100)
 
 
 class VideoMetrics(BaseModel):
@@ -675,3 +684,15 @@ class VideoMetrics(BaseModel):
     # (never model-authored) — see app/video.py.
     notes: list[str] = []
     disclaimer: str = ""
+
+    # How the sampled frames moved the delivery score. Signed, already capped and
+    # scaled by sample size (see delivery.video_adjustment) — 0.0 when there were
+    # too few frames to say anything, which is the common case on a short rep.
+    delivery_adjustment: float = 0.0
+    adjusted_delivery_score: int | None = None
+    # Plain-language explanation of the line above, always populated when video ran.
+    # A score that moved without saying why is exactly the kind of unexplained
+    # number this product refuses to show.
+    adjustment_reason: str = ""
+    # The advisory "Eye contact" row the Delivery tab appends to its components.
+    delivery_component: DeliveryComponent | None = None

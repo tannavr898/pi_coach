@@ -698,7 +698,27 @@ async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> 
         # report, so refund rather than show a panel of zeroes.
         await usage.release(receipt, "video")
 
-    return VideoMetrics(**metrics, disclaimer=video.DISCLAIMER)
+    # Fold the observable checks into the delivery score. Done HERE rather than on
+    # the client because it is grading arithmetic: the client already knows the
+    # audio score, but the weighting, the sample-size floor, and the cap are rules
+    # about how much a handful of frames is allowed to be worth, and those belong
+    # server-side where they can't drift per browser. See delivery.apply_video.
+    extras: dict = {}
+    if req.delivery_score is not None:
+        adjusted, components, delta, reason = delivery.apply_video(
+            req.delivery_score,
+            [],  # only the video row is returned; the client holds the audio ones
+            checks=metrics["checks"],
+            eye_contact_count=metrics["eye_contact_count"],
+        )
+        extras = {
+            "delivery_adjustment": delta,
+            "adjusted_delivery_score": adjusted,
+            "adjustment_reason": reason,
+            "delivery_component": components[-1] if components else None,
+        }
+
+    return VideoMetrics(**metrics, **extras, disclaimer=video.DISCLAIMER)
 
 
 # --- Mastery Blitz (Phase 5) -----------------------------------------------

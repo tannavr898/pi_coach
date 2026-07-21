@@ -30,7 +30,7 @@ import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
 import { clearSamples, confirmScenarioSeen, fetchUsage, getSession, markStudy, saveSession, scoreVideo, seedSamples, type SaveSessionBody } from "./progress";
-import { CAN_CAPTURE_VIDEO, VideoIndicator, VideoOptIn, VideoPanel, useFrameSampler, type VideoGate } from "./video";
+import { CAN_CAPTURE_VIDEO, GazeAnchor, VideoIndicator, VideoOptIn, VideoPanel, useFrameSampler, type VideoGate } from "./video";
 import { HomePage } from "./home";
 import { StudyCourse } from "./course";
 import { Flashcards, FlashcardLibrary } from "./flashcards";
@@ -649,12 +649,26 @@ export default function App() {
       // Video tab. Normally instant — video analysis is the faster of the two
       // background jobs — but awaiting makes it certain rather than probable.
       const videoForSave = await (videoRunRef.current ?? Promise.resolve(null));
+      // `deliveryMetrics` is the snapshot taken before video ran, so re-apply the
+      // adjustment here rather than reading it back off state — otherwise the
+      // session would persist the audio-only score and a rep reopened from
+      // history would disagree with the one the student just looked at.
+      const deliveryForSave =
+        deliveryMetrics && videoForSave?.adjusted_delivery_score != null
+          ? {
+              ...deliveryMetrics,
+              delivery_score: videoForSave.adjusted_delivery_score,
+              delivery_components: videoForSave.delivery_component
+                ? [...deliveryMetrics.delivery_components, videoForSave.delivery_component]
+                : deliveryMetrics.delivery_components,
+            }
+          : deliveryMetrics;
       void saveOrStash({
         scenario: sc,
         score: result,
         response: responseForScoring,
         followup_answer: followupForScoring,
-        delivery: deliveryMetrics,
+        delivery: deliveryForSave,
         video: videoForSave,
         utterances: runUtterances,
         event_id: eventId,
@@ -731,10 +745,29 @@ export default function App() {
       // be able to break the rep.
       if (frames.length > 0) {
         track("video_submitted", { frames: frames.length, event: eventId });
-        videoRunRef.current = scoreVideo(frames)
+        videoRunRef.current = scoreVideo(frames, d.metrics.delivery_score)
           .then((m) => {
             if (scoreRunRef.current !== runId) return null; // stale run — they moved on
             setVideoMetrics(m);
+            // Fold the (small, server-capped) video adjustment into the delivery
+            // metrics the Delivery tab renders and the session saves. Only the
+            // delivery number moves: the content score sent to /api/score is
+            // already in flight by now, and delaying content feedback to wait on
+            // a bonus signal would trade the thing students value most for at
+            // most four points of precision on one sub-score.
+            if (m.adjusted_delivery_score !== null) {
+              setDelivery((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      delivery_score: m.adjusted_delivery_score!,
+                      delivery_components: m.delivery_component
+                        ? [...prev.delivery_components, m.delivery_component]
+                        : prev.delivery_components,
+                    }
+                  : prev,
+              );
+            }
             return m;
           })
           .catch((e) => {
@@ -920,6 +953,14 @@ export default function App() {
                   setStage("prep");
                 }}
               />
+            )}
+
+            {/* The judge to present to, fixed near the webcam, for exactly as long
+                as the camera is on. Scoped to the two stages where the student is
+                actually delivering — showing it during prep or feedback would be
+                asking them to make eye contact with nothing. */}
+            {videoOn && sampler.state === "running" && (stage === "respond" || stage === "followup") && (
+              <GazeAnchor frameCount={sampler.frameCount} />
             )}
 
             {stage === "prep" && scenario && (
@@ -3451,9 +3492,22 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
           <div className="mt-4 space-y-2.5">
             {m.delivery_components.map((c) => (
               <div key={c.label}>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-slate-700 dark:text-slate-200">{c.label}</span>
-                  <span className="text-slate-500 dark:text-slate-400">{c.hint}</span>
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="flex shrink-0 items-center gap-1.5 font-medium text-slate-700 dark:text-slate-200">
+                    {c.label}
+                    {/* Sampled, not measured across the whole rep — say so on the row
+                        itself rather than burying it, so the bar can't read as
+                        carrying the same weight as the audio components. */}
+                    {c.advisory && (
+                      <span
+                        title="Measured from sampled video frames, so it moves your score only slightly"
+                        className="rounded-full border border-slate-300 px-1.5 py-px text-[10px] font-medium text-slate-500 dark:border-slate-600 dark:text-slate-400"
+                      >
+                        sampled
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-right text-slate-500 dark:text-slate-400">{c.hint}</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                   <div

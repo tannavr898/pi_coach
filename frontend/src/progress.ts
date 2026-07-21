@@ -288,9 +288,15 @@ export function fetchUsage(): Promise<Usage> {
  * go over the wire — the full video is never recorded or uploaded — and the
  * backend discards them as soon as it has the counts.
  */
-export function scoreVideo(frames: VideoFrame[]): Promise<VideoMetrics> {
+/**
+ * `deliveryScore` is the audio-only score for this rep. It goes up so the SERVER
+ * can compute how much the sampled frames are allowed to move it — the cap and
+ * the sample-size floor are grading rules, and grading rules don't live in the
+ * client. Omit it on a typed rep, where there's no delivery score to adjust.
+ */
+export function scoreVideo(frames: VideoFrame[], deliveryScore?: number | null): Promise<VideoMetrics> {
   return authFetch<VideoMetrics>("/api/score-video", {
     method: "POST",
-    body: JSON.stringify({ frames }),
+    body: JSON.stringify({ frames, delivery_score: deliveryScore ?? null }),
   });
 }

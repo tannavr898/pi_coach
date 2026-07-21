@@ -111,6 +111,27 @@
   animation: pic-step-in 0.35s ease-out both;
 }
 
+/* The gaze anchor's blink. Long dwell, fast close — a real blink is ~120ms in a
+   ~5s cycle, and matching that is what keeps the face reading as a person to
+   present to rather than a mascot winking at the student. Falls back to open
+   eyes under the reduced-motion rule below, which is the correct still frame. */
+@keyframes pic-blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(1);
+  }
+  94%,
+  96% {
+    transform: scaleY(0.12);
+  }
+}
+.pic-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pic-blink 5.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

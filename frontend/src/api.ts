@@ -204,6 +204,8 @@ export type DeliveryComponent = {
   label: string;
   score: number;
   hint: string;
+  /** Shown but weighted lightly — currently only the sampled video eye-contact row. */
+  advisory?: boolean;
 };
 
 export type SpeakerStat = {
@@ -459,6 +461,13 @@ export type VideoMetrics = {
   off_frame_percent: number;
   notes: string[];
   disclaimer: string;
+  // How much the sampled frames moved the delivery score (signed, capped at ±4
+  // server-side and scaled by how many frames we actually read). 0 when the
+  // sample was too small to say anything — see delivery.video_adjustment.
+  delivery_adjustment: number;
+  adjusted_delivery_score: number | null;
+  adjustment_reason: string;
+  delivery_component: DeliveryComponent | null;
 };
 
 export type VideoFrame = { media_type: string; data: string };
