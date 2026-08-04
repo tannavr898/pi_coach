@@ -283,6 +283,16 @@ async def scenario(
     if not situation:
         raise HTTPException(status_code=502, detail="The model returned an empty scenario.")
 
+    # Share-card headline. Deliberately NOT fatal when missing, unlike `situation`
+    # above: a hookless scenario is a slightly worse share card, and that must never
+    # be a reason to fail a student's rep. The prompt caps it at 20 words; anything
+    # wildly past that is a model slip that would overflow the card hero, so we drop
+    # it and let the client fall back to the topic rather than ship a broken card.
+    hook = str(data.get("hook", "")).strip()
+    if len(hook) > 200:
+        log.warning("SCENARIO hook too long (%d chars), dropping", len(hook))
+        hook = ""
+
     # The criteria selected here are the EXACT criteria scoring will grade against.
     criteria = interpret.resolve_selection([str(i) for i in data.get("criteria_ids", [])], pool)
     if not criteria:
@@ -305,6 +315,7 @@ async def scenario(
         criteria=[_criterion_view(c, req.mode) for c in criteria],
         procedures=PROCEDURES,
         situation=situation,
+        hook=hook,
         followup_questions=followups,
         sampling=Sampling(signature=sampled["signature"], labels=sampled["labels"]) if sampled else None,
     )
@@ -581,6 +592,40 @@ async def mark_scenario_seen(
     if user and req.scenario_id:
         await scenario_cache.mark_seen(req.scenario_id, user["id"])
     return {"status": "ok"}
+
+
+@app.get("/api/scenario/{scenario_id}", response_model=ScenarioResponse, dependencies=[Depends(rate_limit)])
+async def get_scenario_by_id(
+    scenario_id: str,
+    background: BackgroundTasks,
+    mode: Mode = "competition",
+) -> ScenarioResponse:
+    """Serve one pooled scenario by id — the shared-challenge deep link.
+
+    This is how a Gauntlet card closes its loop: the card's URL carries the
+    scenario_id, and whoever opens it gets the SAME role-play their friend played,
+    so the score on the card is actually comparable.
+
+    No `daily_cap` dependency: this spends no model tokens (the scenario already
+    exists in the pool). The rep it leads to is metered where the tokens are
+    actually spent — scoring — and by the client-side signed-out roleplay cap.
+    """
+    hit = await scenario_cache.get_by_id(scenario_id)
+    if hit is None:
+        raise HTTPException(status_code=404, detail="That challenge link has expired or was never valid.")
+
+    background.add_task(scenario_cache.record_served, hit["id"])
+    scenario = ScenarioResponse(**hit["scenario"])
+    scenario.scenario_id = hit["id"]
+    # Mode is a per-request view, exactly as on the cache-hit path above: rows are
+    # pooled in the Learn view and the requested view is re-derived from OUR
+    # framework rather than trusting whatever mode the row was stored under.
+    scenario.mode = mode
+    scenario.criteria = [
+        _criterion_view(c, mode)
+        for c in framework.get_criteria([c.id for c in scenario.criteria])
+    ]
+    return scenario
 
 
 @app.get("/api/usage")
@@ -1064,6 +1109,12 @@ if Path(_DIST).is_dir():
     # Same explicit fallback for the owner-only admin QA page.
     @app.get("/admin", include_in_schema=False)
     def _admin() -> FileResponse:
+        return FileResponse(_INDEX)
+
+    # The onboarding tour, viewable without signing up (analytics stays off on
+    # this route, so reviewing it can't skew the real onboarding funnel).
+    @app.get("/tour", include_in_schema=False)
+    def _tour() -> FileResponse:
         return FileResponse(_INDEX)
 
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")

@@ -119,6 +119,11 @@ def parse_json_object(text: str) -> dict[str, Any]:
     if start == -1 or end == -1 or end < start:
         raise LLMError("Model did not return a JSON object.")
     try:
-        return json.loads(t[start : end + 1])
+        # strict=False tolerates literal control characters inside strings. Models
+        # regularly emit a real newline instead of \n when a field is specified as
+        # multi-paragraph prose (the scenario "situation" asks for 2-3 paragraphs),
+        # and strict parsing turns that stylistic slip into a 502 on a student's rep.
+        # Measured on claude-sonnet-5: 6 of 8 scenario generations failed this way.
+        return json.loads(t[start : end + 1], strict=False)
     except json.JSONDecodeError as e:
         raise LLMError(f"Could not parse model JSON: {e}") from e

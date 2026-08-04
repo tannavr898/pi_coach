@@ -174,6 +174,10 @@ class ScenarioResponse(BaseModel):
     procedures: list[str]
     # Participant-facing situation ONLY — never the judge instructions.
     situation: str
+    # A one-sentence challenge framing of the situation, used as the headline on the
+    # shareable results card. Empty is normal and non-fatal: scenarios pooled before
+    # this field existed have no hook, and the client falls back to `topic`.
+    hook: str = ""
     # The judge's set follow-up questions, surfaced to the participant only AFTER
     # they submit their main response (mirrors a real role-play), then graded.
     followup_questions: list[str]

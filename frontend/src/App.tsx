@@ -19,12 +19,17 @@ import {
   UNLIMITED,
   adminVerify,
   getEvents,
+  getScenarioById,
   postDelivery,
   postFeedback,
   postScenario,
   postScore,
 } from "./api";
 import { identifyEmail, track } from "./analytics";
+import { BrandMark } from "./ui";
+import { GauntletCard, GauntletCardModal } from "./sharecard";
+import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
+import { useVisited, type Surface } from "./visited";
 import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
@@ -136,6 +141,25 @@ function recordSeenScenario(id: string | null | undefined) {
   }
 }
 
+// A shared Gauntlet card links back as `/?s=<scenario_id>`. Read once at startup;
+// consuming it strips the param so a refresh doesn't silently restart the run.
+function readChallengeId(): string | null {
+  try {
+    return new URLSearchParams(window.location.search).get("s");
+  } catch {
+    return null;
+  }
+}
+function clearChallengeParam() {
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.delete("s");
+    window.history.replaceState({}, "", `${u.pathname}${u.search}${u.hash}`);
+  } catch {
+    /* history API unavailable — harmless, the param just lingers */
+  }
+}
+
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -192,16 +216,39 @@ export default function App() {
     setAuthReason(reason);
     setAuthOpen(true);
   }
+  // Which parts of the product this account has opened, and whether it has seen
+  // the tour. Keyed by user id so two accounts on one browser don't share it.
+  const visited = useVisited(authUser?.id ?? null);
+  const [tourOpen, setTourOpen] = useState(false);
+
   // Where to go after a successful auth:
   //  - if they just finished a rep (on the feedback screen), stay put so it
   //    attaches to the new account;
-  //  - a brand-new sign-up gets the guided first-rep intro;
+  //  - a brand-new sign-up gets the guided tour, which hands off to the first rep;
   //  - a returning login goes to their Home dashboard.
   function handleAuthed(mode: "signup" | "login") {
     const onFeedback = view === "practice" && stage === "feedback";
     if (onFeedback) return;
-    if (mode === "signup") startFirstRep();
-    else setView("home");
+    if (mode === "signup") {
+      track("tour_started", { trigger: "signup" });
+      setTourOpen(true);
+    } else setView("home");
+  }
+
+  // Leaving the tour, whichever way they leave it. Marking it done means it never
+  // reappears uninvited; the account menu can replay it on demand.
+  function closeTour(reason: "skipped" | "completed", index?: number) {
+    setTourOpen(false);
+    visited.setTourDone(true);
+    track(reason === "skipped" ? "tour_skipped" : "tour_completed", { index });
+  }
+
+  // Opening a surface for the first time clears its nav dot.
+  function goToView(v: View) {
+    setView(v);
+    if (v === "course" || v === "flashcards" || v === "tips" || v === "faq" || v === "home") {
+      visited.markVisited(v);
+    }
   }
   // Session persistence (logged-in only). `pendingSession` holds a just-completed
   // anonymous run so we can attach it the moment the user signs up ("your first
@@ -311,6 +358,7 @@ export default function App() {
       return;
     }
     track("blitz_started", { count: cards.length, ...extra });
+    visited.markVisited("blitz"); // an overlay, not a view — no route change to hook
     setBlitzCards(cards);
   }
 
@@ -451,6 +499,71 @@ export default function App() {
     setView("practice");
     setStage("pick");
   }
+
+  // --- shared challenge deep link ------------------------------------------
+  // Someone opened a friend's Gauntlet card link (/?s=<scenario_id>). Serve them
+  // that EXACT role-play — a "score to beat" only means something if both people
+  // answered the same prompt. Runs once, before any event has been picked.
+  const challengeRef = useRef<string | null>(readChallengeId());
+  // The scenario carries its event's display NAME, not its id; we resolve the id
+  // from the event list once it loads (needed for math checks + session save).
+  const challengeEventName = useRef<string | null>(null);
+
+  useEffect(() => {
+    const id = challengeRef.current;
+    if (!id) return;
+    challengeRef.current = null; // consume exactly once, even under StrictMode
+    clearChallengeParam();
+    track("challenge_opened");
+    // Capped signed-out visitor: guardRoleplay has already opened the sign-up
+    // wall, so leave them on the landing page rather than a blank practice screen.
+    if (!guardRoleplay()) return;
+    setView("practice");
+    setStage("loading");
+    (async () => {
+      try {
+        const s = await getScenarioById(id, practiceMode);
+        challengeEventName.current = s.event || null;
+        recordSeenScenario(s.scenario_id);
+        if (s.scenario_id) void confirmScenarioSeen(s.scenario_id).catch(() => {});
+        bumpAnonRoleplays(); // an accepted challenge is a graded run like any other
+        track("challenge_accepted", { event: s.event, level: s.level });
+        setScenario(s);
+        setResponseText("");
+        setAudioBlob(null);
+        setPresentRemaining(0);
+        setClockRunning(false);
+        setAutoCountdown(null);
+        setFollowupAnswer("");
+        setFollowupAudio(null);
+        setScore(null);
+        setDelivery(null);
+        setUtterances([]);
+        setPriorSnapshot(null);
+        setRetryOf(null);
+        setStage("ready");
+      } catch (e) {
+        // Stale or bad link: say so plainly and drop them into normal setup
+        // rather than showing a dead end.
+        track("challenge_failed");
+        setError(
+          "That challenge link is no longer available. Pick an event below to start a fresh role-play.",
+        );
+        setStage("pick");
+      }
+    })();
+    // Mount-only: the link is read from the URL once at startup.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Resolve the challenge scenario's event id once the event list arrives.
+  useEffect(() => {
+    const name = challengeEventName.current;
+    if (!name || eventId || events.length === 0) return;
+    const match = events.find((e) => e.name === name);
+    if (match) setEventId(match.id);
+    challengeEventName.current = null;
+  }, [events, eventId]);
 
   // The guided first-rep intro (pre-session screen → hardcoded rep) is shown
   // ONLY to people who just created an account.
@@ -825,10 +938,10 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader
         view={view}
-        onView={setView}
+        onView={goToView}
         onPractice={() => enterPractice()}
-        onHome={() => setView("home")}
-        onFlashcards={() => setView("flashcards")}
+        onHome={() => goToView("home")}
+        onFlashcards={() => goToView("flashcards")}
         theme={theme}
         onToggleTheme={toggleTheme}
         onFeedback={() => setFeedbackOpen(true)}
@@ -837,6 +950,10 @@ export default function App() {
         onLogin={() => openAuth("login")}
         onSignup={() => openAuth("signup")}
         onSignOut={() => { void signOut(); setView("home"); }}
+        // Dots only for signed-in accounts — a signed-out visitor has no account
+        // to track, and marking up the nav for them is noise, not guidance.
+        unvisited={authUser ? (s) => !visited.isVisited(s) : undefined}
+        onReplayTour={authUser ? () => { track("tour_replayed"); setTourOpen(true); } : undefined}
       />
       <AuthModal open={authOpen} initialTab={authTab} reason={authReason} onClose={() => setAuthOpen(false)} onAuthed={handleAuthed} />
       {flashcard && (
@@ -850,6 +967,23 @@ export default function App() {
         />
       )}
       {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => setBlitzCards(null)} />}
+      {tourOpen && (
+        <ProductTour
+          onSkip={() => {
+            closeTour("skipped");
+            // Same landing spot as the old pre-session screen's skip link.
+            setOnboarding(false);
+            setView("practice");
+            setStage("pick");
+          }}
+          onStartRep={(respMode) => {
+            closeTour("completed");
+            setOnboarding(true);
+            setView("practice");
+            startOnboardingRep(respMode);
+          }}
+        />
+      )}
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : view === "course" ? "max-w-5xl" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
@@ -858,12 +992,26 @@ export default function App() {
           </div>
         )}
 
+        {/* One-time "what is this page for" card, on the first visit to a surface.
+            Inline rather than a modal: it introduces the thing they're already
+            looking at, so covering it up would defeat the point. */}
+        {authUser && view !== "practice" && !visited.isVisited(view as Surface) && FEATURE_INTROS[view as Surface] && (
+          <FeatureIntro
+            title={FEATURE_INTROS[view as Surface].title}
+            body={FEATURE_INTROS[view as Surface].body}
+            onDismiss={() => {
+              visited.markVisited(view as Surface);
+              track("feature_intro_dismissed", { view });
+            }}
+          />
+        )}
+
         {view === "home" && authUser ? (
           <HomePage
             onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(); }}
             onPracticeCriterion={practiceCriterion}
             onOpenFlashcards={(ids) => setFlashcard({ ids })}
-            onOpenLibrary={() => setView("flashcards")}
+            onOpenLibrary={() => goToView("flashcards")}
             onOpenSession={loadSession}
           />
         ) : view === "home" ? (
@@ -876,7 +1024,7 @@ export default function App() {
               track("quick_rep_clicked", { from: "landing" });
               startFirstRep();
             }}
-            onTips={() => setView("tips")}
+            onTips={() => goToView("tips")}
             supabaseEnabled={authReady}
             onSignIn={() => openAuth("login", "Log in to pick up your progress and session history.")}
             onSignup={() => openAuth("signup", "Create a free account to start tracking your progress.")}
@@ -927,7 +1075,7 @@ export default function App() {
                 onPracticeMode={setPracticeMode}
                 onLevel={setLevel}
                 onGenerate={generate}
-                onTips={() => setView("tips")}
+                onTips={() => goToView("tips")}
               />
             )}
             {stage === "pick" && usage && <AllowanceNotice usage={usage} onSignIn={() => openAuth("signup")} />}
@@ -1568,20 +1716,418 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// --- brand / shell ---------------------------------------------------------
+// --- product tour ----------------------------------------------------------
 
-function BrandMark({ size = 30 }: { size?: number }) {
-  // Concentric target = "hit the mark" — practice until you nail it.
+/**
+ * The guided walkthrough shown to new accounts.
+ *
+ * Every step renders a REAL screen driven by the demo fixtures — the same
+ * fixtures behind the /demo route — rather than a mock-up, so the tour can't
+ * quietly drift out of sync with the product. The shell (caption bar, keyboard
+ * handling, progress) lives in tour.tsx; the steps are assembled here because
+ * this is where the screens are defined.
+ */
+function ProductTour(props: {
+  onSkip: () => void;
+  onStartRep: (mode: ResponseMode) => void;
+  initialStep?: number;
+}) {
+  // A real sampler that is never started: RespondScreen requires one, and this
+  // way no camera is touched and no permission prompt can fire during the tour.
+  const idleSampler = useFrameSampler();
+  const noop = () => {};
+
+  const demoStage = (node: ReactNode) => () => node;
+
+  const steps: TourStep[] = [
+    {
+      id: "scenario",
+      act: "The rep",
+      caption:
+        "Every role-play starts here: a real business situation, and the exact skills you'll be judged on. Read it twice — the actual ask is usually one sentence.",
+      render: demoStage(<ReadyScreen scenario={DEMO_SCENARIO} onStart={noop} />),
+    },
+    {
+      id: "respond",
+      act: "The rep",
+      caption:
+        "After a prep window on a real clock, you present out loud — or type, if you'd rather. Speaking is what we recommend: it's the only way to get feedback on pace, filler words and pauses.",
+      render: demoStage(
+        <RespondScreen
+          scenario={DEMO_SCENARIO}
+          remaining={DEMO_SCENARIO.timing.present_seconds}
+          running={false}
+          autoCountdown={null}
+          onStart={noop}
+          mode="type"
+          onMode={noop}
+          value={DEMO_RESPONSE}
+          onChange={noop}
+          audioBlob={null}
+          onRecorded={noop}
+          videoGate={{ kind: "unsupported" }}
+          videoSampler={idleSampler}
+          videoOn={false}
+          videoRemaining={null}
+          onEnableVideo={noop}
+          onDisableVideo={noop}
+          onSignIn={noop}
+          onContinue={noop}
+        />,
+      ),
+    },
+    {
+      id: "followup",
+      act: "The rep",
+      caption:
+        "Then the judge's follow-up questions. They're written before you speak, so they probe the situation itself — not whatever you happened to say.",
+      render: demoStage(
+        <FollowupScreen
+          scenario={DEMO_SCENARIO}
+          remaining={Math.round(DEMO_SCENARIO.timing.present_seconds / 3)}
+          running={false}
+          autoCountdown={null}
+          onStart={noop}
+          mode="type"
+          onMode={noop}
+          value={DEMO_FOLLOWUP}
+          onChange={noop}
+          audioBlob={null}
+          onRecorded={noop}
+          videoSampler={null}
+          onDisableVideo={noop}
+          onSubmit={noop}
+        />,
+      ),
+    },
+    ...FEEDBACK_TOUR_TABS.map((t) => ({
+      id: `feedback-${t.tab}`,
+      act: "Your feedback",
+      caption: t.caption,
+      // The feedback view is a two-column grid above `lg` — it needs the same wide
+      // container the app shell gives it, or the tab strip clips.
+      wide: true,
+      render: () => <TourFeedback tab={t.tab} />,
+    })),
+    {
+      id: "share",
+      act: "Your feedback",
+      caption:
+        "And when a run goes well, hit “Challenge a friend” on your score to turn it into a card. One button shares it — your friend opens the same scenario, with your score to beat.",
+      render: () => <TourShareStep />,
+    },
+    {
+      // One summary card rather than a card per feature: each surface introduces
+      // itself properly the first time it's opened (FeatureIntro), so spending
+      // five more steps here before they've done a single rep is friction.
+      id: "features",
+      act: "The rest of the app",
+      caption:
+        "Practice tells you what's weak. These are where you go to fix it — each one explains itself the first time you open it.",
+      render: () => <FeatureSummaryCard />,
+    },
+    {
+      id: "start",
+      act: "Your turn",
+      caption:
+        "That's the whole app. Your first rep is a short one — about two minutes — and it's graded exactly like the real thing.",
+      render: () => (
+        <FeatureTourCard
+          title="Ready for your first rep?"
+          body="A friend's coffee cart needs advice. Two minutes, three skills, real feedback at the end."
+          points={[
+            "Speaking gets you delivery feedback; typing doesn't.",
+            "There's no penalty for a rough first attempt — that's the point of it.",
+          ]}
+        />
+      ),
+      footer: (
+        <div className="flex flex-wrap gap-2">
+          {CAN_RECORD && (
+            <button className={`${BTN_PRIMARY} px-5 py-2`} onClick={() => props.onStartRep("speak")}>
+              🎙️ Start out loud
+            </button>
+          )}
+          <button className={`${BTN_SECONDARY} px-4 py-2`} onClick={() => props.onStartRep("type")}>
+            ⌨️ Type it instead
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden className="shrink-0">
-      <circle cx="16" cy="16" r="14.5" fill="none" stroke="#c7d2fe" strokeWidth="2.5" />
-      <circle cx="16" cy="16" r="9" fill="none" stroke="#818cf8" strokeWidth="2.5" />
-      <circle cx="16" cy="16" r="3.5" fill="#4f46e5" />
-    </svg>
+    <TourShell
+      steps={steps}
+      initialStep={props.initialStep}
+      onSkip={props.onSkip}
+      onStep={(index, step) => track("tour_step", { index, id: step.id, act: step.act })}
+    />
   );
 }
 
-function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut }: {
+/**
+ * The feedback tabs the tour stops on. Four of the six, deliberately: Analysis and
+ * Scenario are named in the Indicators caption instead of costing a step each. The
+ * tab strip is visible in every one of these shots, so the tabs we skip are still
+ * on screen the whole time.
+ */
+const FEEDBACK_TOUR_TABS: { tab: FeedbackTab; caption: string }[] = [
+  {
+    tab: "overview",
+    caption:
+      "Feedback opens on the one-look read: your weighted score, your strongest moment, and the single thing costing you the most.",
+  },
+  {
+    tab: "transcript",
+    caption:
+      "The transcript highlights the exact phrases that earned credit — so you can see which words scored, not just that they did.",
+  },
+  {
+    tab: "delivery",
+    caption:
+      "Delivery measures pace, filler words and pauses from your recording. It never judges tone, confidence or charisma.",
+  },
+  {
+    tab: "criteria",
+    caption:
+      "Indicators breaks down every skill you were assessed on, Novice to Exemplary, with a specific fix for each. Analysis and Scenario are up there too — your problem-solving score, and the original situation.",
+  },
+];
+
+/** The real FeedbackScreen on demo data, with the tour driving which tab is open. */
+function TourFeedback(props: { tab: FeedbackTab }) {
+  return (
+    <FeedbackScreen
+      scenario={DEMO_SCENARIO}
+      score={DEMO_SCORE}
+      response={DEMO_RESPONSE}
+      followupAnswer={DEMO_FOLLOWUP}
+      delivery={DEMO_DELIVERY}
+      utterances={[]}
+      audioBlob={null}
+      onRestart={() => {}}
+      loggedIn
+      tab={props.tab}
+    />
+  );
+}
+
+/**
+ * The share card, shown inline rather than through GauntletCardModal.
+ *
+ * The modal is `fixed inset-0`, so inside the tour it covered the caption bar —
+ * hiding Next and trapping the student on the step. Inline also lets the share
+ * button be visibly inert: this is a walkthrough, and a real tap here would render
+ * a PNG of demo data and open the OS share sheet.
+ */
+function TourShareStep() {
+  return (
+    <div className="flex flex-col items-center gap-4">
+      {/* Where the card comes from — the same button that sits on their score. */}
+      <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-2.5 text-sm font-semibold text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
+        <BrandMark size={16} />
+        Challenge a friend
+      </div>
+      <span aria-hidden className="text-lg leading-none text-slate-300 dark:text-slate-600">↓</span>
+
+      {/* The real card at 0.62, so a 540x675 portrait fits above the caption bar. */}
+      <div style={{ width: 540 * 0.62, height: 675 * 0.62 }}>
+        <div
+          style={{ width: 540, height: 675, transform: "scale(0.62)", transformOrigin: "top left" }}
+          className="overflow-hidden rounded-2xl shadow-xl"
+        >
+          <GauntletCard scenario={DEMO_SCENARIO} score={DEMO_SCORE} />
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-1.5">
+        <button
+          disabled
+          className="inline-flex cursor-not-allowed items-center justify-center rounded-xl bg-indigo-600/60 px-5 py-2.5 text-sm font-semibold text-white"
+        >
+          Share the challenge
+        </button>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Inactive during the tour</p>
+      </div>
+    </div>
+  );
+}
+
+/** The four other surfaces, in one card. Depth lives in each page's FeatureIntro. */
+const FEATURE_SUMMARY: { label: string; line: string }[] = [
+  {
+    label: "Study",
+    line: "An ordered, finishable path through every skill your event is graded on.",
+  },
+  {
+    label: "Flashcards",
+    line: "The full term library, with the ones you keep scoring low on marked for you.",
+  },
+  {
+    label: "Mastery Blitz",
+    line: "Five terms, 45 seconds each — recall under the same pressure a judge applies.",
+  },
+  {
+    label: "Tips & FAQ",
+    line: "The four-beat method that structures a scoring answer, and how this sits with competition rules.",
+  },
+];
+
+function FeatureSummaryCard() {
+  return (
+    <Card>
+      <Eyebrow>There's more than the role-play</Eyebrow>
+      <h2 className="mt-2 font-display text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        Four more ways to move your score
+      </h2>
+      <ul className="mt-4 space-y-3">
+        {FEATURE_SUMMARY.map((f) => (
+          <li key={f.label} className="flex gap-3">
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" aria-hidden />
+            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+              <strong className="font-semibold text-slate-900 dark:text-slate-100">{f.label}</strong>
+              {" — "}
+              {f.line}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+        You'll see a dot in the nav next to the ones you haven't opened yet.
+      </p>
+    </Card>
+  );
+}
+
+function FeatureTourCard(props: { title: string; body: string; points: string[] }) {
+  return (
+    <Card>
+      <h2 className="font-display text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        {props.title}
+      </h2>
+      <p className="mt-2 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        {props.body}
+      </p>
+      <ul className="mt-4 space-y-2">
+        {props.points.map((p) => (
+          <li key={p} className="flex gap-2 text-sm text-slate-700 dark:text-slate-200">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" aria-hidden />
+            <span className="leading-relaxed">{p}</span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/**
+ * The tour on its own, for reviewing it without creating an account.
+ *
+ * Reachable at /tour (or ?tour / #tour) in the same way /demo is. main.tsx skips
+ * analytics init entirely on this route, so walking the preview cannot fire tour
+ * events into PostHog or pollute the funnel with a fake signup. It also touches no
+ * localStorage: nothing here marks the tour done or any surface visited.
+ */
+export function TourPreview() {
+  const params = new URLSearchParams(window.location.search);
+  const [open, setOpen] = useState(!params.has("intros"));
+  // ?step=N jumps straight to a step, so a specific beat can be reviewed or linked
+  // without clicking through the whole thing.
+  const initialStep = Number(params.get("step") || "0");
+  return open ? (
+    <ProductTour
+      initialStep={Number.isFinite(initialStep) ? initialStep : 0}
+      onSkip={() => setOpen(false)}
+      onStartRep={() => setOpen(false)}
+    />
+  ) : (
+    <IntroPreview onReplay={() => setOpen(true)} />
+  );
+}
+
+/**
+ * The other half of onboarding: the one-time card that greets a student the first
+ * time they open each surface, and the nav dots that point them there.
+ *
+ * These normally only appear for a signed-in account on a genuine first visit, so
+ * this is the only way to review the copy without making an account and burning
+ * the real first-visit state.
+ */
+function IntroPreview(props: { onReplay: () => void }) {
+  const [dismissed, setDismissed] = useState<Surface[]>([]);
+  const order: Surface[] = ["course", "flashcards", "blitz", "tips", "faq", "home"];
+  const label: Record<Surface, string> = {
+    course: "Study",
+    flashcards: "Flashcards",
+    blitz: "Mastery Blitz",
+    tips: "Tips",
+    faq: "FAQ",
+    home: "Home",
+  };
+
+  return (
+    <div className="mx-auto max-w-3xl px-5 py-10">
+      <Eyebrow>Onboarding preview</Eyebrow>
+      <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        First-visit cards
+      </h1>
+      <p className="mt-2 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        Each of these appears once, at the top of its page, the first time a signed-in student
+        opens it. Dismissing one clears that page's nav dot for good. Nothing here writes to
+        storage — dismissing below only affects this preview.
+      </p>
+
+      {/* The nav as a new account sees it: a dot on everything unopened. */}
+      <div className="mt-6 flex flex-wrap items-center gap-5 rounded-xl border border-slate-200 bg-white px-5 py-3.5 dark:border-slate-800 dark:bg-slate-900">
+        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Home</span>
+        {(["course", "flashcards", "tips", "faq"] as Surface[]).map((s) => (
+          <span key={s} className="text-sm font-medium text-slate-600 dark:text-slate-300">
+            {label[s]}
+            {!dismissed.includes(s) && <NavDot />}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-6 space-y-5">
+        {order.map((s) => (
+          <div key={s}>
+            <p className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+              {label[s]}
+              {dismissed.includes(s) && " · dismissed"}
+            </p>
+            {dismissed.includes(s) ? (
+              <p className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
+                Card gone, dot cleared. This is what the page looks like from now on.
+              </p>
+            ) : (
+              <FeatureIntro
+                title={FEATURE_INTROS[s].title}
+                body={FEATURE_INTROS[s].body}
+                onDismiss={() => setDismissed((d) => [...d, s])}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8 flex flex-wrap gap-3">
+        <button className={BTN_PRIMARY} onClick={props.onReplay}>
+          Replay the tour
+        </button>
+        {dismissed.length > 0 && (
+          <button className={BTN_SECONDARY} onClick={() => setDismissed([])}>
+            Reset cards
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- brand / shell ---------------------------------------------------------
+
+function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, unvisited, onReplayTour }: {
   view: View;
   onView: (v: View) => void;
   onPractice: () => void;
@@ -1595,7 +2141,12 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
   onLogin?: () => void;
   onSignup?: () => void;
   onSignOut?: () => void;
+  // Marks nav items this account hasn't opened yet. Absent (signed out) = no dots.
+  unvisited?: (s: Surface) => boolean;
+  onReplayTour?: () => void;
 }) {
+  // A dot only when we have a visited-tracker AND the surface is still unseen.
+  const dot = (s: Surface) => (unvisited?.(s) ? <NavDot /> : null);
   // Below `md` the full nav can't fit a phone's width without overflowing (the
   // horizontal-scroll "bar"), so it collapses into a disclosure menu. The theme
   // toggle stays inline — it's a one-tap affordance students use constantly.
@@ -1629,10 +2180,10 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           )}
           {/* Study is open to everyone: browsing your event's path is the whole
               pitch for making an account, so gating it behind one is backwards. */}
-          <NavLink active={view === "course"} onClick={() => onView("course")}>Study</NavLink>
-          {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Flashcards</NavLink>}
-          <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips</NavLink>
-          <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ</NavLink>
+          <NavLink active={view === "course"} onClick={() => onView("course")}>Study{dot("course")}</NavLink>
+          {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Flashcards{dot("flashcards")}</NavLink>}
+          <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips{dot("tips")}</NavLink>
+          <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ{dot("faq")}</NavLink>
           <button
             onClick={onFeedback}
             aria-label="Send feedback"
@@ -1642,7 +2193,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
             <span>Feedback</span>
           </button>
           {authReady && (userEmail ? (
-            <AccountMenu email={userEmail} onSignOut={onSignOut} />
+            <AccountMenu email={userEmail} onSignOut={onSignOut} onReplayTour={onReplayTour} />
           ) : (
             <div className="flex items-center gap-3">
               <button
@@ -1688,13 +2239,16 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
             ) : (
               <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
             )}
-            <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study</MobileNavItem>
-            {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Flashcards</MobileNavItem>}
-            <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips</MobileNavItem>
-            <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ</MobileNavItem>
+            <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study{dot("course")}</MobileNavItem>
+            {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Flashcards{dot("flashcards")}</MobileNavItem>}
+            <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips{dot("tips")}</MobileNavItem>
+            <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ{dot("faq")}</MobileNavItem>
             <MobileNavItem active={false} onClick={pick(onFeedback)}>💬 Feedback</MobileNavItem>
             {authReady && (userEmail ? (
               <>
+                {onReplayTour && (
+                  <MobileNavItem active={false} onClick={pick(onReplayTour)}>Replay the tour</MobileNavItem>
+                )}
                 <div className="mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400">{userEmail}</div>
                 <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
               </>
@@ -1724,7 +2278,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
 // Small account control shown when signed in: the email initial, opening a menu
 // with the address and a sign-out. (A "Home" entry is added once the logged-in
 // home page exists.)
-function AccountMenu({ email, onSignOut, onHome }: { email: string; onSignOut?: () => void; onHome?: () => void }) {
+function AccountMenu({ email, onSignOut, onHome, onReplayTour }: { email: string; onSignOut?: () => void; onHome?: () => void; onReplayTour?: () => void }) {
   const [open, setOpen] = useState(false);
   const initial = (email[0] || "?").toUpperCase();
   useEffect(() => {
@@ -1751,6 +2305,14 @@ function AccountMenu({ email, onSignOut, onHome }: { email: string; onSignOut?: 
               className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Home
+            </button>
+          )}
+          {onReplayTour && (
+            <button
+              onClick={() => { setOpen(false); onReplayTour(); }}
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Replay the tour
             </button>
           )}
           <button
@@ -2951,7 +3513,7 @@ function ScorePill({ label, value, weight }: { label: string; value: number; wei
   );
 }
 
-type FeedbackTab = "overview" | "transcript" | "delivery" | "video" | "analysis" | "criteria";
+type FeedbackTab = "overview" | "transcript" | "delivery" | "video" | "analysis" | "criteria" | "scenario";
 
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
@@ -2970,6 +3532,9 @@ function FeedbackScreen(props: {
   priorSnapshot?: RunSnapshot | null;
   loggedIn?: boolean;
   onSignIn?: () => void;
+  // Optional controlled tab, so the product tour can step through the tabs. Left
+  // undefined everywhere else, in which case the screen owns its own tab as before.
+  tab?: FeedbackTab;
 }) {
   const { score } = props;
   const marks = buildMarks(score.scores);
@@ -2980,8 +3545,10 @@ function FeedbackScreen(props: {
   // analysis + 15% presentation) directly, plus each section's own percentage.
   const pct = score.overall_percent;
   const level = score.overall_level;
-  const [tab, setTab] = useState<FeedbackTab>("overview");
+  const [ownTab, setTab] = useState<FeedbackTab>("overview");
+  const tab = props.tab ?? ownTab; // controlled only when the tour drives it
   const [activeMark, setActiveMark] = useState<string | null>(null);
+  const [showCard, setShowCard] = useState(false);
 
   const tabs = [
     { key: "overview", label: "Overview" },
@@ -2992,6 +3559,9 @@ function FeedbackScreen(props: {
     ...(props.video ? [{ key: "video", label: "Video", badge: "Beta" }] : []),
     { key: "analysis", label: "Analysis" },
     { key: "criteria", label: "Indicators", badge: `${score.total_points}/${score.max_points}` },
+    // The situation they just answered. Feedback is unreadable without the prompt
+    // in front of you, and the scenario is already in state here — no refetch.
+    { key: "scenario", label: "Scenario" },
   ];
 
   return (
@@ -3018,11 +3588,22 @@ function FeedbackScreen(props: {
             and presentation (15%){props.delivery ? ", blending your voice delivery into presentation" : ""}.
             Practice coaching, not an official competition score.
           </p>
+          <button
+            onClick={() => setShowCard(true)}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-950/70"
+          >
+            <BrandMark size={16} />
+            Challenge a friend
+          </button>
           <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
             <LevelLegend />
           </div>
         </Card>
       </div>
+
+      {showCard && (
+        <GauntletCardModal scenario={props.scenario} score={score} onClose={() => setShowCard(false)} />
+      )}
 
       <div className="mt-5 space-y-5 lg:mt-0">
         {props.priorSnapshot && (
@@ -3048,6 +3629,12 @@ function FeedbackScreen(props: {
         {tab === "delivery" && props.delivery && <DeliveryTab metrics={props.delivery} audioBlob={props.audioBlob} />}
         {tab === "video" && props.video && <VideoPanel metrics={props.video} />}
         {tab === "criteria" && <CriteriaTab scores={score.scores} />}
+        {tab === "scenario" && (
+          <div className="space-y-4">
+            <SituationSheet text={props.scenario.situation} />
+            <CoverSheet scenario={props.scenario} />
+          </div>
+        )}
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
           Your score weights <strong className="font-semibold text-slate-700 dark:text-slate-200">performance indicators</strong> (60%),

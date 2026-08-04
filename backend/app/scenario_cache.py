@@ -207,6 +207,31 @@ async def lookup(
         return None
 
 
+async def get_by_id(scenario_id: str) -> dict | None:
+    """Fetch one pooled scenario by id for a shared challenge link.
+
+    Unlike `lookup`, this bypasses the variety machinery entirely — no cache key,
+    no least-served ordering, no `seen` filter. Someone following a friend's
+    challenge must land on THAT role-play, even one they've already played.
+
+    Returns ``{"id": ..., "scenario": {...}}`` or None.
+    """
+    if not enabled():
+        return None
+    try:
+        row = await db.get_cached_scenario(scenario_id)
+    except httpx.HTTPError as exc:
+        log.warning("scenario by-id lookup failed: %s", exc)
+        return None
+    if not row:
+        return None
+    scenario = row.get("scenario_json")
+    if not isinstance(scenario, dict) or not scenario.get("situation"):
+        log.warning("challenge link hit a malformed scenario %s", scenario_id)
+        return None
+    return {"id": str(row["id"]), "scenario": scenario}
+
+
 async def record_served(scenario_id: str) -> None:
     """Bump a cached scenario's serve counter.
 

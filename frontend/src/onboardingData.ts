@@ -71,6 +71,7 @@ export const ONBOARDING_SCENARIO: ScenarioResponse = {
 Maya knows you've been learning about business, so she asks for your quick advice: how could she get more first-time buyers to become regulars, and how could she bring in customers beyond the morning rush, without just cutting her prices?
 
 Give Maya a short, friendly recommendation. You don't need a full plan, just a few clear, practical ideas she could actually try.`,
+  hook: "A coffee cart owns the 7am gym rush, sells nothing after noon, and never sees a customer twice.",
   followup_questions: [
     "Nice ideas. Of everything you suggested, what's the one thing you'd have Maya try first, and how would she know within a couple of weeks whether it's working?",
   ],

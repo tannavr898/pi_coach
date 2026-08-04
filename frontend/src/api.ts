@@ -84,6 +84,10 @@ export type ScenarioResponse = {
   criteria: Criterion[];
   procedures: string[];
   situation: string;
+  // One-sentence challenge framing of the situation — the headline on the shareable
+  // results card. Optional: scenarios pooled before this field existed have none, so
+  // the card falls back to `topic`.
+  hook?: string;
   followup_questions: string[];
   // Phase 3: the scenario-variety combination the backend sampled + injected
   // (null when the event has no taxonomy yet or a free-text focus was used).
@@ -332,6 +336,19 @@ export function postScenario(body: {
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+/**
+ * Fetch one pooled scenario by id — the shared-challenge deep link (?s=<id>).
+ *
+ * Serves that exact role-play regardless of what this browser has already seen,
+ * which is the point: a challenge is only fair if both people played the same one.
+ * Throws on 404 when the link is stale.
+ */
+export function getScenarioById(scenarioId: string, mode: Mode): Promise<ScenarioResponse> {
+  return request<ScenarioResponse>(
+    `/api/scenario/${encodeURIComponent(scenarioId)}?mode=${encodeURIComponent(mode)}`,
+  );
 }
 
 export function postScore(body: {

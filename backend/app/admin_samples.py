@@ -65,6 +65,7 @@ def _scenario(topic: str, event: str) -> ScenarioResponse:
         criteria=_CRITERIA,
         procedures=["Prep, then present your recommendation.", "The judge asks a follow-up."],
         situation=f"Sample scenario for QA: {topic}. (Generated for the admin preview — not a real role-play.)",
+        hook=f"Sample hook for QA: {topic.lower()} — the share card headlines with this line.",
         followup_questions=["What would you try first, and how would you know it worked?"],
     )
 

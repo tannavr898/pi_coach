@@ -10,9 +10,10 @@
 
 import { useEffect, useState } from "react";
 import { getDomains, type DomainSummary } from "./api";
-import { getProgress, getSessions, type ProgressResponse, type SessionSummary } from "./progress";
+import { getMyCourse, getProgress, getSessions, type Course, type ProgressResponse, type SessionSummary } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 import { ChartFrame, SkillRadar, TrendLine, VolumeBars } from "./charts";
+import { track } from "./analytics";
 
 function fmtDate(iso: string): string {
   try {
@@ -56,15 +57,20 @@ export function HomePage(props: {
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
   const [domains, setDomains] = useState<DomainSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // The event they're studying for, if they've enrolled in a course. Drives the
+  // radar filter — 404 just means "hasn't picked one", which is not an error.
+  const [course, setCourse] = useState<Course | null>(null);
+  const [radarScope, setRadarScope] = useState<"event" | "all">("event");
 
   useEffect(() => {
     let active = true;
-    Promise.all([getProgress(), getSessions(), getDomains()])
-      .then(([p, s, d]) => {
+    Promise.all([getProgress(), getSessions(), getDomains(), getMyCourse().catch(() => null)])
+      .then(([p, s, d, c]) => {
         if (!active) return;
         setProgress(p);
         setSessions(s);
         setDomains(d);
+        setCourse(c);
       })
       .catch((e) => {
         if (active) setError(e instanceof Error ? e.message : String(e));
@@ -80,10 +86,19 @@ export function HomePage(props: {
   const count = progress?.sessions_count ?? 0;
   const mastery = progress?.criterion_mastery ?? [];
 
-  // Skill radar = the 13 domains. Each domain's value is the average mastery rank
-  // (0 Novice → 3 Exemplary) of the criteria you've been graded on in it; domains
-  // you haven't touched sit at 0 — the "fill in your skills" view.
-  const radarData = domains.map((d) => {
+  // The domains this student's event is actually graded on. A course's units are
+  // grouped by domain, so the distinct domain_ids across them ARE the event's set,
+  // already in priority order. Empty when they haven't enrolled in a course.
+  const eventDomainIds = course ? [...new Set(course.units.map((u) => u.domain_id))] : [];
+  const canFilter = eventDomainIds.length >= 3; // fewer spokes than that isn't a radar
+  const filtered = canFilter && radarScope === "event";
+  const shownDomains = filtered ? domains.filter((d) => eventDomainIds.includes(d.id)) : domains;
+
+  // Skill radar. Each domain's value is the average mastery rank (0 Novice →
+  // 3 Exemplary) of the criteria you've been graded on in it; domains you haven't
+  // touched sit at 0 — the "fill in your skills" view. Note the join is on domain
+  // NAME: CriterionMastery carries the display name, not the id.
+  const radarData = shownDomains.map((d) => {
     const crits = mastery.filter((m) => m.domain === d.name);
     const value = crits.length ? crits.reduce((s, m) => s + m.avg_rank, 0) / crits.length : 0;
     return { label: d.name, value };
@@ -130,7 +145,35 @@ export function HomePage(props: {
       <div className="grid gap-5 lg:grid-cols-3">
         {/* 2: Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
         <Card className="lg:col-span-2">
-          <ChartFrame title="Your skills across the 13 domains" hint="Higher is stronger: 0 Novice → 3 Exemplary, averaged over the criteria you've been graded on in each domain.">
+          {canFilter && (
+            <div className="mb-3 flex flex-wrap items-center justify-end gap-1.5">
+              <span className="mr-auto font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                Showing
+              </span>
+              {(["event", "all"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setRadarScope(s); track("radar_filter_changed", { scope: s }); }}
+                  aria-pressed={radarScope === s}
+                  className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                    radarScope === s
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {s === "event" ? course?.event ?? "My event" : "All domains"}
+                </button>
+              ))}
+            </div>
+          )}
+          <ChartFrame
+            title={filtered ? `Your skills for ${course?.event}` : `Your skills across the ${domains.length || 13} domains`}
+            hint={
+              filtered
+                ? `Only the ${radarData.length} domains this event is graded on. Higher is stronger: 0 Novice → 3 Exemplary.`
+                : "Higher is stronger: 0 Novice → 3 Exemplary, averaged over the criteria you've been graded on in each domain."
+            }
+          >
             {radarData.length >= 3 && count > 0 ? (
               <div className="grid items-center gap-6 sm:grid-cols-[1.4fr_1fr]">
                 <SkillRadar data={radarData} max={3} />
@@ -152,7 +195,10 @@ export function HomePage(props: {
             )}
           </ChartFrame>
           {practicedDomains > 0 && (
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">You've touched {practicedDomains} of {domains.length || 13} domains. Spokes at 0 are ones you haven't practiced yet.</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              You've touched {practicedDomains} of {radarData.length || domains.length || 13}{" "}
+              {filtered ? "domains this event grades" : "domains"}. Spokes at 0 are ones you haven't practiced yet.
+            </p>
           )}
 
           {weak && (

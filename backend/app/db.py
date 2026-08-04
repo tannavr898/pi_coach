@@ -196,6 +196,21 @@ async def list_cached_scenarios(cache_key: str, *, limit: int = 25) -> list[dict
     return resp.json()
 
 
+async def get_cached_scenario(scenario_id: str) -> dict | None:
+    """One pooled scenario by id, for the shared-challenge deep link.
+
+    Deliberately ignores cache_key, times_served and the per-user `seen` filter:
+    the whole point of a challenge link is to serve THAT scenario to whoever
+    opens it, including someone who has already played it.
+    """
+    params = {"id": f"eq.{scenario_id}", "select": CACHED_SELECT, "limit": "1"}
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_base()}/cached_scenario", headers=_headers(), params=params)
+    resp.raise_for_status()
+    rows = resp.json()
+    return rows[0] if rows else None
+
+
 async def count_cached_scenarios(cache_key: str) -> int:
     """How many scenarios are already pooled under this key (for the per-key cap)."""
     params = {"cache_key": f"eq.{cache_key}", "select": "id", "limit": "1"}

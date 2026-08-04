@@ -22,6 +22,23 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
   );
 }
 
+// The bullseye wordmark. Concentric target = "hit the mark" — practice until you
+// nail it. Lives here rather than in App.tsx because the share card renders it too,
+// and the card must not import from App.tsx (see the note at the top of this file).
+//
+// Export-safe on purpose: literal hex fills (no `currentColor`, no CSS variables)
+// and explicit width/height alongside the viewBox. Those are exactly the properties
+// html-to-image needs to serialize an inline SVG into the exported PNG.
+export function BrandMark({ size = 30 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden className="shrink-0">
+      <circle cx="16" cy="16" r="14.5" fill="none" stroke="#c7d2fe" strokeWidth="2.5" />
+      <circle cx="16" cy="16" r="9" fill="none" stroke="#818cf8" strokeWidth="2.5" />
+      <circle cx="16" cy="16" r="3.5" fill="#4f46e5" />
+    </svg>
+  );
+}
+
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-500">{children}</p>

@@ -194,7 +194,8 @@ def build_scenario_prompt(
     event: dict | None = None,
     params: dict[str, str] | None = None,
 ) -> tuple[str, str]:
-    """Build the (system, user) messages: select 4-6 criteria and write the scenario.
+    """Build the (system, user) messages: select 4-6 criteria, write the scenario,
+    and write the one-line share-card `hook`.
 
     When `params` (a sampled taxonomy combination) is given, the scenario is pinned
     to that specific setup via a fixed-parameters block; otherwise we fall back to
@@ -254,6 +255,19 @@ Return a JSON object with EXACTLY these keys:
      who plays a named counterpart and will ask follow-up questions. Plain prose,
      2-3 short paragraphs. Do NOT include the criteria list, procedures, or anything
      addressed to the judge.",
+  "hook": "A single punchy CHALLENGE framing of this scenario. HARD LIMIT 20 words —
+     aim for 12-16. Count them before you answer. Present tense, third person, about
+     the BUSINESS, never the participant. Name the company and ONE concrete pressure:
+     a single number or stake, NOT a list of them. Leaving detail out is the whole
+     point — this is bait on a share card, it must make a stranger want to attempt
+     this role-play, not brief them on it. Do NOT describe the participant's role or
+     task, do NOT use 'you', do NOT ask a question, do NOT trail off. One sentence,
+     one clause of tension, ending in a period.
+     GOOD (17 words): 'A regional coffee chain just lost 18% of its foot traffic to a
+     new competitor three blocks away.'
+     TOO LONG — never do this (26 words, three separate figures): 'Ironveil Bindery
+     has $9,200 in the bank, $19,400 due in eight days, and $22,000 locked in a
+     receivable that will not arrive for 38 more days.'",
   "followup_questions": ["Two questions the judge asks AFTER the presentation.
      Ground them in THIS scenario and the selected criteria (a trade-off, a risk,
      how they'd measure success, an alternative they should have weighed). CRITICAL:

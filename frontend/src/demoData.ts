@@ -112,6 +112,7 @@ export const DEMO_SCENARIO: ScenarioResponse = {
 The owner, Dana Okafor, wants a plan to turn more one-time buyers into repeat customers and to lift traffic in the slow 3-to-5pm window, without simply slashing prices across the board. Dana cares about the brand feeling fresh and local, and is open to using the FreshBlend mobile app more aggressively.
 
 You will present your recommendation to Dana, who will play the role of the owner and ask you two follow-up questions at the end.`,
+  hook: "A nine-store smoothie chain packs its mornings, dies by 3pm, and loses most first-time buyers forever.",
   followup_questions: [
     "A tiered loyalty program adds operating cost. How would you make sure the rewards don't erode the margin you're trying to protect?",
     "If the three-store pilot showed only a small lift in repeat visits, how would you decide whether to roll out, adjust, or stop?",
