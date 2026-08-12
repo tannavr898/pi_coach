@@ -8,7 +8,7 @@
 import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "./supabase";
-import { track } from "./analytics";
+import { identifyUser, resetIdentity, track } from "./analytics";
 import { BTN_PRIMARY } from "./ui";
 
 type AuthResult = { error?: string; needsConfirmation?: boolean };
@@ -42,11 +42,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setReady(true);
       sb.auth.getSession().then(({ data }) => {
         if (!active) return;
-        setUser(data.session?.user ?? null);
+        const u = data.session?.user ?? null;
+        setUser(u);
+        if (u) identifyUser(u.id);
         setLoading(false);
       });
       const { data } = sb.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
+        const u = session?.user ?? null;
+        setUser(u);
+        // Covers sign-in, a sign-up that returns a session, token refresh, and a
+        // session restored on reload. identify is idempotent, so re-calling with
+        // the same id costs nothing. Sign-out is handled in signOut() below —
+        // resetting here would also fire on transient null sessions.
+        if (u) identifyUser(u.id);
       });
       unsub = () => data.subscription.unsubscribe();
     });
@@ -81,6 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const sb = await getSupabase();
     await sb?.auth.signOut();
     track("auth_signed_out", {});
+    // After the event, so it's still attributed to the person who signed out.
+    resetIdentity();
   };
 
   return <Ctx.Provider value={{ ready, loading, user, signUp, signIn, signOut }}>{children}</Ctx.Provider>;

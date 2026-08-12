@@ -5414,6 +5414,18 @@ function FAQPage({ onStart }: { onStart: () => void }) {
             covers timing only (pace, fillers, pauses), never tone, confidence, accent, or “charisma.”
           </p>
         </FAQItem>
+        <FAQItem q="Do you record my screen?">
+          <p>
+            We record session replays — how people move through the app, so we can find where it gets confusing. A
+            replay captures clicks, scrolling, and timing.
+          </p>
+          <p>
+            <strong className="font-semibold text-slate-800 dark:text-slate-200">All text is masked in your browser before anything is sent.</strong>{" "}
+            That means a replay shows the layout and where you clicked, never your response, your transcript, the
+            scenario, or your feedback. The same rule as everywhere else here: the words you write stay between you and
+            the grader.
+          </p>
+        </FAQItem>
       </FAQGroup>
 
       <FAQGroup title="How we're different">
