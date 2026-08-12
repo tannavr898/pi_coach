@@ -1359,6 +1359,11 @@ export default function App() {
                 onStudyCriteria={(ids) => setFlashcard({ ids })}
                 priorSnapshot={priorSnapshot}
                 loggedIn={!!authUser}
+                // Only ask when there's an account to create: `authReady` false
+                // means Supabase isn't configured for this deployment.
+                promptSource={
+                  authReady && !authUser ? (onboarding ? "two_min_rep_score" : "roleplay_score") : undefined
+                }
                 onSignIn={() => openAuth("signup", "Want to see if you improve next time? Create an account to track your progress.")}
               />
             )}
@@ -3747,6 +3752,103 @@ function ScorePill({ label, value, weight }: { label: string; value: number; wei
 
 type FeedbackTab = "overview" | "transcript" | "delivery" | "video" | "analysis" | "criteria" | "scenario";
 
+// How long on the score screen counts as "they've read it". Long enough that it
+// can't land while they're still taking in the number, short enough to catch
+// someone who reads the rail and never scrolls.
+const SIGNUP_PROMPT_DWELL_MS = 20000;
+
+// The shortest the prompt can ever wait, even when they scroll straight to the
+// bottom. Without a floor, a short feedback screen on a tall monitor would have
+// the sentinel already in view at mount and the modal would land on top of the
+// score itself.
+const SIGNUP_PROMPT_FLOOR_MS = 5000;
+
+// Session-scoped, following the sessionStorage convention in blitz.tsx: a "maybe
+// later" is an answer, and re-asking it on every rep in a sitting is how a
+// prompt becomes noise. A new tab is a new session, so it can ask again then.
+const SIGNUP_PROMPT_KEY = "pic-signup-prompt-dismissed";
+
+function signupPromptDismissed(): boolean {
+  try {
+    return sessionStorage.getItem(SIGNUP_PROMPT_KEY) === "1";
+  } catch {
+    return false; // private mode — the prompt just isn't sticky across reloads
+  }
+}
+
+function rememberSignupPromptDismissed(): void {
+  try {
+    sessionStorage.setItem(SIGNUP_PROMPT_KEY, "1");
+  } catch {
+    /* private mode — worst case it can ask again after a reload */
+  }
+}
+
+// The one blocking moment in the product, and deliberately so: it appears only
+// after a real score AND after they've read the feedback, and it gates nothing —
+// everything behind it has already been seen and stays readable on dismiss.
+// Escape and a backdrop click both dismiss, so it can't become a trap.
+function SignupPromptModal({ onSignup, onDismiss }: { onSignup: () => void; onDismiss: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Focus trap + restore, matching MasteryBlitz (blitz.tsx:195-214) — the most
+  // complete dialog a11y in the codebase.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    const prev = document.activeElement as HTMLElement | null;
+    node.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); dismissRef.current(); return; }
+      if (e.key !== "Tab") return;
+      const f = node.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      );
+      if (f.length === 0) { e.preventDefault(); node.focus(); return; }
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      onClick={onDismiss}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="signup-prompt-title"
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2
+          id="signup-prompt-title"
+          className="font-display text-lg font-semibold leading-snug text-slate-900 dark:text-slate-100"
+        >
+          Save this and track your delivery over time — see if you're actually improving.
+        </h2>
+        <button className={`mt-5 w-full ${BTN_PRIMARY}`} onClick={onSignup}>
+          Create free account
+        </button>
+        <button
+          onClick={onDismiss}
+          className="mt-3 w-full rounded-xl px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          Maybe later
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
   score: ScoreResponse;
@@ -3764,6 +3866,11 @@ function FeedbackScreen(props: {
   priorSnapshot?: RunSnapshot | null;
   loggedIn?: boolean;
   onSignIn?: () => void;
+  // Set only when a signup prompt is actually warranted: signed out AND accounts
+  // are configured. Carrying eligibility on the same prop as the source keeps the
+  // screen from having to know about `authReady` at all — undefined means "don't
+  // ask", which is also the right answer for the tour and the demo.
+  promptSource?: "two_min_rep_score" | "roleplay_score";
   // Optional controlled tab, so the product tour can step through the tabs. Left
   // undefined everywhere else, in which case the screen owns its own tab as before.
   tab?: FeedbackTab;
@@ -3781,6 +3888,44 @@ function FeedbackScreen(props: {
   const tab = props.tab ?? ownTab; // controlled only when the tour drives it
   const [activeMark, setActiveMark] = useState<string | null>(null);
   const [showCard, setShowCard] = useState(false);
+
+  // --- post-score signup prompt -------------------------------------------
+  // Held back until they've actually read something, never shown before the
+  // score. Two independent triggers, whichever comes first: reaching the bottom
+  // of the feedback, or simply dwelling here long enough to have read it. The
+  // scroll sentinel alone would miss anyone who reads the score rail and stops;
+  // the timer alone would interrupt a fast scroller mid-scroll.
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [reachedBottom, setReachedBottom] = useState(false);
+  const promptFiredRef = useRef(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const mountedAtRef = useRef(Date.now());
+  const source = props.promptSource;
+
+  function openPrompt() {
+    if (promptFiredRef.current || !source) return;
+    // A dismissal is remembered for the session: someone working through three
+    // reps in a sitting has already answered this question once.
+    if (signupPromptDismissed()) return;
+    promptFiredRef.current = true;
+    setPromptOpen(true);
+    track("signup_prompt_shown", { source });
+  }
+
+  useInView(bottomRef, () => setReachedBottom(true), { rootMargin: "0px 0px -10% 0px" });
+
+  // Reaching the end of the feedback is the strong signal and shortens the wait,
+  // but it never skips the floor: on a tall viewport the bottom sentinel can
+  // already be in view at mount, and the prompt must never land at the same
+  // instant as the score. Measured from mount, so reaching the bottom late
+  // fires immediately rather than restarting a countdown.
+  useEffect(() => {
+    if (!source) return;
+    const target = reachedBottom ? SIGNUP_PROMPT_FLOOR_MS : SIGNUP_PROMPT_DWELL_MS;
+    const t = window.setTimeout(openPrompt, Math.max(0, target - (Date.now() - mountedAtRef.current)));
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, reachedBottom]);
 
   const tabs = [
     { key: "overview", label: "Overview" },
@@ -3921,7 +4066,26 @@ function FeedbackScreen(props: {
             📇 Study {weakIds.length > 0 ? "your weak criteria" : "these criteria"} →
           </button>
         )}
+
+        {/* Scroll sentinel: reaching it means they read to the end of the
+            feedback. Zero-height so it changes no layout. */}
+        <div ref={bottomRef} aria-hidden="true" />
       </div>
+
+      {promptOpen && source && (
+        <SignupPromptModal
+          onSignup={() => {
+            track("signup_prompt_clicked", { source });
+            setPromptOpen(false);
+            props.onSignIn?.();
+          }}
+          onDismiss={() => {
+            track("signup_prompt_dismissed", { source });
+            rememberSignupPromptDismissed();
+            setPromptOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
