@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-17T15:13:18.401Z",
+  "title": "Design System: PI Coach",
+  "extensions": {
+    "colorMeta": {
+      "indigo-primary": {
+        "role": "primary",
+        "displayName": "Signal Indigo",
+        "canonical": "#4f46e5",
+        "tonalRamp": [
+          "#312e81",
+          "#3730a3",
+          "#4338ca",
+          "#4f46e5",
+          "#6366f1",
+          "#818cf8",
+          "#a5b4fc",
+          "#c7d2fe"
+        ]
+      },
+      "indigo-accent": {
+        "role": "primary",
+        "displayName": "Accent Indigo",
+        "canonical": "#6366f1",
+        "tonalRamp": [
+          "#3730a3",
+          "#4338ca",
+          "#4f46e5",
+          "#6366f1",
+          "#818cf8",
+          "#a5b4fc",
+          "#c7d2fe",
+          "#e0e7ff"
+        ]
+      },
+      "canvas-light": {
+        "role": "neutral",
+        "displayName": "Slate Canvas",
+        "canonical": "#f6f7fb",
+        "tonalRamp": [
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#64748b",
+          "#94a3b8",
+          "#cbd5e1",
+          "#e2e8f0",
+          "#f6f7fb"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Dark Surface",
+        "canonical": "#0f172a",
+        "tonalRamp": [
+          "#020617",
+          "#0a0f1f",
+          "#0f172a",
+          "#1e293b",
+          "#334155",
+          "#475569",
+          "#64748b",
+          "#94a3b8"
+        ]
+      },
+      "level-novice": {
+        "role": "tertiary",
+        "displayName": "Novice Red",
+        "canonical": "#ef4444",
+        "tonalRamp": [
+          "#7f1d1d",
+          "#991b1b",
+          "#b91c1c",
+          "#dc2626",
+          "#ef4444",
+          "#f87171",
+          "#fca5a5",
+          "#fecaca"
+        ]
+      },
+      "level-developing": {
+        "role": "tertiary",
+        "displayName": "Developing Amber",
+        "canonical": "#f59e0b",
+        "tonalRamp": [
+          "#78350f",
+          "#92400e",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fcd34d",
+          "#fde68a"
+        ]
+      },
+      "level-proficient": {
+        "role": "tertiary",
+        "displayName": "Proficient Sky",
+        "canonical": "#0ea5e9",
+        "tonalRamp": [
+          "#0c4a6e",
+          "#075985",
+          "#0369a1",
+          "#0284c7",
+          "#0ea5e9",
+          "#38bdf8",
+          "#7dd3fc",
+          "#bae6fd"
+        ]
+      },
+      "level-exemplary": {
+        "role": "tertiary",
+        "displayName": "Exemplary Emerald",
+        "canonical": "#10b981",
+        "tonalRamp": [
+          "#064e3b",
+          "#065f46",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#6ee7b7",
+          "#a7f3d0"
+        ]
+      },
+      "beat-answer": {
+        "role": "tertiary",
+        "displayName": "Answer Indigo (Beat 1)",
+        "canonical": "#4f46e5",
+        "note": "Four-beats set: state the recommendation. Same Signal Indigo.",
+        "tonalRamp": [
+          "#312e81",
+          "#3730a3",
+          "#4338ca",
+          "#4f46e5",
+          "#6366f1",
+          "#818cf8",
+          "#a5b4fc",
+          "#c7d2fe"
+        ]
+      },
+      "beat-explain": {
+        "role": "tertiary",
+        "displayName": "Explain Violet (Beat 2)",
+        "canonical": "#7c3aed",
+        "note": "Four-beats set: justify it. Solid only, never gradient, never on scoring.",
+        "tonalRamp": [
+          "#4c1d95",
+          "#5b21b6",
+          "#6d28d9",
+          "#7c3aed",
+          "#8b5cf6",
+          "#a78bfa",
+          "#c4b5fd",
+          "#ddd6fe"
+        ]
+      },
+      "beat-connect": {
+        "role": "tertiary",
+        "displayName": "Connect Fuchsia (Beat 3)",
+        "canonical": "#c026d3",
+        "note": "Four-beats set: tie it to the business. Highest-value beat; most saturated accent.",
+        "tonalRamp": [
+          "#701a75",
+          "#86198f",
+          "#a21caf",
+          "#c026d3",
+          "#d946ef",
+          "#e879f9",
+          "#f0abfc",
+          "#f5d0fe"
+        ]
+      },
+      "beat-above": {
+        "role": "tertiary",
+        "displayName": "Above Amber (Beat 4)",
+        "canonical": "#d97706",
+        "note": "Four-beats set: above and beyond. Distinct in context from Developing Amber; never share a surface.",
+        "tonalRamp": [
+          "#78350f",
+          "#92400e",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fcd34d",
+          "#fde68a"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero and top-of-screen H1 only. Space Grotesk, the one place fluid sizing is allowed."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section H2s. Space Grotesk, fixed scale."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Paragraphs and UI prose. Inter, 65–75ch cap."
+      },
+      "label": {
+        "displayName": "Label / Eyebrow",
+        "purpose": "Mono uppercase kickers and micro-labels. Ration these — not on every section."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "Big numeric data: rubric weights, percentages, pace."
+      },
+      "microlabel": {
+        "displayName": "Micro-label",
+        "purpose": "Dense mono data badges at 9-11px (most points, term index, Definition). Never for prose; kept at 600 weight to stay crisp."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-rest",
+        "value": "0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)",
+        "purpose": "Default soft seat under a light-mode surface."
+      },
+      {
+        "name": "card-lift",
+        "value": "0 6px 24px rgba(15,23,42,0.08)",
+        "purpose": "Hover/active only; pairs with a 2px upward translate."
+      },
+      {
+        "name": "hero-media",
+        "value": "0 20px 25px -5px rgba(99,102,241,0.10)",
+        "purpose": "The one indigo-tinted shadow, under the demo video."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-standard",
+        "value": "cubic-bezier(0.45, 0, 0.2, 1)",
+        "purpose": "Loader wave and reveals; exponential ease-out, no bounce."
+      },
+      {
+        "name": "duration-ui",
+        "value": "200ms",
+        "purpose": "Default state transition — hover, focus, tab switch."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce → crossfade or slow pulse",
+        "purpose": "Every animation needs this path; essential loaders keep a slow pulse, never freeze."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action per view — generate, submit, start.",
+      "html": "<button class=\"ds-btn-primary\">Ready to practice? →</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; background: #4f46e5; color: #fff; font: 600 0.875rem/1 Inter, sans-serif; padding: 0.625rem 1.25rem; border: none; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(15,23,42,0.08); cursor: pointer; transition: background 0.2s, transform 0.2s; } .ds-btn-primary:hover { background: #4338ca; } .ds-btn-primary:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The alternative action beside a primary.",
+      "html": "<button class=\"ds-btn-secondary\">Read the tips</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; color: #334155; font: 600 0.875rem/1 Inter, sans-serif; padding: 0.625rem 1.25rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 1px 2px rgba(15,23,42,0.06); cursor: pointer; transition: background 0.2s; } .ds-btn-secondary:hover { background: #f8fafc; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The raised task surface. Flat at rest, lifts on hover. Never nest cards.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Three steps, start to score</h3><p class=\"ds-card-body\">Prep against the clock, present it live, then read exactly where you stood.</p></div>",
+      "css": ".ds-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem; box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04); transition: box-shadow 0.2s, transform 0.2s; } .ds-card:hover { box-shadow: 0 6px 24px rgba(15,23,42,0.08); transform: translateY(-2px); } .ds-card-title { font: 600 1.0625rem/1.3 'Space Grotesk', sans-serif; color: #0f172a; margin: 0; } .ds-card-body { font: 400 0.9375rem/1.6 Inter, sans-serif; color: #475569; margin: 0.5rem 0 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Slate-bordered field; focus shifts to indigo with a soft ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"marketing for a restaurant\" />",
+      "css": ".ds-input { width: 100%; background: #fff; color: #0f172a; font: 400 0.875rem/1.5 Inter, sans-serif; padding: 0.75rem 1rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; box-shadow: 0 1px 2px rgba(15,23,42,0.06); outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: #64748b; } .ds-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 2px rgba(79,70,229,0.2); }"
+    },
+    {
+      "name": "Tab / Pill",
+      "kind": "chip",
+      "refersTo": "chip-tab",
+      "description": "Segmented control. Active inverts to Signal Indigo fill.",
+      "html": "<div class=\"ds-tabs\"><button class=\"ds-tab ds-tab-on\">Competition</button><button class=\"ds-tab\">Learn</button></div>",
+      "css": ".ds-tabs { display: inline-flex; gap: 0.5rem; } .ds-tab { background: #fff; color: #475569; font: 500 0.875rem/1 Inter, sans-serif; padding: 0.375rem 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; cursor: pointer; transition: background 0.2s; } .ds-tab:hover { background: #f8fafc; } .ds-tab-on { background: #4f46e5; border-color: #4f46e5; color: #fff; }"
+    },
+    {
+      "name": "Eyebrow / Kicker",
+      "kind": "custom",
+      "refersTo": "eyebrow",
+      "description": "Mono uppercase micro-label. Signature but rationed — not above every section.",
+      "html": "<p class=\"ds-eyebrow\">How it works</p>",
+      "css": ".ds-eyebrow { font: 500 0.6875rem/1.4 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.18em; color: #6366f1; margin: 0; }"
+    },
+    {
+      "name": "Level Badge",
+      "kind": "chip",
+      "refersTo": "level-badge",
+      "description": "Scoring band chip from the diverging ramp. Green means earned.",
+      "html": "<span class=\"ds-level ds-level-proficient\">Proficient</span>",
+      "css": ".ds-level { display: inline-block; font: 500 0.6875rem/1.4 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.125rem 0.5rem; border-radius: 0.5rem; } .ds-level-proficient { background: #e0f2fe; color: #075985; }"
+    },
+    {
+      "name": "Breathing Target Loader",
+      "kind": "custom",
+      "refersTo": "loader",
+      "description": "Concentric indigo rings pulsing outward around a center dot — the brand mark in motion. Keeps a slow pulse under reduced-motion.",
+      "html": "<div class=\"ds-loader\" role=\"status\" aria-label=\"Loading\"><span class=\"ds-loader-ring\"></span><span class=\"ds-loader-ring\"></span><span class=\"ds-loader-dot\"></span></div>",
+      "css": ".ds-loader { position: relative; width: 64px; height: 64px; display: grid; place-items: center; } .ds-loader-ring { position: absolute; border-radius: 9999px; border: 2px solid rgba(99,102,241,0.35); animation: ds-wave 2.8s cubic-bezier(0.45,0,0.2,1) infinite; } .ds-loader-ring:nth-child(1) { inset: 0; } .ds-loader-ring:nth-child(2) { inset: 12px; animation-delay: 0.15s; } .ds-loader-dot { width: 12px; height: 12px; border-radius: 9999px; background: #4f46e5; box-shadow: 0 0 10px 2px rgba(79,70,229,0.55); animation: ds-wave-dot 2.8s cubic-bezier(0.45,0,0.2,1) infinite; } @keyframes ds-wave { 0%,100% { transform: scale(1); } 50% { transform: scale(0.68); } } @keyframes ds-wave-dot { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } } @media (prefers-reduced-motion: reduce) { .ds-loader-ring, .ds-loader-dot { animation-duration: 2.8s; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Competition Floor",
+    "overview": "PI Coach is where a DECA competitor rehearses the room before they're in it, so the interface carries the focus of game day without its dread. The feel is supportive, sharp, modern: a coach in the student's corner who is also exact enough to be believed. Indigo is the signal color against a cool slate canvas that stays quiet so the task can be loud. The system is built between two poles it refuses to become — not gamified or cartoonish, and not clinical exam software. Warmth comes from copy, spacing, and a coach's voice; sharpness from a precise type scale, a monospace data language, and an honest four-level scoring ramp.",
+    "keyCharacteristics": [
+      "Indigo as a rationed signal on a cool slate canvas; color means status, never garnish.",
+      "One type system, three voices: Space Grotesk (display), Inter (text), JetBrains Mono (data/labels).",
+      "A diverging four-level scoring ramp (red → amber → sky → emerald) reserved for real assessment.",
+      "Flat by default, a gentle lift on hover; dark mode drops shadows for tonal layering.",
+      "Full light/dark parity; every animation has a reduced-motion path."
+    ],
+    "rules": [
+      {
+        "name": "The Rationed Indigo Rule",
+        "body": "Signal Indigo marks at most one primary action per view. If two things on a screen are indigo-filled, one is lying about its importance.",
+        "section": "colors"
+      },
+      {
+        "name": "The Earned-Green Rule",
+        "body": "The scoring ramp is the only place saturated red/amber/sky/emerald appear. Never borrow those hues for decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Fixed-Scale Rule",
+        "body": "Outside the hero H1, type is a fixed rem scale, not fluid clamps.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono-Means-Data Rule",
+        "body": "JetBrains Mono is reserved for numeric data and system labels. Never set prose or buttons in mono for flavor.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest; a shadow appears only in response to hover, focus, or elevation.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Shadowless-Dark Rule",
+        "body": "In dark mode, no drop shadows. Separate layers by surface tone and hairline borders.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do ration Signal Indigo (#4f46e5) to one primary action per view; use Accent Indigo for smaller emphasis.",
+      "Do keep the scoring ramp (red → amber → sky → emerald) exclusively for assessment, so green always means earned.",
+      "Do set every score, weight, timer, and kicker in JetBrains Mono; keep prose in Inter and headings in Space Grotesk.",
+      "Do keep body text at Body Slate (#475569) or darker — it must clear 4.5:1 on canvas and surface.",
+      "Do let surfaces sit flat and lift only on hover/focus; in dark mode separate layers by tone, not shadow.",
+      "Do give every animation a prefers-reduced-motion path, never a hard freeze on essential feedback.",
+      "Do vary section rhythm around an 8rem base so the page feels hand-paced, not stamped."
+    ],
+    "donts": [
+      "Don't use gradient text or gradient-filled buttons. Emphasis comes from weight, size, and a single solid Signal Indigo.",
+      "Don't stamp a mono uppercase eyebrow above every section. One deliberate kicker is voice; an eyebrow on every heading is AI grammar.",
+      "Don't ship identical card grids — same-size number/icon + heading + text repeated in a rigid grid-cols-3.",
+      "Don't drift gamified or cartoonish: no mascots, confetti, badge-grinding, or playful blobs.",
+      "Don't drift clinical or sterile: no standardized-test grays or proctoring-tool coldness.",
+      "Don't borrow the scoring hues for decoration, or use Novice Red / Exemplary Emerald as generic error/success garnish.",
+      "Don't nest a card inside a card, ever.",
+      "Don't use border-left/border-right greater than 1px as a colored accent stripe."
+    ]
+  }
+}

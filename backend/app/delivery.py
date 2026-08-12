@@ -48,6 +48,145 @@ def _norm(text: str) -> str:
     return re.sub(r"^[^\w]+|[^\w]+$", "", text.lower())
 
 
+def _clamp(v: float, lo: float = 0, hi: float = 100) -> int:
+    return int(round(max(lo, min(hi, v))))
+
+
+def delivery_score(
+    pace_flag: str,
+    filler_per_min: float,
+    long_pause_count: int,
+    time_flag: str,
+    reading_signal: bool,
+) -> tuple[int, list[dict]]:
+    """A deterministic 0-100 delivery score with a component breakdown.
+
+    Built only from timing/fluency facts (never tone or confidence). Returns
+    (score, components) where each component is {label, score, hint}. This feeds
+    both the Delivery tab and the blended overall score.
+    """
+    pace = 100 if pace_flag == "good" else 58
+    fluency = _clamp(100 - filler_per_min * 12)          # ~0/min=100, 2.5=70, 5=40
+    flow = _clamp(100 - long_pause_count * 20)            # each 3s+ pause costs 20
+    timing = 100 if time_flag == "good" else 62
+
+    components = [
+        {"label": "Pace", "score": pace,
+         "hint": "In the 130–160 WPM range" if pace == 100 else "Drifted fast or slow"},
+        {"label": "Fluency", "score": fluency,
+         "hint": "Few filler words" if fluency >= 80 else "Trim the um/uh"},
+        {"label": "Flow", "score": flow,
+         "hint": "No long stalls" if flow >= 80 else "Watch the long pauses"},
+        {"label": "Timing", "score": timing,
+         "hint": "Used the window well" if timing == 100 else "Off the target length"},
+    ]
+    # Weighted blend; a read-aloud signal shaves a little off.
+    overall = pace * 0.30 + fluency * 0.30 + flow * 0.20 + timing * 0.20
+    if reading_signal:
+        overall -= 4
+    return _clamp(overall), components
+
+
+# --- video's contribution to the delivery score -----------------------------
+#
+# WHY THIS IS DELIBERATELY SMALL
+# Video sees ~8-60 still frames of a multi-minute rep. That is a real signal —
+# a student who never looks up is visible in it — but it is a SNAPSHOT, and the
+# error bars are wide: a frame lands where it lands, and glancing at notes for
+# the two seconds a sample happened to fire is indistinguishable from reading
+# the whole time. Audio metrics, by contrast, are computed over every word.
+#
+# So video is a nudge, never a verdict. Four rules keep it honest:
+#
+#   1. FLOOR. Under VIDEO_MIN_CHECKS frames we don't adjust at all. A 3-frame
+#      sample of a 6-minute rep isn't evidence, and pretending otherwise to
+#      produce a number would be the exact dishonesty this app exists to avoid.
+#   2. CAP. The swing is at most VIDEO_MAX_ADJUSTMENT points on a 0-100 score —
+#      too small to move a student across a grade band on the strength of a
+#      handful of frames, large enough to notice and act on.
+#   3. CONFIDENCE SCALING. Between the floor and VIDEO_FULL_CONFIDENCE_CHECKS
+#      the cap scales linearly with sample size, so a short rep with 10 frames
+#      moves the score about a third as much as a full 30-frame one. More
+#      evidence, more influence — which is what a sample size is FOR.
+#   4. OBSERVABLE INPUT ONLY. The input is the eye-contact rate, a count of
+#      frames. Not "presence", not "confidence" — the same rule the rest of the
+#      delivery engine follows.
+#
+# The center is 60%, not 100%: a presenter who looks at their notes or their
+# product a third of the time is doing the job correctly, and scoring against a
+# never-look-away ideal would coach students into staring.
+VIDEO_MIN_CHECKS = 8
+VIDEO_FULL_CONFIDENCE_CHECKS = 30
+VIDEO_MAX_ADJUSTMENT = 4.0
+VIDEO_CENTER_PERCENT = 60.0
+VIDEO_FULL_SWING = 30.0  # 30 points either side of center reaches the full cap
+
+
+def video_adjustment(checks: int, eye_contact_count: int) -> tuple[float, str]:
+    """How much the sampled frames should move the delivery score, and why.
+
+    Returns ``(delta, reason)``. `delta` is signed and already capped/scaled;
+    `reason` is shown to the student so the number is never unexplained.
+    """
+    if checks <= 0:
+        return 0.0, "No frames were readable, so video didn't affect your delivery score."
+    if checks < VIDEO_MIN_CHECKS:
+        return 0.0, (
+            f"Only {checks} frame{'s' if checks != 1 else ''} were sampled — too few to "
+            "adjust your delivery score, so this rep was scored on audio alone. Longer "
+            "reps sample more frames."
+        )
+
+    eye_percent = eye_contact_count / checks * 100
+    # -1..+1 relative to the center band, then capped and scaled by sample size.
+    offset = max(-1.0, min(1.0, (eye_percent - VIDEO_CENTER_PERCENT) / VIDEO_FULL_SWING))
+    confidence = min(1.0, checks / VIDEO_FULL_CONFIDENCE_CHECKS)
+    delta = round(offset * VIDEO_MAX_ADJUSTMENT * confidence, 1)
+
+    direction = "raised" if delta > 0 else "lowered" if delta < 0 else "didn't change"
+    magnitude = f" by {abs(delta):.1f}" if delta else ""
+    return delta, (
+        f"Eye contact in {eye_contact_count} of {checks} checks {direction} your delivery "
+        f"score{magnitude}. Video is sampled from still frames, so it can only move this "
+        f"score by up to {VIDEO_MAX_ADJUSTMENT:.0f} points either way."
+    )
+
+
+def apply_video(
+    score: int,
+    components: list[dict],
+    *,
+    checks: int,
+    eye_contact_count: int,
+) -> tuple[int, list[dict], float, str]:
+    """Fold observable video checks into an existing delivery score.
+
+    Additive by design: the four audio components are computed and weighted
+    exactly as they were before this feature existed, and video only shifts the
+    final number. That keeps the audio engine — the accurate half — untouched,
+    and means a voice-only rep and a video rep are graded on the same scale
+    rather than on two different ones.
+    """
+    delta, reason = video_adjustment(checks, eye_contact_count)
+    if checks <= 0:
+        return score, components, 0.0, reason
+
+    eye_percent = round(eye_contact_count / checks * 100)
+    # Shown alongside the audio components, but marked advisory: its `score` is
+    # the observed rate itself, not a graded band, and the hint states the raw
+    # count so a student can check the claim against their own memory of the rep.
+    enriched = [
+        *components,
+        {
+            "label": "Eye contact",
+            "score": eye_percent,
+            "hint": f"Looked at the camera in {eye_contact_count} of {checks} sampled frames",
+            "advisory": True,
+        },
+    ]
+    return _clamp(score + delta), enriched, delta, reason
+
+
 def compute_delivery(
     words: Sequence[_Word],
     audio_duration_s: float = 0.0,
@@ -74,6 +213,8 @@ def compute_delivery(
             "time_flag": "short",
             "reading_signal": False,
             "notes": ["No speech was detected in the recording."],
+            "delivery_score": 0,
+            "delivery_components": [],
         }
 
     first_start = words[0].start_ms
@@ -137,6 +278,8 @@ def compute_delivery(
             cv = statistics.pstdev(nonzero) / mean_gap if mean_gap > 0 else 1.0
             reading_signal = cv < 0.5
 
+    dscore, dcomponents = delivery_score(pace_flag, filler_per_min, len(long_pauses), time_flag, reading_signal)
+
     return {
         "duration_seconds": round(duration_s, 1),
         "word_count": n,
@@ -154,7 +297,59 @@ def compute_delivery(
         "time_flag": time_flag,
         "reading_signal": reading_signal,
         "notes": _notes(pace, pace_flag, filler_total, filler_per_min, crutch_counts, long_pauses, duration_s, time_flag, reading_signal),
+        "delivery_score": dscore,
+        "delivery_components": dcomponents,
     }
+
+
+# A single voice doing this share (or more) of the talking reads as dominating.
+DOMINATION_SHARE = 0.65
+
+
+def compute_speakers(words: Sequence[_Word]) -> dict:
+    """Per-speaker talk breakdown for team events. Deterministic, from timestamps.
+
+    Returns {"speakers": [...], "dominated_by": "A"|"", "balance_note": "..."}.
+    Talk time is summed voiced word durations (gaps excluded), so it reflects who
+    actually held the floor. Empty when there aren't at least two labeled speakers.
+    """
+    by: dict[str, list] = {}
+    for w in words:
+        spk = getattr(w, "speaker", "") or ""
+        if spk:
+            by.setdefault(spk, []).append(w)
+    if len(by) < 2:
+        return {"speakers": [], "dominated_by": "", "balance_note": ""}
+
+    rows: list[dict] = []
+    for spk in sorted(by):
+        ws = by[spk]
+        talk_s = sum(max(w.end_ms - w.start_ms, 0) for w in ws) / 1000.0
+        fillers = sum(1 for w in ws if _norm(w.text) in HARD_FILLERS)
+        pace = round(len(ws) / (talk_s / 60.0)) if talk_s > 0 else 0
+        rows.append({
+            "speaker": spk,
+            "talk_seconds": round(talk_s, 1),
+            "word_count": len(ws),
+            "filler_count": fillers,
+            "pace_wpm": pace,
+        })
+
+    total = sum(r["talk_seconds"] for r in rows) or 1.0
+    for r in rows:
+        r["talk_share"] = round(r["talk_seconds"] / total, 3)
+
+    top = max(rows, key=lambda r: r["talk_share"])
+    dominated_by = top["speaker"] if top["talk_share"] >= DOMINATION_SHARE else ""
+    shares = ", ".join(f"{r['speaker']} {round(r['talk_share'] * 100)}%" for r in rows)
+    if dominated_by:
+        balance_note = (
+            f"Speaker {dominated_by} did {round(top['talk_share'] * 100)}% of the talking ({shares}). "
+            "In a team event judges want to see both partners contribute — aim for a more even split."
+        )
+    else:
+        balance_note = f"Fairly balanced split ({shares}) — both partners held the floor."
+    return {"speakers": rows, "dominated_by": dominated_by, "balance_note": balance_note}
 
 
 def _fmt_time(seconds: float) -> str:

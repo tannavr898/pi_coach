@@ -35,6 +35,15 @@ class Word:
     text: str
     start_ms: int
     end_ms: int
+    speaker: str = ""  # "A"/"B"/… when diarization is on, else ""
+
+
+@dataclass
+class Utter:
+    speaker: str
+    text: str
+    start_ms: int
+    end_ms: int
 
 
 @dataclass
@@ -42,18 +51,21 @@ class Transcript:
     text: str
     words: list[Word] = field(default_factory=list)
     audio_duration_s: float = 0.0
+    utterances: list[Utter] = field(default_factory=list)
 
 
 def transcribe(
     audio: bytes,
     *,
+    diarize: bool = False,
     poll_interval: float = 2.0,
     timeout: float = 300.0,
 ) -> Transcript:
     """Transcribe audio bytes to text + word timestamps.
 
-    Runs synchronously (the endpoint is a sync `def`, so FastAPI executes it in a
-    threadpool — the polling sleep won't block the event loop).
+    When `diarize` is set (team events), ask the provider for speaker labels so we
+    can attribute words/turns to each speaker. Runs synchronously (the endpoint is
+    a sync `def`, so FastAPI executes it in a threadpool — polling won't block).
     """
     if TRANSCRIPTION_PROVIDER != "assemblyai":
         raise TranscriptionError(f"Unsupported transcription provider: {TRANSCRIPTION_PROVIDER!r}")
@@ -70,10 +82,13 @@ def transcribe(
             up.raise_for_status()
             audio_url = up.json()["upload_url"]
 
+            body = {"audio_url": audio_url, "disfluencies": True, "punctuate": True}
+            if diarize:
+                body["speaker_labels"] = True
             created = client.post(
                 f"{_AAI_BASE}/transcript",
                 headers=headers,
-                json={"audio_url": audio_url, "disfluencies": True, "punctuate": True},
+                json=body,
             )
             created.raise_for_status()
             tid = created.json()["id"]
@@ -94,6 +109,13 @@ def transcribe(
     except httpx.HTTPError as e:
         raise TranscriptionError(f"Transcription provider error: {e}") from e
 
-    words = [Word(w.get("text", ""), int(w.get("start", 0)), int(w.get("end", 0))) for w in data.get("words", [])]
+    words = [
+        Word(w.get("text", ""), int(w.get("start", 0)), int(w.get("end", 0)), str(w.get("speaker") or ""))
+        for w in data.get("words", [])
+    ]
     duration = float(data.get("audio_duration") or (words[-1].end_ms / 1000 if words else 0.0))
-    return Transcript(text=(data.get("text") or "").strip(), words=words, audio_duration_s=duration)
+    utterances = [
+        Utter(str(u.get("speaker") or ""), (u.get("text") or "").strip(), int(u.get("start", 0)), int(u.get("end", 0)))
+        for u in (data.get("utterances") or [])
+    ]
+    return Transcript(text=(data.get("text") or "").strip(), words=words, audio_duration_s=duration, utterances=utterances)

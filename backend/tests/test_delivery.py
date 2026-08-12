@@ -1,5 +1,7 @@
 """Delivery-metric math + /api/score-delivery wiring (transcription monkeypatched)."""
 
+import re
+
 from fastapi.testclient import TestClient
 
 from app import delivery, transcription
@@ -103,3 +105,98 @@ def test_endpoint_503_without_key(monkeypatch):
     monkeypatch.setattr(transcription, "transcribe", boom)
     r = client.post("/api/score-delivery", files={"audio": ("take.webm", b"xxxx", "audio/webm")})
     assert r.status_code == 503
+
+
+def test_endpoint_422_on_empty_audio(monkeypatch):
+    # Nothing recorded: the provider is never called, and the user gets a clear
+    # 4xx with a next step instead of a 502.
+    def boom(audio, **kw):
+        raise AssertionError("transcribe should not run on empty audio")
+
+    monkeypatch.setattr(transcription, "transcribe", boom)
+    r = client.post("/api/score-delivery", files={"audio": ("take.webm", b"", "audio/webm")})
+    assert r.status_code == 422
+    assert "record" in r.json()["detail"].lower()
+
+
+def test_endpoint_502_gives_actionable_message(monkeypatch):
+    # A silent/undecodable clip makes the provider error; surface a helpful reason,
+    # not the raw provider string.
+    def boom(audio, **kw):
+        raise transcription.TranscriptionError("Audio does not appear to contain audio")
+
+    monkeypatch.setattr(transcription, "transcribe", boom)
+    r = client.post("/api/score-delivery", files={"audio": ("take.webm", b"xxxx", "audio/webm")})
+    assert r.status_code == 502
+    detail = r.json()["detail"].lower()
+    assert "silent" in detail and "microphone" in detail
+
+
+# --- video's contribution to the delivery score -----------------------------
+#
+# The rule these guard is "a handful of frames is a nudge, not a verdict". Each
+# test below pins one of the four properties that keep it a nudge, because the
+# failure mode is silent: a wider cap or a lower floor still returns a plausible
+# number, it just returns one the sample can't support.
+
+
+def test_too_few_frames_never_moves_the_score():
+    """Under the floor we adjust by exactly zero — and say why."""
+    for checks in range(0, delivery.VIDEO_MIN_CHECKS):
+        delta, reason = delivery.video_adjustment(checks, eye_contact_count=checks)
+        assert delta == 0.0, f"{checks} frames should not move the score"
+        assert reason, "a no-op still owes the student an explanation"
+
+
+def test_adjustment_is_capped_in_both_directions():
+    """Perfect and zero eye contact both land inside the cap, at any sample size."""
+    for checks in (8, 30, 60, 500):
+        best, _ = delivery.video_adjustment(checks, eye_contact_count=checks)
+        worst, _ = delivery.video_adjustment(checks, eye_contact_count=0)
+        assert 0 < best <= delivery.VIDEO_MAX_ADJUSTMENT
+        assert -delivery.VIDEO_MAX_ADJUSTMENT <= worst < 0
+
+
+def test_more_frames_earn_more_influence():
+    """Confidence scaling: the same eye-contact rate moves a bigger sample more."""
+    small, _ = delivery.video_adjustment(10, eye_contact_count=10)
+    large, _ = delivery.video_adjustment(30, eye_contact_count=30)
+    assert small < large
+    # And past the full-confidence point it stops growing — the cap is a cap.
+    huge, _ = delivery.video_adjustment(60, eye_contact_count=60)
+    assert huge == large
+
+
+def test_center_band_is_neutral_not_punitive():
+    """Looking at notes a third of the time is doing the job, not failing at it."""
+    checks = 30
+    at_center = int(checks * delivery.VIDEO_CENTER_PERCENT / 100)
+    delta, _ = delivery.video_adjustment(checks, eye_contact_count=at_center)
+    assert delta == 0.0
+
+
+def test_apply_video_appends_an_advisory_component_and_clamps():
+    score, components, delta, reason = delivery.apply_video(
+        70, [{"label": "Pace", "score": 100, "hint": ""}], checks=30, eye_contact_count=30
+    )
+    assert score == 74  # 70 + the full +4
+    assert components[-1]["label"] == "Eye contact"
+    assert components[-1]["advisory"] is True
+    assert "30 of 30" in components[-1]["hint"]
+    assert delta == delivery.VIDEO_MAX_ADJUSTMENT
+    assert reason
+
+    # A near-perfect audio score can't be pushed past 100 by the video bonus.
+    topped, _, _, _ = delivery.apply_video(99, [], checks=30, eye_contact_count=30)
+    assert topped == 100
+
+
+def test_video_never_reports_an_internal_state():
+    """Same honesty rule as the video module: observable counts only, no inference."""
+    banned = re.compile(
+        r"\b(confiden|nervous|anxious|charisma|engag|enthusias|comfortable|shy|energy|likeab)",
+        re.I,
+    )
+    for checks, eye in [(0, 0), (3, 1), (10, 2), (30, 18), (60, 60)]:
+        _, reason = delivery.video_adjustment(checks, eye)
+        assert not banned.search(reason), reason
