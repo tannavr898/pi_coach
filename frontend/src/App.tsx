@@ -224,6 +224,14 @@ export default function App() {
   const [view, setView] = useState<View>("home");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const nudge = useLandingNudge();
+  // Any entry into the practice flow retires the landing nudge — enterPractice,
+  // the 2-minute rep, a challenge deep link, the tour handoff. Keyed on `view`
+  // rather than patched into each entry point, so a future one can't miss it.
+  useEffect(() => {
+    if (view === "practice") nudge.consume();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
   const { user: authUser, ready: authReady, signOut } = useAuth();
   // Login dialog (optional; opened after a session, from the header, or the
   // landing page — never before the user has experienced the product).
@@ -1372,6 +1380,24 @@ export default function App() {
       </main>
       <SiteFooter />
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
+      {/* Landing only: a signed-in visitor gets HomePage here, and this is
+          cold-visitor copy. Suppressed for a capped visitor, whose "Try it"
+          would open the sign-up wall instead of a rep — a broken promise.
+          Outside <main> because it's fixed-position, which is also why
+          LandingPage itself needs no changes. */}
+      {nudge.open && view === "home" && !authUser && !roleplayCapReached && (
+        <RepNudge
+          onShown={nudge.markShown}
+          onStart={() => {
+            track("rep_nudge_clicked");
+            startFirstRep(); // the view effect retires the nudge from here
+          }}
+          onDismiss={() => {
+            track("rep_nudge_dismissed");
+            nudge.dismiss();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -2809,6 +2835,105 @@ function ProcessStrip() {
 // A scroll-based marketing page. A cold visitor lands here — hero, how it works,
 // what the feedback looks like, then an email capture — and is one click away from
 // the setup form (onStart → view="practice").
+
+// --- landing nudge ---------------------------------------------------------
+// A corner toast offered once per session to a visitor who has been reading the
+// landing page a while without starting anything.
+const NUDGE_KEY = "pic-landing-nudge";
+const NUDGE_DELAY_MS = 30000;
+
+function nudgeSpent(): boolean {
+  try {
+    return sessionStorage.getItem(NUDGE_KEY) === "1";
+  } catch {
+    return false; // private mode — the nudge just isn't sticky across reloads
+  }
+}
+
+function spendNudge(): void {
+  try {
+    sessionStorage.setItem(NUDGE_KEY, "1");
+  } catch {
+    /* private mode — worst case it can offer itself again after a reload */
+  }
+}
+
+// Called from App, never from LandingPage: LandingPage unmounts on every nav
+// away (home → tips → home), which would take its timer with it and re-arm the
+// nudge each time they came back. App never unmounts, so one timeout covers the
+// whole visit. sessionStorage carries the "already offered" flag across a
+// reload — and only a reload, which is the intent: a new tab is a new visit.
+function useLandingNudge() {
+  const [open, setOpen] = useState(false);
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (nudgeSpent()) return;
+    const t = window.setTimeout(() => {
+      if (nudgeSpent()) return; // they started a rep while we were waiting
+      spendNudge(); // burn it the moment it's offered, seen or not
+      setOpen(true);
+    }, NUDGE_DELAY_MS);
+    // StrictMode runs this twice in dev; the cleanup clears the first timeout,
+    // so exactly one timer is ever pending.
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return {
+    open,
+    // Fired from the toast's own mount rather than from the timer, so the event
+    // means "they saw it" and not "it became eligible" — the 30s can elapse
+    // while they're off on /tips, where the toast doesn't render. One-shot:
+    // navigating away and back remounts the toast, which is not a second view.
+    markShown: () => {
+      if (shownRef.current) return;
+      shownRef.current = true;
+      track("rep_nudge_shown");
+    },
+    dismiss: () => setOpen(false),
+    // Starting a rep retires the nudge for the session and hides it if it's
+    // already up. Storage is the cancel channel: a pending timer re-reads the
+    // flag when it fires, so this also cancels a nudge that hasn't landed yet.
+    consume: () => {
+      spendNudge();
+      setOpen(false);
+    },
+  };
+}
+
+// Non-blocking by construction: fixed to a corner, no backdrop, no focus trap,
+// and `role="status"` rather than a dialog so it's announced without stealing
+// focus. z-40 sits above the sticky header (z-20) and the video gaze anchor
+// (z-30) but below modals (z-50), so it can never cover the auth dialog.
+function RepNudge({ onStart, onDismiss, onShown }: { onStart: () => void; onDismiss: () => void; onShown: () => void }) {
+  useEffect(() => {
+    onShown();
+    // Mount-only: onShown is idempotent, and re-running on identity changes
+    // would count re-renders as impressions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div
+      role="status"
+      className="fixed bottom-4 right-4 z-40 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+    >
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="absolute right-2 top-2 rounded-lg px-2 py-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+      >
+        ✕
+      </button>
+      <p className="pr-6 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+        See what it catches — get an honest score on one 2-minute rep.
+      </p>
+      <button onClick={onStart} className={`${BTN_PRIMARY} mt-3 w-full`}>
+        Try it (2 min)
+      </button>
+    </div>
+  );
+}
+
 
 function LandingPage({ onStart, onQuickRep, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onQuickRep: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
