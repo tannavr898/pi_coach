@@ -53,3 +53,20 @@ export function identifyEmail(email: string): void {
     /* swallow */
   }
 }
+
+// Same as `track`, but for events fired from a `pagehide` handler, where a
+// normal XHR is usually killed before it leaves the tab. sendBeacon is handed to
+// the browser to deliver after the page is gone.
+//
+// Treat anything sent this way as a LOWER BOUND: posthog-js registers its own
+// unload flush, and if ours loses that race the event is dropped. Never compare
+// beacon-delivered volume against normally-tracked volume as if the two were
+// measured equally.
+export function trackBeacon(event: string, props?: Record<string, unknown>): void {
+  if (!ph) return;
+  try {
+    ph.capture(event, props, { transport: "sendBeacon" });
+  } catch {
+    /* swallow */
+  }
+}

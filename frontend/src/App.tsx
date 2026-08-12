@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import {
   type Criterion,
   type CriterionScore,
@@ -25,7 +25,7 @@ import {
   postScenario,
   postScore,
 } from "./api";
-import { identifyEmail, track } from "./analytics";
+import { identifyEmail, track, trackBeacon } from "./analytics";
 import { BrandMark } from "./ui";
 import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
@@ -80,6 +80,25 @@ const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices 
 // inherits the rest.
 
 type Stage = "presession" | "pick" | "loading" | "ready" | "prep" | "walkin" | "respond" | "followup" | "scoring" | "feedback";
+
+// Stage ids read fine in code but are opaque in a PostHog breakdown, so the
+// abandonment funnel reports these instead. Two worth calling out: "respond" is
+// the speak-out-loud step (the one that asks for a microphone), and a live rep
+// can only be sitting on "feedback" while the content grade is still in flight —
+// they submitted successfully and were reading the delivery screen, which is a
+// wait, not a bail.
+const STEP_LABEL: Record<Stage, string> = {
+  presession: "intro",
+  pick: "pick",
+  loading: "loading",
+  ready: "scenario",
+  prep: "prep",
+  walkin: "walkin",
+  respond: "present",
+  followup: "followup",
+  scoring: "scoring",
+  feedback: "grading_wait",
+};
 
 // How long the participant can sit on the response/follow-up screen without
 // starting before the 5-second auto-start countdown kicks in.
@@ -565,10 +584,63 @@ export default function App() {
     challengeEventName.current = null;
   }, [events, eventId]);
 
+  // --- 2-minute rep: where do they bail? -----------------------------------
+  // The landing "Try a 2-minute rep" is the top of the funnel, so the useful
+  // question isn't how many finish — it's where the rest stop, and especially
+  // whether it's the speak-out-loud step, the only one that asks for a mic.
+  //
+  // These are refs rather than state because every exit path runs inside an
+  // event handler or the `pagehide` listener, where a state update would land
+  // too late to read back. `endTwoMinRep` therefore touches nothing but refs,
+  // which is also what makes the listener's empty dep array safe.
+  const repLiveRef = useRef(false);
+  // Trails `stage`/`mode` while a rep is live. By the time an exit handler runs,
+  // `stage` may already have been reset (restart() → "pick") or may belong to a
+  // different run entirely (goToView leaves `stage` untouched).
+  const repStepRef = useRef<Stage>("presession");
+  const repModeRef = useRef<ResponseMode>("type");
+  const repRecordedRef = useRef(false);
+
+  function armTwoMinRep(step: Stage, respMode: ResponseMode) {
+    repLiveRef.current = true;
+    repStepRef.current = step;
+    repModeRef.current = respMode;
+    repRecordedRef.current = false;
+  }
+
+  // The one exit. Everything that ends the rep goes through here and the first
+  // call wins, so the event fires at most once per run — including under
+  // StrictMode, where the second pass finds the flag already cleared.
+  function endTwoMinRep(reachedScore: boolean, unloading = false) {
+    if (!repLiveRef.current) return;
+    repLiveRef.current = false;
+    if (reachedScore) {
+      // Fired here rather than beside `scored` so it counts the FIRST score of an
+      // armed run and nothing else. tryAgain() deliberately leaves `onboarding`
+      // set, so a naive `if (onboarding)` at the scoring call site would count
+      // every retry as another completed 2-minute rep.
+      track("two_min_rep_scored");
+      return; // a completion is not an abandon
+    }
+    const props = {
+      last_step: STEP_LABEL[repStepRef.current],
+      // Without `mode`, recording_started:false can't distinguish a typed run
+      // from someone who reached the mic and wouldn't press record — which is
+      // the whole question this event exists to answer.
+      mode: repModeRef.current,
+      recording_started: repRecordedRef.current,
+    };
+    if (unloading) trackBeacon("two_min_rep_abandoned", props);
+    else track("two_min_rep_abandoned", props);
+  }
+
   // The guided first-rep intro (pre-session screen → hardcoded rep) is shown
   // ONLY to people who just created an account.
   function startFirstRep() {
     if (!guardRoleplay()) return; // signed-out cap: the 2-minute rep counts too
+    // Armed after the guard on purpose: a capped visitor gets the sign-up wall
+    // instead of a rep, so there is nothing for them to abandon.
+    armTwoMinRep("presession", mode);
     setError(null);
     setOnboarding(true);
     setView("practice");
@@ -576,9 +648,15 @@ export default function App() {
   }
 
   // Seed the hardcoded onboarding scenario (no /api/scenario call) and jump into
-  // the same session flow the full app uses.
-  function startOnboardingRep(respMode: ResponseMode) {
+  // the same session flow the full app uses. `source` separates the landing
+  // funnel from the post-signup tour, which reaches this same function with an
+  // already-signed-in user and would otherwise inflate landing conversion.
+  function startOnboardingRep(respMode: ResponseMode, source: "landing" | "tour") {
+    // Re-arm: the tour hands off straight to here, never passing through the
+    // pre-session screen, so this is the only arming point on that path.
+    armTwoMinRep("ready", respMode);
     track("onboarding_started", { mode: respMode });
+    track("two_min_rep_started", { source });
     bumpAnonRoleplays(); // the 2-minute rep is a graded run — counts against the cap
     setScenario(ONBOARDING_SCENARIO);
     setMode(respMode);
@@ -598,6 +676,51 @@ export default function App() {
     setError(null);
     setStage("ready");
   }
+
+  // Trail the live rep's step and mode. Guarded, so stages belonging to a later
+  // non-onboarding run can never be reported as the abandon point.
+  useEffect(() => {
+    if (!repLiveRef.current) return;
+    repStepRef.current = stage;
+    repModeRef.current = mode;
+  }, [stage, mode]);
+
+  // A real score arrived → completed, not abandoned. Deliberately keyed on
+  // `score` rather than `stage === "feedback"`: spoken runs land on "feedback"
+  // with score === null while the grade is still in flight (DeliveryFirstScreen),
+  // and grading can still fail from there.
+  useEffect(() => {
+    if (score) endTwoMinRep(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [score]);
+
+  // The run stopped being the 2-minute rep: restart(), enterPractice(), skipping
+  // the pre-session screen, or opening a stored session all clear `onboarding`.
+  // A no-op if it already scored — that disarmed it in an earlier commit.
+  useEffect(() => {
+    if (!onboarding) endTwoMinRep(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboarding]);
+
+  // In-app navigation out of the flow. goToView deliberately does NOT reset
+  // `stage`, so without this a header click would leave the rep live forever and
+  // mis-attribute some later exit to it.
+  useEffect(() => {
+    if (view !== "practice") endTwoMinRep(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  // Tab close, reload, or navigating off the site. `pagehide` rather than
+  // `beforeunload`: it also fires on iOS Safari and doesn't disqualify the page
+  // from the bfcache. Not `visibilitychange` — that fires on every tab switch,
+  // so a student who alt-tabs to look something up mid-prep would be marked
+  // abandoned with no way to undo it.
+  useEffect(() => {
+    const onHide = () => endTwoMinRep(false, true);
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load the event catalog once, so the picker is ready on the first screen.
   useEffect(() => {
@@ -980,7 +1103,7 @@ export default function App() {
             closeTour("completed");
             setOnboarding(true);
             setView("practice");
-            startOnboardingRep(respMode);
+            startOnboardingRep(respMode, "tour");
           }}
         />
       )}
@@ -1018,13 +1141,18 @@ export default function App() {
           <LandingPage
             onStart={() => {
               track("practice_cta_clicked", { from: "landing" });
+              track("cta_clicked", { cta: "ready_to_practice" });
               enterPractice();
             }}
             onQuickRep={() => {
               track("quick_rep_clicked", { from: "landing" });
+              track("cta_clicked", { cta: "two_min_rep" });
               startFirstRep();
             }}
-            onTips={() => goToView("tips")}
+            onTips={() => {
+              track("cta_clicked", { cta: "new_to_deca" });
+              goToView("tips");
+            }}
             supabaseEnabled={authReady}
             onSignIn={() => openAuth("login", "Log in to pick up your progress and session history.")}
             onSignup={() => openAuth("signup", "Create a free account to start tracking your progress.")}
@@ -1050,7 +1178,7 @@ export default function App() {
             {stage === "presession" && (
               <PreSessionScreen
                 canRecord={CAN_RECORD}
-                onStart={(respMode) => startOnboardingRep(respMode)}
+                onStart={(respMode) => startOnboardingRep(respMode, "landing")}
                 onSkip={() => {
                   setOnboarding(false);
                   setStage("pick");
@@ -1142,6 +1270,7 @@ export default function App() {
                 running={clockRunning}
                 autoCountdown={autoCountdown}
                 onStart={startClock}
+                onRecordingStart={() => { repRecordedRef.current = true; }}
                 mode={mode}
                 onMode={setMode}
                 value={responseText}
@@ -2751,6 +2880,72 @@ function SectionHeading({ title, blurb }: { title: string; blurb?: string }) {
 const HERO_POSTER =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23e0e7ff'/%3E%3Cstop offset='1' stop-color='%23ede9fe'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1920' height='1080' fill='url(%23g)'/%3E%3Ctext x='960' y='520' font-family='system-ui,sans-serif' font-size='64' font-weight='600' fill='%234f46e5' text-anchor='middle'%3EPI Coach demo%3C/text%3E%3Ctext x='960' y='600' font-family='system-ui,sans-serif' font-size='38' fill='%236366f1' text-anchor='middle'%3Ea scenario, presented, and graded%3C/text%3E%3C/svg%3E";
 
+// One-shot IntersectionObserver for scroll-depth markers. Fires `onFire` at most
+// once and then disconnects: these are funnel milestones, not live state, so
+// there's nothing to keep watching afterwards.
+//
+// `when: "scrolled-past"` is a LEAVE event, and `!isIntersecting` alone can't
+// express it — that's equally true of an element below the fold that was never
+// reached. Two conditions disambiguate: the element must have exited off the TOP
+// (`boundingClientRect.bottom <= rootBounds.top`), and we must have seen it
+// intersect at least once. A visitor who never scrolls fires nothing at all,
+// which is the honest answer — so never use such an event as a denominator.
+type InViewOpts = {
+  threshold?: number;
+  /** Shrinks the viewport, e.g. "-15% 0px" to require the element to come well in. */
+  rootMargin?: string;
+  when?: "enters" | "scrolled-past";
+};
+
+function useInView(
+  ref: RefObject<Element | null>,
+  onFire: () => void,
+  { threshold = 0, rootMargin, when = "enters" }: InViewOpts = {},
+) {
+  // Call sites pass inline arrows, so `onFire` is a new identity every render.
+  // Holding it in a ref keeps the observer's deps stable — otherwise it would be
+  // torn down and rebuilt on every render of the page.
+  const cb = useRef(onFire);
+  cb.current = onFire;
+  const firedRef = useRef(false); // one-shot, and StrictMode's remount re-observes
+  const seenRef = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    // No polyfill: these markers are optional, so an unsupported browser simply
+    // doesn't report rather than breaking the page.
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const fire = () => {
+      if (firedRef.current) return;
+      firedRef.current = true;
+      io.disconnect();
+      cb.current();
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            seenRef.current = true;
+            if (when === "enters") fire();
+          } else if (
+            when === "scrolled-past" &&
+            seenRef.current &&
+            // rootBounds is null in a few older engines; the root here IS the
+            // viewport, whose top is 0.
+            e.boundingClientRect.bottom <= (e.rootBounds?.top ?? 0)
+          ) {
+            fire();
+          }
+        }
+      },
+      { threshold, rootMargin },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, threshold, rootMargin, when]);
+}
+
 function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQuickRep: () => void; onTips: () => void }) {
   // Honor prefers-reduced-motion like the rest of the app: don't autoplay the
   // looping demo; show the poster and expose native controls so a reduced-motion
@@ -2763,12 +2958,16 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
     mq.addEventListener?.("change", sync);
     return () => mq.removeEventListener?.("change", sync);
   }, []);
+  // Scroll-depth marker. Fires on the LEAVE, not the enter: the hero is on
+  // screen at load, so an enter event would just be a second pageview.
+  const heroRef = useRef<HTMLElement>(null);
+  useInView(heroRef, () => track("hero_scrolled_past"), { when: "scrolled-past" });
   return (
     // Asymmetric, left-aligned composition: a narrower copy column (5/12) paired
     // with a wider media column (7/12), and the two are deliberately staggered on
     // the vertical axis — copy nudged down, media held at the top — so the hero
     // reads as hand-placed rather than centered on a symmetric grid.
-    <section className="grid items-start gap-12 pt-2 lg:grid-cols-12 lg:gap-10">
+    <section ref={heroRef} className="grid items-start gap-12 pt-2 lg:grid-cols-12 lg:gap-10">
       <div className="lg:col-span-5 lg:pt-10">
         <Eyebrow>DECA role-play practice</Eyebrow>
         <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.06] tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-5xl">
@@ -2862,6 +3061,15 @@ function HowItWorksSection() {
 
 type FbSection = "pi" | "analysis" | "present";
 
+// The internal keys are abbreviations; these are what the funnel reports. Kept
+// separate from `feedback_section_viewed`, which still sends the raw key, so the
+// pre-existing event's history stays continuous.
+const FB_BAND_LABEL: Record<FbSection, string> = {
+  pi: "indicators",
+  analysis: "analytical",
+  present: "presentation",
+};
+
 function FeedbackExplainerSection() {
   const [active, setActive] = useState<FbSection>("pi");
   const blocks: { key: FbSection; weight: number; short: string; title: string; body: string; looksFor: string }[] = [
@@ -2891,8 +3099,18 @@ function FeedbackExplainerSection() {
     },
   ];
   const activeBlock = blocks.find((b) => b.key === active)!;
+  // The landing page's mid-funnel milestone: this block renders the app's real
+  // graded feedback rather than a mockup, so reaching it is the strongest signal
+  // short of starting a rep.
+  //
+  // rootMargin rather than a ratio threshold, deliberately. This section embeds a
+  // full CriteriaTab and can be taller than a phone viewport, at which point
+  // `intersectionRatio` can never reach a threshold like 0.25 and the event would
+  // silently never fire — a bug invisible on desktop and universal on mobile.
+  const showcaseRef = useRef<HTMLElement>(null);
+  useInView(showcaseRef, () => track("feedback_showcase_reached"), { rootMargin: "-15% 0px" });
   return (
-    <section>
+    <section ref={showcaseRef}>
       <SectionHeading
         title="Graded on the same weighted rubric a judge uses"
         blurb="Most tools hand you a vibe. PI Coach splits your score into the three things that actually decide a role-play — weighted exactly like the real sheet — and shows its work on each. Tap a band to see the feedback it produces."
@@ -2915,6 +3133,7 @@ function FeedbackExplainerSection() {
               onClick={() => {
                 setActive(b.key);
                 track("feedback_section_viewed", { section: b.key });
+                track("feedback_band_tapped", { band: FB_BAND_LABEL[b.key] });
               }}
               style={{ flexBasis: `${b.weight}%` }}
               className={`flex min-w-[4.5rem] flex-col items-start justify-center gap-0.5 px-3 text-left transition sm:min-w-0 sm:px-5 ${
@@ -3189,6 +3408,11 @@ function RespondScreen(props: {
   onChange: (v: string) => void;
   audioBlob: Blob | null;
   onRecorded: (b: Blob | null) => void;
+  // Distinct from `onStart`, which typing also triggers (see the onChange below).
+  // This one fires only when the mic actually opens, which is what the
+  // abandonment funnel needs to tell "froze at the record button" apart from
+  // "recorded, then bailed".
+  onRecordingStart?: () => void;
   // Video (beta). All optional-in-spirit: the screen is fully functional and
   // identical to before when the gate is "unsupported" or the user declines.
   videoGate: VideoGate;
@@ -3237,7 +3461,12 @@ function RespondScreen(props: {
           </>
         ) : (
           <div className="mt-3">
-            <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
+            <VoiceRecorder
+              audioBlob={props.audioBlob}
+              onRecorded={props.onRecorded}
+              onStart={props.onStart}
+              onRecordingStart={props.onRecordingStart}
+            />
             <div className="mt-3">
               <VideoOptIn
                 gate={props.videoGate}
@@ -3283,7 +3512,7 @@ function ModeToggle({ mode, onMode }: { mode: ResponseMode; onMode: (m: Response
   );
 }
 
-function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | null; onRecorded: (b: Blob | null) => void; onStart?: () => void }) {
+function VoiceRecorder({ audioBlob, onRecorded, onStart, onRecordingStart }: { audioBlob: Blob | null; onRecorded: (b: Blob | null) => void; onStart?: () => void; onRecordingStart?: () => void }) {
   const [state, setState] = useState<"idle" | "recording" | "recorded">(audioBlob ? "recorded" : "idle");
   const [elapsed, setElapsed] = useState(0);
   const [err, setErr] = useState<string | null>(null);
@@ -3330,6 +3559,9 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart }: { audioBlob: Blob | n
       setElapsed(0);
       setState("recording");
       onStart?.(); // starting to speak starts the presentation clock
+      // Only reached once getUserMedia resolved, so a denied or failed mic
+      // permission correctly does NOT count as having started recording.
+      onRecordingStart?.();
       timerRef.current = window.setInterval(() => setElapsed((e) => e + 1), 1000);
     } catch (e) {
       // Distinguish the common failures so the message is actionable on mobile.
