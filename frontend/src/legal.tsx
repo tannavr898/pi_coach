@@ -58,7 +58,7 @@ function LegalPage({ title, children }: { title: string; children: ReactNode }) 
   }, [title]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <header className="border-b border-slate-200/80 bg-white/60 backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/50">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <a href="/" className="flex items-center gap-2.5">

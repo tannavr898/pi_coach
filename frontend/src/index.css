@@ -24,7 +24,7 @@
       repeating-linear-gradient(45deg, rgba(79, 70, 229, 0.05) 0 1px, transparent 1px 30px),
       repeating-linear-gradient(-45deg, rgba(79, 70, 229, 0.05) 0 1px, transparent 1px 30px);
     color: #0f172a;
-    min-height: 100vh;
+    min-height: 100dvh;
   }
   .dark body {
     background-color: #0a0f1f;
@@ -152,5 +152,30 @@
   }
   .pic-spin {
     animation-duration: 1.1s !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch-device form controls.
+
+   iOS Safari zooms the viewport whenever you focus an input whose font-size is
+   under 16px, and it does not zoom back out when you blur. Our controls are
+   `text-sm` (14px), so on an iPhone every tap into the response box — the one
+   action the whole product exists for — punched the layout to ~1.3x and left it
+   there. 16px on coarse pointers is the documented way to suppress it.
+
+   Deliberately UNLAYERED: Tailwind's utilities live in `@layer utilities`, and
+   unlayered rules beat layered ones in the cascade regardless of specificity.
+   That means this wins over `text-sm` without `!important` and without editing
+   forty class strings. Checkbox and radio are excluded — they have no text, and
+   sizing them here would change their box.
+
+   Scoped to `pointer: coarse` so desktop keeps its denser 14px controls.
+--------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }

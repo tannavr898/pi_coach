@@ -1066,7 +1066,7 @@ export default function App() {
   const wide = view === "home" || (view === "practice" && stage === "feedback") || view === "tips";
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <SiteHeader
         view={view}
         onView={goToView}
@@ -1418,7 +1418,7 @@ export function DemoApp() {
   }, [step]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} onFlashcards={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
@@ -1526,7 +1526,7 @@ export function AdminApp() {
 
   if (!unlocked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+      <div className="flex min-h-dvh items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
         <form onSubmit={unlock} className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-500">Admin QA</div>
           <h1 className="mt-2 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Enter the passphrase</h1>
@@ -1558,7 +1558,7 @@ export function AdminApp() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col">
       <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
           <p className="text-sm text-amber-900 dark:text-amber-200">
@@ -1812,7 +1812,7 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 dark:bg-black/60"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-slate-900/40 p-4 dark:bg-black/60 sm:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -2927,7 +2927,8 @@ function RepNudge({ onStart, onDismiss, onShown }: { onStart: () => void; onDism
   return (
     <div
       role="status"
-      className="fixed bottom-4 right-4 z-40 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+      className="fixed right-4 z-40 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+      style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
       <button
         onClick={onDismiss}
@@ -3954,7 +3955,7 @@ function SignupPromptModal({ onSignup, onDismiss }: { onSignup: () => void; onDi
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-slate-900/50 p-4 backdrop-blur-sm sm:items-center"
       onClick={onDismiss}
     >
       <div
