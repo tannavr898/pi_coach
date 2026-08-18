@@ -24,10 +24,10 @@ import { BrandMark } from "./ui";
 // Must be an address that is actually monitored — Google checks that the
 // contact route on a privacy policy is real during brand verification, and it
 // is the address a parent or guardian would write to asking for a deletion.
-const CONTACT_EMAIL = "support@trypicoach.com";
+const CONTACT_EMAIL = "yourpicoach@gmail.com";
 
 // The state whose law governs the terms. Set this to where you actually are.
-const GOVERNING_LAW = "the State of Texas, USA";
+const GOVERNING_LAW = "the State of Pennsylvania, USA";
 
 // Shown on both pages. Bump it whenever the substance changes, not for typo
 // fixes — a date that moves for nothing trains people to ignore it.
