@@ -179,3 +179,25 @@
     font-size: 16px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Touch targets.
+
+   Apple's HIG asks for 44pt and Material for 48dp; several of our controls sit
+   near 32px, which is comfortable with a cursor and fiddly with a thumb. Rather
+   than inflate every control everywhere (desktop density is fine, and these are
+   the same components), `.tap` raises the hit area only where the pointer is
+   actually coarse.
+
+   The flex properties come along because <button> is inline-block by default:
+   min-height alone would grow the box without re-centring the label inside it.
+--------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .tap {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

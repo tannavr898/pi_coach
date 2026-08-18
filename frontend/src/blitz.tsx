@@ -290,7 +290,7 @@ function ModePills({ mode, onMode }: { mode: "type" | "speak"; onMode: (m: "type
         <button
           key={m}
           disabled={m === "speak" && !CAN_RECORD}
-          className={`rounded-md px-2.5 py-1 transition disabled:opacity-40 ${mode === m ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}
+          className={`tap rounded-md px-3 py-1.5 transition disabled:opacity-40 ${mode === m ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}
           onClick={() => onMode(m)}
         >
           {m === "type" ? "✍️ Type" : "🎙️ Speak"}
