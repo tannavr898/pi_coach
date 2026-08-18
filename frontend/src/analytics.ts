@@ -8,17 +8,34 @@
 // number). We NEVER send response text, transcripts, or scenario content —
 // those stay between the user and the grading call.
 //
-// Session replay is ON, and that rule is what shapes how it's configured: every
-// input is masked AND every rendered text node is masked (`maskTextSelector:
-// "*"`). A replay therefore carries layout, clicks, scrolling, hesitation and
-// timing — everything needed to see WHERE someone drops off — but not one
-// character a student wrote or read. Masking rendered text is the half that
-// matters most here: the transcript, the evidence quotes and the scenario are
-// read-only text, not form inputs, so `maskAllInputs` alone would not touch
-// them. If you ever narrow the mask, narrow it to specific marketing surfaces;
-// never unmask the practice flow.
+// Session replay is ON. It used to mask every rendered character, which made
+// replays unreadable — a wall of asterisks tells you nothing about where
+// someone got stuck. So the mask is now narrow and deliberate: the product's
+// own chrome and copy record as plain text (nav, buttons, scenario briefs,
+// scores, feedback prose, marketing pages), and only what belongs to the person
+// is hidden. Two mechanisms, because they cover different halves of the DOM:
+//
+//   1. Inputs, per type. `maskAllInputs` is OFF so the event picker and the
+//      flashcard search read normally, and `maskInputOptions` masks exactly the
+//      fields carrying credentials or authored content: passwords, email
+//      fields, and every textarea (the presentation, the follow-up, the Blitz
+//      answer, custom scenario notes, feedback messages).
+//   2. Rendered text tagged with PH_MASK — the student's own words played back
+//      to them. Input masking cannot reach any of it: the transcript, the
+//      evidence quotes and the signed-in email are read-only DOM, not fields.
+//
+// The rule when adding UI: if a string on screen came from the student, tag it
+// PH_MASK; if it came from us (UI copy, generated scenario, generated
+// feedback), leave it readable. And a new free-text input must be a textarea or
+// type="email" to be covered — a bare <input type="text"> holding personal data
+// would record in the clear.
 
 type PostHog = typeof import("posthog-js")["default"];
+
+// Add to any element whose rendered text is the student's own words. This is
+// rrweb's default `maskTextClass`, and matching is ancestor-aware, so tagging a
+// container masks everything inside it.
+export const PH_MASK = "ph-mask";
 
 let ph: PostHog | null = null;
 
@@ -35,9 +52,14 @@ export async function initAnalytics(): Promise<void> {
       capture_pageview: true,
       disable_session_recording: false,
       session_recording: {
-        maskAllInputs: true,
-        // Everything rendered, not just form fields — see the note at the top.
-        maskTextSelector: "*",
+        // Per-type input masking rather than a blanket one — see the note above.
+        maskAllInputs: false,
+        maskInputOptions: { password: true, email: true, textarea: true },
+        // `ph-mask` is already rrweb's default for this; naming it keeps the
+        // contract next to PH_MASK, and the selector form states the descendant
+        // rule explicitly instead of leaning on the ancestor walk.
+        maskTextClass: PH_MASK,
+        maskTextSelector: `.${PH_MASK}, .${PH_MASK} *`,
       },
       person_profiles: "identified_only",
     });

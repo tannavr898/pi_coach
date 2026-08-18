@@ -78,6 +78,77 @@ git push origin HEAD          # push the current branch
 - Going truly public? Consider a shared access passcode or Cloudflare Access in
   front of it — the spend guards cap the damage, but a gate prevents it.
 
+## 6. Accounts: Supabase auth + Google sign-in
+
+Login is optional in the product, so this whole section is optional too — with
+`SUPABASE_URL` / `SUPABASE_ANON_KEY` unset, the app hides every account feature
+and anonymous practice is unaffected.
+
+### 6a. Enable the Google provider
+
+1. **Google Cloud Console** → create (or pick) a project → **APIs & Services →
+   OAuth consent screen**. Choose **External**, then fill in:
+   - **App name:** `PI Coach` — this is the string Google shows users. Leave it
+     blank and they get bare domains instead.
+   - **App logo:** the bullseye mark. Uploading a logo triggers Google's brand
+     verification, which can take days; skip it for launch if you'd rather not
+     wait.
+   - **Application home page:** `https://trypicoach.com`
+   - **Authorized domain:** `trypicoach.com`
+   - **Scopes:** leave the defaults. We only need `email` and `profile`, which
+     are *non-sensitive* — so no Google security review is required, and users
+     see no "unverified app" interstitial.
+2. Set publishing status to **In production**. In *Testing* only addresses you
+   list by hand can sign in, capped at 100 — a silent way to lose every real
+   signup.
+3. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - **Authorized JavaScript origins:** `https://trypicoach.com`
+   - **Authorized redirect URI:** `https://<project-ref>.supabase.co/auth/v1/callback`
+     (or your Supabase custom domain — see 6b). Copy this exactly from the
+     Supabase provider page; a trailing-slash mismatch is the usual cause of
+     `redirect_uri_mismatch`.
+4. **Supabase dashboard → Authentication → Providers → Google**: enable it and
+   paste the client ID + client secret.
+5. **Supabase → Authentication → URL Configuration**:
+   - **Site URL:** `https://trypicoach.com`
+   - **Redirect URLs:** add `https://trypicoach.com/**` (and
+     `http://localhost:5173/**` for dev). The wildcard matters — the app returns
+     you to the exact path you left from, not just the root.
+
+### 6b. Making the consent screen say "trypicoach.com"
+
+By default Google's screen reads *"to continue to `<project-ref>.supabase.co`"*,
+because that host owns the callback URL. Two independent fixes, and you want
+both:
+
+- **App name + authorized domain** (free, step 6a above) — this is what replaces
+  the raw hostname in the headline with `PI Coach`. Do this first; it's most of
+  the perceived fix.
+- **A Supabase custom domain** — Supabase serves auth from
+  `auth.trypicoach.com` instead of `<project-ref>.supabase.co`, so the callback
+  host users see when they expand *"see details"*, and every link in the
+  confirmation emails, is yours. This is a **paid add-on on the Pro plan**
+  (Supabase → Settings → General → Custom Domains); check the current price
+  before committing. After enabling it you must update the redirect URI in the
+  Google credential (step 6a.3) to the new host.
+
+**Confirmation emails** are a third, separate surface: they're sent from
+Supabase's shared address until you configure **custom SMTP** (Supabase → Auth →
+SMTP Settings) with a provider like Resend or Postmark on a domain you own. The
+shared sender is also heavily rate-limited, so this is worth doing before any
+real signup volume regardless of branding.
+
+### 6c. Session replay and what it records
+
+Replay masking is configured in `frontend/src/analytics.ts` — read the comment
+at the top of that file before changing it. The short version: the product's own
+UI records as readable text so you can see where people get stuck, while
+passwords, email fields, every textarea, and any rendered text tagged `PH_MASK`
+(transcripts, evidence quotes, the signed-in address) are masked. If you add a
+surface that displays what a student wrote or said, tag it `PH_MASK`; if you add
+a free-text input holding anything personal, make it a `textarea` or
+`type="email"` so the input mask covers it.
+
 ---
 
 ## Other hosts (same Dockerfile)

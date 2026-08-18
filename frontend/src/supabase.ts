@@ -21,7 +21,15 @@ async function create(): Promise<SupabaseClient | null> {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: false,
+        // Required by the Google sign-in flow: the provider bounces the browser
+        // back to us with the session in the URL, and this is what reads it out
+        // (and then scrubs the URL). It's a no-op on an ordinary page load.
+        //
+        // Deliberately left on the default implicit flow rather than PKCE. PKCE
+        // stores its verifier in the localStorage of the browser that started
+        // the flow, which would break the common case of a student signing up on
+        // a laptop and opening the confirmation email on their phone.
+        detectSessionInUrl: true,
       },
     });
   } catch {

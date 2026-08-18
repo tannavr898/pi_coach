@@ -25,7 +25,7 @@ import {
   postScenario,
   postScore,
 } from "./api";
-import { identifyEmail, track, trackBeacon } from "./analytics";
+import { identifyEmail, PH_MASK, track, trackBeacon } from "./analytics";
 import { BrandMark } from "./ui";
 import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
@@ -1608,7 +1608,7 @@ export function AdminApp() {
                 <button className={`mt-4 ${BTN_PRIMARY}`} onClick={() => setAuthOpen(true)}>Log in to seed data</button>
               ) : (
                 <>
-                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Signed in as {user.email}</p>
+                  <p className={`mt-3 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>Signed in as {user.email}</p>
                   <div className="mt-3 flex flex-wrap gap-2.5">
                     <button className={BTN_PRIMARY} disabled={busy !== ""} onClick={doSeed}>{busy === "seed" ? "Seeding…" : "Seed 6 sample sessions"}</button>
                     <button
@@ -1850,7 +1850,11 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
+            {/* type="email" is what puts this field inside the replay mask
+                (see maskInputOptions in analytics.ts); an untyped input would
+                record in the clear. Empty still validates, so it stays optional. */}
             <input
+              type="email"
               className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 dark:text-slate-100"
               placeholder="Email (optional: only if you want a reply)"
               value={email}
@@ -2409,7 +2413,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
                 {onReplayTour && (
                   <MobileNavItem active={false} onClick={pick(onReplayTour)}>Replay the tour</MobileNavItem>
                 )}
-                <div className="mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400">{userEmail}</div>
+                <div className={`mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{userEmail}</div>
                 <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
               </>
             ) : (
@@ -2458,7 +2462,7 @@ function AccountMenu({ email, onSignOut, onHome, onReplayTour }: { email: string
       </button>
       {open && (
         <div className="absolute right-0 top-10 z-30 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-800 dark:bg-slate-900">
-          <div className="truncate px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{email}</div>
+          <div className={`truncate px-3 py-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{email}</div>
           {onHome && (
             <button
               onClick={() => { setOpen(false); onHome(); }}
@@ -4406,7 +4410,7 @@ function AnalysisRow(props: { label: string; blurb: string; sub: SubScore }) {
         <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{props.sub.justification}</p>
       )}
       {props.sub.evidence && (
-        <p className="mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400">
+        <p className={`mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400 ${PH_MASK}`}>
           “{props.sub.evidence}”
         </p>
       )}
@@ -4458,7 +4462,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
           <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{c.justification}</p>
         )}
         {c.evidence && (
-          <p className="mt-1.5 border-l-2 border-fuchsia-200 pl-2.5 text-xs italic text-slate-500 dark:border-fuchsia-900/60 dark:text-slate-400">
+          <p className={`mt-1.5 border-l-2 border-fuchsia-200 pl-2.5 text-xs italic text-slate-500 dark:border-fuchsia-900/60 dark:text-slate-400 ${PH_MASK}`}>
             “{c.evidence}”
           </p>
         )}
@@ -4481,7 +4485,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
             <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{d.justification}</p>
           )}
           {d.evidence && (
-            <p className="mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic text-slate-500 dark:border-emerald-900/60 dark:text-slate-400">
+            <p className={`mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic text-slate-500 dark:border-emerald-900/60 dark:text-slate-400 ${PH_MASK}`}>
               “{d.evidence}”
             </p>
           )}
@@ -4668,7 +4672,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
           {m.crutch_phrases.length > 0 && (
             <div className="mt-3">
               <span className="font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Crutch phrases (advisory)</span>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <div className={`mt-1.5 flex flex-wrap gap-1.5 ${PH_MASK}`}>
                 {m.crutch_phrases.map((f) => <Chip key={f.phrase}>{f.phrase} ×{f.count}</Chip>)}
               </div>
             </div>
@@ -4788,7 +4792,7 @@ function CriterionRow({ r }: { r: CriterionScore }) {
         <div className="border-t border-black/5 px-3.5 pb-3 pt-2.5 dark:border-white/10">
           {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
           {r.evidence.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className={`mt-2 flex flex-wrap gap-1.5 ${PH_MASK}`}>
               {r.evidence.map((q, i) => (
                 <span key={i} className="rounded bg-white/70 dark:bg-slate-800/60 px-1.5 py-0.5 text-xs italic text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700">
                   “{truncate(q, 80)}”
@@ -4895,7 +4899,7 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
         <div className="space-y-2 border-t border-black/5 px-3 pb-3 pt-2.5 dark:border-white/10">
           {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
           {r.evidence.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className={`flex flex-wrap gap-1.5 ${PH_MASK}`}>
               {r.evidence.map((q, i) => (
                 <span key={i} className="rounded bg-white/70 dark:bg-slate-800/60 px-1.5 py-0.5 text-xs italic text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700">
                   “{truncate(q, 80)}”
@@ -4983,14 +4987,14 @@ function TranscriptTab(props: {
                   <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold text-white ${SPEAKER_BAR[speakerIndex(props.utterances, u.speaker) % SPEAKER_BAR.length]}`}>
                     {u.speaker}
                   </span>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+                  <p className={`whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PH_MASK}`}>
                     {highlight(u.text, props.marks, props.active, props.onSelect)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+            <p className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PH_MASK}`}>
               {highlight(props.response, props.marks, props.active, props.onSelect)}
             </p>
           )}
@@ -4999,7 +5003,7 @@ function TranscriptTab(props: {
         {props.followupAnswer.trim() && (
           <Card>
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your follow-up answer</h3>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+            <p className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PH_MASK}`}>
               {highlight(props.followupAnswer, props.marks, props.active, props.onSelect)}
             </p>
             {props.followupFeedback && (
