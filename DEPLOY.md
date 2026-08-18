@@ -90,9 +90,10 @@ and anonymous practice is unaffected.
    OAuth consent screen**. Choose **External**, then fill in:
    - **App name:** `PI Coach`. Setting this alone does **not** change what users
      see — read 6b before assuming it did.
-   - **App logo:** the bullseye mark, 120×120 square. Do not skip this: the
-     upload is what triggers Google's brand verification, and brand verification
-     is the only free way to get your name onto the consent screen.
+   - **App logo:** upload [`brand/logo-120.png`](./brand/logo-120.png) — the
+     bullseye mark at Google's 120×120 limit. Do not skip this: without a logo
+     and a verified brand, Google shows only your app *domain*, which is the
+     whole problem you are trying to fix.
    - **Application home page:** `https://trypicoach.com`
    - **Privacy policy URL:** `https://trypicoach.com/privacy` and **Terms of
      service URL:** `https://trypicoach.com/terms`. Both ship with the app
