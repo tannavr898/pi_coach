@@ -25,7 +25,7 @@ import {
   postScenario,
   postScore,
 } from "./api";
-import { identifyEmail, track, trackBeacon } from "./analytics";
+import { identifyEmail, PH_MASK, track, trackBeacon } from "./analytics";
 import { BrandMark } from "./ui";
 import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
@@ -224,6 +224,14 @@ export default function App() {
   const [view, setView] = useState<View>("home");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const nudge = useLandingNudge();
+  // Any entry into the practice flow retires the landing nudge — enterPractice,
+  // the 2-minute rep, a challenge deep link, the tour handoff. Keyed on `view`
+  // rather than patched into each entry point, so a future one can't miss it.
+  useEffect(() => {
+    if (view === "practice") nudge.consume();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
   const { user: authUser, ready: authReady, signOut } = useAuth();
   // Login dialog (optional; opened after a session, from the header, or the
   // landing page — never before the user has experienced the product).
@@ -1359,6 +1367,11 @@ export default function App() {
                 onStudyCriteria={(ids) => setFlashcard({ ids })}
                 priorSnapshot={priorSnapshot}
                 loggedIn={!!authUser}
+                // Only ask when there's an account to create: `authReady` false
+                // means Supabase isn't configured for this deployment.
+                promptSource={
+                  authReady && !authUser ? (onboarding ? "two_min_rep_score" : "roleplay_score") : undefined
+                }
                 onSignIn={() => openAuth("signup", "Want to see if you improve next time? Create an account to track your progress.")}
               />
             )}
@@ -1367,6 +1380,24 @@ export default function App() {
       </main>
       <SiteFooter />
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
+      {/* Landing only: a signed-in visitor gets HomePage here, and this is
+          cold-visitor copy. Suppressed for a capped visitor, whose "Try it"
+          would open the sign-up wall instead of a rep — a broken promise.
+          Outside <main> because it's fixed-position, which is also why
+          LandingPage itself needs no changes. */}
+      {nudge.open && view === "home" && !authUser && !roleplayCapReached && (
+        <RepNudge
+          onShown={nudge.markShown}
+          onStart={() => {
+            track("rep_nudge_clicked");
+            startFirstRep(); // the view effect retires the nudge from here
+          }}
+          onDismiss={() => {
+            track("rep_nudge_dismissed");
+            nudge.dismiss();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1577,7 +1608,7 @@ export function AdminApp() {
                 <button className={`mt-4 ${BTN_PRIMARY}`} onClick={() => setAuthOpen(true)}>Log in to seed data</button>
               ) : (
                 <>
-                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Signed in as {user.email}</p>
+                  <p className={`mt-3 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>Signed in as {user.email}</p>
                   <div className="mt-3 flex flex-wrap gap-2.5">
                     <button className={BTN_PRIMARY} disabled={busy !== ""} onClick={doSeed}>{busy === "seed" ? "Seeding…" : "Seed 6 sample sessions"}</button>
                     <button
@@ -1748,6 +1779,14 @@ function SiteFooter() {
           Recordings are transcribed to measure delivery, then discarded on our servers; your audio stays on your
           device unless you keep it. Delivery covers timing only (pace, fillers, pauses), never tone or confidence.
         </p>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/privacy">
+            Privacy
+          </a>
+          <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/terms">
+            Terms
+          </a>
+        </div>
       </div>
     </footer>
   );
@@ -1819,7 +1858,11 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
+            {/* type="email" is what puts this field inside the replay mask
+                (see maskInputOptions in analytics.ts); an untyped input would
+                record in the clear. Empty still validates, so it stays optional. */}
             <input
+              type="email"
               className="mt-2 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white px-3.5 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 dark:text-slate-100"
               placeholder="Email (optional: only if you want a reply)"
               value={email}
@@ -2378,7 +2421,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
                 {onReplayTour && (
                   <MobileNavItem active={false} onClick={pick(onReplayTour)}>Replay the tour</MobileNavItem>
                 )}
-                <div className="mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400">{userEmail}</div>
+                <div className={`mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{userEmail}</div>
                 <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
               </>
             ) : (
@@ -2427,7 +2470,7 @@ function AccountMenu({ email, onSignOut, onHome, onReplayTour }: { email: string
       </button>
       {open && (
         <div className="absolute right-0 top-10 z-30 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-800 dark:bg-slate-900">
-          <div className="truncate px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{email}</div>
+          <div className={`truncate px-3 py-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{email}</div>
           {onHome && (
             <button
               onClick={() => { setOpen(false); onHome(); }}
@@ -2804,6 +2847,105 @@ function ProcessStrip() {
 // A scroll-based marketing page. A cold visitor lands here — hero, how it works,
 // what the feedback looks like, then an email capture — and is one click away from
 // the setup form (onStart → view="practice").
+
+// --- landing nudge ---------------------------------------------------------
+// A corner toast offered once per session to a visitor who has been reading the
+// landing page a while without starting anything.
+const NUDGE_KEY = "pic-landing-nudge";
+const NUDGE_DELAY_MS = 30000;
+
+function nudgeSpent(): boolean {
+  try {
+    return sessionStorage.getItem(NUDGE_KEY) === "1";
+  } catch {
+    return false; // private mode — the nudge just isn't sticky across reloads
+  }
+}
+
+function spendNudge(): void {
+  try {
+    sessionStorage.setItem(NUDGE_KEY, "1");
+  } catch {
+    /* private mode — worst case it can offer itself again after a reload */
+  }
+}
+
+// Called from App, never from LandingPage: LandingPage unmounts on every nav
+// away (home → tips → home), which would take its timer with it and re-arm the
+// nudge each time they came back. App never unmounts, so one timeout covers the
+// whole visit. sessionStorage carries the "already offered" flag across a
+// reload — and only a reload, which is the intent: a new tab is a new visit.
+function useLandingNudge() {
+  const [open, setOpen] = useState(false);
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (nudgeSpent()) return;
+    const t = window.setTimeout(() => {
+      if (nudgeSpent()) return; // they started a rep while we were waiting
+      spendNudge(); // burn it the moment it's offered, seen or not
+      setOpen(true);
+    }, NUDGE_DELAY_MS);
+    // StrictMode runs this twice in dev; the cleanup clears the first timeout,
+    // so exactly one timer is ever pending.
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return {
+    open,
+    // Fired from the toast's own mount rather than from the timer, so the event
+    // means "they saw it" and not "it became eligible" — the 30s can elapse
+    // while they're off on /tips, where the toast doesn't render. One-shot:
+    // navigating away and back remounts the toast, which is not a second view.
+    markShown: () => {
+      if (shownRef.current) return;
+      shownRef.current = true;
+      track("rep_nudge_shown");
+    },
+    dismiss: () => setOpen(false),
+    // Starting a rep retires the nudge for the session and hides it if it's
+    // already up. Storage is the cancel channel: a pending timer re-reads the
+    // flag when it fires, so this also cancels a nudge that hasn't landed yet.
+    consume: () => {
+      spendNudge();
+      setOpen(false);
+    },
+  };
+}
+
+// Non-blocking by construction: fixed to a corner, no backdrop, no focus trap,
+// and `role="status"` rather than a dialog so it's announced without stealing
+// focus. z-40 sits above the sticky header (z-20) and the video gaze anchor
+// (z-30) but below modals (z-50), so it can never cover the auth dialog.
+function RepNudge({ onStart, onDismiss, onShown }: { onStart: () => void; onDismiss: () => void; onShown: () => void }) {
+  useEffect(() => {
+    onShown();
+    // Mount-only: onShown is idempotent, and re-running on identity changes
+    // would count re-renders as impressions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div
+      role="status"
+      className="fixed bottom-4 right-4 z-40 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg dark:border-slate-800 dark:bg-slate-900"
+    >
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="absolute right-2 top-2 rounded-lg px-2 py-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+      >
+        ✕
+      </button>
+      <p className="pr-6 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+        See what it catches — get an honest score on one 2-minute rep.
+      </p>
+      <button onClick={onStart} className={`${BTN_PRIMARY} mt-3 w-full`}>
+        Try it (2 min)
+      </button>
+    </div>
+  );
+}
+
 
 function LandingPage({ onStart, onQuickRep, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onQuickRep: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
@@ -3747,6 +3889,103 @@ function ScorePill({ label, value, weight }: { label: string; value: number; wei
 
 type FeedbackTab = "overview" | "transcript" | "delivery" | "video" | "analysis" | "criteria" | "scenario";
 
+// How long on the score screen counts as "they've read it". Long enough that it
+// can't land while they're still taking in the number, short enough to catch
+// someone who reads the rail and never scrolls.
+const SIGNUP_PROMPT_DWELL_MS = 20000;
+
+// The shortest the prompt can ever wait, even when they scroll straight to the
+// bottom. Without a floor, a short feedback screen on a tall monitor would have
+// the sentinel already in view at mount and the modal would land on top of the
+// score itself.
+const SIGNUP_PROMPT_FLOOR_MS = 5000;
+
+// Session-scoped, following the sessionStorage convention in blitz.tsx: a "maybe
+// later" is an answer, and re-asking it on every rep in a sitting is how a
+// prompt becomes noise. A new tab is a new session, so it can ask again then.
+const SIGNUP_PROMPT_KEY = "pic-signup-prompt-dismissed";
+
+function signupPromptDismissed(): boolean {
+  try {
+    return sessionStorage.getItem(SIGNUP_PROMPT_KEY) === "1";
+  } catch {
+    return false; // private mode — the prompt just isn't sticky across reloads
+  }
+}
+
+function rememberSignupPromptDismissed(): void {
+  try {
+    sessionStorage.setItem(SIGNUP_PROMPT_KEY, "1");
+  } catch {
+    /* private mode — worst case it can ask again after a reload */
+  }
+}
+
+// The one blocking moment in the product, and deliberately so: it appears only
+// after a real score AND after they've read the feedback, and it gates nothing —
+// everything behind it has already been seen and stays readable on dismiss.
+// Escape and a backdrop click both dismiss, so it can't become a trap.
+function SignupPromptModal({ onSignup, onDismiss }: { onSignup: () => void; onDismiss: () => void }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Focus trap + restore, matching MasteryBlitz (blitz.tsx:195-214) — the most
+  // complete dialog a11y in the codebase.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    const prev = document.activeElement as HTMLElement | null;
+    node.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.preventDefault(); dismissRef.current(); return; }
+      if (e.key !== "Tab") return;
+      const f = node.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      );
+      if (f.length === 0) { e.preventDefault(); node.focus(); return; }
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("keydown", onKey); prev?.focus?.(); };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+      onClick={onDismiss}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="signup-prompt-title"
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2
+          id="signup-prompt-title"
+          className="font-display text-lg font-semibold leading-snug text-slate-900 dark:text-slate-100"
+        >
+          Save this and track your delivery over time — see if you're actually improving.
+        </h2>
+        <button className={`mt-5 w-full ${BTN_PRIMARY}`} onClick={onSignup}>
+          Create free account
+        </button>
+        <button
+          onClick={onDismiss}
+          className="mt-3 w-full rounded-xl px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          Maybe later
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function FeedbackScreen(props: {
   scenario: ScenarioResponse;
   score: ScoreResponse;
@@ -3764,6 +4003,11 @@ function FeedbackScreen(props: {
   priorSnapshot?: RunSnapshot | null;
   loggedIn?: boolean;
   onSignIn?: () => void;
+  // Set only when a signup prompt is actually warranted: signed out AND accounts
+  // are configured. Carrying eligibility on the same prop as the source keeps the
+  // screen from having to know about `authReady` at all — undefined means "don't
+  // ask", which is also the right answer for the tour and the demo.
+  promptSource?: "two_min_rep_score" | "roleplay_score";
   // Optional controlled tab, so the product tour can step through the tabs. Left
   // undefined everywhere else, in which case the screen owns its own tab as before.
   tab?: FeedbackTab;
@@ -3781,6 +4025,44 @@ function FeedbackScreen(props: {
   const tab = props.tab ?? ownTab; // controlled only when the tour drives it
   const [activeMark, setActiveMark] = useState<string | null>(null);
   const [showCard, setShowCard] = useState(false);
+
+  // --- post-score signup prompt -------------------------------------------
+  // Held back until they've actually read something, never shown before the
+  // score. Two independent triggers, whichever comes first: reaching the bottom
+  // of the feedback, or simply dwelling here long enough to have read it. The
+  // scroll sentinel alone would miss anyone who reads the score rail and stops;
+  // the timer alone would interrupt a fast scroller mid-scroll.
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [reachedBottom, setReachedBottom] = useState(false);
+  const promptFiredRef = useRef(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const mountedAtRef = useRef(Date.now());
+  const source = props.promptSource;
+
+  function openPrompt() {
+    if (promptFiredRef.current || !source) return;
+    // A dismissal is remembered for the session: someone working through three
+    // reps in a sitting has already answered this question once.
+    if (signupPromptDismissed()) return;
+    promptFiredRef.current = true;
+    setPromptOpen(true);
+    track("signup_prompt_shown", { source });
+  }
+
+  useInView(bottomRef, () => setReachedBottom(true), { rootMargin: "0px 0px -10% 0px" });
+
+  // Reaching the end of the feedback is the strong signal and shortens the wait,
+  // but it never skips the floor: on a tall viewport the bottom sentinel can
+  // already be in view at mount, and the prompt must never land at the same
+  // instant as the score. Measured from mount, so reaching the bottom late
+  // fires immediately rather than restarting a countdown.
+  useEffect(() => {
+    if (!source) return;
+    const target = reachedBottom ? SIGNUP_PROMPT_FLOOR_MS : SIGNUP_PROMPT_DWELL_MS;
+    const t = window.setTimeout(openPrompt, Math.max(0, target - (Date.now() - mountedAtRef.current)));
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, reachedBottom]);
 
   const tabs = [
     { key: "overview", label: "Overview" },
@@ -3921,7 +4203,26 @@ function FeedbackScreen(props: {
             📇 Study {weakIds.length > 0 ? "your weak criteria" : "these criteria"} →
           </button>
         )}
+
+        {/* Scroll sentinel: reaching it means they read to the end of the
+            feedback. Zero-height so it changes no layout. */}
+        <div ref={bottomRef} aria-hidden="true" />
       </div>
+
+      {promptOpen && source && (
+        <SignupPromptModal
+          onSignup={() => {
+            track("signup_prompt_clicked", { source });
+            setPromptOpen(false);
+            props.onSignIn?.();
+          }}
+          onDismiss={() => {
+            track("signup_prompt_dismissed", { source });
+            rememberSignupPromptDismissed();
+            setPromptOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -4117,7 +4418,7 @@ function AnalysisRow(props: { label: string; blurb: string; sub: SubScore }) {
         <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{props.sub.justification}</p>
       )}
       {props.sub.evidence && (
-        <p className="mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400">
+        <p className={`mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400 ${PH_MASK}`}>
           “{props.sub.evidence}”
         </p>
       )}
@@ -4169,7 +4470,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
           <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{c.justification}</p>
         )}
         {c.evidence && (
-          <p className="mt-1.5 border-l-2 border-fuchsia-200 pl-2.5 text-xs italic text-slate-500 dark:border-fuchsia-900/60 dark:text-slate-400">
+          <p className={`mt-1.5 border-l-2 border-fuchsia-200 pl-2.5 text-xs italic text-slate-500 dark:border-fuchsia-900/60 dark:text-slate-400 ${PH_MASK}`}>
             “{c.evidence}”
           </p>
         )}
@@ -4192,7 +4493,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
             <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{d.justification}</p>
           )}
           {d.evidence && (
-            <p className="mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic text-slate-500 dark:border-emerald-900/60 dark:text-slate-400">
+            <p className={`mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic text-slate-500 dark:border-emerald-900/60 dark:text-slate-400 ${PH_MASK}`}>
               “{d.evidence}”
             </p>
           )}
@@ -4379,7 +4680,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
           {m.crutch_phrases.length > 0 && (
             <div className="mt-3">
               <span className="font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Crutch phrases (advisory)</span>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <div className={`mt-1.5 flex flex-wrap gap-1.5 ${PH_MASK}`}>
                 {m.crutch_phrases.map((f) => <Chip key={f.phrase}>{f.phrase} ×{f.count}</Chip>)}
               </div>
             </div>
@@ -4499,7 +4800,7 @@ function CriterionRow({ r }: { r: CriterionScore }) {
         <div className="border-t border-black/5 px-3.5 pb-3 pt-2.5 dark:border-white/10">
           {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
           {r.evidence.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className={`mt-2 flex flex-wrap gap-1.5 ${PH_MASK}`}>
               {r.evidence.map((q, i) => (
                 <span key={i} className="rounded bg-white/70 dark:bg-slate-800/60 px-1.5 py-0.5 text-xs italic text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700">
                   “{truncate(q, 80)}”
@@ -4606,7 +4907,7 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
         <div className="space-y-2 border-t border-black/5 px-3 pb-3 pt-2.5 dark:border-white/10">
           {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
           {r.evidence.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className={`flex flex-wrap gap-1.5 ${PH_MASK}`}>
               {r.evidence.map((q, i) => (
                 <span key={i} className="rounded bg-white/70 dark:bg-slate-800/60 px-1.5 py-0.5 text-xs italic text-slate-500 dark:text-slate-400 ring-1 ring-slate-200 dark:ring-slate-700">
                   “{truncate(q, 80)}”
@@ -4694,14 +4995,14 @@ function TranscriptTab(props: {
                   <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold text-white ${SPEAKER_BAR[speakerIndex(props.utterances, u.speaker) % SPEAKER_BAR.length]}`}>
                     {u.speaker}
                   </span>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+                  <p className={`whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PH_MASK}`}>
                     {highlight(u.text, props.marks, props.active, props.onSelect)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+            <p className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PH_MASK}`}>
               {highlight(props.response, props.marks, props.active, props.onSelect)}
             </p>
           )}
@@ -4710,7 +5011,7 @@ function TranscriptTab(props: {
         {props.followupAnswer.trim() && (
           <Card>
             <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your follow-up answer</h3>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+            <p className={`mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PH_MASK}`}>
               {highlight(props.followupAnswer, props.marks, props.active, props.onSelect)}
             </p>
             {props.followupFeedback && (
@@ -5123,6 +5424,18 @@ function FAQPage({ onStart }: { onStart: () => void }) {
             Recordings are sent to a transcription service to measure delivery, then discarded on our servers. We keep
             only the transcript and the numbers. Your audio stays on your device unless you choose to keep it. Delivery
             covers timing only (pace, fillers, pauses), never tone, confidence, accent, or “charisma.”
+          </p>
+        </FAQItem>
+        <FAQItem q="Do you record my screen?">
+          <p>
+            We record session replays — how people move through the app, so we can find where it gets confusing. A
+            replay captures clicks, scrolling, and timing.
+          </p>
+          <p>
+            <strong className="font-semibold text-slate-800 dark:text-slate-200">All text is masked in your browser before anything is sent.</strong>{" "}
+            That means a replay shows the layout and where you clicked, never your response, your transcript, the
+            scenario, or your feedback. The same rule as everywhere else here: the words you write stay between you and
+            the grader.
           </p>
         </FAQItem>
       </FAQGroup>

@@ -78,6 +78,95 @@ git push origin HEAD          # push the current branch
 - Going truly public? Consider a shared access passcode or Cloudflare Access in
   front of it — the spend guards cap the damage, but a gate prevents it.
 
+## 6. Accounts: Supabase auth + Google sign-in
+
+Login is optional in the product, so this whole section is optional too — with
+`SUPABASE_URL` / `SUPABASE_ANON_KEY` unset, the app hides every account feature
+and anonymous practice is unaffected.
+
+### 6a. Enable the Google provider
+
+1. **Google Cloud Console** → create (or pick) a project → **APIs & Services →
+   OAuth consent screen**. Choose **External**, then fill in:
+   - **App name:** `PI Coach`. Setting this alone does **not** change what users
+     see — read 6b before assuming it did.
+   - **App logo:** upload [`brand/logo-120.png`](./brand/logo-120.png) — the
+     bullseye mark at Google's 120×120 limit. Do not skip this: without a logo
+     and a verified brand, Google shows only your app *domain*, which is the
+     whole problem you are trying to fix.
+   - **Application home page:** `https://trypicoach.com`
+   - **Privacy policy URL:** `https://trypicoach.com/privacy` and **Terms of
+     service URL:** `https://trypicoach.com/terms`. Both ship with the app
+     (`frontend/src/legal.tsx`) and both are required for branding. Before
+     pointing Google at them, set `CONTACT_EMAIL` and `GOVERNING_LAW` at the top
+     of that file — the contact address must be one you actually monitor.
+   - **Authorized domain:** `trypicoach.com`. You can only save this if the
+     domain is already verified in [Google Search
+     Console](https://search.google.com/search-console) under the *same* Google
+     account as the Cloud project.
+   - **Scopes:** leave the defaults. We only need `email` and `profile`, which
+     are *non-sensitive* — so no Google security review is required, and users
+     see no "unverified app" interstitial.
+2. Set publishing status to **In production**. In *Testing* only addresses you
+   list by hand can sign in, capped at 100 — a silent way to lose every real
+   signup.
+3. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - **Authorized JavaScript origins:** `https://trypicoach.com`
+   - **Authorized redirect URI:** `https://<project-ref>.supabase.co/auth/v1/callback`
+     (or your Supabase custom domain — see 6b). Copy this exactly from the
+     Supabase provider page; a trailing-slash mismatch is the usual cause of
+     `redirect_uri_mismatch`.
+4. **Supabase dashboard → Authentication → Providers → Google**: enable it and
+   paste the client ID + client secret.
+5. **Supabase → Authentication → URL Configuration**:
+   - **Site URL:** `https://trypicoach.com`
+   - **Redirect URLs:** add `https://trypicoach.com/**` (and
+     `http://localhost:5173/**` for dev). The wildcard matters — the app returns
+     you to the exact path you left from, not just the root.
+
+### 6b. Making the consent screen say "trypicoach.com"
+
+Google's screen reads *"to continue to `<project-ref>.supabase.co`"* because it
+displays the host that owns the **callback URL**, not your App name. Typing an
+App name into the consent screen changes nothing on its own — this is the part
+that surprises everyone. Two ways out:
+
+- **Google brand verification** (free, slow). Google swaps the hostname for your
+  App name only once it has verified your brand. To get there you need *all* of
+  6a: the domain verified in Search Console, an uploaded logo (the upload is what
+  submits you for review), live privacy-policy and terms URLs on that domain, and
+  publishing status **In production**. Non-sensitive scopes mean no security
+  review, but the logo/brand review still takes days. Miss any one of these and
+  you keep seeing the raw `*.supabase.co` host.
+- **A Supabase custom domain** (paid, immediate). Supabase serves auth from
+  `auth.trypicoach.com` instead of `<project-ref>.supabase.co`, so the callback
+  host *is* yours and there is nothing for Google to verify. It also fixes the
+  host shown under *"see details"* and the links in confirmation emails. It's a
+  **paid add-on on a paid plan** (Supabase → Settings → General → Custom
+  Domains); check the current price before committing. After enabling it, update
+  the redirect URI in the Google credential (step 6a.3) to the new host.
+
+The two are independent — the custom domain works whether or not Google ever
+verifies your brand, which is why it's the reliable option if you need this
+fixed on a deadline.
+
+**Confirmation emails** are a third, separate surface: they're sent from
+Supabase's shared address until you configure **custom SMTP** (Supabase → Auth →
+SMTP Settings) with a provider like Resend or Postmark on a domain you own. The
+shared sender is also heavily rate-limited, so this is worth doing before any
+real signup volume regardless of branding.
+
+### 6c. Session replay and what it records
+
+Replay masking is configured in `frontend/src/analytics.ts` — read the comment
+at the top of that file before changing it. The short version: the product's own
+UI records as readable text so you can see where people get stuck, while
+passwords, email fields, every textarea, and any rendered text tagged `PH_MASK`
+(transcripts, evidence quotes, the signed-in address) are masked. If you add a
+surface that displays what a student wrote or said, tag it `PH_MASK`; if you add
+a free-text input holding anything personal, make it a `textarea` or
+`type="email"` so the input mask covers it.
+
 ---
 
 ## Other hosts (same Dockerfile)

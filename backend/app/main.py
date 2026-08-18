@@ -1117,4 +1117,15 @@ if Path(_DIST).is_dir():
     def _tour() -> FileResponse:
         return FileResponse(_INDEX)
 
+    # Privacy policy and terms. These have to answer on the bare path, not just
+    # via a client-side hash: Google fetches both URLs when verifying the OAuth
+    # consent screen's branding (DEPLOY.md §6b), and a 404 fails that check.
+    @app.get("/privacy", include_in_schema=False)
+    def _privacy() -> FileResponse:
+        return FileResponse(_INDEX)
+
+    @app.get("/terms", include_in_schema=False)
+    def _terms() -> FileResponse:
+        return FileResponse(_INDEX)
+
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")
