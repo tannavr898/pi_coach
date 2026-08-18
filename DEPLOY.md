@@ -88,13 +88,21 @@ and anonymous practice is unaffected.
 
 1. **Google Cloud Console** → create (or pick) a project → **APIs & Services →
    OAuth consent screen**. Choose **External**, then fill in:
-   - **App name:** `PI Coach` — this is the string Google shows users. Leave it
-     blank and they get bare domains instead.
-   - **App logo:** the bullseye mark. Uploading a logo triggers Google's brand
-     verification, which can take days; skip it for launch if you'd rather not
-     wait.
+   - **App name:** `PI Coach`. Setting this alone does **not** change what users
+     see — read 6b before assuming it did.
+   - **App logo:** the bullseye mark, 120×120 square. Do not skip this: the
+     upload is what triggers Google's brand verification, and brand verification
+     is the only free way to get your name onto the consent screen.
    - **Application home page:** `https://trypicoach.com`
-   - **Authorized domain:** `trypicoach.com`
+   - **Privacy policy URL:** `https://trypicoach.com/privacy` and **Terms of
+     service URL:** `https://trypicoach.com/terms`. Both ship with the app
+     (`frontend/src/legal.tsx`) and both are required for branding. Before
+     pointing Google at them, set `CONTACT_EMAIL` and `GOVERNING_LAW` at the top
+     of that file — the contact address must be one you actually monitor.
+   - **Authorized domain:** `trypicoach.com`. You can only save this if the
+     domain is already verified in [Google Search
+     Console](https://search.google.com/search-console) under the *same* Google
+     account as the Cloud project.
    - **Scopes:** leave the defaults. We only need `email` and `profile`, which
      are *non-sensitive* — so no Google security review is required, and users
      see no "unverified app" interstitial.
@@ -117,20 +125,29 @@ and anonymous practice is unaffected.
 
 ### 6b. Making the consent screen say "trypicoach.com"
 
-By default Google's screen reads *"to continue to `<project-ref>.supabase.co`"*,
-because that host owns the callback URL. Two independent fixes, and you want
-both:
+Google's screen reads *"to continue to `<project-ref>.supabase.co`"* because it
+displays the host that owns the **callback URL**, not your App name. Typing an
+App name into the consent screen changes nothing on its own — this is the part
+that surprises everyone. Two ways out:
 
-- **App name + authorized domain** (free, step 6a above) — this is what replaces
-  the raw hostname in the headline with `PI Coach`. Do this first; it's most of
-  the perceived fix.
-- **A Supabase custom domain** — Supabase serves auth from
+- **Google brand verification** (free, slow). Google swaps the hostname for your
+  App name only once it has verified your brand. To get there you need *all* of
+  6a: the domain verified in Search Console, an uploaded logo (the upload is what
+  submits you for review), live privacy-policy and terms URLs on that domain, and
+  publishing status **In production**. Non-sensitive scopes mean no security
+  review, but the logo/brand review still takes days. Miss any one of these and
+  you keep seeing the raw `*.supabase.co` host.
+- **A Supabase custom domain** (paid, immediate). Supabase serves auth from
   `auth.trypicoach.com` instead of `<project-ref>.supabase.co`, so the callback
-  host users see when they expand *"see details"*, and every link in the
-  confirmation emails, is yours. This is a **paid add-on on the Pro plan**
-  (Supabase → Settings → General → Custom Domains); check the current price
-  before committing. After enabling it you must update the redirect URI in the
-  Google credential (step 6a.3) to the new host.
+  host *is* yours and there is nothing for Google to verify. It also fixes the
+  host shown under *"see details"* and the links in confirmation emails. It's a
+  **paid add-on on a paid plan** (Supabase → Settings → General → Custom
+  Domains); check the current price before committing. After enabling it, update
+  the redirect URI in the Google credential (step 6a.3) to the new host.
+
+The two are independent — the custom domain works whether or not Google ever
+verifies your brand, which is why it's the reliable option if you need this
+fixed on a deadline.
 
 **Confirmation emails** are a third, separate surface: they're sent from
 Supabase's shared address until you configure **custom SMTP** (Supabase → Auth →

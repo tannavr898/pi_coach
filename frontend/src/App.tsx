@@ -1779,6 +1779,14 @@ function SiteFooter() {
           Recordings are transcribed to measure delivery, then discarded on our servers; your audio stays on your
           device unless you keep it. Delivery covers timing only (pace, fillers, pauses), never tone or confidence.
         </p>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/privacy">
+            Privacy
+          </a>
+          <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/terms">
+            Terms
+          </a>
+        </div>
       </div>
     </footer>
   );
