@@ -19,10 +19,17 @@
 
     <!-- Icons. The SVG is preferred by browsers that support it (crisp at any
          zoom); the .ico carries purpose-drawn 16/32/48/64 frames for the rest.
-         All of it is generated from the brand mark by brand/gen_icons.py. -->
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+         All of it is generated from the brand mark by brand/gen_icons.py.
+
+         The ?v= is a cache-buster, and it is load-bearing. Browsers keep favicons
+         in a store separate from the HTTP cache, keyed by URL and not revalidated
+         on a normal or even a hard reload -- so a visitor whose browser learned
+         "this site has no icon" before these shipped would keep seeing the blank
+         globe more or less forever. Changing the URL is what forces a re-fetch.
+         Bump this whenever the icon art changes. -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
     <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Link previews: search results, iMessage, Slack, Discord, X. -->

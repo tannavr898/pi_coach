@@ -128,11 +128,17 @@ def _og_card() -> Image.Image:
 
 
 def _favicon_svg() -> str:
-    """Vector favicon for browsers that prefer it (crisp at every zoom)."""
+    """Vector favicon for browsers that prefer it (crisp at every zoom).
+
+    Carries explicit width/height as well as a viewBox. A viewBox alone is valid
+    SVG and renders fine inline, but as a favicon it leaves the image with no
+    intrinsic size, and browsers that decline to guess one draw nothing at all --
+    which looks exactly like having no favicon rather than like a broken file.
+    """
     c, r, wdt, dot = 32, RING_R_F * 64, RING_W_F * 64, DOT_R_F * 64
     return (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" '
-        'aria-label="PI Coach">'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" '
+        'viewBox="0 0 64 64" role="img" aria-label="PI Coach">'
         f'<rect width="64" height="64" rx="{RADIUS_F * 64:.1f}" fill="#4f46e5"/>'
         f'<circle cx="{c}" cy="{c}" r="{r:.2f}" fill="none" stroke="#fff" '
         f'stroke-width="{wdt:.2f}"/>'

@@ -9,6 +9,7 @@ with events.json, still looks fine in a browser — and quietly earns nothing.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import re
 
 import pytest
@@ -141,6 +142,26 @@ def test_chrome_matches_the_app():
     # Resolved before first paint, or the reader gets a white flash on every load.
     head = html.split("</head>", 1)[0]
     assert "pic-theme" in head
+
+
+def test_icon_urls_stay_in_step_with_the_spa():
+    """Both surfaces must request the SAME favicon URL.
+
+    The ?v= exists because browsers cache favicons by URL in a store an ordinary
+    reload does not revalidate. If these two drift, one surface quietly serves an
+    icon URL the browser already has a stale (or empty) entry for, and the icon
+    silently stops appearing on exactly one half of the site -- the hardest kind
+    of bug to notice, because nothing errors.
+    """
+    index = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+    if not index.is_file():  # backend-only checkout; nothing to compare against
+        pytest.skip("frontend/index.html not present")
+    spa = index.read_text(encoding="utf-8")
+    rendered = client.get("/flashcards").text
+    for icon in ["favicon.ico", "favicon.svg", "apple-touch-icon.png"]:
+        want = f"/{icon}?v={seo._ICON_V}"
+        assert want in spa, f"{want} missing from index.html"
+        assert want in rendered, f"{want} missing from the rendered page"
 
 
 def test_counts_match_the_course_they_describe():

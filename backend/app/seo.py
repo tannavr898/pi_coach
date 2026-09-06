@@ -97,6 +97,14 @@ _DISCLAIMER = (
 )
 
 
+# Cache-buster for the icon URLs. Browsers keep favicons in a store separate from
+# the HTTP cache, keyed by URL and not revalidated on an ordinary reload, so a
+# visitor whose browser already learned "no icon here" will keep showing the blank
+# globe until the URL itself changes. Must stay in step with frontend/index.html —
+# the two surfaces should ask for the same icon.
+_ICON_V = "2"
+
+
 def site_url() -> str:
     """Absolute origin for canonicals, Open Graph tags and the sitemap."""
     return config.SITE_URL
@@ -286,9 +294,10 @@ def _shell(*, title: str, description: str, path: str, body: str, jsonld: str) -
 <link rel="canonical" href="{_e(url)}">
 <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <meta name="theme-color" content="#4f46e5">
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico?v={_ICON_V}" sizes="32x32">
+<link rel="icon" href="/favicon.svg?v={_ICON_V}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v={_ICON_V}">
+<link rel="manifest" href="/site.webmanifest">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="PI Coach">
 <meta property="og:title" content="{_e(title)}">
