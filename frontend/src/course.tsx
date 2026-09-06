@@ -17,10 +17,13 @@ import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 
 export function StudyCourse({
   authed,
+  refreshKey,
   onStudy,
   onBlitz,
 }: {
   authed: boolean;
+  // Changes each time a study overlay or a Blitz closes. See the refetch below.
+  refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
 }) {
@@ -46,6 +49,29 @@ export function StudyCourse({
       active = false;
     };
   }, [authed]);
+
+  // Progress is written server-side while a study overlay or Blitz is open, so by
+  // the time one closes this screen's copy of the course is stale. Refetch the
+  // course being VIEWED (not getMyCourse -- you can browse a path you aren't
+  // enrolled in, and clobbering that would bounce you to a different event).
+  //
+  // Without this, flipping cards and finishing Blitzes both left every counter
+  // frozen until a full page reload, which is indistinguishable from studying not
+  // counting at all.
+  useEffect(() => {
+    if (!refreshKey) return;
+    const eventId = course?.event_id;
+    if (!eventId) return;
+    let active = true;
+    getCourse(eventId)
+      .then((c) => active && setCourse(c))
+      .catch(() => {}); // a failed refresh just leaves the old numbers up
+    return () => {
+      active = false;
+    };
+    // Deliberately keyed on refreshKey alone: including `course` would refetch in
+    // a loop, since the refetch replaces it.
+  }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pick = useCallback(async (eventId: string) => {
     setBusy(true);

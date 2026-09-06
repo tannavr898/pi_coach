@@ -302,6 +302,13 @@ export default function App() {
   const [flashcard, setFlashcard] = useState<FlashcardTarget | null>(null);
   // Mastery Blitz (Phase 5): the term set to drill, or null when closed.
   const [blitzCards, setBlitzCards] = useState<Term[] | null>(null);
+  // Bumped whenever a study surface closes. Flipping a card or finishing a Blitz
+  // writes progress on the SERVER, but the course on screen was fetched when the
+  // view mounted and has no idea -- so without this the counters sit unchanged
+  // until a full page reload, which reads as "studying does nothing". That was
+  // true of Blitz results too, not just flips.
+  const [studyEpoch, setStudyEpoch] = useState(0);
+  const endStudy = () => setStudyEpoch((n) => n + 1);
   const flags = useFlags(authUser?.id ?? null);
 
   // Refresh the allowance when auth settles and after each completed session, so
@@ -1094,10 +1101,10 @@ export default function App() {
           startId={flashcard.startId}
           title={flashcard.title}
           flags={flags}
-          onClose={() => setFlashcard(null)}
+          onClose={() => { setFlashcard(null); endStudy(); }}
         />
       )}
-      {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => setBlitzCards(null)} />}
+      {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => { setBlitzCards(null); endStudy(); }} />}
       {tourOpen && (
         <ProductTour
           onSkip={() => {
@@ -1174,6 +1181,7 @@ export default function App() {
         ) : view === "course" ? (
           <StudyCourse
             authed={!!authUser}
+            refreshKey={studyEpoch}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards, title) => startBlitz(cards, { from: "course", unit: title })}
           />
