@@ -232,10 +232,15 @@ const DECK_KEY = "pic-deck";
 
 export function FlashcardLibrary({
   flags,
+  initialDeck,
   onStudy,
   onBlitz,
 }: {
   flags: FlagsApi;
+  // An event handed over from its public deck page (/flashcards/<event>). Wins over
+  // the remembered choice: following that link is a deliberate "show me THIS deck",
+  // and honouring a stale localStorage value instead would silently ignore it.
+  initialDeck?: string | null;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
 }) {
@@ -259,6 +264,7 @@ export function FlashcardLibrary({
   // that are actually theirs. Remembered locally so it survives a reload and does
   // not need an account; the event catalog is public either way.
   const [deckId, setDeckId] = useState<string>(() => {
+    if (initialDeck) return initialDeck;
     try {
       return localStorage.getItem(DECK_KEY) ?? "";
     } catch {

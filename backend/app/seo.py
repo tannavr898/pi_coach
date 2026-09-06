@@ -505,10 +505,14 @@ def render_event_page(event_id: str) -> str | None:
         "</ul>"
     )
 
+    # The handoff back into the app. ?deck= opens the in-app library already scoped
+    # to this event, so the shareable page and the interactive one are two views of
+    # the same deck rather than two places that happen to hold similar cards.
     actions = (
         '<div class="actions">'
         f'<a class="cta" href="/">Practice a {_e(code)} role-play →</a>'
-        '<a class="cta ghost" href="/flashcards">Browse every event →</a>'
+        f'<a class="cta ghost" href="/?deck={_e(event_id)}">Study these in the app →</a>'
+        '<a class="cta ghost" href="/flashcards">Every event →</a>'
         "</div>"
     )
 

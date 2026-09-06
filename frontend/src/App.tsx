@@ -179,6 +179,19 @@ function clearChallengeParam() {
   }
 }
 
+// A deck handed over from a public /flashcards/<event> page, so "open this in the
+// app" lands in the interactive library already scoped to that event rather than a
+// generic 830-card list. Validated against the id shape rather than trusted: it
+// reaches the API as a path segment.
+function readDeckParam(): string | null {
+  try {
+    const v = new URLSearchParams(window.location.search).get("deck");
+    return v && /^[a-z0-9-]{1,80}$/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -221,7 +234,9 @@ export default function App() {
   const [usage, setUsage] = useState<Usage | null>(null);
   const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>("home");
+  // Arriving from a public deck page opens the library on that deck.
+  const [handoffDeck] = useState<string | null>(() => readDeckParam());
+  const [view, setView] = useState<View>(() => (readDeckParam() ? "flashcards" : "home"));
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const nudge = useLandingNudge();
@@ -1175,6 +1190,7 @@ export default function App() {
         ) : view === "flashcards" ? (
           <FlashcardLibrary
             flags={flags}
+            initialDeck={handoffDeck}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards) => startBlitz(cards)}
           />
@@ -2398,7 +2414,11 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           {/* Study is open to everyone: browsing your event's path is the whole
               pitch for making an account, so gating it behind one is backwards. */}
           <NavLink active={view === "course"} onClick={() => onView("course")}>Study{dot("course")}</NavLink>
-          {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Flashcards{dot("flashcards")}</NavLink>}
+          {/* Flashcards is the PUBLIC decks page — a real URL anyone can open or
+              share, signed in or not. The in-app browser (search, flags, Blitz,
+              progress) is a different thing and says so. */}
+          <NavAnchor href="/flashcards">Flashcards</NavAnchor>
+          {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Library{dot("flashcards")}</NavLink>}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips{dot("tips")}</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ{dot("faq")}</NavLink>
           <button
@@ -2457,7 +2477,8 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
               <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
             )}
             <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study{dot("course")}</MobileNavItem>
-            {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Flashcards{dot("flashcards")}</MobileNavItem>}
+            <MobileNavAnchor href="/flashcards">Flashcards</MobileNavAnchor>
+            {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Library{dot("flashcards")}</MobileNavItem>}
             <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips{dot("tips")}</MobileNavItem>
             <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ{dot("faq")}</MobileNavItem>
             <MobileNavItem active={false} onClick={pick(onFeedback)}>💬 Feedback</MobileNavItem>
@@ -2562,6 +2583,32 @@ function NavLink({ active, onClick, children }: { active: boolean; onClick: () =
         }`}
       />
     </button>
+  );
+}
+
+// Nav item that is a real link rather than a view switch. Same look as NavLink,
+// but it navigates — /flashcards is served by the backend (app/seo.py), so the
+// SPA cannot render it and a button would have nowhere to go.
+function NavAnchor({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="group relative px-0.5 py-1 text-sm font-medium tracking-tight text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+    >
+      {children}
+      <span className="pointer-events-none absolute -bottom-0.5 left-0 right-0 h-0.5 origin-left scale-x-0 rounded-full bg-indigo-500 transition-transform duration-300 ease-out group-hover:scale-x-100 dark:bg-indigo-400" />
+    </a>
+  );
+}
+
+function MobileNavAnchor({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="flex min-h-11 items-center rounded-xl px-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+    >
+      {children}
+    </a>
   );
 }
 

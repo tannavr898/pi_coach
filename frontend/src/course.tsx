@@ -149,11 +149,29 @@ export function StudyCourse({
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
+      {/* Any error raised once a course is on screen -- enrolling is the main one.
+          The guard above only catches errors that prevented a course loading at
+          all, so without this an enroll failure was literally invisible: the
+          button appeared to do nothing and no message was ever shown. */}
+      {error && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} aria-label="Dismiss" className="shrink-0 font-semibold">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <Eyebrow>Study course</Eyebrow>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+          <h1 className="mt-2 flex flex-wrap items-center gap-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
             {course.event}
+            {course.enrolled && (
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                ✓ Your path
+              </span>
+            )}
           </h1>
           <p className="mt-1 max-w-xl text-sm text-slate-600 dark:text-slate-300">
             {course.core_count} core terms across {visible.length} units. Finish the core path and you'll know every
