@@ -17,6 +17,10 @@ Endpoints:
 - POST /api/course/enroll  start/switch the signed-in user's path
 - POST /api/study/mark     fold a flip/blitz/role-play result into progress
 
+Plus the server-rendered study pages (app/seo.py): /flashcards, /flashcards/{event},
+/robots.txt and /sitemap.xml. Those are plain HTML rather than JSON — they are the
+only pages a search crawler can read without executing the SPA bundle.
+
 The Vite dev server proxies /api/* here, so no CORS in development. Provider keys
 stay server-side; the frontend only ever talks to /api/*. The judge's instructions
 are never returned to the client — only the participant-facing situation and (after
@@ -33,7 +37,7 @@ import logging
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, scenario_cache, study, taxonomy, terms, transcription, usage, video
+from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, scenario_cache, seo, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, rate_limit
@@ -81,6 +85,12 @@ from .schemas import (
 from . import mathcheck
 
 app = FastAPI(title="PI Coach", version="1.0.0")
+
+# Server-rendered study pages (/flashcards, /flashcards/{event}) plus robots.txt and
+# sitemap.xml. Included here, near the top, because Starlette matches routes in
+# registration order and the SPA is mounted at "/" at the very bottom of this file —
+# anything registered after that mount is unreachable.
+app.include_router(seo.router)
 
 # Standard participant-facing procedures (our own wording — original material).
 PROCEDURES = [

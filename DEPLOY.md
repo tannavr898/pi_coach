@@ -169,6 +169,67 @@ a free-text input holding anything personal, make it a `textarea` or
 
 ---
 
+## 7. Getting found in search
+
+The app ships the technical half of this. **The other half is manual and nothing in
+the repo can do it for you** — a brand-new domain is not in Google's index at all
+until you tell Google it exists.
+
+### What the code already does
+
+- **Server-rendered study pages** (`backend/app/seo.py`). The SPA is one HTML file
+  with an empty `<div id="root">`, so there is nothing in it for a crawler to match
+  against a query like "BLTDM flashcards". These routes render the study corpus as
+  real HTML instead:
+  - `/flashcards` — hub linking all 28 event decks
+  - `/flashcards/business-law-ethics-team` — one deck, ~14,000 words of real content
+  - `/flashcards/bltdm` — DECA event codes 301 to the canonical slug
+- **`/robots.txt` and `/sitemap.xml`**, both generated from the live event catalog,
+  so adding an event to `events.json` adds its page to the sitemap automatically.
+- **Titles, meta descriptions, canonicals, Open Graph/Twitter cards** on every page,
+  plus `BreadcrumbList` / `LearningResource` / `FAQPage` structured data.
+- **Favicons and the social card** — `brand/gen_icons.py` regenerates the whole set
+  into `frontend/public/` if the mark ever changes.
+
+`SITE_URL` (set in `render.yaml`) is what all of that resolves canonicals against.
+If it ever points at `pi-coach-xxxx.onrender.com`, Google indexes that hostname
+instead of your domain — check it first when something looks wrong.
+
+### What you have to do by hand (~15 min, once)
+
+1. **Google Search Console** → [search.google.com/search-console](https://search.google.com/search-console)
+   → add `trypicoach.com` as a **Domain** property → add the TXT record it gives you
+   at your registrar. (§6b already needed this property for OAuth verification — the
+   same one works here.)
+2. **Submit the sitemap**: Search Console → *Sitemaps* → enter `sitemap.xml` → Submit.
+3. **Request indexing** for the two pages that matter most: paste
+   `https://trypicoach.com/` and `https://trypicoach.com/flashcards` into the URL
+   Inspection bar at the top, then click **Request Indexing** on each. This is the
+   thing that turns "invisible" into "crawled in a few days" rather than a few weeks.
+4. **Bing Webmaster Tools** ([bing.com/webmasters](https://www.bing.com/webmasters))
+   — it imports directly from Search Console in about two clicks, and it is where
+   ChatGPT's web results come from.
+
+### What to expect
+
+Indexing takes days; *ranking* takes longer and is not something the code controls.
+A new domain with no links pointing at it starts with no authority, so expect to
+show up for specific long-tail queries ("BLTDM flashcards", "DECA business law
+ethics flashcards") well before anything broad. The two things that actually move
+this, in order:
+
+- **Links from places DECA students already are** — your chapter's site, a state
+  association page, a teacher's resource list, a Reddit/Discord comment that is
+  genuinely useful rather than a drive-by link.
+- **Not breaking what's there**: keep the URLs stable. A page that changes address
+  starts over.
+
+Check progress in Search Console → *Performance*, filtered to queries containing
+"flashcards". `site:trypicoach.com` in Google also tells you, roughly, what is
+indexed.
+
+---
+
 ## Other hosts (same Dockerfile)
 
 - **Railway** — New Project → Deploy from repo → it detects the `Dockerfile`. Add

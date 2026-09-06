@@ -75,6 +75,15 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 # so the secret never ships in the frontend bundle. Empty = admin page disabled.
 ADMIN_PASSPHRASE = os.getenv("ADMIN_PASSPHRASE", "")
 
+# Public origin, used to build the absolute URLs search engines need: canonical
+# links, Open Graph tags and every <loc> in sitemap.xml (see seo.py). Those have to
+# be absolute and have to name the domain we actually want indexed, which a request's
+# own Host header can't be trusted for — a preview deploy or the raw
+# pi-coach-xxxx.onrender.com hostname would otherwise emit canonicals pointing at
+# itself and split the site's ranking across hostnames. Override only if the
+# production domain changes; no trailing slash.
+SITE_URL = os.getenv("SITE_URL", "https://trypicoach.com").rstrip("/")
+
 
 def has_supabase() -> bool:
     """True if Supabase is configured (login + progress features are enabled)."""

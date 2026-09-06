@@ -1763,6 +1763,21 @@ function useTheme() {
   return { theme, toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")) };
 }
 
+// A sample of the server-rendered decks, by DECA event code. Two jobs: a student
+// who competes in one of these gets there in one click, and a crawler that only
+// ever reaches the homepage still finds real internal links into the study pages
+// instead of a single link to a hub. The full set lives at /flashcards.
+const FOOTER_DECKS: [slug: string, code: string][] = [
+  ["principles-business-management", "PBM"],
+  ["principles-marketing", "PMK"],
+  ["principles-finance", "PFN"],
+  ["business-law-ethics-team", "BLTDM"],
+  ["human-resources-management", "HRM"],
+  ["entrepreneurship-team", "ETDM"],
+  ["marketing-management-team", "MTDM"],
+  ["personal-financial-literacy", "PFL"],
+];
+
 function SiteFooter() {
   return (
     <footer className="border-t border-slate-200/80 bg-white/50 dark:border-slate-800/80 dark:bg-slate-950/40">
@@ -1779,12 +1794,34 @@ function SiteFooter() {
           Recordings are transcribed to measure delivery, then discarded on our servers; your audio stays on your
           device unless you keep it. Delivery covers timing only (pace, fillers, pauses), never tone or confidence.
         </p>
+        {/* Real <a href> links, not view switches. These point at the
+            server-rendered study pages (backend/app/seo.py), which are the only
+            pages on this site a crawler can read without executing the bundle —
+            so this footer is also how Google finds them from the homepage. */}
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/flashcards">
+            Flashcards by event
+          </a>
           <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/privacy">
             Privacy
           </a>
           <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/terms">
             Terms
+          </a>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+          <span className="text-slate-400 dark:text-slate-500">Study decks:</span>
+          {FOOTER_DECKS.map(([slug, code]) => (
+            <a
+              key={slug}
+              className="transition hover:text-slate-900 hover:underline dark:hover:text-slate-100"
+              href={`/flashcards/${slug}`}
+            >
+              {code}
+            </a>
+          ))}
+          <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/flashcards">
+            all 28 →
           </a>
         </div>
       </div>
