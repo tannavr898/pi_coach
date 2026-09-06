@@ -7,13 +7,81 @@
          numbers. Without it those insets are all 0 and anything anchored to the
          bottom edge sits under the home indicator. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>PI Coach — practice DECA role-plays out loud</title>
+
+    <title>PI Coach — Practice DECA Role-Plays Out Loud</title>
+    <meta
+      name="description"
+      content="Practice DECA role-plays out loud and get honest, per-criterion feedback on content and delivery. Original scenarios for all 28 events, plus 830 study flashcards. Free to start, no account needed."
+    />
+    <link rel="canonical" href="https://trypicoach.com/" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#4f46e5" />
+
+    <!-- Icons. The SVG is preferred by browsers that support it (crisp at any
+         zoom); the .ico carries purpose-drawn 16/32/48/64 frames for the rest.
+         All of it is generated from the brand mark by brand/gen_icons.py. -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Link previews: search results, iMessage, Slack, Discord, X. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PI Coach" />
+    <meta property="og:title" content="PI Coach — Practice DECA Role-Plays Out Loud" />
+    <meta
+      property="og:description"
+      content="Original role-play scenarios for all 28 DECA events, honest per-criterion feedback, and 830 study flashcards."
+    />
+    <meta property="og:url" content="https://trypicoach.com/" />
+    <meta property="og:image" content="https://trypicoach.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PI Coach — practice DECA role-plays out loud" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PI Coach — Practice DECA Role-Plays Out Loud" />
+    <meta
+      name="twitter:description"
+      content="Original role-play scenarios for all 28 DECA events, honest per-criterion feedback, and 830 study flashcards."
+    />
+    <meta name="twitter:image" content="https://trypicoach.com/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Structured data. The sitelinks search box is not requested (we have no
+         site-wide search endpoint to honor it); this is the identity + app
+         description Google uses for the knowledge panel and rich results. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://trypicoach.com/#website",
+            "url": "https://trypicoach.com/",
+            "name": "PI Coach",
+            "description": "Practice DECA role-plays out loud with original scenarios, per-criterion feedback, and study flashcards.",
+            "inLanguage": "en-US"
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://trypicoach.com/#app",
+            "name": "PI Coach",
+            "url": "https://trypicoach.com/",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Any (web browser)",
+            "description": "An AI role-play trainer for DECA competitors: pick your event, get an original scenario, present it out loud against a real timer, and get per-criterion feedback on content and delivery.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "isAccessibleForFree": true
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
