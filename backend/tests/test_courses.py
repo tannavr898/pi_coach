@@ -168,3 +168,48 @@ def test_apply_counts_a_miss_as_seen_but_not_correct():
                         "FW-151", "blitz", "missed")
     assert after["seen_count"] == 6 and after["correct_count"] == 5
     assert after["status"] == "learning"
+
+
+def test_flipping_moves_seen_but_never_completes_a_unit():
+    """The rule the whole study design rests on, asserted end to end.
+
+    Flipping a card has to produce visible movement -- otherwise a student works
+    through a deck, watches every number stay at zero, and concludes the app is
+    broken (it was: nothing sent flip evidence at all). But it must never finish
+    the path, because "finish this and you know your event" is only a promise if
+    tapping Next cannot fulfil it.
+    """
+    course = courses.course_for("business-law-ethics-team")
+    unit = next(u for u in course["units"] if u["core_ids"])
+
+    flipped = {tid: study.apply(None, tid, "flip")["status"] for tid in unit["core_ids"]}
+    assert set(flipped.values()) == {"learning"}, "a flip starts a term, nothing more"
+
+    summarized = courses.summarize(course, flipped)
+    after = next(u for u in summarized["units"] if u["id"] == unit["id"])
+    assert after["core_learning"] == len(unit["core_ids"]), "seen must be visible"
+    assert after["core_known"] == 0, "flipping must not prove anything"
+    assert after["done"] is False
+    assert summarized["core_percent"] == 0, "the headline tracks proven, not seen"
+
+    # Now blitz the same terms correctly: that is what completes them.
+    blitzed = {tid: study.apply(None, tid, "blitz", "correct")["status"] for tid in unit["core_ids"]}
+    proven = courses.summarize(courses.course_for("business-law-ethics-team"), blitzed)
+    unit_proven = next(u for u in proven["units"] if u["id"] == unit["id"])
+    assert unit_proven["core_known"] == len(unit["core_ids"])
+    assert unit_proven["core_learning"] == 0, "a proven term is no longer merely seen"
+    assert proven["core_known"] > 0 and proven["core_percent"] > 0
+
+
+def test_seen_and_proven_never_double_count():
+    """learning and known are disjoint: a term is in exactly one bucket, so
+    "3 seen + 1 proven" out of 4 can never exceed the unit's total."""
+    course = courses.course_for("human-resources-management")
+    ids = [i for u in course["units"] for i in u["core_ids"] + u["extended_ids"]]
+    progress = {tid: ("known" if n % 3 == 0 else "learning" if n % 3 == 1 else "new")
+                for n, tid in enumerate(ids)}
+    s = courses.summarize(course, progress)
+    for u in s["units"]:
+        assert u["known"] + u["learning"] <= u["total"]
+        assert u["core_known"] + u["core_learning"] <= u["core_total"]
+    assert s["known_count"] + s["learning_count"] <= s["total"]

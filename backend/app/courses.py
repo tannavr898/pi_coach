@@ -109,7 +109,9 @@ def summarize(course: dict, progress: dict[str, str]) -> dict:
     account look the same here, which is what lets the course render logged-out.
     """
     known_total = 0
+    learning_total = 0
     core_known = 0
+    core_learning = 0
     for u in course["units"]:
         ids = u["core_ids"] + u["extended_ids"]
         known = [i for i in ids if progress.get(i) == "known"]
@@ -122,13 +124,24 @@ def summarize(course: dict, progress: dict[str, str]) -> dict:
         # finishing every graded term in a topic would still see 4/8 and never be
         # able to complete the path they were promised.
         u["core_known"] = sum(1 for i in u["core_ids"] if progress.get(i) == "known")
+        # Same reason `known` needed a core-scoped twin. Without this the UI can
+        # only show "seen" counted over both tiers, so a student on the Core path
+        # sees a seen-count larger than the total it sits next to.
+        u["core_learning"] = sum(1 for i in u["core_ids"] if progress.get(i) == "learning")
         u["core_total"] = len(u["core_ids"])
         u["done"] = len(known) == len(ids) and bool(ids)
         known_total += len(known)
+        learning_total += len(learning)
         core_known += u["core_known"]
+        core_learning += u["core_learning"]
 
     course["known_count"] = known_total
+    # Started but not yet proven. Surfaced so flipping through cards produces
+    # visible movement without letting it complete the path — see study.py on why
+    # only a Blitz or a role-play can promote a term to "known".
+    course["learning_count"] = learning_total
     course["core_known"] = core_known
+    course["core_learning"] = core_learning
     # The Core path is the promise ("every skill we grade you on for this event"),
     # so it gets its own completion number rather than being averaged away.
     course["core_percent"] = round(100 * core_known / course["core_count"]) if course["core_count"] else 0

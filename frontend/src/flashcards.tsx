@@ -5,9 +5,9 @@
 // matching the Tips page), and one term-specific common mistake. Weak sets are
 // highlighted; any card can be flagged to study later (persisted via useFlags).
 
-import { useEffect, useMemo, useState } from "react";
-import { getAllTerms, getTerms, type FlashcardExample, type Term } from "./api";
-import { getProgress } from "./progress";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getAllTerms, getEvents, getTerms, type EventSummary, type FlashcardExample, type Term } from "./api";
+import { getCourse, getProgress, markStudy, type Course } from "./progress";
 import type { FlagsApi } from "./flags";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 
@@ -80,6 +80,23 @@ export function Flashcards({
 
   const total = cards.length;
   const card = total ? cards[Math.min(i, total - 1)] : null;
+
+  // Revealing a card's back records it as STARTED. This is the "flip" evidence the
+  // backend has always understood (study.py) and that nothing was ever sending —
+  // so before this, working through a deck moved no counter anywhere and the app
+  // looked broken to anyone who studied the honest way.
+  //
+  // A flip can only ever reach "learning", never "known": that stays gated behind a
+  // Blitz or a real role-play, because a path you can finish by tapping Next is not
+  // the promise the course makes. Marked on reveal rather than on advance, once per
+  // card per session (flipping back and forth is not new evidence), and
+  // fire-and-forget — markStudy no-ops when signed out and never throws.
+  const marked = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!flipped || !card || marked.current.has(card.id)) return;
+    marked.current.add(card.id);
+    void markStudy([{ term_id: card.id, evidence: "flip" }]);
+  }, [flipped, card]);
 
   function go(delta: number) {
     setFlipped(false);
@@ -209,6 +226,10 @@ function FlagButton({ flagged, onFlag }: { flagged: boolean; onFlag: () => void 
 
 const LEVEL_RANK: Record<string, number> = { novice: 0, developing: 1, proficient: 2, exemplary: 3 };
 
+// Where the chosen deck is remembered. Local to the browser like `pic-theme` and
+// the card flags: it's a view preference, not progress, so it needs no account.
+const DECK_KEY = "pic-deck";
+
 export function FlashcardLibrary({
   flags,
   onStudy,
@@ -232,6 +253,21 @@ export function FlashcardLibrary({
       return n;
     });
 
+  // The deck filter: which event's terms the library is scoped to. "" is the whole
+  // 830-term corpus. This is the one thing the library was missing — a competitor
+  // studies for ONE event, and 830 cards grouped by all 13 domains buries the ~250
+  // that are actually theirs. Remembered locally so it survives a reload and does
+  // not need an account; the event catalog is public either way.
+  const [deckId, setDeckId] = useState<string>(() => {
+    try {
+      return localStorage.getItem(DECK_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const [events, setEvents] = useState<EventSummary[]>([]);
+  const [deck, setDeck] = useState<Course | null>(null);
+
   useEffect(() => {
     let active = true;
     getAllTerms()
@@ -247,22 +283,60 @@ export function FlashcardLibrary({
         setWeakIds(weak);
       })
       .catch(() => {});
+    // The event picker. Non-fatal: without it the deck filter just isn't offered.
+    getEvents()
+      .then((e) => active && setEvents(e))
+      .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
 
+  // The chosen event's course gives us its term ids. Anonymous-friendly (getCourse
+  // uses maybeAuthFetch), so the filter works signed out; only the progress numbers
+  // inside it need an account.
+  useEffect(() => {
+    let active = true;
+    try {
+      localStorage.setItem(DECK_KEY, deckId);
+    } catch {
+      /* private mode — the filter still works, it just won't be remembered */
+    }
+    if (!deckId) {
+      setDeck(null);
+      return;
+    }
+    getCourse(deckId)
+      .then((c) => active && setDeck(c))
+      .catch(() => active && setDeck(null));
+    return () => {
+      active = false;
+    };
+  }, [deckId]);
+
+  const deckIds = useMemo(() => {
+    if (!deck) return null;
+    return new Set(deck.units.flatMap((u) => [...u.core_ids, ...u.extended_ids]));
+  }, [deck]);
+
+  // Everything below counts over the SCOPED set, not the corpus: with a deck
+  // chosen, "12 flagged" has to mean 12 in this deck or the number is a lie.
+  const scoped = useMemo(
+    () => (deckIds ? (all ?? []).filter((c) => deckIds.has(c.id)) : all ?? []),
+    [all, deckIds],
+  );
+
   // Weakness comes from graded sessions, so only terms with a criterion can be weak
   // — study-only terms have nothing to be weak against.
   const isWeak = (t: Term) => !!t.criterion_id && weakIds.has(t.criterion_id);
 
-  const flaggedCards = useMemo(() => (all ?? []).filter((c) => flags.flags.has(c.id)), [all, flags.flags]);
-  const recommended = useMemo(() => (all ?? []).filter(isWeak), [all, weakIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  const flaggedCards = useMemo(() => scoped.filter((c) => flags.flags.has(c.id)), [scoped, flags.flags]);
+  const recommended = useMemo(() => scoped.filter(isWeak), [scoped, weakIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group by domain, honoring the search filter.
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = (all ?? []).filter((c) => !q || c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q));
+    const filtered = scoped.filter((c) => !q || c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q));
     const order: string[] = [];
     const by: Record<string, Term[]> = {};
     for (const c of filtered) {
@@ -273,7 +347,7 @@ export function FlashcardLibrary({
       by[c.domain].push(c);
     }
     return order.sort((a, b) => a.localeCompare(b)).map((d) => ({ domain: d, cards: by[d] }));
-  }, [all, query]);
+  }, [scoped, query]);
 
   const searching = query.trim().length > 0;
   const allOpen = groups.length > 0 && groups.every((g) => openDomains.has(g.domain));
@@ -286,7 +360,9 @@ export function FlashcardLibrary({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <Eyebrow>Flashcard library</Eyebrow>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">All {all.length} terms, by domain</h1>
+          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+            {deck ? `${deck.event}: ${scoped.length} terms` : `All ${all.length} terms, by domain`}
+          </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Front: the term. Back: a plain definition, a worked example run through the four beats, and the one mistake to avoid. Flag any card ★ to study later.</p>
         </div>
         <input
@@ -296,6 +372,16 @@ export function FlashcardLibrary({
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:w-64"
         />
       </div>
+
+      <DeckBar
+        events={events}
+        deckId={deckId}
+        deck={deck}
+        count={scoped.length}
+        onPick={setDeckId}
+        onStudy={() => scoped.length && onStudy(scoped, undefined, deck ? deck.event : "All terms")}
+        onBlitz={() => scoped.length && onBlitz(scoped, deck ? deck.event : "All terms")}
+      />
 
       {/* Mastery Blitz launcher: rapid, timed drill over a set of terms. */}
       <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30 sm:flex-row sm:items-center">
@@ -418,6 +504,114 @@ export function FlashcardLibrary({
         );
       })}
       {groups.length === 0 && <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">No terms match "{query}".</p>}
+    </div>
+  );
+}
+
+// Scope the library to one event's deck.
+//
+// The library holds all 830 terms across 13 domains, but a competitor is studying
+// for exactly ONE event, and roughly 250 of those cards are theirs. Without this,
+// finding them meant knowing which domains your event draws from — which is the
+// app's internal model, not something a student should have to learn.
+//
+// The event->terms join is the same one the course path uses (backend courses.py),
+// fetched through getCourse, so the deck here and the Study tab can never disagree.
+function DeckBar({
+  events,
+  deckId,
+  deck,
+  count,
+  onPick,
+  onStudy,
+  onBlitz,
+}: {
+  events: EventSummary[];
+  deckId: string;
+  deck: Course | null;
+  count: number;
+  onPick: (id: string) => void;
+  onStudy: () => void;
+  onBlitz: () => void;
+}) {
+  // Grouped into DECA's clusters, matching how the events are presented everywhere
+  // else — a flat list of 28 is a wall.
+  const clusters = useMemo(() => {
+    const order: string[] = [];
+    const by: Record<string, EventSummary[]> = {};
+    for (const e of events) {
+      if (!by[e.cluster]) {
+        by[e.cluster] = [];
+        order.push(e.cluster);
+      }
+      by[e.cluster].push(e);
+    }
+    return order.map((c) => ({ cluster: c, events: by[c] }));
+  }, [events]);
+
+  if (!events.length) return null;
+
+  return (
+    <div
+      className={`rounded-2xl border p-5 transition-colors ${
+        deck
+          ? "border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/30"
+          : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+      }`}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">
+            {deck ? `Studying for ${deck.event}` : "Studying for one event?"}
+          </h3>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            {deck
+              ? `${count} cards, the ones this event actually exercises. ${deck.core_count} of them are skills we grade you on.`
+              : "Narrow the library to just the terms your event draws on."}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="deck-pick">
+            Filter the library to an event
+          </label>
+          <select
+            id="deck-pick"
+            value={deckId}
+            onChange={(e) => onPick(e.target.value)}
+            className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          >
+            <option value="">Every term</option>
+            {clusters.map(({ cluster, events: inCluster }) => (
+              <optgroup key={cluster} label={cluster}>
+                {inCluster.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <button className={BTN_SECONDARY} disabled={!count} onClick={onStudy}>
+            Study →
+          </button>
+          <button className={BTN_SECONDARY} disabled={!count} onClick={onBlitz}>
+            ⚡ Blitz
+          </button>
+        </div>
+      </div>
+      {deck && (
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+          {/* A real link, not a view switch: this deck also exists as a public page
+              that needs no account, which is what you send a team partner. */}
+          <a
+            className="font-medium text-indigo-600 transition hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
+            href={`/flashcards/${deck.event_id}`}
+          >
+            Open the shareable {deck.event} deck page →
+          </a>{" "}
+          Readable without signing in, so you can send it to your partner.
+        </p>
+      )}
     </div>
   );
 }

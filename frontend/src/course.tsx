@@ -97,6 +97,11 @@ export function StudyCourse({
   // unit that only has 4 core terms makes the path look unfinishable.
   const unitDone = useCallback((u: CourseUnit) => (tier === "core" ? u.core_known : u.known), [tier]);
   const unitTotal = useCallback((u: CourseUnit) => (tier === "core" ? u.core_total : u.total), [tier]);
+  // Seen but not yet proven. Shown next to the proven count because otherwise
+  // working honestly through a deck moves nothing on screen and the app reads as
+  // broken -- a flip can only ever reach "learning" (backend study.py), so without
+  // surfacing it there is no feedback at all until the first Blitz lands.
+  const unitSeen = useCallback((u: CourseUnit) => (tier === "core" ? u.core_learning : u.learning), [tier]);
 
   const visible = useMemo(
     () => (course?.units ?? []).filter((u) => unitIds(u).length > 0),
@@ -113,6 +118,8 @@ export function StudyCourse({
   const done = tier === "core" ? course.core_known : course.known_count;
   const total = tier === "core" ? course.core_count : course.total;
   const percent = tier === "core" ? course.core_percent : course.percent;
+  const seen = tier === "core" ? course.core_learning : course.learning_count;
+  const seenPercent = total ? Math.round((100 * (done + seen)) / total) : 0;
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
@@ -144,13 +151,22 @@ export function StudyCourse({
               <span className="text-lg text-slate-300 dark:text-slate-600">/{total}</span>
               <span className="ml-2 text-base font-semibold text-indigo-600 dark:text-indigo-400">{percent}%</span>
             </div>
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              proven{seen > 0 && <> · {seen} more seen, not yet proven</>}
+            </div>
           </div>
           <div className="flex gap-2">
             <TierTab active={tier === "core"} onClick={() => setTier("core")} label={`Core path (${course.core_count})`} />
             <TierTab active={tier === "all"} onClick={() => setTier("all")} label={`Everything (${course.total})`} />
           </div>
         </div>
-        <Bar percent={percent} className="mt-3" />
+        <Bar percent={percent} behind={seenPercent} className="mt-3" />
+        {done < total && (
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Flipping a card marks it seen. A term counts as proven once you use it correctly in a
+            Blitz, or apply it in a graded role-play.
+          </p>
+        )}
         {!authed && (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
             You're browsing this path signed out: nothing is being saved. Make an account to keep your progress over
@@ -190,6 +206,7 @@ export function StudyCourse({
         const ids = unitIds(u);
         const done = unitDone(u);
         const total = unitTotal(u);
+        const seen = unitSeen(u);
         return (
           <Card key={u.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -211,6 +228,9 @@ export function StudyCourse({
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                  {seen > 0 && done < total && (
+                    <span className="text-slate-400 dark:text-slate-500">{seen} seen · </span>
+                  )}
                   {done}/{total}
                 </span>
                 <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
@@ -225,7 +245,11 @@ export function StudyCourse({
                 </button>
               </div>
             </div>
-            <Bar percent={total ? Math.round((100 * done) / total) : 0} className="mt-3" />
+            <Bar
+              percent={total ? Math.round((100 * done) / total) : 0}
+              behind={total ? Math.round((100 * (done + seen)) / total) : 0}
+              className="mt-3"
+            />
           </Card>
         );
       })}
@@ -248,19 +272,44 @@ function TierTab({ active, onClick, label }: { active: boolean; onClick: () => v
   );
 }
 
-function Bar({ percent, label, className = "" }: { percent: number; label?: string; className?: string }) {
-  const pct = Math.round(Math.min(100, Math.max(0, percent)));
+// Two-layer progress. `percent` is what's been PROVEN (solid indigo); the optional
+// `behind` is proven-plus-seen (a pale wash under it), so flipping through a deck
+// visibly moves something without ever claiming the term is mastered. The solid
+// layer is the only one that means "done" — that distinction is the whole point.
+//
+// aria-valuenow stays on the proven figure: a screen reader must hear the honest
+// number, and the wash is a hint, not a second value.
+function Bar({
+  percent,
+  behind,
+  label,
+  className = "",
+}: {
+  percent: number;
+  behind?: number;
+  label?: string;
+  className?: string;
+}) {
+  const clamp = (n: number) => Math.round(Math.min(100, Math.max(0, n)));
+  const pct = clamp(percent);
+  const seenPct = behind == null ? 0 : Math.max(pct, clamp(behind));
   return (
     <div
-      className={`h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}
+      className={`relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}
       role="progressbar"
       aria-valuenow={pct}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label ? `${label}: ${pct}% complete` : `${pct}% complete`}
     >
+      {seenPct > pct && (
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-indigo-200 transition-[width] duration-500 dark:bg-indigo-900"
+          style={{ width: `${seenPct}%` }}
+        />
+      )}
       <div
-        className="h-full rounded-full bg-indigo-500 transition-[width] duration-500"
+        className="absolute inset-y-0 left-0 rounded-full bg-indigo-500 transition-[width] duration-500"
         style={{ width: `${pct}%` }}
       />
     </div>

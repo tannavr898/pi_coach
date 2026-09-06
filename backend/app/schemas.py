@@ -562,6 +562,7 @@ class CourseUnit(BaseModel):
     # Core counted separately: the UI shows one tier at a time, and on the Core path
     # a unit's progress has to be out of its core terms to ever reach 100%.
     core_known: int = 0
+    core_learning: int = 0
     core_total: int = 0
     done: bool = False
 
@@ -577,7 +578,11 @@ class CourseResponse(BaseModel):
     extended_count: int = 0
     total: int = 0
     known_count: int = 0
+    # Started but not proven. Lets the UI show that flipping cards did something
+    # without letting flips complete the path (see study.py).
+    learning_count: int = 0
     core_known: int = 0
+    core_learning: int = 0
     # The Core path is the promise ("every skill we grade you on for this event"),
     # so it gets its own number instead of being averaged into the whole corpus.
     core_percent: int = 0

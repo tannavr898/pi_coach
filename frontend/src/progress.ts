@@ -198,6 +198,8 @@ export type CourseUnit = {
   total: number;
   // Core counted separately, so a unit's progress matches the tier being viewed.
   core_known: number;
+  // Seen but not yet proven, scoped to the core tier for the same reason.
+  core_learning: number;
   core_total: number;
   done: boolean;
 };
@@ -211,7 +213,11 @@ export type Course = {
   extended_count: number;
   total: number;
   known_count: number;
+  // Terms started but not proven. Flipping a card moves a term here, never to
+  // known -- only a Blitz or a role-play can do that (see backend study.py).
+  learning_count: number;
   core_known: number;
+  core_learning: number;
   // Core = every skill we actually grade for this event. Tracked separately from
   // `percent` because it's the finishable promise, not just a fraction.
   core_percent: number;
