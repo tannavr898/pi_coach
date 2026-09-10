@@ -234,6 +234,15 @@ export default function App() {
   const [usage, setUsage] = useState<Usage | null>(null);
   const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // An optional recovery offered alongside `error`. An error a student can act on
+  // is a different thing from one they can only read, and the difference belongs
+  // in the banner rather than in a paragraph telling them to start over.
+  //
+  // `forError` pins the action to the exact message it belongs to, so it expires
+  // on its own: the many `setError(...)` sites elsewhere in this component don't
+  // have to remember to clear it, and a "Try grading again" button can never end
+  // up attached to some later, unrelated failure.
+  const [errorAction, setErrorAction] = useState<{ label: string; run: () => void; forError: string } | null>(null);
   // Arriving from a public deck page opens the library on that deck.
   const [handoffDeck] = useState<string | null>(() => readDeckParam());
   const [view, setView] = useState<View>(() => (readDeckParam() ? "flashcards" : "home"));
@@ -247,7 +256,7 @@ export default function App() {
     if (view === "practice") nudge.consume();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
-  const { user: authUser, ready: authReady, signOut } = useAuth();
+  const { user: authUser, ready: authReady, signOut, oauthError, dismissOAuthError } = useAuth();
   // Login dialog (optional; opened after a session, from the header, or the
   // landing page — never before the user has experienced the product).
   const [authOpen, setAuthOpen] = useState(false);
@@ -307,6 +316,16 @@ export default function App() {
   // feedback screen is already showing. This token invalidates a stale grade if
   // the user restarts / retries / regenerates before it lands.
   const scoreRunRef = useRef(0);
+  // The inputs to the LAST content grade, captured after the paid steps
+  // (transcription) have already succeeded, so a failed grade can be retried
+  // without redoing them. See retryGrade().
+  const lastGradeRef = useRef<{
+    sc: ScenarioResponse;
+    response: string;
+    delivery: DeliveryMetrics | null;
+    utterances: Utterance[];
+    followup: string;
+  } | null>(null);
   // Phase 2b: prefetch the scenario the moment event + level are chosen (while
   // the user is still in the optional focus box). Keyed on the no-focus combo;
   // consumed by generate() only when the focus box is still empty.
@@ -821,6 +840,7 @@ export default function App() {
     if (!guardRoleplay()) return; // signed-out cap: spending starts here (scenario gen)
     setError(null);
     scoreRunRef.current++; // cancel any background grade still in flight from a prior run
+    lastGradeRef.current = null; // and its retry target, which belongs to that run
     setStage("loading");
     try {
       const focus = request.trim();
@@ -876,16 +896,26 @@ export default function App() {
     responseForScoring: string,
     deliveryMetrics: DeliveryMetrics | null,
     runUtterances: Utterance[],
+    // Set only on a RETRY, carrying the follow-up transcript the first attempt
+    // already paid for. Without it a retry would re-upload the follow-up audio
+    // and spend a second voice session to obtain text we are literally holding.
+    followupOverride?: string,
   ) {
     try {
       // Spoken follow-up: transcribe it too (content only — its delivery isn't graded).
-      let followupForScoring = followupAnswer;
-      if (followupMode === "speak" && followupAudio) {
+      let followupForScoring = followupOverride ?? followupAnswer;
+      if (followupOverride === undefined && followupMode === "speak" && followupAudio) {
         const fd = await postDelivery(followupAudio, sc.timing.target_seconds);
         if (scoreRunRef.current !== runId) return;
         followupForScoring = fd.transcript;
         setFollowupAnswer(fd.transcript);
       }
+      // Everything the grade needs, minus the paid steps — so a failure below can
+      // be retried from exactly here rather than from the recording.
+      lastGradeRef.current = {
+        sc, response: responseForScoring, delivery: deliveryMetrics,
+        utterances: runUtterances, followup: followupForScoring,
+      };
 
       const result = await postScore({
         scenario: sc.situation,
@@ -945,9 +975,40 @@ export default function App() {
       // Scoring itself failed (e.g. the grading call errored or timed out). Track
       // it so a run that submitted but never `scored` is visible, not silent.
       track("score_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
-      setError(errMsg(e));
-      setStage("followup");
+      const message = errMsg(e);
+      setError(message);
+      // Do NOT send a spoken run back to the follow-up screen. Their transcript
+      // and delivery feedback are already on screen and still valid; retreating
+      // to an earlier step hides work that succeeded, and the only way forward
+      // from there was to re-submit — re-uploading the audio, re-paying for
+      // transcription, and burning a second voice session to fix a failure in a
+      // later step entirely. Stay put and offer to retry just the grade.
+      if (deliveryMetrics) {
+        setErrorAction(
+          lastGradeRef.current ? { label: "Try grading again", run: retryGrade, forError: message } : null,
+        );
+      } else {
+        setStage("followup");
+      }
     }
+  }
+
+  /**
+   * Re-run ONLY the content grade, reusing the transcript we already have.
+   *
+   * The expensive, already-succeeded half of a spoken submission (upload,
+   * transcription, delivery metrics) is not repeated, so this is fast, free, and
+   * costs no allowance — which is what makes it safe to offer as a plain button.
+   */
+  async function retryGrade() {
+    const g = lastGradeRef.current;
+    if (!g) return;
+    setError(null);
+    setErrorAction(null);
+    track("score_retried", { event: eventId });
+    const runId = ++scoreRunRef.current;
+    if (!g.delivery) setStage("scoring"); // typed runs have no interim screen to sit on
+    await runScoring(runId, g.sc, g.response, g.delivery, g.utterances, g.followup);
   }
 
   async function submit() {
@@ -1061,6 +1122,7 @@ export default function App() {
 
   function restart() {
     scoreRunRef.current++; // cancel any background grade in flight
+    lastGradeRef.current = null; // nothing left to retry — this rep is over
     setScenario(null);
     setScore(null);
     setDelivery(null);
@@ -1139,9 +1201,33 @@ export default function App() {
       )}
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : view === "course" ? "max-w-5xl" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
-          <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
-            <span>{error}</span>
+            <span className="flex-1">{error}</span>
+            {errorAction?.forError === error && (
+              <button onClick={errorAction.run} className="font-semibold underline underline-offset-2">
+                {errorAction.label}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* A sign-in hand-off that came back broken. Amber rather than red, and
+            with the retry right here: nothing they were doing was lost, they
+            just aren't logged in — practice itself never needed an account. */}
+        {oauthError && (
+          <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            <span className="mt-0.5">⚠</span>
+            <span className="flex-1">{oauthError}</span>
+            <button
+              onClick={() => { dismissOAuthError(); openAuth("login"); }}
+              className="font-semibold underline underline-offset-2"
+            >
+              Try again
+            </button>
+            <button onClick={dismissOAuthError} aria-label="Dismiss" className="text-amber-500 hover:text-amber-700">
+              ✕
+            </button>
           </div>
         )}
 

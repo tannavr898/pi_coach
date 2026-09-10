@@ -29,14 +29,93 @@ type AuthState = {
   // success navigates away from this page entirely.
   signInWithProvider: (provider: OAuthProvider) => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  // A failed provider hand-off we were redirected back with, surfaced only when
+  // it left them actually signed out — see the AuthProvider effect.
+  oauthError: string | null;
+  dismissOAuthError: () => void;
 };
 
 const Ctx = createContext<AuthState | null>(null);
+
+// --- OAuth return errors ----------------------------------------------------
+
+// Params the provider hand-off writes onto our URL when it fails. `error` and
+// `error_code` are what Supabase sends; `error_description` is the human string.
+const OAUTH_ERROR_PARAMS = ["error", "error_code", "error_description", "error_uri"];
+
+// What each failure actually means to a student, in their words. The default
+// covers codes we haven't seen yet — never show them a raw `error_code`.
+function explainOAuthError(code: string): string {
+  if (code === "bad_oauth_state" || code === "flow_state_expired" || code === "flow_state_not_found") {
+    // Overwhelmingly a stale sign-in link being replayed: the browser's Back
+    // button after a completed sign-in, a second tab finishing a flow the first
+    // one already consumed, or a consent screen left open long enough for the
+    // hand-off to expire. All three are harmless, and in the common case they
+    // are ALREADY signed in — which is why the caller checks for a session
+    // before showing any of this.
+    return "That sign-in link had already been used or had expired. Try signing in once more.";
+  }
+  if (code === "access_denied") return "Sign-in was cancelled. You can try again whenever you're ready.";
+  if (code === "server_error") return "The sign-in provider had a problem. Please try again in a moment.";
+  return "Something went wrong signing you in. Please try again.";
+}
+
+/**
+ * Read (and REMOVE) an OAuth failure the provider left on our URL.
+ *
+ * Two reasons this has to exist. First, nothing else clears these params:
+ * supabase-js on the implicit flow scrubs the URL *hash* it owns, and these
+ * arrive in the query string, so `?error=invalid_request&error_code=bad_oauth_state`
+ * would otherwise sit in the address bar for the rest of the session — and get
+ * bookmarked, shared, and re-loaded. Second, a failed hand-off lands on the site
+ * root with no explanation on screen at all; the student just finds themselves
+ * logged out on the home page with a scary URL.
+ *
+ * Called at module load, deliberately: it must run before the Supabase client is
+ * constructed (which happens after /api/config resolves) so nothing else has a
+ * chance to rewrite the URL first.
+ */
+function consumeOAuthError(): { code: string; message: string } | null {
+  try {
+    const url = new URL(window.location.href);
+    // Supabase uses the query string for a callback that failed before it could
+    // resolve a redirect target, and the hash for implicit-flow errors after.
+    const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+    const code = url.searchParams.get("error_code") || hash.get("error_code")
+      || url.searchParams.get("error") || hash.get("error");
+    if (!code) return null;
+
+    for (const k of OAUTH_ERROR_PARAMS) {
+      url.searchParams.delete(k);
+      hash.delete(k);
+    }
+    const rest = hash.toString();
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${rest ? `#${rest}` : ""}`);
+    return { code, message: explainOAuthError(code) };
+  } catch {
+    return null; // malformed URL or no history API — never block boot over this
+  }
+}
+
+// Captured once, at import, for the reason given above. Read by AuthProvider.
+const OAUTH_RETURN_ERROR = typeof window !== "undefined" ? consumeOAuthError() : null;
+
+/** The current URL, minus any OAuth error params, for use as a `redirectTo`. */
+function cleanReturnUrl(): string {
+  try {
+    const url = new URL(window.location.href);
+    for (const k of OAUTH_ERROR_PARAMS) url.searchParams.delete(k);
+    return `${url.origin}${url.pathname}${url.search}`;
+  } catch {
+    return window.location.origin;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
@@ -55,6 +134,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(u);
         if (u) identifyUser(u.id);
         setLoading(false);
+        // Resolve a failed provider hand-off only once we know whether it
+        // actually cost them anything. The most common `bad_oauth_state` is a
+        // replayed callback — Back button, or a second tab — on a flow that
+        // already succeeded, so they land here signed in and there is nothing to
+        // tell them. Showing a red banner over a working session would invent a
+        // problem. Only a failure that left them signed OUT gets surfaced.
+        if (OAUTH_RETURN_ERROR) {
+          track("auth_oauth_failed", { code: OAUTH_RETURN_ERROR.code, recovered: !!u });
+          if (!u) setOauthError(OAUTH_RETURN_ERROR.message);
+        }
       });
       const { data } = sb.auth.onAuthStateChange((_event, session) => {
         const u = session?.user ?? null;
@@ -64,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // the same id costs nothing. Sign-out is handled in signOut() below —
         // resetting here would also fire on transient null sessions.
         if (u) identifyUser(u.id);
+        if (u) setOauthError(null); // a later success retires the earlier failure
       });
       unsub = () => data.subscription.unsubscribe();
     });
@@ -108,8 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider,
       options: {
         // Return to the exact page they left, query string included, so a
-        // shared-challenge deep link survives the round trip.
-        redirectTo: window.location.origin + window.location.pathname + window.location.search,
+        // shared-challenge deep link survives the round trip — but with any
+        // error params from a PREVIOUS failed attempt stripped. Carrying those
+        // through would land a successful sign-in back on `?error=...` and show
+        // the failure banner again, over a session that actually worked.
+        redirectTo: cleanReturnUrl(),
       },
     });
     if (error) return { error: error.message };
@@ -125,7 +218,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ ready, loading, user, signUp, signIn, signInWithProvider, signOut }}>
+    <Ctx.Provider
+      value={{
+        ready,
+        loading,
+        user,
+        signUp,
+        signIn,
+        signInWithProvider,
+        signOut,
+        oauthError,
+        dismissOAuthError: () => setOauthError(null),
+      }}
+    >
       {children}
     </Ctx.Provider>
   );

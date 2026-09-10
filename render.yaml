@@ -15,16 +15,30 @@ services:
       - key: TRANSCRIPTION_API_KEY
         sync: false # set in dashboard (secret)
       - key: ANTHROPIC_MODEL
-        value: claude-sonnet-4-6
+        # Keep in step with app/config.py's documented default. This pin had
+        # drifted a generation behind it (claude-sonnet-4-6), which quietly
+        # overrode the code: Sonnet 5 is both cheaper per token and stronger, and
+        # the comments in config.py already described it as what we run.
+        value: claude-sonnet-5
       - key: SITE_URL
         # Public origin baked into canonicals, Open Graph tags and sitemap.xml.
         # Must be the domain you want indexed — if this ever says
         # pi-coach-xxxx.onrender.com, Google indexes that hostname instead.
         value: https://trypicoach.com
       - key: DAILY_REQUEST_CAP
-        value: "500" # app-level wallet guard; tune to your provider spend caps
+        # App-level wallet guard; tune to your provider spend caps. Read it as
+        # SESSIONS, not requests: one spoken role-play costs ~3 counted calls
+        # (scenario, transcribe, grade), so 500 is roughly 165 role-plays a day
+        # across all users combined. Grading and transcription now get a grace
+        # band above this so a rep already recorded still finishes — the cap
+        # stops new sessions rather than destroying ones in flight.
+        value: "500"
       - key: RATE_LIMIT_PER_MIN
-        value: "20"
+        # Per-IP burst limit. Sized for a shared school NAT: a class of ~30 all
+        # starting a rep in the same minute is the pattern this product is for,
+        # and at the old 20 it read as one abusive client and 429'd the room
+        # mid-rep. See the header of app/ratelimit.py.
+        value: "120"
       - key: POSTHOG_KEY
         sync: false # public PostHog project key; optional, served via /api/config
       - key: POSTHOG_HOST

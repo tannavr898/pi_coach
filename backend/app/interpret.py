@@ -77,8 +77,7 @@ def interpret_request(request: str) -> dict:
     parsing/validation slip degrades to a sensible in-scope default rather than
     failing the user."""
     system, user = prompts.build_interpretation_prompt(request, framework.domains())
-    raw = llm.complete(system, user, model=config.SCENARIO_MODEL, max_tokens=500)
-    data = llm.parse_json_object(raw)
+    data = llm.complete_json(system, user, model=config.SCENARIO_MODEL, max_tokens=600)
 
     if data.get("in_scope") is False:
         msg = str(data.get("redirect_message", "")).strip() or (

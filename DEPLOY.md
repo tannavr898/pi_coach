@@ -24,9 +24,19 @@ A public URL means anyone can spend your API credits. Three layers, set them up
 2. **AssemblyAI spend cap** — you've done this; confirm it's still set.
 3. **App-level daily guard** — `DAILY_REQUEST_CAP` (set in step 3) stops paid
    calls for the day with a friendly message *before* the hard provider cap is
-   hit. Tune it to your budget; ~500/day is a safe start.
+   hit. Tune it to your budget; ~500/day is a safe start. Count it in *sessions*,
+   not requests: one spoken role-play is ~3 counted calls (scenario, transcribe,
+   grade), so 500 is roughly 165 role-plays a day across every user combined.
 
-There's also a per-IP burst limit (`RATE_LIMIT_PER_MIN`, default 20/min).
+There's also a per-IP burst limit (`RATE_LIMIT_PER_MIN`, default 120/min) — sized
+for a shared school NAT, where a whole class arrives from one address.
+
+Both guards are deliberately asymmetric: they gate the calls that *start* a
+session, while transcription and grading get a higher ceiling and a grace band
+above the daily cap. Refusing a submit would throw away a rep the student already
+recorded, after we had already paid for the expensive half of it — the tokens are
+spent by then, so turning it away saves nothing and costs them everything. See the
+header of `backend/app/ratelimit.py`.
 
 ## 2. Push the code to GitHub
 

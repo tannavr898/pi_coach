@@ -8,12 +8,15 @@ text completion, and parse model JSON defensively (the roadmap §7 rule).
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any
 
 import anthropic
 
 from .config import MODEL, SCENARIO_MODEL, SCORING_MODEL  # noqa: F401  (re-exported for callers)
+
+log = logging.getLogger("uvicorn.error")
 
 
 class LLMNotConfigured(RuntimeError):
@@ -22,6 +25,18 @@ class LLMNotConfigured(RuntimeError):
 
 class LLMError(RuntimeError):
     """Raised when the provider call or response parsing fails."""
+
+
+class LLMTruncated(LLMError):
+    """Raised when the model hit `max_tokens` and the reply is cut off mid-JSON.
+
+    Split out from the generic parse failure because the two need different
+    responses: a truncated reply is a capacity problem we caused (raise the cap),
+    while a malformed one is a model slip that a retry usually clears. Before
+    this existed, truncation surfaced as "Could not parse model JSON: Expecting
+    ',' delimiter" — a message that pointed at the wrong bug and reached the
+    student verbatim.
+    """
 
 
 _client: anthropic.Anthropic | None = None
@@ -56,6 +71,8 @@ def complete(system: str, user: str, *, model: str | None = None, max_tokens: in
         )
     except anthropic.APIError as e:  # network, rate-limit, 5xx, etc.
         raise LLMError(f"Anthropic API error: {e}") from e
+    if getattr(msg, "stop_reason", None) == "max_tokens":
+        raise LLMTruncated(f"Model reply hit the {max_tokens}-token cap and was cut off.")
     return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text").strip()
 
 
@@ -99,6 +116,8 @@ def complete_vision(
         )
     except anthropic.APIError as e:
         raise LLMError(f"Anthropic API error: {e}") from e
+    if getattr(msg, "stop_reason", None) == "max_tokens":
+        raise LLMTruncated(f"Model reply hit the {max_tokens}-token cap and was cut off.")
     return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text").strip()
 
 
@@ -127,3 +146,47 @@ def parse_json_object(text: str) -> dict[str, Any]:
         return json.loads(t[start : end + 1], strict=False)
     except json.JSONDecodeError as e:
         raise LLMError(f"Could not parse model JSON: {e}") from e
+
+
+def complete_json(
+    system: str,
+    user: str,
+    *,
+    model: str | None = None,
+    max_tokens: int = 2048,
+    retries: int = 1,
+) -> dict[str, Any]:
+    """`complete` + `parse_json_object`, with a bounded retry on a bad reply.
+
+    WHY THIS EXISTS. The Anthropic SDK already retries transport-level failures
+    (429s, 5xx, dropped connections) on its own, so those are covered. What it
+    cannot retry is the failure that actually reached students: a 200 OK whose
+    body is not parseable JSON — the model dropped a comma, wrapped the object in
+    prose, or ran into `max_tokens` and stopped mid-string. Every one of those
+    turned into a 502 and cost the student the rep they had just recorded, even
+    though the very same request succeeds on a second attempt the overwhelming
+    majority of the time.
+
+    Truncation is retried differently from a malformed body: repeating the call
+    with the same ceiling would only truncate again, so the cap is doubled for the
+    retry. Everything else is a straight re-ask.
+
+    `retries` is deliberately small. This sits in the request path of a student
+    waiting on a score, and a model that fails twice in a row is an outage to
+    report, not a loop to grind on.
+    """
+    attempt = 0
+    cap = max_tokens
+    while True:
+        try:
+            return parse_json_object(complete(system, user, model=model, max_tokens=cap))
+        except LLMTruncated as e:
+            if attempt >= retries:
+                raise
+            cap = min(cap * 2, 16000)
+            log.warning("LLM reply truncated (%s); retrying at max_tokens=%d", e, cap)
+        except LLMError as e:
+            if attempt >= retries:
+                raise
+            log.warning("LLM returned unparseable JSON (%s); retrying", e)
+        attempt += 1

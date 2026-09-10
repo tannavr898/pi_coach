@@ -258,6 +258,55 @@ export type DeliveryResponse = {
   utterances: Utterance[];
 };
 
+// How long we'll wait before calling a request dead, per class of work.
+//
+// WHY THESE EXIST AT ALL. `fetch` has no default timeout: if a request stalls —
+// a phone that walked out of Wi-Fi range, a proxy that accepted the connection
+// and then went quiet, a cold backend — the promise simply never settles. The
+// loading screen then spins forever with no error, no retry, and no way back,
+// which is indistinguishable to the student from the app being broken. A bounded
+// wait turns that into a message they can act on.
+//
+// The numbers are set from what each call actually does, not a single global
+// guess: transcription uploads audio and then polls a third party, so it is the
+// slowest by a wide margin and is given the most room.
+const TIMEOUT_MS = {
+  quick: 20_000,      // catalog/config reads — local JSON, no model call
+  model: 120_000,     // one LLM round trip (scenario, grading, blitz)
+  transcribe: 300_000, // upload + provider polling; matches the server's own deadline
+};
+
+/** A user-facing message for a request that ran out of time, by class of work. */
+function timeoutMessage(kind: keyof typeof TIMEOUT_MS): string {
+  if (kind === "transcribe") {
+    return "Your recording took too long to process. Check your connection and submit again — your recording is still here.";
+  }
+  return "That took too long to come back. Check your connection and try again.";
+}
+
+/**
+ * `fetch` with a deadline. Aborts on timeout and re-throws as a plain-English
+ * Error, so callers never have to distinguish an AbortError from a real failure.
+ */
+async function fetchWithTimeout(
+  path: string,
+  init: RequestInit,
+  kind: keyof typeof TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS[kind]);
+  try {
+    return await fetch(path, { ...init, signal: controller.signal });
+  } catch (e) {
+    // An abort we started is a timeout; anything else is a genuine network fault
+    // (offline, DNS, TLS) and deserves its own wording.
+    if (controller.signal.aborted) throw new Error(timeoutMessage(kind));
+    throw new Error("We couldn't reach the server. Check your connection and try again.");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function throwIfError(res: Response): Promise<void> {
   if (res.ok) return;
   let detail = `HTTP ${res.status}`;
@@ -270,11 +319,12 @@ async function throwIfError(res: Response): Promise<void> {
   throw new Error(detail);
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    ...init,
-  });
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  kind: keyof typeof TIMEOUT_MS = "quick",
+): Promise<T> {
+  const res = await fetchWithTimeout(path, { headers: { "Content-Type": "application/json" }, ...init }, kind);
   await throwIfError(res);
   return res.json() as Promise<T>;
 }
@@ -332,10 +382,11 @@ export function postScenario(body: {
   // role-play for this browser. Signed-in users are also de-duped server-side.
   seen?: string[];
 }): Promise<ScenarioResponse> {
-  return request<ScenarioResponse>("/api/scenario", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  return request<ScenarioResponse>(
+    "/api/scenario",
+    { method: "POST", body: JSON.stringify(body) },
+    "model",
+  );
 }
 
 /**
@@ -362,10 +413,11 @@ export function postScore(body: {
   spoken?: boolean;
   delivery_score?: number | null;
 }): Promise<ScoreResponse> {
-  return request<ScoreResponse>("/api/score-content", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  return request<ScoreResponse>(
+    "/api/score-content",
+    { method: "POST", body: JSON.stringify(body) },
+    "model",
+  );
 }
 
 // --- Mastery Blitz (Phase 5) ----------------------------------------------
@@ -382,10 +434,11 @@ export function postBlitzScore(body: {
   scenario: string;
   answers: { term_id: string; response: string }[];
 }): Promise<{ results: BlitzResult[] }> {
-  return request<{ results: BlitzResult[] }>("/api/blitz-score", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  return request<{ results: BlitzResult[] }>(
+    "/api/blitz-score",
+    { method: "POST", body: JSON.stringify(body) },
+    "model",
+  );
 }
 
 // Transcript only (no delivery metrics) — for spoken blitz answers, graded on content.
@@ -393,7 +446,7 @@ export async function postTranscribe(audio: Blob): Promise<string> {
   const ext = audio.type.includes("webm") ? "webm" : audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "dat";
   const fd = new FormData();
   fd.append("audio", audio, `blitz.${ext}`);
-  const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+  const res = await fetchWithTimeout("/api/transcribe", { method: "POST", body: fd }, "transcribe");
   if (!res.ok) {
     let detail = "";
     try {
@@ -416,7 +469,7 @@ export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = f
   fd.append("audio", audio, `take.${ext}`);
   fd.append("target_seconds", String(targetSeconds));
   fd.append("diarize", String(diarize));
-  const res = await fetch("/api/score-delivery", { method: "POST", body: fd });
+  const res = await fetchWithTimeout("/api/score-delivery", { method: "POST", body: fd }, "transcribe");
   if (!res.ok) {
     // Prefer the backend's specific reason (e.g. "silent or too short"); fall back
     // to a plain-English message when the body isn't JSON — which is what a raw

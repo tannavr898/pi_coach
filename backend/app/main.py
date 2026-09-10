@@ -33,14 +33,19 @@ performance-indicator text, codes, or event-to-PI mapping exists anywhere here.
 from __future__ import annotations
 
 import logging
+import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
+import anyio.to_thread
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, scenario_cache, seo, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
-from .ratelimit import daily_cap, rate_limit
+from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
 from .schemas import (
     AnalyticalSection,
     CreativityScore,
@@ -84,7 +89,28 @@ from .schemas import (
 )
 from . import mathcheck
 
-app = FastAPI(title="PI Coach", version="1.0.0")
+# How many blocking calls may be in flight at once.
+#
+# Everything slow in this app is I/O waiting on somebody else — the transcription
+# provider's poll loop, an Anthropic completion, a Supabase round trip — so these
+# threads spend their lives asleep, not competing for CPU. The default of 40 is
+# tuned for short database calls; here a single transcription can hold its thread
+# for the length of a student's recording, and once all 40 are held every plain
+# `def` endpoint in this file (they share the same pool) queues behind them. The
+# raised ceiling is what keeps a class submitting together from stalling each
+# other; the real spend limits are the guards in ratelimit.py, not this number.
+_THREADPOOL_SIZE = int(os.getenv("THREADPOOL_SIZE", "120"))
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Must happen inside the running loop: the limiter is loop-scoped state.
+    anyio.to_thread.current_default_thread_limiter().total_tokens = _THREADPOOL_SIZE
+    log.info("threadpool sized to %d", _THREADPOOL_SIZE)
+    yield
+
+
+app = FastAPI(title="PI Coach", version="1.0.0", lifespan=_lifespan)
 
 # Server-rendered study pages (/flashcards, /flashcards/{event}) plus robots.txt and
 # sitemap.xml. Included here, near the top, because Starlette matches routes in
@@ -212,7 +238,7 @@ async def scenario(
 
     # 1) Plan -> topic + industry + the domain pool (event drives the domains).
     try:
-        interp = interpret.plan_session(event, req.request)
+        interp = await run_in_threadpool(interpret.plan_session, event, req.request)
     except interpret.OutOfScope as e:
         raise HTTPException(status_code=422, detail=e.message)
     except llm.LLMNotConfigured as e:
@@ -282,12 +308,17 @@ async def scenario(
         params=sampled["labels"] if sampled else None,
     )
     try:
-        raw = llm.complete(system, user, model=config.SCENARIO_MODEL, max_tokens=1600)
-        data = llm.parse_json_object(raw)
+        data = await run_in_threadpool(
+            llm.complete_json, system, user, model=config.SCENARIO_MODEL, max_tokens=2400
+        )
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     except llm.LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        log.warning("SCENARIO generation failed: %s", e)
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't build a role-play just now. Give it another try.",
+        )
 
     situation = str(data.get("situation", "")).strip()
     if not situation:
@@ -500,7 +531,7 @@ def _build_presentation(raw: dict, spoken: bool, delivery_score: int | None) -> 
     )
 
 
-@app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+@app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 def score_content(req: ScoreRequest) -> ScoreResponse:
     """Grade a response against the selected framework criteria using the weighted
     three-section rubric (60% performance indicators, 25% analytical, 15% presentation)."""
@@ -521,12 +552,26 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
         quantitative, req.spoken, req.delivery_score, depth_vocab=depth_vocab,
     )
     try:
-        raw = llm.complete(system, user, model=config.SCORING_MODEL, max_tokens=4096)
-        data = llm.parse_json_object(raw)
+        # 8192, not 4096: the reply carries a full paragraph of feedback plus
+        # verbatim evidence quotes for every criterion, and a wordy run on a long
+        # transcript could brush the old ceiling — at which point the JSON came
+        # back cut in half and the student lost a rep they had already recorded.
+        # A ceiling is not a bill; unused headroom costs nothing.
+        data = llm.complete_json(system, user, model=config.SCORING_MODEL, max_tokens=8192)
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     except llm.LLMError as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        # The technical reason goes to the log, not to a high-schooler staring at
+        # a failed rep. "Could not parse model JSON: Expecting ',' delimiter" used
+        # to render verbatim in the app's error banner.
+        log.warning("SCORING failed: %s", e)
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "We couldn't finish grading this response. Your recording and "
+                "delivery feedback are safe — try grading again in a moment."
+            ),
+        )
 
     # --- Section 1: Performance Indicators (60%) ---
     entries = {str(e.get("criterion_id", "")): e for e in data.get("performance_indicators", [])}
@@ -649,7 +694,7 @@ async def get_usage(user: dict | None = Depends(optional_user)) -> dict:
     return await usage.summary(user)
 
 
-@app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+@app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 async def score_delivery(
     audio: UploadFile = File(...),
     target_seconds: int = Form(delivery.DEFAULT_TARGET_SECONDS),
@@ -664,7 +709,7 @@ async def score_delivery(
     keep only the transcript + numbers (minors' data minimization; the browser
     holds the recording for playback, deleting it unless the user opts to keep it).
     """
-    raw = audio.file.read()
+    raw = await audio.read()
     if not raw:
         # Nothing was captured (mic blocked, or "stop" hit before any audio) —
         # a client problem, so a clear 422 rather than a scary gateway-style 5xx.
@@ -680,7 +725,15 @@ async def score_delivery(
     receipt = await usage.claim(user, "voice")
 
     try:
-        result = transcription.transcribe(raw, diarize=diarize)
+        # Off the event loop, and this is the one that mattered most: `transcribe`
+        # uploads the audio and then POLLS the provider with a blocking
+        # `time.sleep(2)` until the transcript is ready — tens of seconds on a
+        # normal rep. Awaiting that inline in an `async def` pinned the single
+        # worker's event loop for the whole poll, so every other request (another
+        # student's grade, the SPA's own assets, Render's health check) simply
+        # queued behind it. transcription.py's docstring already assumed a
+        # threadpool; this is what actually puts it in one.
+        result = await run_in_threadpool(transcription.transcribe, raw, diarize=diarize)
     except transcription.TranscriptionNotConfigured as e:
         await usage.release(receipt, "voice")
         raise HTTPException(status_code=503, detail=str(e))
@@ -713,7 +766,7 @@ async def score_delivery(
     return DeliveryResponse(transcript=result.text, metrics=DeliveryMetrics(**metrics), utterances=utterances)
 
 
-@app.post("/api/score-video", response_model=VideoMetrics, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+@app.post("/api/score-video", response_model=VideoMetrics, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> VideoMetrics:
     """Analyze sampled frames for observable eye contact and expression.
 
@@ -736,7 +789,9 @@ async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> 
 
     receipt = await usage.claim(user, "video")
     try:
-        metrics = video.analyze([(f.media_type, f.data) for f in req.frames])
+        metrics = await run_in_threadpool(
+            video.analyze, [(f.media_type, f.data) for f in req.frames]
+        )
     except video.VideoNotConfigured as e:
         await usage.release(receipt, "video")
         raise HTTPException(status_code=503, detail=str(e))
@@ -788,7 +843,7 @@ def blitz_scenarios() -> list[BlitzScenario]:
     return [BlitzScenario(**s) for s in blitz.scenarios()]
 
 
-@app.post("/api/transcribe", response_model=TranscribeResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+@app.post("/api/transcribe", response_model=TranscribeResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
     """Transcript only (no delivery metrics) — used for spoken blitz answers, which
     are graded on content, not delivery. Each recording is transcribed as it's
@@ -805,7 +860,7 @@ def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
     return TranscribeResponse(transcript=result.text)
 
 
-@app.post("/api/blitz-score", response_model=BlitzScoreResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
+@app.post("/api/blitz-score", response_model=BlitzScoreResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
     """Grade a whole drill in ONE batched call: for each term, 'used correctly and
     in context?' -> correct | partial | missed + a one-line note. Term text is
@@ -828,8 +883,7 @@ def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
 
     system, user = prompts.build_blitz_prompt(req.scenario, items)
     try:
-        raw = llm.complete(system, user, model=config.BLITZ_MODEL, max_tokens=1024)
-        data = llm.parse_json_object(raw)
+        data = llm.complete_json(system, user, model=config.BLITZ_MODEL, max_tokens=2048)
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     except llm.LLMError as e:
