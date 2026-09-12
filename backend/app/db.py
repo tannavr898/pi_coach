@@ -320,6 +320,24 @@ async def bump_scenario_served(scenario_id: str) -> None:
     resp.raise_for_status()
 
 
+# --- site-wide stats -------------------------------------------------------
+# Three running totals (see app/stats.py). The increment is a SQL function so it's
+# atomic under concurrent reps, same reason as bump_scenario_served.
+
+
+async def bump_stat(kind: str) -> None:
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(f"{_base()}/rpc/bump_stat", headers=_headers(), json={"p_kind": kind})
+    resp.raise_for_status()
+
+
+async def get_stats() -> dict[str, int]:
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_base()}/app_stat", headers=_headers(), params={"select": "kind,count"})
+    resp.raise_for_status()
+    return {r["kind"]: int(r["count"]) for r in resp.json()}
+
+
 # --- usage counters (tier caps) --------------------------------------------
 # Enforcement is server-side and ATOMIC: the cap check lives inside the SQL
 # statement that does the increment (see supabase/schema.sql), because a

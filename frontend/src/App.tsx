@@ -8,6 +8,7 @@ import {
   type Level,
   type MathCheck,
   type Mode,
+  type PublicStats,
   type RubricLevel,
   type ScenarioResponse,
   type ScoreResponse,
@@ -19,6 +20,7 @@ import {
   UNLIMITED,
   adminVerify,
   getEvents,
+  getPublicStats,
   getScenarioById,
   postDelivery,
   postFeedback,
@@ -3286,6 +3288,17 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
   // screen at load, so an enter event would just be a second pageview.
   const heroRef = useRef<HTMLElement>(null);
   useInView(heroRef, () => track("hero_scrolled_past"), { when: "scrolled-past" });
+  // Real usage totals. Silent on failure: the hero is complete without them.
+  const [stats, setStats] = useState<PublicStats | null>(null);
+  useEffect(() => {
+    let active = true;
+    getPublicStats()
+      .then((s) => active && setStats(s))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   return (
     // Asymmetric, left-aligned composition: a narrower copy column (5/12) paired
     // with a wider media column (7/12), and the two are deliberately staggered on
@@ -3342,6 +3355,7 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
             New to DECA role-plays? →
           </button>
         </p>
+        {stats?.show && <HeroStats stats={stats} />}
       </div>
 
       {/* Native 16:9 mockup, no letterbox, so object-cover fills with no crop.
@@ -3366,6 +3380,33 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
         </div>
       </div>
     </section>
+  );
+}
+
+// One quiet line of proof under the hero CTAs, not a row of big-number tiles: the
+// numbers are the server's own counters (backend stats.py), and the server only
+// says `show` once there are enough role-plays to be worth mentioning. A single
+// total that's still tiny is dropped rather than printed next to a big one.
+const HERO_STAT_FLOOR = 25;
+
+function HeroStats({ stats }: { stats: PublicStats }) {
+  const items = [
+    { n: stats.roleplays, label: "role-plays graded" },
+    { n: stats.scenarios, label: "original scenarios written" },
+    { n: stats.blitzes, label: "Blitz drills" },
+  ].filter((i) => i.n >= HERO_STAT_FLOOR);
+  if (!items.length) return null;
+  return (
+    <p className="mt-6 flex flex-wrap gap-x-5 gap-y-1 border-t border-slate-200 pt-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
+      {items.map((i) => (
+        <span key={i.label}>
+          <span className="font-mono font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+            {i.n.toLocaleString()}
+          </span>{" "}
+          {i.label}
+        </span>
+      ))}
+    </p>
   );
 }
 

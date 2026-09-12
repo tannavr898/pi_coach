@@ -613,6 +613,16 @@ class StudyMarkResponse(BaseModel):
     updated: int = 0
 
 
+class PublicStats(BaseModel):
+    """Site-wide totals (app/stats.py). `show` says whether there are enough to put
+    on the landing page."""
+
+    roleplays: int = 0
+    blitzes: int = 0
+    scenarios: int = 0
+    show: bool = False
+
+
 # --- study plans --------------------------------------------------------------
 # A plan is recomputed from these inputs on every load (see app/plan.py), so the
 # inputs are the only thing a student ever sends.

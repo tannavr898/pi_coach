@@ -331,3 +331,47 @@ create policy "own rows" on public.study_plan
   for all
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
+
+
+-- ---------------------------------------------------------------------------
+-- Site-wide stats: `app_stat` (one row per counter).
+--
+-- Running totals of role-plays graded, Blitz drills graded, and scenarios freshly
+-- written (app/stats.py says exactly what counts). Counts only: no user, no
+-- content, nothing that could reconstruct who practiced what.
+--
+-- RLS is on with NO policy, so only the backend's service key can read or write.
+-- The increment function's execute grant is revoked from the public roles for the
+-- same reason: PostgREST exposes functions to the anon key by default, and a
+-- counter anyone with the (public) anon key could bump would be a counter nobody
+-- should believe.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.app_stat (
+  kind        text primary key,               -- roleplay | blitz | scenario
+  count       bigint not null default 0,
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.app_stat enable row level security;
+
+create or replace function public.bump_stat(p_kind text)
+returns void language sql as $$
+  insert into public.app_stat (kind, count, updated_at) values (p_kind, 1, now())
+  on conflict (kind) do update set count = public.app_stat.count + 1, updated_at = now();
+$$;
+
+revoke execute on function public.bump_stat(text) from public, anon, authenticated;
+
+-- Start from what's already on record, so the totals don't begin at zero on a
+-- live site. `do nothing` keeps a re-run of this file from resetting them.
+-- Role-plays can only be seeded from saved (signed-in) sessions, minus the admin
+-- QA sample rows; anonymous reps before this point were never recorded.
+insert into public.app_stat (kind, count)
+  select 'roleplay', count(*) from public.sessions where coalesce(event, '') <> 'admin-sample'
+  on conflict (kind) do nothing;
+insert into public.app_stat (kind, count)
+  select 'scenario', count(*) from public.cached_scenario
+  on conflict (kind) do nothing;
+insert into public.app_stat (kind, count) values ('blitz', 0)
+  on conflict (kind) do nothing;

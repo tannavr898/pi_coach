@@ -337,6 +337,13 @@ export function getEvents(): Promise<EventSummary[]> {
   return request<EventSummary[]>("/api/events");
 }
 
+// Site-wide totals. `show` is false until there are enough to be worth showing.
+export type PublicStats = { roleplays: number; blitzes: number; scenarios: number; show: boolean };
+
+export function getPublicStats(): Promise<PublicStats> {
+  return request<PublicStats>("/api/stats");
+}
+
 // Study terms by id — a weak-term deck, a flagged set, or a course unit. Graded
 // terms share their criterion's id, so a criterion id resolves here directly.
 export function getTerms(ids: string[]): Promise<Term[]> {

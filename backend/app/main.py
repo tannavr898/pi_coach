@@ -13,6 +13,7 @@ Endpoints:
 - POST /api/score-delivery transcribe audio + compute deterministic delivery metrics
 - POST /api/score-video    observable eye-contact/expression checks on sampled frames
 - GET  /api/usage          this caller's tier + remaining monthly allowance
+- GET  /api/stats          site-wide totals: role-plays, Blitz drills, scenarios
 - GET  /api/course/{id}    an event's study path (anonymous-friendly)
 - POST /api/course/enroll  start/switch the signed-in user's path
 - POST /api/study/mark     fold a flip/blitz/role-play result into progress
@@ -46,7 +47,7 @@ import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, rubric, scenario_cache, seo, study, taxonomy, terms, transcription, usage, video
+from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
@@ -74,6 +75,7 @@ from .schemas import (
     EnrollRequest,
     PlanInputs,
     PlanResponse,
+    PublicStats,
     Sampling,
     StudyMarkRequest,
     StudyMarkResponse,
@@ -393,6 +395,7 @@ async def scenario(
         scenario_json=cache_row.model_dump(),
     )
     built.scenario_id = scenario_id
+    background.add_task(stats.bump, "scenario")  # freshly written, not a cache reuse
     return built
 
 
@@ -538,7 +541,7 @@ def _build_presentation(raw: dict, spoken: bool, delivery_score: int | None) -> 
 
 
 @app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
-def score_content(req: ScoreRequest) -> ScoreResponse:
+def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreResponse:
     """Grade a response against the selected framework criteria using the weighted
     three-section rubric (60% performance indicators, 25% analytical, 15% presentation)."""
     # Resolve criteria from our framework — never trust the client for their text.
@@ -612,6 +615,7 @@ def score_content(req: ScoreRequest) -> ScoreResponse:
     # result is authoritative — the model is never trusted for arithmetic.
     math_checks = mathcheck.verify_all(data.get("math_checks", [])) if quantitative else []
 
+    background.add_task(stats.bump, "roleplay")
     return ScoreResponse(
         scores=scores,
         total_points=total,
@@ -698,6 +702,13 @@ async def get_usage(user: dict | None = Depends(optional_user)) -> dict:
     for. Anonymous callers get the anonymous tier's numbers, which the client
     also enforces (see app/usage.py for why that one is client-side)."""
     return await usage.summary(user)
+
+
+@app.get("/api/stats", response_model=PublicStats)
+async def get_stats() -> PublicStats:
+    """Site-wide totals for the landing page. Public and anonymous: counts only,
+    cached in-process for a few minutes (app/stats.py)."""
+    return PublicStats(**await stats.snapshot())
 
 
 @app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
@@ -867,7 +878,7 @@ def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
 
 
 @app.post("/api/blitz-score", response_model=BlitzScoreResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
-def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
+def blitz_score(req: BlitzScoreRequest, background: BackgroundTasks) -> BlitzScoreResponse:
     """Grade a whole drill in ONE batched call: for each term, 'used correctly and
     in context?' -> correct | partial | missed + a one-line note. Term text is
     re-pinned server-side by id (never trusted from the client)."""
@@ -913,6 +924,7 @@ def blitz_score(req: BlitzScoreRequest) -> BlitzScoreResponse:
             verdict=verdict if verdict in valid else "missed",  # type: ignore[arg-type]
             note=str(r.get("note", "")).strip(),
         ))
+    background.add_task(stats.bump, "blitz")
     return BlitzScoreResponse(results=results)
 
 
