@@ -35,7 +35,9 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* non-JSON error body */
     }
-    throw new Error(detail);
+    // The status rides along so a caller can tell "you don't have one yet" (404)
+    // from a real failure without matching on message text.
+    throw Object.assign(new Error(detail), { status: res.status });
   }
   return res.json() as Promise<T>;
 }
@@ -260,6 +262,123 @@ export async function markStudy(marks: StudyMark[]): Promise<{ updated: number }
   } catch {
     return { updated: 0 };
   }
+}
+
+// --- study plans ------------------------------------------------------------
+// A plan is recomputed server-side from these inputs on every load (backend
+// plan.py), so the inputs are all the client ever sends.
+
+export type PlanGoal = "core" | "all";
+export type PlanStageInput = { name: string; date: string };
+export type PlanInputs = {
+  event_id: string;
+  stages: PlanStageInput[];
+  // Minutes per weekday, Sunday first — the same order as Date.getDay().
+  day_minutes: number[];
+  goal: PlanGoal;
+};
+
+export type PlanTaskKind = "learn" | "weak" | "review" | "roleplay" | "mock";
+export type PlanTask = {
+  id: string;
+  kind: PlanTaskKind;
+  title: string;
+  detail: string;
+  minutes: number;
+  term_ids: string[];
+  unit_id: string;
+  criterion_name: string;
+  tier: string;
+  // Derived from real progress, never self-reported. All zero in a preview.
+  done: boolean;
+  progress_done: number;
+  progress_total: number;
+  seen: number;
+};
+
+export type PlanPhase = "learn" | "sharpen" | "taper" | "competition" | "done";
+export type PlanDay = {
+  date: string;
+  weekday: number;
+  budget: number;
+  planned: number;
+  phase: PlanPhase;
+  stage: string;
+  tasks: PlanTask[];
+};
+export type PlanWeek = {
+  start: string;
+  end: string;
+  phase: PlanPhase;
+  new_terms: number;
+  reviews: number;
+  roleplays: number;
+  minutes: number;
+  stages: string[];
+};
+export type PlanStage = { name: string; date: string; days_left: number; past: boolean };
+export type PlanFeasibility = {
+  status: "on_track" | "tight" | "behind" | "done";
+  message: string;
+  core_remaining: number;
+  core_by_first_stage: number;
+  core_finish_date: string | null;
+  needed_minutes_per_day: number | null;
+  full_finish_date: string | null;
+};
+export type PlanPhaseRun = { phase: PlanPhase; start_day: number; end_day: number };
+export type PlanCalendarDay = { date: string; kind: "study" | "competition"; minutes: number; summary: string };
+export type PlanHistoryDay = { date: string; planned: number; done: number };
+
+export type StudyPlan = {
+  event_id: string;
+  event: string;
+  goal: PlanGoal;
+  day_minutes: number[];
+  stages: PlanStage[];
+  feasibility: PlanFeasibility;
+  today: PlanDay;
+  days: PlanDay[];
+  weeks: PlanWeek[];
+  phases: PlanPhaseRun[];
+  calendar: PlanCalendarDay[];
+  history: PlanHistoryDay[];
+  saved: boolean;
+};
+
+// "Today" is the student's calendar day, not the server's. Sending the browser's
+// date + offset keeps a 11pm study session on the right day's checklist.
+function localDayQuery(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `local_date=${local}&tz_offset=${d.getTimezoneOffset()}`;
+}
+
+// Anyone can preview: seeing your season laid out is the pitch for saving it.
+export function previewPlan(inputs: PlanInputs): Promise<StudyPlan> {
+  return maybeAuthFetch<StudyPlan>(`/api/plan/preview?${localDayQuery()}`, {
+    method: "POST",
+    body: JSON.stringify(inputs),
+  });
+}
+
+// The saved plan, or null when the student hasn't made one yet.
+export async function getMyPlan(): Promise<StudyPlan | null> {
+  try {
+    return await authFetch<StudyPlan>(`/api/plan?${localDayQuery()}`);
+  } catch (e) {
+    if ((e as { status?: number }).status === 404) return null;
+    throw e;
+  }
+}
+
+export function savePlan(inputs: PlanInputs): Promise<StudyPlan> {
+  return authFetch<StudyPlan>(`/api/plan?${localDayQuery()}`, { method: "PUT", body: JSON.stringify(inputs) });
+}
+
+export function deletePlan(): Promise<{ deleted: boolean }> {
+  return authFetch<{ deleted: boolean }>("/api/plan", { method: "DELETE" });
 }
 
 // Admin QA: seed / clear canned sample sessions in the logged-in account.

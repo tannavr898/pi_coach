@@ -1252,6 +1252,7 @@ export default function App() {
             onOpenFlashcards={(ids) => setFlashcard({ ids })}
             onOpenLibrary={() => goToView("flashcards")}
             onOpenSession={loadSession}
+            onOpenStudy={() => goToView("course")}
           />
         ) : view === "home" ? (
           <LandingPage
@@ -1286,6 +1287,8 @@ export default function App() {
             refreshKey={studyEpoch}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards, title) => startBlitz(cards, { from: "course", unit: title })}
+            onPractice={(name) => (name ? practiceCriterion(name) : enterPractice())}
+            onSignup={() => openAuth("signup", "Create a free account to save your study plan and track it day by day.")}
           />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />

@@ -293,3 +293,41 @@ $$;
 -- is nothing here that could reconstruct what the camera saw.
 -- ---------------------------------------------------------------------------
 alter table public.sessions add column if not exists video jsonb;
+
+
+-- ---------------------------------------------------------------------------
+-- Study plans: `study_plan` (one row per user).
+--
+-- A plan turns the event course into a dated daily schedule toward the student's
+-- competitions. Only the INPUTS are stored — event, competition dates, minutes per
+-- weekday, goal — because the schedule itself is recomputed from current progress
+-- on every load (app/plan.py). That is what lets a missed day reschedule itself
+-- instead of turning into a backlog, with nothing here to migrate or repair.
+--
+-- The one piece of computed state is today's task list (`today_tasks`, keyed by
+-- the student's local `today_date`). It is frozen on the first load of the day so
+-- the checklist doesn't reshuffle while they're working through it. When the day
+-- rolls over, the old list is scored into `history` ({date, planned, done}) — a
+-- count, not a log of what they did, in keeping with the usage_counter posture.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.study_plan (
+  user_id      uuid primary key references auth.users(id) on delete cascade,
+  event_id     text not null,                        -- events.json id
+  stages       jsonb not null default '[]'::jsonb,   -- [{name, date}]
+  day_minutes  int[] not null,                       -- 7 entries, Sunday first
+  goal         text not null default 'core',         -- core | all
+  today_date   date,
+  today_tasks  jsonb,
+  history      jsonb not null default '[]'::jsonb,   -- last 60 days: [{date, planned, done}]
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.study_plan enable row level security;
+
+drop policy if exists "own rows" on public.study_plan;
+create policy "own rows" on public.study_plan
+  for all
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());

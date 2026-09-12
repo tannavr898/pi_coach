@@ -234,7 +234,7 @@ export const FEATURE_INTROS: Record<Surface, { title: string; body: string }> = 
   },
   course: {
     title: "A finishable path for your event",
-    body: "Pick the event you compete in and get an ordered route through every skill it's graded on, split into short units. Start with the Core path — that's the set we actually score.",
+    body: "Pick the event you compete in and get an ordered route through every skill it's graded on, split into short units. Add your competition dates and study time, and it becomes a day-by-day plan that reflows when you miss a day.",
   },
   flashcards: {
     title: "The full study library",

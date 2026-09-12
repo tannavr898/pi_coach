@@ -10,7 +10,17 @@
 
 import { useEffect, useState } from "react";
 import { getDomains, type DomainSummary } from "./api";
-import { getMyCourse, getProgress, getSessions, type Course, type ProgressResponse, type SessionSummary } from "./progress";
+import {
+  getMyCourse,
+  getMyPlan,
+  getProgress,
+  getSessions,
+  type Course,
+  type ProgressResponse,
+  type SessionSummary,
+  type StudyPlan,
+} from "./progress";
+import { PlanNudge, PlanTodayCard } from "./plan";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 import { ChartFrame, SkillRadar, TrendLine, VolumeBars } from "./charts";
 import { track } from "./analytics";
@@ -52,6 +62,7 @@ export function HomePage(props: {
   onOpenFlashcards: (ids: string[]) => void;
   onOpenLibrary: () => void;
   onOpenSession: (id: string) => void;
+  onOpenStudy: () => void;
 }) {
   const [progress, setProgress] = useState<ProgressResponse | null>(null);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
@@ -61,16 +72,26 @@ export function HomePage(props: {
   // radar filter — 404 just means "hasn't picked one", which is not an error.
   const [course, setCourse] = useState<Course | null>(null);
   const [radarScope, setRadarScope] = useState<"event" | "all">("event");
+  // Today's slice of their study plan, if they've made one. A failure here just
+  // hides the card — the dashboard's other numbers don't depend on it.
+  const [plan, setPlan] = useState<StudyPlan | null>(null);
 
   useEffect(() => {
     let active = true;
-    Promise.all([getProgress(), getSessions(), getDomains(), getMyCourse().catch(() => null)])
-      .then(([p, s, d, c]) => {
+    Promise.all([
+      getProgress(),
+      getSessions(),
+      getDomains(),
+      getMyCourse().catch(() => null),
+      getMyPlan().catch(() => null),
+    ])
+      .then(([p, s, d, c, pl]) => {
         if (!active) return;
         setProgress(p);
         setSessions(s);
         setDomains(d);
         setCourse(c);
+        setPlan(pl);
       })
       .catch((e) => {
         if (active) setError(e instanceof Error ? e.message : String(e));
@@ -135,6 +156,12 @@ export function HomePage(props: {
           </button>
         </div>
       </Card>
+
+      {plan ? (
+        <PlanTodayCard plan={plan} onOpen={props.onOpenStudy} />
+      ) : course ? (
+        <PlanNudge eventName={course.event} onOpen={props.onOpenStudy} />
+      ) : null}
 
       {error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">

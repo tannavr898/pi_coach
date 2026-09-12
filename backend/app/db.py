@@ -169,6 +169,43 @@ async def upsert_study_progress(user_id: str, rows: list[dict]) -> int:
     return len(payload)
 
 
+# --- study plans -----------------------------------------------------------
+# Only the inputs and today's frozen tasks are stored; app/plan.py recomputes the
+# rest on every load.
+
+PLAN_SELECT = "event_id,stages,day_minutes,goal,today_date,today_tasks,history"
+
+
+async def get_study_plan(user_id: str) -> dict | None:
+    params = {"user_id": f"eq.{user_id}", "limit": "1", "select": PLAN_SELECT}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(f"{_base()}/study_plan", headers=_headers(), params=params)
+    resp.raise_for_status()
+    rows = resp.json()
+    return rows[0] if rows else None
+
+
+async def upsert_study_plan(user_id: str, fields: dict) -> None:
+    """Insert or merge columns into a user's plan. Merge-duplicates only touches the
+    columns sent, so saving new inputs leaves `history` alone."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{_base()}/study_plan",
+            headers={**_headers(), "Prefer": "return=minimal,resolution=merge-duplicates"},
+            params={"on_conflict": "user_id"},
+            json={**fields, "user_id": user_id, "updated_at": "now()"},
+        )
+    resp.raise_for_status()
+
+
+async def delete_study_plan(user_id: str) -> None:
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.delete(
+            f"{_base()}/study_plan", headers=_headers(), params={"user_id": f"eq.{user_id}"}
+        )
+    resp.raise_for_status()
+
+
 # --- scenario cache --------------------------------------------------------
 # Shared inventory of already-generated scenarios, keyed by the interpreted
 # request (see supabase/schema.sql for why the key is shaped the way it is).

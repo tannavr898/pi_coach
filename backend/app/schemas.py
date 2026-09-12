@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -610,6 +611,120 @@ class StudyMarkRequest(BaseModel):
 
 class StudyMarkResponse(BaseModel):
     updated: int = 0
+
+
+# --- study plans --------------------------------------------------------------
+# A plan is recomputed from these inputs on every load (see app/plan.py), so the
+# inputs are the only thing a student ever sends.
+
+
+class PlanStage(BaseModel):
+    """One competition on the student's calendar (District, State, ICDC...)."""
+
+    name: str = Field(default="Competition", max_length=40)
+    date: _dt.date
+
+
+class PlanInputs(BaseModel):
+    event_id: str = Field(min_length=1, max_length=80)
+    stages: list[PlanStage] = Field(min_length=1, max_length=5)
+    # Minutes per weekday, Sunday first (JavaScript's getDay order). Bounds per
+    # entry are checked in plan.validate_inputs so the message is readable.
+    day_minutes: list[int] = Field(min_length=7, max_length=7)
+    goal: Literal["core", "all"] = "core"
+
+
+class PlanTask(BaseModel):
+    id: str
+    kind: Literal["learn", "weak", "review", "roleplay", "mock"]
+    title: str
+    detail: str = ""
+    minutes: int = 0
+    term_ids: list[str] = []
+    unit_id: str = ""
+    criterion_name: str = ""
+    tier: str = ""
+    # Derived from progress, never self-reported. Zero for a preview.
+    done: bool = False
+    progress_done: int = 0
+    progress_total: int = 0
+    seen: int = 0
+
+
+class PlanDay(BaseModel):
+    date: str
+    weekday: int
+    budget: int = 0
+    planned: int = 0
+    phase: str = ""   # learn | sharpen | taper | competition | done
+    stage: str = ""   # the competition held this day, if any
+    tasks: list[PlanTask] = []
+
+
+class PlanWeek(BaseModel):
+    start: str
+    end: str
+    phase: str = ""
+    new_terms: int = 0
+    reviews: int = 0
+    roleplays: int = 0
+    minutes: int = 0
+    stages: list[str] = []
+
+
+class PlanStageOut(BaseModel):
+    name: str
+    date: str
+    days_left: int
+    past: bool = False
+
+
+class PlanFeasibility(BaseModel):
+    status: Literal["on_track", "tight", "behind", "done"]
+    message: str = ""
+    core_remaining: int = 0
+    core_by_first_stage: int = 0
+    core_finish_date: str | None = None
+    needed_minutes_per_day: int | None = None
+    full_finish_date: str | None = None
+
+
+class PlanPhaseRun(BaseModel):
+    """A contiguous phase, as day offsets from today (end exclusive)."""
+
+    phase: str
+    start_day: int
+    end_day: int
+
+
+class PlanCalendarDay(BaseModel):
+    date: str
+    kind: Literal["study", "competition"]
+    minutes: int = 0
+    summary: str = ""
+
+
+class PlanHistoryDay(BaseModel):
+    date: str
+    planned: int = 0
+    done: int = 0
+
+
+class PlanResponse(BaseModel):
+    event_id: str
+    event: str
+    goal: Literal["core", "all"] = "core"
+    day_minutes: list[int] = []
+    stages: list[PlanStageOut] = []
+    feasibility: PlanFeasibility
+    today: PlanDay
+    days: list[PlanDay] = []
+    weeks: list[PlanWeek] = []
+    phases: list[PlanPhaseRun] = []
+    calendar: list[PlanCalendarDay] = []
+    history: list[PlanHistoryDay] = []
+    # False for a signed-out preview (or an unsaved what-if).
+    saved: bool = False
 
 
 # --- Mastery Blitz (Phase 5) ----------------------------------------------

@@ -16,6 +16,8 @@ Endpoints:
 - GET  /api/course/{id}    an event's study path (anonymous-friendly)
 - POST /api/course/enroll  start/switch the signed-in user's path
 - POST /api/study/mark     fold a flip/blitz/role-play result into progress
+- POST /api/plan/preview   a study plan from inputs, unsaved (anonymous-friendly)
+- GET/PUT/DELETE /api/plan the signed-in user's saved study plan
 
 Plus the server-rendered study pages (app/seo.py): /flashcards, /flashcards/{event},
 /robots.txt and /sitemap.xml. Those are plain HTML rather than JSON — they are the
@@ -32,17 +34,19 @@ performance-indicator text, codes, or event-to-PI mapping exists anywhere here.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import date, datetime, timedelta, timezone
 
 import anyio.to_thread
 import httpx
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, progress, prompts, rubric, scenario_cache, seo, study, taxonomy, terms, transcription, usage, video
+from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, rubric, scenario_cache, seo, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
@@ -68,6 +72,8 @@ from .schemas import (
     CourseResponse,
     DepthScore,
     EnrollRequest,
+    PlanInputs,
+    PlanResponse,
     Sampling,
     StudyMarkRequest,
     StudyMarkResponse,
@@ -1091,6 +1097,161 @@ async def mark_study(req: StudyMarkRequest, user: dict = Depends(current_user)) 
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="Couldn't save your progress.") from exc
     return StudyMarkResponse(updated=updated)
+
+
+# --- study plans -----------------------------------------------------------
+# The schedule is recomputed from inputs + current progress on every request
+# (app/plan.py); the only computed state stored is today's frozen task list.
+
+def _plan_day(local_date: str, tz_offset: int) -> tuple[date, int]:
+    """The student's calendar day, from their browser. Trusted only within a day of
+    the server's UTC date, so a wrong client clock can't shift a plan by weeks."""
+    tz = max(-14 * 60, min(14 * 60, tz_offset))
+    server = datetime.now(timezone.utc)
+    fallback = (server - timedelta(minutes=tz)).date()
+    try:
+        day = date.fromisoformat(local_date) if local_date else fallback
+    except ValueError:
+        day = fallback
+    if abs((day - server.date()).days) > 1:
+        day = fallback
+    return day, tz
+
+
+async def _plan_context(user: dict, tz: int) -> tuple[dict, list[dict], list[date]]:
+    """Progress map, weak criteria, and role-play dates — everything the planner reads."""
+    rows, sessions = await asyncio.gather(
+        db.list_study_progress(user["id"]),
+        db.list_sessions(user["id"], limit=200, select=db.PROGRESS_SELECT),
+    )
+    weak = plan.weak_criteria(progress.compute_progress(sessions)["criterion_mastery"])
+    return plan.progress_map(rows, tz), weak, plan.session_dates(sessions, tz)
+
+
+def _plan_out(built: dict, prog: dict, sessions: list[date], day: date, *, saved: bool,
+              history: list[dict]) -> PlanResponse:
+    today_tasks = plan.overlay_status(built["today"]["tasks"], prog, sessions, day)
+    built["today"]["tasks"] = today_tasks
+    if built["days"] and built["days"][0]["date"] == day.isoformat():
+        built["days"][0]["tasks"] = today_tasks
+    return PlanResponse(**built, saved=saved, history=history)
+
+
+@app.post("/api/plan/preview", response_model=PlanResponse, dependencies=[Depends(rate_limit)])
+async def preview_plan(
+    req: PlanInputs,
+    local_date: str = Query(default="", max_length=10),
+    tz_offset: int = Query(default=0),
+    user: dict | None = Depends(optional_user),
+) -> PlanResponse:
+    """Build a plan without saving it. Anyone can see what their summer would look
+    like — the same pitch as the course rendering signed-out. Signed-in previews use
+    real progress, so editing a saved plan shows honest numbers before committing."""
+    day, tz = _plan_day(local_date, tz_offset)
+    inputs = req.model_dump(mode="json")
+    if err := plan.validate_inputs(inputs, day):
+        raise HTTPException(status_code=422, detail=err)
+
+    prog: dict = {}
+    weak: list[dict] = []
+    sessions: list[date] = []
+    if user and config.has_supabase():
+        try:
+            prog, weak, sessions = await _plan_context(user, tz)
+        except httpx.HTTPError as exc:
+            log.warning("plan preview progress load failed: %s", exc)
+    built = plan.build_plan(inputs, prog, weak, day, last_roleplay=sessions[-1] if sessions else None)
+    return _plan_out(built, prog, sessions, day, saved=False, history=[])
+
+
+@app.get("/api/plan", response_model=PlanResponse)
+async def get_plan(
+    local_date: str = Query(default="", max_length=10),
+    tz_offset: int = Query(default=0),
+    user: dict = Depends(current_user),
+) -> PlanResponse:
+    """The signed-in user's plan, recomputed for today. 404 until they save one."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    day, tz = _plan_day(local_date, tz_offset)
+    try:
+        row, (prog, weak, sessions) = await asyncio.gather(
+            db.get_study_plan(user["id"]), _plan_context(user, tz)
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't load your study plan.") from exc
+    if not row:
+        raise HTTPException(status_code=404, detail="No study plan yet.")
+
+    inputs = {k: row[k] for k in ("event_id", "stages", "day_minutes", "goal")}
+    last_rp = sessions[-1] if sessions else None
+    history = row.get("history") or []
+    frozen = row.get("today_tasks") if row.get("today_date") == day.isoformat() else None
+
+    if frozen is None:
+        # First load of a new day: score the day that just ended, then freeze today.
+        # Last-roleplay excludes today's sessions, or doing today's rep early would
+        # make the freshly-frozen list think it wasn't due.
+        prior = [s for s in sessions if s < day]
+        built = plan.build_plan(inputs, prog, weak, day, last_roleplay=prior[-1] if prior else None)
+        if not built:
+            raise HTTPException(status_code=404, detail="Your plan's event no longer exists.")
+        old_date = row.get("today_date")
+        history = plan.rollover(history, date.fromisoformat(old_date) if old_date else None,
+                                row.get("today_tasks"), prog, sessions)
+        try:
+            await db.upsert_study_plan(user["id"], {
+                "event_id": inputs["event_id"],
+                "day_minutes": inputs["day_minutes"],
+                "today_date": day.isoformat(),
+                "today_tasks": built["today"]["tasks"],
+                "history": history,
+            })
+        except httpx.HTTPError as exc:
+            # Unfrozen just means today may reshuffle — still show the plan.
+            log.warning("plan snapshot save failed: %s", exc)
+    else:
+        built = plan.build_plan(inputs, prog, weak, day, frozen_today=frozen, last_roleplay=last_rp)
+        if not built:
+            raise HTTPException(status_code=404, detail="Your plan's event no longer exists.")
+    return _plan_out(built, prog, sessions, day, saved=True, history=history)
+
+
+@app.put("/api/plan", response_model=PlanResponse)
+async def save_plan(
+    req: PlanInputs,
+    local_date: str = Query(default="", max_length=10),
+    tz_offset: int = Query(default=0),
+    user: dict = Depends(current_user),
+) -> PlanResponse:
+    """Save (or replace) the plan's inputs. Also enrolls the course for that event,
+    so the Study page and the plan can never disagree about what's being studied.
+    Clearing today's snapshot makes the next load freeze a list built from the new
+    inputs; history is left alone."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    day, _ = _plan_day(local_date, tz_offset)
+    inputs = req.model_dump(mode="json")
+    if err := plan.validate_inputs(inputs, day):
+        raise HTTPException(status_code=422, detail=err)
+    try:
+        await db.set_study_profile(user["id"], req.event_id)
+        await db.upsert_study_plan(user["id"], {**inputs, "today_date": None, "today_tasks": None})
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't save your study plan.") from exc
+    return await get_plan(local_date=local_date, tz_offset=tz_offset, user=user)
+
+
+@app.delete("/api/plan")
+async def delete_plan(user: dict = Depends(current_user)) -> dict:
+    """Remove the plan. Study progress is untouched — it belongs to the terms."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    try:
+        await db.delete_study_plan(user["id"])
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't delete your study plan.") from exc
+    return {"deleted": True}
 
 
 # --- admin QA page (owner-only, secret passphrase) -------------------------

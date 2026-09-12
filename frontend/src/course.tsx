@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getEvents, getTerms, type EventSummary, type Term } from "./api";
+import { StudyPlanSection } from "./plan";
 import { enrollCourse, getCourse, getMyCourse, type Course, type CourseUnit } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 
@@ -20,18 +21,26 @@ export function StudyCourse({
   refreshKey,
   onStudy,
   onBlitz,
+  onPractice,
+  onSignup,
 }: {
   authed: boolean;
   // Changes each time a study overlay or a Blitz closes. See the refetch below.
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
+  // A plan's role-play task. With a name, practice is focused on that skill.
+  onPractice: (criterionName?: string) => void;
+  onSignup: () => void;
 }) {
   const [events, setEvents] = useState<EventSummary[] | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [tier, setTier] = useState<"core" | "all">("core");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // With a plan on screen, its next task is the one indigo action; the course's
+  // own "Blitz this course" panel steps down to secondary.
+  const [hasPlan, setHasPlan] = useState(false);
 
   // On mount: load the picker, and jump straight to the enrolled course if there is
   // one. A 404 here is the normal "hasn't picked yet" answer, not a failure.
@@ -183,6 +192,23 @@ export function StudyCourse({
         </button>
       </div>
 
+      <StudyPlanSection
+        course={course}
+        authed={authed}
+        refreshKey={refreshKey}
+        onStudy={onStudy}
+        onBlitz={onBlitz}
+        onPractice={onPractice}
+        onSignup={onSignup}
+        onHasPlan={setHasPlan}
+        // Saving a plan enrolls its event, so the "Your path" badge should follow.
+        onSaved={() => {
+          getCourse(course.event_id)
+            .then(setCourse)
+            .catch(() => {});
+        }}
+      />
+
       {/* Headline progress. Core gets the number; "everything" is the deeper pass. */}
       <Card>
         <div className="flex flex-wrap items-end justify-between gap-3">
@@ -230,7 +256,13 @@ export function StudyCourse({
       </Card>
 
       {/* Blitz the whole course: the drill picks its own 5 from whatever it's given. */}
-      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30 sm:flex-row sm:items-center">
+      <div
+        className={`flex flex-col items-start justify-between gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center ${
+          hasPlan
+            ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+            : "border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30"
+        }`}
+      >
         <div>
           <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Blitz this course</h3>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
@@ -238,7 +270,7 @@ export function StudyCourse({
           </p>
         </div>
         <button
-          className={BTN_PRIMARY}
+          className={hasPlan ? BTN_SECONDARY : BTN_PRIMARY}
           disabled={busy || !allIds.length}
           onClick={() => launch(allIds, course.event, onBlitz)}
         >
