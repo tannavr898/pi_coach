@@ -1,4 +1,4 @@
-"""Mastery Blitz (Phase 5) — the drill's static scenario pool.
+"""Mastery Blitz (Phase 5), the drill's static scenario pool.
 
 Short, predetermined scenarios (no LLM call) that the blitz picks from. The drill
 loop stays model-free; the only model call is ONE batched scoring pass at the end.

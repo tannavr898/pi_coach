@@ -1,4 +1,4 @@
-"""Canned sample sessions for the admin QA page — NO LLM tokens.
+"""Canned sample sessions for the admin QA page, NO LLM tokens.
 
 `build_sample_rows()` returns fully-valid session rows (same shape db.insert_session
 writes) with BACKDATED created_at spread over a couple of weeks and a deliberate
@@ -64,8 +64,8 @@ def _scenario(topic: str, event: str) -> ScenarioResponse:
         mode="learn",
         criteria=_CRITERIA,
         procedures=["Prep, then present your recommendation.", "The judge asks a follow-up."],
-        situation=f"Sample scenario for QA: {topic}. (Generated for the admin preview — not a real role-play.)",
-        hook=f"Sample hook for QA: {topic.lower()} — the share card headlines with this line.",
+        situation=f"Sample scenario for QA: {topic}. (Generated for the admin preview, not a real role-play.)",
+        hook=f"Sample hook for QA: {topic.lower()}, the share card headlines with this line.",
         followup_questions=["What would you try first, and how would you know it worked?"],
     )
 
@@ -155,7 +155,7 @@ def build_sample_rows(user_id: str) -> list[dict]:
                 "user_id": user_id,
                 "created_at": created.isoformat(),
                 "scenario": scenario.model_dump(),
-                "response": f"[Sample typed response for QA — {topic}.]",
+                "response": f"[Sample typed response for QA, {topic}.]",
                 "followup_answer": "[Sample follow-up answer.]",
                 "score": score.model_dump(),
                 "delivery": delivery.model_dump(),

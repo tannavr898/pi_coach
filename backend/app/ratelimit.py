@@ -1,7 +1,7 @@
 """Spend guards for the paid endpoints: a per-IP burst limit and an app-wide
 daily ceiling.
 
-Roadmap §9 says install rate limiting *before* wiring up a paid API — a runaway
+Roadmap §9 says install rate limiting *before* wiring up a paid API, a runaway
 loop or abuse is the real cost risk, not normal use. This is a small in-memory
 fixed-window limiter, enough for a single-process MVP. (The hard spend cap lives
 in the provider console; this is the second layer.)
@@ -10,7 +10,7 @@ TWO RULES SHAPE THE NUMBERS HERE, AND BOTH COME FROM WHO USES THIS APP.
 
 1. CAP THE START OF WORK, NEVER THE FINISH. A role-play spends across three
    calls: generate the scenario, transcribe the recording, grade the content. A
-   guard that fires on the first one costs a student nothing — they pick another
+   guard that fires on the first one costs a student nothing, they pick another
    moment and start over. A guard that fires on the *last* one destroys a rep
    they have already prepared for, recorded, and submitted, after we already paid
    for the expensive half. It also saves nothing: the tokens were spent two calls
@@ -21,7 +21,7 @@ TWO RULES SHAPE THE NUMBERS HERE, AND BOTH COME FROM WHO USES THIS APP.
 2. A SHARED SCHOOL IP IS NOT ABUSE. These are high-school students, and a class
    practicing together comes from one building on one NAT'd address. Thirty
    students starting a rep in the same minute is the usage pattern this product
-   exists for, and at the old 20/min it read as a single abusive client — the
+   exists for, and at the old 20/min it read as a single abusive client, the
    whole classroom got "you're going a bit fast", mid-rep, at submit. The burst
    limit is now set for a classroom rather than for one person, which still stops
    a scripted loop (those run orders of magnitude faster) without punishing the
@@ -39,7 +39,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, Request
 
 # Per-IP burst limit (fixed window) for endpoints that START paid work.
-# Sized for a shared classroom NAT, not a single browser — see rule 2 above.
+# Sized for a shared classroom NAT, not a single browser, see rule 2 above.
 _WINDOW_SECONDS = 60
 _MAX_PER_WINDOW = int(os.getenv("RATE_LIMIT_PER_MIN", "120"))
 
@@ -50,13 +50,13 @@ _COMPLETION_MULTIPLIER = 4
 
 # App-level daily budget guard. A public URL means anyone can spend your provider
 # credits; the provider spend cap is a hard stop, but this degrades gracefully
-# *before* that — returning a friendly message once the day's paid-call ceiling
+# *before* that, returning a friendly message once the day's paid-call ceiling
 # is reached. 0 disables it (e.g. local dev). Resets at UTC midnight.
 _DAILY_CAP = int(os.getenv("DAILY_REQUEST_CAP", "0"))
 
 # How far past the daily cap a session already under way may go to finish. Reps
 # in flight when the cap lands are allowed to complete rather than being thrown
-# away — see rule 1. Sized to drain the in-flight work, not to extend the day.
+# away, see rule 1. Sized to drain the in-flight work, not to extend the day.
 _DAILY_GRACE = 1.25
 
 _hits: dict[str, deque[float]] = defaultdict(deque)
@@ -73,7 +73,7 @@ def _record(request: Request, ceiling: int) -> None:
     if len(dq) >= ceiling:
         raise HTTPException(
             status_code=429,
-            detail="You're going a bit fast — wait a moment and try again.",
+            detail="You're going a bit fast. Wait a moment and try again.",
         )
     dq.append(now)
 
@@ -94,7 +94,7 @@ def rate_limit_completion(request: Request) -> None:
     """FastAPI dependency for endpoints that FINISH work already paid for.
 
     Same window, much higher ceiling. This is the guard on transcription and
-    grading — the two calls a student reaches only after recording a rep — so it
+    grading, the two calls a student reaches only after recording a rep, so it
     exists to stop a runaway, not to decide whether a submitted rep gets graded.
     """
     _record(request, _MAX_PER_WINDOW * _COMPLETION_MULTIPLIER)
@@ -123,7 +123,7 @@ def daily_cap(request: Request) -> None:
             status_code=503,
             detail=(
                 "PI Coach has hit today's practice limit. Typed practice is "
-                "unlimited — or try a role-play again tomorrow."
+                "unlimited, or try a role-play again tomorrow."
             ),
         )
     _bump_day()
@@ -132,7 +132,7 @@ def daily_cap(request: Request) -> None:
 def daily_cap_completion(request: Request) -> None:
     """Daily cap for endpoints that finish a session already under way.
 
-    Still counted against the day — this is not a loophole around the budget —
+    Still counted against the day, this is not a loophole around the budget,
     but allowed a grace band above the ceiling so that reps recorded just before
     the cap landed still get graded. Refusing here would throw away a student's
     recording to save money we have already spent.
@@ -145,7 +145,7 @@ def daily_cap_completion(request: Request) -> None:
             status_code=503,
             detail=(
                 "PI Coach has hit today's practice limit, so we can't grade this "
-                "one right now. Your recording is still on this page — try again "
+                "one right now. Your recording is still on this page. Try again "
                 "tomorrow, or practice by typing, which is unlimited."
             ),
         )

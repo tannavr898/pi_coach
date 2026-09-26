@@ -1,4 +1,4 @@
-// Canned data for the marketing demo (`/demo`). Nothing here hits the API — it
+// Canned data for the marketing demo (`/demo`). Nothing here hits the API, it
 // drives the real screens with a realistic worked example so visitors (and ad
 // screenshots) can see exactly what PI Coach produces, without a live session.
 //
@@ -222,7 +222,7 @@ export const DEMO_SCORE: ScoreResponse = {
       max_points: 10,
       headline: "Picked a coherent, audience-fit blend",
       feedback:
-        "Good reasoning for **shifting spend from radio to app push and micro-influencers** based on where the 18–28 core actually is. You named the channels but didn't fully explain the **trade-offs** between them.",
+        "Good reasoning for **shifting spend from radio to app push and micro-influencers** based on where the 18-28 core actually is. You named the channels but didn't fully explain the **trade-offs** between them.",
       evidence: ["shift spend away from untargeted radio and toward app push notifications and local micro-influencers"],
       gaps: ["Didn't weigh the cost of influencers vs. push", "No budget split across the channels"],
       suggestion: "I'd put 60% of the budget into app push since it's near-free per send, and 40% into two local micro-influencers to drive trial.",
@@ -240,7 +240,7 @@ export const DEMO_SCORE: ScoreResponse = {
         "Strong insight that **the app becomes an owned channel** and returns first-party data the delivery apps withhold. That's the systems thinking judges reward, one step short of comparing it to the delivery channel on cost.",
       evidence: ["the app becomes our owned channel", "first-party data the delivery apps never hand back"],
       gaps: ["No comparison to the third-party delivery channel's economics"],
-      suggestion: "Delivery apps take 20–30% per order, so shifting even a quarter of those sales to our own app protects real margin.",
+      suggestion: "Delivery apps take 20-30% per order, so shifting even a quarter of those sales to our own app protects real margin.",
     },
     {
       criterion_id: "FW-164",
@@ -296,13 +296,13 @@ export const DEMO_DELIVERY: DeliveryMetrics = {
   time_flag: "good",
   reading_signal: false,
   notes: [
-    "Pace sat in the ideal 120–150 WPM range, easy for a judge to follow.",
+    "Pace sat in the ideal 120-150 WPM range, easy for a judge to follow.",
     "Only 6 fillers across nearly 8 minutes; the one 4-second pause came right before your channel point, which actually read as a deliberate beat.",
     "You used 7:52 of the window, leaving room for the follow-up, which is well managed.",
   ],
   delivery_score: 84,
   delivery_components: [
-    { label: "Pace", score: 100, hint: "In the 130–160 WPM range" },
+    { label: "Pace", score: 100, hint: "In the 130-160 WPM range" },
     { label: "Fluency", score: 90, hint: "Few filler words" },
     { label: "Flow", score: 80, hint: "One long pause" },
     { label: "Timing", score: 100, hint: "Used the window well" },

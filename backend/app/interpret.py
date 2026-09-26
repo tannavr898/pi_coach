@@ -3,7 +3,7 @@
 The user types what they want to practice ("marketing for a restaurant"); we
 interpret that into our business domains + an industry, then hand the criteria in
 those domains to scenario generation, which selects the 4-6 that best fit and can
-be assessed together. Selection is OUR logic over OUR framework — there is no
+be assessed together. Selection is OUR logic over OUR framework, there is no
 fixed event-to-criteria blueprint.
 """
 
@@ -39,14 +39,14 @@ class OutOfScope(Exception):
 def plan_session(event: dict | None, focus: str) -> dict:
     """Decide the {topic, industry, domain_ids} for a role-play.
 
-    The chosen event (if any) is authoritative for the domains — that is OUR
+    The chosen event (if any) is authoritative for the domains, that is OUR
     event->domain mapping, and it is the pool generation draws criteria from.
     The optional free-text focus only refines the topic/industry:
 
     - event + no focus  -> a random scenario within the event's scope (no LLM call).
     - event + focus      -> interpret the focus for topic/industry; if the focus
                             isn't a business topic, quietly ignore it and fall back
-                            to a general scenario for the event (never error here —
+                            to a general scenario for the event (never error here,
                             they already picked a valid event).
     - no event + focus   -> the plain free-text path (topic, industry, AND domains
                             all come from interpreting the text).
@@ -81,7 +81,7 @@ def interpret_request(request: str) -> dict:
 
     if data.get("in_scope") is False:
         msg = str(data.get("redirect_message", "")).strip() or (
-            'Try a business topic — for example "marketing for a coffee shop" or '
+            'Try a business topic, for example "marketing for a coffee shop" or '
             '"a staffing problem in retail."'
         )
         raise OutOfScope(msg)
@@ -99,7 +99,7 @@ def interpret_request(request: str) -> dict:
 def candidate_pool(domain_ids: list[str]) -> list[dict]:
     """The criteria generation may choose from, for the interpreted domains."""
     pool = framework.criteria_for_domains(domain_ids)
-    if not pool:  # extreme fallback — should not happen with validated ids
+    if not pool:  # extreme fallback, should not happen with validated ids
         pool = framework.criteria_for_domains(_DEFAULT_DOMAINS)
     return pool[:_MAX_CANDIDATES]
 
@@ -116,7 +116,7 @@ def resolve_selection(criteria_ids: list[str], pool: list[dict]) -> list[dict]:
     - Keep only ids the model was actually offered (the pool), preserving order.
     - Drop duplicates.
     - If the model returned too few valid ids, top up from the pool; if it returned
-      too many, take the first N — so a role-play always grades against exactly N.
+      too many, take the first N, so a role-play always grades against exactly N.
     """
     pool_ids = [c["id"] for c in pool]
     pool_set = set(pool_ids)

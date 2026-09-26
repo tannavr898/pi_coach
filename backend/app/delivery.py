@@ -1,8 +1,8 @@
-"""Delivery metrics — deterministic arithmetic over word timestamps (roadmap §8).
+"""Delivery metrics, deterministic arithmetic over word timestamps (roadmap §8).
 
 This is the trustworthy half of the voice layer: pace, fillers, pauses, and time
 use are all computed directly from the per-word start/end times the transcription
-API returns. No model, no guessing — just math, so the numbers are accurate and
+API returns. No model, no guessing, just math, so the numbers are accurate and
 defensible. We measure ONLY timing/fillers here; tone/confidence are out of scope
 (roadmap §2 delivery honesty) and never inferred.
 """
@@ -26,12 +26,12 @@ LONG_PAUSE = 3.0
 # and that INCLUDES the judge's follow-up questions. So the spoken pitch itself
 # should land around 7-8 minutes, leaving 1-2 minutes for the questions.
 DEFAULT_TARGET_SECONDS = 450  # ~7:30 recommended speaking time
-SPEAK_MIN_SECONDS = 360  # under 6:00 — room to develop each point more
-SPEAK_MAX_SECONDS = 510  # over 8:30 — leave time for the judge's questions
+SPEAK_MIN_SECONDS = 360  # under 6:00, room to develop each point more
+SPEAK_MAX_SECONDS = 510  # over 8:30, leave time for the judge's questions
 
-# "um"/"uh" family — almost always disfluencies, safe to count as fillers.
+# "um"/"uh" family, almost always disfluencies, safe to count as fillers.
 HARD_FILLERS = {"um", "umm", "uhm", "uh", "uhh", "er", "erm", "err", "hmm", "hm", "mm", "mhm", "uh-huh"}
-# Discourse crutches — context-dependent, so reported separately and advisory
+# Discourse crutches, context-dependent, so reported separately and advisory
 # only (never rolled into the filler rate, to avoid unfair penalties).
 CRUTCH_SINGLES = {"like", "basically", "literally", "actually"}
 CRUTCH_PHRASES = [("you", "know"), ("i", "mean"), ("sort", "of"), ("kind", "of"), ("you", "see")]
@@ -72,7 +72,7 @@ def delivery_score(
 
     components = [
         {"label": "Pace", "score": pace,
-         "hint": "In the 130–160 WPM range" if pace == 100 else "Drifted fast or slow"},
+         "hint": "In the 130-160 WPM range" if pace == 100 else "Drifted fast or slow"},
         {"label": "Fluency", "score": fluency,
          "hint": "Few filler words" if fluency >= 80 else "Trim the um/uh"},
         {"label": "Flow", "score": flow,
@@ -90,8 +90,8 @@ def delivery_score(
 # --- video's contribution to the delivery score -----------------------------
 #
 # WHY THIS IS DELIBERATELY SMALL
-# Video sees ~8-60 still frames of a multi-minute rep. That is a real signal —
-# a student who never looks up is visible in it — but it is a SNAPSHOT, and the
+# Video sees ~8-60 still frames of a multi-minute rep. That is a real signal,
+# a student who never looks up is visible in it, but it is a SNAPSHOT, and the
 # error bars are wide: a frame lands where it lands, and glancing at notes for
 # the two seconds a sample happened to fire is indistinguishable from reading
 # the whole time. Audio metrics, by contrast, are computed over every word.
@@ -101,15 +101,15 @@ def delivery_score(
 #   1. FLOOR. Under VIDEO_MIN_CHECKS frames we don't adjust at all. A 3-frame
 #      sample of a 6-minute rep isn't evidence, and pretending otherwise to
 #      produce a number would be the exact dishonesty this app exists to avoid.
-#   2. CAP. The swing is at most VIDEO_MAX_ADJUSTMENT points on a 0-100 score —
+#   2. CAP. The swing is at most VIDEO_MAX_ADJUSTMENT points on a 0-100 score,
 #      too small to move a student across a grade band on the strength of a
 #      handful of frames, large enough to notice and act on.
 #   3. CONFIDENCE SCALING. Between the floor and VIDEO_FULL_CONFIDENCE_CHECKS
 #      the cap scales linearly with sample size, so a short rep with 10 frames
 #      moves the score about a third as much as a full 30-frame one. More
-#      evidence, more influence — which is what a sample size is FOR.
+#      evidence, more influence, which is what a sample size is FOR.
 #   4. OBSERVABLE INPUT ONLY. The input is the eye-contact rate, a count of
-#      frames. Not "presence", not "confidence" — the same rule the rest of the
+#      frames. Not "presence", not "confidence", the same rule the rest of the
 #      delivery engine follows.
 #
 # The center is 60%, not 100%: a presenter who looks at their notes or their
@@ -132,7 +132,7 @@ def video_adjustment(checks: int, eye_contact_count: int) -> tuple[float, str]:
         return 0.0, "No frames were readable, so video didn't affect your delivery score."
     if checks < VIDEO_MIN_CHECKS:
         return 0.0, (
-            f"Only {checks} frame{'s' if checks != 1 else ''} were sampled — too few to "
+            f"Only {checks} frame{'s' if checks != 1 else ''} were sampled: too few to "
             "adjust your delivery score, so this rep was scored on audio alone. Longer "
             "reps sample more frames."
         )
@@ -163,7 +163,7 @@ def apply_video(
 
     Additive by design: the four audio components are computed and weighted
     exactly as they were before this feature existed, and video only shifts the
-    final number. That keeps the audio engine — the accurate half — untouched,
+    final number. That keeps the audio engine, the accurate half, untouched,
     and means a voice-only rep and a video rep are graded on the same scale
     rather than on two different ones.
     """
@@ -345,10 +345,10 @@ def compute_speakers(words: Sequence[_Word]) -> dict:
     if dominated_by:
         balance_note = (
             f"Speaker {dominated_by} did {round(top['talk_share'] * 100)}% of the talking ({shares}). "
-            "In a team event judges want to see both partners contribute — aim for a more even split."
+            "In a team event judges want to see both partners contribute. Aim for a more even split."
         )
     else:
-        balance_note = f"Fairly balanced split ({shares}) — both partners held the floor."
+        balance_note = f"Fairly balanced split ({shares}), both partners held the floor."
     return {"speakers": rows, "dominated_by": dominated_by, "balance_note": balance_note}
 
 
@@ -360,33 +360,33 @@ def _fmt_time(seconds: float) -> str:
 def _notes(pace, pace_flag, filler_total, filler_per_min, crutch_counts, long_pauses, duration_s, time_flag, reading_signal) -> list[str]:
     notes: list[str] = []
     if pace_flag == "fast":
-        notes.append(f"Your pace was {pace} WPM — on the fast side. Aim for 130–160 so the judge can follow.")
+        notes.append(f"Your pace was {pace} WPM, on the fast side. Aim for 130-160 so the judge can follow.")
     elif pace_flag == "slow":
-        notes.append(f"Your pace was {pace} WPM — a bit slow. Lifting toward 130–160 will sound more confident.")
+        notes.append(f"Your pace was {pace} WPM, a bit slow. Lifting toward 130-160 will sound more confident.")
     else:
-        notes.append(f"Your pace was {pace} WPM — right in the presentation sweet spot.")
+        notes.append(f"Your pace was {pace} WPM, right in the presentation sweet spot.")
 
     if filler_total == 0:
-        notes.append("No filler words (um/uh) — clean delivery.")
+        notes.append("No filler words (um/uh), clean delivery.")
     elif filler_per_min >= 4:
-        notes.append(f"{filler_total} filler words ({filler_per_min}/min) — noticeable. A brief silent pause beats an 'um'.")
+        notes.append(f"{filler_total} filler words ({filler_per_min}/min), noticeable. A brief silent pause beats an 'um'.")
     else:
-        notes.append(f"{filler_total} filler words ({filler_per_min}/min) — low, but worth trimming.")
+        notes.append(f"{filler_total} filler words ({filler_per_min}/min), low, but worth trimming.")
 
     if crutch_counts:
         top = max(crutch_counts.items(), key=lambda x: x[1])
-        notes.append(f"Watch crutch phrases like \"{top[0]}\" (used {top[1]}×) — advisory, not counted against pace.")
+        notes.append(f"Watch crutch phrases like \"{top[0]}\" (used {top[1]}×): advisory, not counted against pace.")
 
     if long_pauses:
         worst = max(long_pauses, key=lambda p: p["length_seconds"])
-        notes.append(f"{len(long_pauses)} long pause(s) over 3s — the longest was {worst['length_seconds']}s at {_fmt_time(worst['at_seconds'])}. Short stalls are fine; long ones lose the room.")
+        notes.append(f"{len(long_pauses)} long pause(s) over 3s, the longest was {worst['length_seconds']}s at {_fmt_time(worst['at_seconds'])}. Short stalls are fine; long ones lose the room.")
 
     if time_flag == "short":
-        notes.append(f"You spoke for {_fmt_time(duration_s)} — short of the 7-8 minute target. Develop each point further to use the window.")
+        notes.append(f"You spoke for {_fmt_time(duration_s)}, short of the 7-8 minute target. Develop each point further to use the window.")
     elif time_flag == "long":
-        notes.append(f"You spoke for {_fmt_time(duration_s)} — long. The 10-minute window includes the judge's two questions, so aim to wrap your pitch by ~8 minutes.")
+        notes.append(f"You spoke for {_fmt_time(duration_s)}, on the long side. The 10-minute window includes the judge's two questions, so aim to wrap your pitch by ~8 minutes.")
     else:
-        notes.append(f"You spoke for {_fmt_time(duration_s)} — right around the 7-8 minute target, leaving room for the judge's questions.")
+        notes.append(f"You spoke for {_fmt_time(duration_s)}, right around the 7-8 minute target, leaving room for the judge's questions.")
 
     if reading_signal:
         notes.append("Soft signal: your pacing was very even with almost no natural pauses, which can sound read rather than presented. (Advisory only.)")

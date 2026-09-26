@@ -1,8 +1,8 @@
-"""Event study courses — an ordered, finishable path through the study corpus.
+"""Event study courses, an ordered, finishable path through the study corpus.
 
 The app was built for the rep: generate a scenario, answer it, get graded. That
 serves someone who already knows the material. A course serves the student who
-doesn't yet — pick your event in June, work the path over the summer, arrive in the
+doesn't yet, pick your event in June, work the path over the summer, arrive in the
 fall with the domain knowledge down so practice can be about delivery.
 
 The join this rests on already existed and was simply unused by the study UI: each
@@ -21,7 +21,7 @@ ORDER is deliberate and deterministic:
     already sorts to domain -> framework topic order -> core-first. That shared
     ordering is why the library and the course agree; don't re-sort here.
 
-Everything here is pure — no DB, no user. main.py overlays a logged-in user's
+Everything here is pure, no DB, no user. main.py overlays a logged-in user's
 progress on top. Same split as progress.py, and it keeps this unit-testable.
 
 Nothing here reads DECA's PI list. The event->domain mapping is our own (see
@@ -34,7 +34,7 @@ from . import events, terms
 
 
 def _unit_id(domain_id: str, topic: str) -> str:
-    """Stable id for a unit. Topics are our own strings, so slugging is cosmetic —
+    """Stable id for a unit. Topics are our own strings, so slugging is cosmetic,
     the pair is what identifies it."""
     return f"{domain_id}::{topic}"
 
@@ -43,7 +43,7 @@ def units_for_domains(domain_ids: list[str]) -> list[dict]:
     """Group the terms of the given domains into topic units.
 
     Domains come back in the order given (the event's priority), and terms keep
-    file order within each — see the module docstring on why that matters.
+    file order within each, see the module docstring on why that matters.
     """
     out: list[dict] = []
     for domain_id in domain_ids:
@@ -105,7 +105,7 @@ def summarize(course: dict, progress: dict[str, str]) -> dict:
     """Overlay a user's per-term status onto a course.
 
     `progress` maps term_id -> status ("new" | "learning" | "known"). Terms absent
-    from it are "new" — a student who has never seen a term and a student with no
+    from it are "new", a student who has never seen a term and a student with no
     account look the same here, which is what lets the course render logged-out.
     """
     known_total = 0
@@ -137,7 +137,7 @@ def summarize(course: dict, progress: dict[str, str]) -> dict:
 
     course["known_count"] = known_total
     # Started but not yet proven. Surfaced so flipping through cards produces
-    # visible movement without letting it complete the path — see study.py on why
+    # visible movement without letting it complete the path, see study.py on why
     # only a Blitz or a role-play can promote a term to "known".
     course["learning_count"] = learning_total
     course["core_known"] = core_known

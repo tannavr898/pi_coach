@@ -6,22 +6,22 @@ read-through (see app/data/framework-notes.md, "Independence audit"). Nothing
 re-ran it. Tripling the corpus is exactly the moment that stops being good enough,
 so this makes the audit repeatable.
 
-THE ORDERING RULE — read this before changing anything here
+THE ORDERING RULE, read this before changing anything here
 The PI list is an AUDIT INPUT ONLY, never an authoring input. Terms are written
 blind from business fundamentals (scripts/gen_terms.py never sees this file), and
-this script checks the result afterwards. Wiring it into generation — even as a
-"rewrite anything that matches" filter — would make the PI list a source, which is
+this script checks the result afterwards. Wiring it into generation, even as a
+"rewrite anything that matches" filter, would make the PI list a source, which is
 precisely what framework-notes.md's two hard rules forbid. Audit after; never author
 against.
 
 WHAT COUNTS AS A PROBLEM
 Not shared vocabulary. Two people writing about break-even analysis will both say
-"fixed costs" — the concepts are public domain and overlap is expected and fine.
+"fixed costs", the concepts are public domain and overlap is expected and fine.
 Copying shows up as shared PHRASING, so the signals are ranked accordingly:
 
   run     longest shared run of consecutive content words. The primary red flag:
           an 8-word shared run is not parallel invention.
-  ratio   sequence similarity over the whole blob. Secondary — catches paraphrase.
+  ratio   sequence similarity over the whole blob. Secondary, catches paraphrase.
   jaccard bag-of-words overlap. INFORMATIONAL ONLY. High jaccard on the same
           concept is expected and is not evidence of anything.
 
@@ -35,7 +35,7 @@ It also does two jobs that aren't about legality but are free here:
 
 OUTPUT
 stdout stays safe to paste: our text, scores, and PI ids only. The full side-by-side
-report contains PI text, so it is written into backend/reference/ — already
+report contains PI text, so it is written into backend/reference/, already
 git-ignored and docker-ignored, so the licensed text cannot escape that directory.
 
 Exits 0 when clean, 1 when anything trips a FAIL threshold, 2 when the reference
@@ -61,7 +61,7 @@ from scripts._textsim import tokens as _tokens
 _REF = Path(__file__).resolve().parents[1] / "reference" / "pis-core-reference.json"
 _REPORT = Path(__file__).resolve().parents[1] / "reference" / "independence-report.md"
 
-# Hard fail — this is copied or near-copied text.
+# Hard fail, this is copied or near-copied text.
 FAIL_RUN = 8
 FAIL_RATIO = 0.60
 # Worth a human look, not automatically wrong.
@@ -76,7 +76,7 @@ GRAIN_RATIO = 0.35
 
 def _load_pis() -> list[dict]:
     """Flatten the reference to comparable records. PI text stays in memory and in
-    the git-ignored report — it is never written anywhere the repo can see."""
+    the git-ignored report, it is never written anywhere the repo can see."""
     doc = json.loads(_REF.read_text(encoding="utf-8"))
     out: list[dict] = []
     for area in doc.get("instructional_areas", []):
@@ -136,7 +136,7 @@ def _topic_report(matched: list[dict]) -> list[str]:
     Concentration on its own means nothing, and an earlier version of this that
     flagged on concentration alone was a pure false-positive generator: a topic
     called "Promotion" will obviously best-match promotion PIs, and "each onto a
-    distinct PI" only says our own terms aren't duplicates of each other — which is
+    distinct PI" only says our own terms aren't duplicates of each other, which is
     the thing we want. Drift only bites when our terms also sit CLOSE to their group,
     which is the shape of having decomposed their list rather than the concept. So
     the textual floor below is what makes this signal mean anything.
@@ -159,7 +159,7 @@ def _topic_report(matched: list[dict]) -> list[str]:
         mean_ratio = sum(m["best"]["ratio"] for m in ms) / len(ms)
         if share >= 0.6 and distinct == len(ms) and mean_ratio >= GRAIN_RATIO:
             lines.append(
-                f"- **{domain} / {topic}** — {n}/{len(ms)} terms best-match inside one "
+                f"- **{domain} / {topic}**, {n}/{len(ms)} terms best-match inside one "
                 f"performance element, each onto a distinct PI, mean ratio "
                 f"{mean_ratio:.2f}. Re-apply the grain test."
             )
@@ -173,7 +173,7 @@ def main() -> int:
     args = ap.parse_args()
 
     if not _REF.exists():
-        print(f"No PI reference at {_REF} — nothing to audit against.")
+        print(f"No PI reference at {_REF}, nothing to audit against.")
         print("This file is git-ignored by design; it exists only on an authoring machine.")
         return 2
 
@@ -199,7 +199,7 @@ def main() -> int:
     dupes = _check_dupes(ours)
     grain = _topic_report(matched)
 
-    # stdout: safe to paste — our text, our scores, their ids only.
+    # stdout: safe to paste, our text, our scores, their ids only.
     print()
     print(f"FAIL   {len(fails)}   (run >= {FAIL_RUN} or ratio >= {FAIL_RATIO})")
     print(f"review {len(reviews)}   (run >= {REVIEW_RUN} or ratio >= {REVIEW_RATIO})")
@@ -217,7 +217,7 @@ def main() -> int:
     lines = [
         "# Independence report",
         "",
-        "Generated by `scripts/check_independence.py`. **Contains licensed DECA PI text —",
+        "Generated by `scripts/check_independence.py`. **Contains licensed DECA PI text , ",
         "this file lives in backend/reference/ because that directory is git-ignored and",
         "docker-ignored. Do not move, paste, or commit it.**",
         "",
@@ -231,9 +231,9 @@ def main() -> int:
     for m in worst[: max(args.top, 40)]:
         b, t = m["best"], m["term"]
         lines += [
-            f"### {t['id']} — {t['name']}  ({b['flag'] or 'ok'}: run={b['run']}, ratio={b['ratio']:.2f})",
+            f"### {t['id']}, {t['name']}  ({b['flag'] or 'ok'}: run={b['run']}, ratio={b['ratio']:.2f})",
             f"- **ours:** {t.get('definition', '')}",
-            f"- **theirs ({b['pi']['id']}, {b['pi']['area']}):** {b['pi']['text']} — {b['pi']['definition']}",
+            f"- **theirs ({b['pi']['id']}, {b['pi']['area']}):** {b['pi']['text']}, {b['pi']['definition']}",
             "",
         ]
     if dupes:

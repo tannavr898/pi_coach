@@ -17,7 +17,7 @@
   body {
     font-family: var(--font-sans);
     /* Soft slate canvas: a faint indigo wash at the top, over a subtle diamond
-       lattice (two crisscrossed hairline gradients — no images, GPU-cheap). */
+       lattice (two crisscrossed hairline gradients, no images, GPU-cheap). */
     background-color: #f6f7fb;
     background-image:
       radial-gradient(120% 55% at 50% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
@@ -111,7 +111,7 @@
   animation: pic-step-in 0.35s ease-out both;
 }
 
-/* The gaze anchor's blink. Long dwell, fast close — a real blink is ~120ms in a
+/* The gaze anchor's blink. Long dwell, fast close, a real blink is ~120ms in a
    ~5s cycle, and matching that is what keeps the face reading as a person to
    present to rather than a mascot winking at the student. Falls back to open
    eyes under the reduced-motion rule below, which is the correct still frame. */
@@ -140,7 +140,7 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  /* A loading screen is essential feedback — a frozen one reads as "hung." Keep
+  /* A loading screen is essential feedback, a frozen one reads as "hung." Keep
      the loader breathing (a touch slower) even when motion is reduced. These
      class selectors beat the `*` rule above on specificity, so they win. */
   .pic-wave,
@@ -160,14 +160,14 @@
 
    iOS Safari zooms the viewport whenever you focus an input whose font-size is
    under 16px, and it does not zoom back out when you blur. Our controls are
-   `text-sm` (14px), so on an iPhone every tap into the response box — the one
-   action the whole product exists for — punched the layout to ~1.3x and left it
+   `text-sm` (14px), so on an iPhone every tap into the response box, the one
+   action the whole product exists for, punched the layout to ~1.3x and left it
    there. 16px on coarse pointers is the documented way to suppress it.
 
    Deliberately UNLAYERED: Tailwind's utilities live in `@layer utilities`, and
    unlayered rules beat layered ones in the cascade regardless of specificity.
    That means this wins over `text-sm` without `!important` and without editing
-   forty class strings. Checkbox and radio are excluded — they have no text, and
+   forty class strings. Checkbox and radio are excluded, they have no text, and
    sizing them here would change their box.
 
    Scoped to `pointer: coarse` so desktop keeps its denser 14px controls.

@@ -41,10 +41,10 @@ def _int_env(name: str, default: int) -> int:
 
 
 # Monthly allowances per tier. Typed practice is absent from this table on
-# purpose — it is unlimited everywhere and has nothing to look up.
+# purpose, it is unlimited everywhere and has nothing to look up.
 LIMITS: dict[str, dict[str, int]] = {
     # Signed out. A real taste of the voice loop, then a reason to make an
-    # account. NOTE: anonymous limits are enforced CLIENT-side (see usage.py) —
+    # account. NOTE: anonymous limits are enforced CLIENT-side (see usage.py),
     # this entry exists so the UI can show the same numbers the client enforces.
     "anonymous": {
         "voice": _int_env("CAP_ANON_VOICE", 2),
@@ -57,7 +57,7 @@ LIMITS: dict[str, dict[str, int]] = {
         "video": _int_env("CAP_FREE_VIDEO", 3),
     },
     # Announced, not purchasable. No checkout, no Stripe, no subscription
-    # management — see the module docstring.
+    # management, see the module docstring.
     "pro": {
         "voice": _int_env("CAP_PRO_VOICE", UNLIMITED),
         "video": _int_env("CAP_PRO_VIDEO", UNLIMITED),
@@ -86,7 +86,7 @@ def period_key(now: datetime | None = None) -> str:
 
 
 def resets_on(now: datetime | None = None) -> str:
-    """ISO date the current period rolls over — shown with every cap message, so
+    """ISO date the current period rolls over, shown with every cap message, so
     hitting a limit always comes with a "you're back on ___" rather than a wall."""
     n = now or datetime.now(timezone.utc)
     y, m = (n.year + 1, 1) if n.month == 12 else (n.year, n.month + 1)

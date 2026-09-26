@@ -17,8 +17,8 @@ def test_course_covers_exactly_the_events_domains():
 
 
 def test_course_units_follow_event_domain_priority():
-    """Domains must appear in the event's own order — the primary discipline first,
-    not alphabetically — since that's the order a student studies in."""
+    """Domains must appear in the event's own order, the primary discipline first,
+    not alphabetically, since that's the order a student studies in."""
     e = events.all_events()[0]
     course = courses.course_for(e["id"])
     seen: list[str] = []
@@ -37,7 +37,7 @@ def test_course_counts_add_up_and_units_are_non_empty():
 
 
 def test_core_tier_is_exactly_the_graded_terms():
-    """The Core path's promise is "every skill we grade you on for this event" —
+    """The Core path's promise is "every skill we grade you on for this event",
     if that drifts, the promise is a lie."""
     course = courses.course_for("human-resources-management")
     for u in course["units"]:
@@ -88,7 +88,7 @@ def test_summarize_counts_core_separately_from_the_whole_corpus():
 def test_units_count_core_progress_separately_from_total():
     """The UI shows one tier at a time. If a unit only reported known/total over ALL
     its terms, a Core-path unit with 4 core and 4 extended terms would show "0/8" and
-    could never reach 100% — the promised path would be unfinishable by construction.
+    could never reach 100%, the promised path would be unfinishable by construction.
     """
     course = courses.course_for("principles-marketing")
     mixed = next(u for u in course["units"] if u["core_ids"] and u["extended_ids"])

@@ -1,6 +1,6 @@
 // The guided "first rep" scenario. Hardcoded (like demoData.ts) so a brand-new
 // visitor can complete a full role-play in ~2 minutes with ZERO scenario-
-// generation LLM call — a curious visitor who bounces before submitting costs
+// generation LLM call, a curious visitor who bounces before submitting costs
 // nothing. Grading still runs the real /api/score-content when they finish, so
 // the payoff (deep feedback + highlighted transcript) is undiminished.
 //
@@ -62,7 +62,7 @@ export const ONBOARDING_SCENARIO: ScenarioResponse = {
   ],
   procedures: [
     "Take a couple of minutes to look over the situation and jot down a few notes.",
-    "Then give a short spoken (or typed) recommendation: about 60–90 seconds is plenty.",
+    "Then give a short spoken (or typed) recommendation: about 60-90 seconds is plenty.",
     "You're judged on your ideas and, if you speak, on your delivery (pace, fillers, pauses).",
     "The owner will ask you one quick follow-up question at the end.",
   ],

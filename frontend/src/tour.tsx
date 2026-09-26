@@ -1,6 +1,6 @@
 // The guided product tour, and the one-time intro cards that back it up.
 //
-// This file owns PRESENTATION only — the shell, the caption bar, the keyboard and
+// This file owns PRESENTATION only, the shell, the caption bar, the keyboard and
 // focus handling. The steps themselves are passed in as data, because the screens
 // being demonstrated (ReadyScreen, RespondScreen, FeedbackScreen…) live in App.tsx
 // and importing them here would make tour.tsx <-> App.tsx circular, which is the
@@ -15,7 +15,7 @@ import { BTN_PRIMARY, BTN_SECONDARY } from "./ui";
 import type { Surface } from "./visited";
 
 export type TourStep = {
-  /** Stable id for analytics — safe to reorder steps without breaking funnels. */
+  /** Stable id for analytics, safe to reorder steps without breaking funnels. */
   id: string;
   /** Grouping label shown in the caption bar ("The rep", "Your feedback"…). */
   act: string;
@@ -230,7 +230,7 @@ export function FeatureIntro(props: {
 export const FEATURE_INTROS: Record<Surface, { title: string; body: string }> = {
   home: {
     title: "Your progress, and what to do about it",
-    body: "Every number here points at a next action. The radar shows which business skills you've actually demonstrated — spokes at zero mean 'not practiced yet', not 'bad'.",
+    body: "Every number here points at a next action. The radar shows which business skills you've actually demonstrated, spokes at zero mean 'not practiced yet', not 'bad'.",
   },
   course: {
     title: "A finishable path for your event",
@@ -242,11 +242,11 @@ export const FEATURE_INTROS: Record<Surface, { title: string; body: string }> = 
   },
   blitz: {
     title: "Mastery Blitz: five terms, 45 seconds each",
-    body: "A speed drill you launch from a course unit or a flashcard set. It's for recall under pressure — the same pressure you're under when a judge asks a follow-up.",
+    body: "A speed drill you launch from a course unit or a flashcard set. It's for recall under pressure, the same pressure you're under when a judge asks a follow-up.",
   },
   tips: {
     title: "The four-beat method",
-    body: "Define, Explain, Connect, Above & Beyond — the structure that turns a vague answer into a scoring one. One worked example carries the whole page.",
+    body: "Define, Explain, Connect, Above & Beyond, the structure that turns a vague answer into a scoring one. One worked example carries the whole page.",
   },
   faq: {
     title: "How this works, and whether it's allowed",

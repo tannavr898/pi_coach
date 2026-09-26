@@ -65,7 +65,7 @@ def transcribe(
 
     When `diarize` is set (team events), ask the provider for speaker labels so we
     can attribute words/turns to each speaker. Runs synchronously (the endpoint is
-    a sync `def`, so FastAPI executes it in a threadpool — polling won't block).
+    a sync `def`, so FastAPI executes it in a threadpool, polling won't block).
     """
     if TRANSCRIPTION_PROVIDER != "assemblyai":
         raise TranscriptionError(f"Unsupported transcription provider: {TRANSCRIPTION_PROVIDER!r}")

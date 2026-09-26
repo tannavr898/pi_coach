@@ -1,4 +1,4 @@
-"""The deterministic arithmetic verifier — the safety net for quantitative events."""
+"""The deterministic arithmetic verifier, the safety net for quantitative events."""
 
 import math
 

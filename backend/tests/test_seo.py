@@ -3,7 +3,7 @@
 These assertions look fussy for HTML, but every one of them is a way the pages
 silently stop doing their only job. A page that renders beautifully and 500s for
 one event, or emits a canonical pointing at the wrong host, or drifts out of sync
-with events.json, still looks fine in a browser — and quietly earns nothing.
+with events.json, still looks fine in a browser, and quietly earns nothing.
 """
 
 from __future__ import annotations
@@ -24,12 +24,12 @@ ALL_EVENT_IDS = [e["id"] for e in events.all_events()]
 
 
 def _main(html: str) -> str:
-    """Just the <main> region — the rendered content, without the shared page chrome."""
+    """Just the <main> region, the rendered content, without the shared page chrome."""
     return html.split('<main class="wrap">', 1)[1].split("</main>", 1)[0]
 
 
 def _text(html: str) -> str:
-    """Visible text only — what a crawler indexes, minus markup and JSON-LD."""
+    """Visible text only, what a crawler indexes, minus markup and JSON-LD."""
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", _main(html)))
 
 
@@ -59,7 +59,7 @@ def test_bltdm_page_answers_the_query():
     text = _text(html)
     assert "BLTDM" in text
     assert "Business Law" in text
-    # The content has to be in the HTML, not fetched later — that is the entire
+    # The content has to be in the HTML, not fetched later, that is the entire
     # point of rendering server-side rather than letting the SPA paint it.
     assert "Legal Environment Awareness" in text
     # A page thin enough to be a stub cannot rank for anything.

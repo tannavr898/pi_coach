@@ -1,6 +1,6 @@
 // Auth context + modal, backed by Supabase's managed auth: email/password, or
 // Google as a one-tap alternative. We never hand-roll sessions or password
-// handling — supabase-js owns that; here we only expose a thin React surface
+// handling, supabase-js owns that; here we only expose a thin React surface
 // (user, sign in/up/out, sign in with a provider) and a login dialog.
 //
 // Login is entirely optional: anonymous practice never touches this. When
@@ -16,7 +16,7 @@ type AuthResult = { error?: string; needsConfirmation?: boolean };
 
 // The providers enabled in the Supabase dashboard. Adding another (Apple,
 // Microsoft) is a dashboard change plus one entry here and in PROVIDER_BUTTONS
-// below — nothing else in the flow is provider-specific.
+// below, nothing else in the flow is provider-specific.
 export type OAuthProvider = "google";
 
 type AuthState = {
@@ -30,7 +30,7 @@ type AuthState = {
   signInWithProvider: (provider: OAuthProvider) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   // A failed provider hand-off we were redirected back with, surfaced only when
-  // it left them actually signed out — see the AuthProvider effect.
+  // it left them actually signed out, see the AuthProvider effect.
   oauthError: string | null;
   dismissOAuthError: () => void;
 };
@@ -44,14 +44,14 @@ const Ctx = createContext<AuthState | null>(null);
 const OAUTH_ERROR_PARAMS = ["error", "error_code", "error_description", "error_uri"];
 
 // What each failure actually means to a student, in their words. The default
-// covers codes we haven't seen yet — never show them a raw `error_code`.
+// covers codes we haven't seen yet, never show them a raw `error_code`.
 function explainOAuthError(code: string): string {
   if (code === "bad_oauth_state" || code === "flow_state_expired" || code === "flow_state_not_found") {
     // Overwhelmingly a stale sign-in link being replayed: the browser's Back
     // button after a completed sign-in, a second tab finishing a flow the first
     // one already consumed, or a consent screen left open long enough for the
     // hand-off to expire. All three are harmless, and in the common case they
-    // are ALREADY signed in — which is why the caller checks for a session
+    // are ALREADY signed in, which is why the caller checks for a session
     // before showing any of this.
     return "That sign-in link had already been used or had expired. Try signing in once more.";
   }
@@ -66,7 +66,7 @@ function explainOAuthError(code: string): string {
  * Two reasons this has to exist. First, nothing else clears these params:
  * supabase-js on the implicit flow scrubs the URL *hash* it owns, and these
  * arrive in the query string, so `?error=invalid_request&error_code=bad_oauth_state`
- * would otherwise sit in the address bar for the rest of the session — and get
+ * would otherwise sit in the address bar for the rest of the session, and get
  * bookmarked, shared, and re-loaded. Second, a failed hand-off lands on the site
  * root with no explanation on screen at all; the student just finds themselves
  * logged out on the home page with a scary URL.
@@ -93,7 +93,7 @@ function consumeOAuthError(): { code: string; message: string } | null {
     window.history.replaceState({}, "", `${url.pathname}${url.search}${rest ? `#${rest}` : ""}`);
     return { code, message: explainOAuthError(code) };
   } catch {
-    return null; // malformed URL or no history API — never block boot over this
+    return null; // malformed URL or no history API, never block boot over this
   }
 }
 
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         // Resolve a failed provider hand-off only once we know whether it
         // actually cost them anything. The most common `bad_oauth_state` is a
-        // replayed callback — Back button, or a second tab — on a flow that
+        // replayed callback, Back button, or a second tab, on a flow that
         // already succeeded, so they land here signed in and there is nothing to
         // tell them. Showing a red banner over a working session would invent a
         // problem. Only a failure that left them signed OUT gets surfaced.
@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(u);
         // Covers sign-in, a sign-up that returns a session, token refresh, and a
         // session restored on reload. identify is idempotent, so re-calling with
-        // the same id costs nothing. Sign-out is handled in signOut() below —
+        // the same id costs nothing. Sign-out is handled in signOut() below,
         // resetting here would also fire on transient null sessions.
         if (u) identifyUser(u.id);
         if (u) setOauthError(null); // a later success retires the earlier failure
@@ -184,8 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {};
   };
 
-  // Redirect-based OAuth. Nothing after a successful call runs — the tab is
-  // already on the provider's consent screen — so the completion side lives
+  // Redirect-based OAuth. Nothing after a successful call runs, the tab is
+  // already on the provider's consent screen, so the completion side lives
   // entirely in onAuthStateChange above, which fires once we are bounced back
   // with a session. That is also why there is no signed-up vs logged-in event
   // here: from our side the two are indistinguishable on an OAuth return, so we
@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider,
       options: {
         // Return to the exact page they left, query string included, so a
-        // shared-challenge deep link survives the round trip — but with any
+        // shared-challenge deep link survives the round trip, but with any
         // error params from a PREVIOUS failed attempt stripped. Carrying those
         // through would land a successful sign-in back on `?error=...` and show
         // the failure banner again, over a session that actually worked.
@@ -247,7 +247,7 @@ export function useAuth(): AuthState {
 // Google's mark, inlined rather than fetched: the button must not depend on a
 // third-party request that an ad blocker or a school network can drop, which
 // would leave a nameless white square. The four fills are Google's brand colors,
-// fixed by their branding guidelines — they do not follow our theme.
+// fixed by their branding guidelines, they do not follow our theme.
 function GoogleMark() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden className="shrink-0">
@@ -323,7 +323,7 @@ export function AuthModal({
       setConfirmSent(true);
       return;
     }
-    // Signed in — a session is active.
+    // Signed in, a session is active.
     onAuthed?.(tab);
     onClose();
   }

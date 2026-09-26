@@ -1,7 +1,7 @@
 """Build script: expand the study corpus (terms.json) past the graded framework.
 
 Replaces gen_flashcards.py, which could only ever author one card per framework
-criterion — the coupling that capped the library at 282.
+criterion, the coupling that capped the library at 282.
 
 TWO PASSES, because the hard part is deciding WHICH terms exist, not writing their
 backs:
@@ -12,14 +12,14 @@ backs:
   content   Per proposed term, write the card: coaches line, plain definition, a
             worked example through the four beats, and one common mistake.
 
-SOURCING — the rule that keeps this legal
+SOURCING, the rule that keeps this legal
 Terms are authored BLIND from business fundamentals. This script never reads
 backend/reference/ and must never be given DECA's PI list, as a source, a checklist,
-or a "don't match this" filter — any of those would make their list an input, which
+or a "don't match this" filter, any of those would make their list an input, which
 is what framework-notes.md's two hard rules forbid. Independence is checked AFTER
 the fact by scripts/check_independence.py. Author blind; audit after.
 
-GRAIN — the rule that keeps this defensible
+GRAIN, the rule that keeps this defensible
 Tripling the corpus means slicing finer, and a fine enough slice maps to exactly one
 PI. The prompts below enforce the grain test from framework-notes.md ("one
 identifiable skill a student can practice") and explicitly forbid producing new terms
@@ -68,7 +68,7 @@ _GROWTH = 2
 # "Supply and Demand" vs "Labor Supply and Demand" are genuinely distinct concepts
 # and must survive.
 _DUPE_NAME_RATIO = 0.85
-# A new topic that can't field this many terms makes a stub course unit — units are
+# A new topic that can't field this many terms makes a stub course unit, units are
 # topics, so one-term topics turn the study path choppy.
 _MIN_NEW_TOPIC = 3
 
@@ -77,9 +77,9 @@ _MIN_NEW_TOPIC = 3
 
 SKELETON_SYSTEM = (
     "You are a business educator building a STUDY GLOSSARY for a high-school business "
-    "competition practice app. Given ONE business domain — its existing topics and the "
-    "terms already covered — propose NEW terms that expand that domain's coverage.\n\n"
-    "SOURCE RULE (critical): author ONLY from general business fundamentals — the "
+    "competition practice app. Given ONE business domain, its existing topics and the "
+    "terms already covered, propose NEW terms that expand that domain's coverage.\n\n"
+    "SOURCE RULE (critical): author ONLY from general business fundamentals, the "
     "material taught in any introductory business or marketing textbook. Do NOT "
     "reproduce, adapt, or work from any competition organization's published list of "
     "performance indicators, its wording, or its groupings. If you happen to know such "
@@ -87,20 +87,20 @@ SKELETON_SYSTEM = (
     "be a concept you could point to in a textbook.\n\n"
     "GRAIN RULE (critical): each term names ONE identifiable skill or concept a student "
     "could explain in about a minute inside a role-play.\n"
-    "- Too broad: 'Marketing' — coaching on it would be useless.\n"
-    "- Too narrow: 'The birthday-offer tactic' — a fragment, not a skill.\n"
+    "- Too broad: 'Marketing', coaching on it would be useless.\n"
+    "- Too narrow: 'The birthday-offer tactic', a fragment, not a skill.\n"
     "- Right: 'Target Market Selection', 'Break-even Thinking'.\n"
     "Do NOT create a term by slicing an existing term into smaller pieces. New terms "
-    "must be SIBLINGS of the existing ones — genuinely different concepts at the same "
+    "must be SIBLINGS of the existing ones, genuinely different concepts at the same "
     "altitude. A term that only makes sense as a sub-part of a listed term is wrong.\n\n"
     "COVERAGE RULE: prefer breadth over depth. You may extend an existing topic, or "
-    "introduce a NEW topic within this domain where real territory is uncovered — but a "
+    "introduce a NEW topic within this domain where real territory is uncovered, but a "
     "new topic must carry AT LEAST 3 terms. Do not create a topic to hold one term; put "
     "that term in an existing topic instead. Never duplicate or merely rephrase anything "
     "in the already-covered list.\n\n"
     "STAY IN YOUR DOMAIN: propose only terms that genuinely belong to THIS domain. Other "
     "domains (marketing, finance, operations, HR, and so on) are being written "
-    "separately — a concept that is really theirs will collide with their work. If a "
+    "separately, a concept that is really theirs will collide with their work. If a "
     "term's natural home is another field, leave it out.\n\n"
     "Return ONLY a JSON object: {\"terms\": [{\"topic\": \"...\", \"name\": \"...\"}, ...]}\n"
     "- topic: an existing topic from the list, or a new one (1-3 words, Title Case).\n"
@@ -116,7 +116,7 @@ def _skeleton_prompt(domain: dict, existing: list[dict], want: int) -> str:
     return (
         f"Domain: {domain['name']}\n"
         f"What this domain covers: {domain.get('blurb', '')}\n\n"
-        f"ALREADY COVERED ({len(existing)} terms across {len(by_topic)} topics) — do not "
+        f"ALREADY COVERED ({len(existing)} terms across {len(by_topic)} topics), do not "
         f"duplicate or rephrase any of these:\n{covered}\n\n"
         f"Propose exactly {want} NEW terms for this domain. Return ONLY the JSON object."
     )
@@ -203,7 +203,7 @@ def cmd_skeleton(args) -> int:
     targets = [d for d in framework.domains() if not args.domain or d["id"] == args.domain]
     todo = [d for d in targets if args.force or d["id"] not in done_domains]
     if not todo:
-        print("skeleton already covers every domain — use --force to redo")
+        print("skeleton already covers every domain, use --force to redo")
         return 0
     print(f"proposing terms for {len(todo)} domain(s)...", flush=True)
 
@@ -216,7 +216,7 @@ def cmd_skeleton(args) -> int:
                 got = fut.result()
                 proposed.extend(got)
                 print(f"  + {d['name']}: {len(got)} proposed", flush=True)
-            except Exception as e:  # noqa: BLE001 — log and continue; re-run fills gaps
+            except Exception as e:  # noqa: BLE001, log and continue; re-run fills gaps
                 failed += 1
                 print(f"  ! {d['name']}: {e}", flush=True)
 
@@ -246,7 +246,7 @@ def cmd_skeleton(args) -> int:
         {"version": 1,
          "note": ("Proposed study terms, authored blind from business fundamentals. "
                   "REVIEW THIS BY HAND before running `gen_terms content`: check the grain "
-                  "(one coachable skill, a sibling of its neighbours — not a fragment of "
+                  "(one coachable skill, a sibling of its neighbours, not a fragment of "
                   "one) and delete anything duplicative. Deleting a row is free; its id is "
                   "simply retired."),
          "proposed": proposed},
@@ -271,17 +271,17 @@ CONTENT_SYSTEM = (
     "- definition: define the SKILL in plain, student-friendly words. NOT a grading "
     "question ('does the response...'). One sentence.\n"
     "- example.define: in the participant's voice, define the skill simply and "
-    "conversationally — no textbook jargon.\n"
+    "conversationally, no textbook jargon.\n"
     "- example.explain: why the skill matters to a business in the real world.\n"
     "- example.connect: apply it to a SPECIFIC invented scenario with a concrete "
-    "recommendation. This beat earns the most points — make it concrete and specific.\n"
+    "recommendation. This beat earns the most points, make it concrete and specific.\n"
     "- example.above: ONE number, statistic, trade-off, real brand case, or niche term "
     "that goes beyond the obvious. Any math must be correct and realistic.\n"
-    "- mistake: one sentence — a common error SPECIFIC to this skill, not a generic "
+    "- mistake: one sentence, a common error SPECIFIC to this skill, not a generic "
     "'be vague' or 'don't ramble'.\n"
     "- Write from general business fundamentals in your own words. Never reproduce any "
     "competition organization's published indicator wording.\n"
-    "- NEVER use an em dash (—) or en dash (–). Use a comma, a colon, or a new "
+    "- NEVER use an em dash or an en dash. Use a comma, a colon, or a new "
     "sentence. This is a hard rule: the shipped cards contain none.\n"
     "- Voice: first person, spoken, concise (each beat ~1-2 sentences). Pick a fresh, "
     "varied scenario and industry that fits the skill's domain. No markdown.\n"
@@ -299,7 +299,7 @@ def _fewshot(by_id: dict[str, dict]) -> str:
         if not t:
             continue
         card = {k: t[k] for k in ("coaches", "definition", "example", "mistake") if k in t}
-        out.append(f"EXAMPLE — skill: {label}\n{json.dumps(card, ensure_ascii=False)}")
+        out.append(f"EXAMPLE, skill: {label}\n{json.dumps(card, ensure_ascii=False)}")
     return "\n\n".join(out)
 
 
@@ -347,14 +347,14 @@ def _sort_terms(all_terms: list[dict]) -> list[dict]:
 
 def cmd_content(args) -> int:
     if not _SKELETON.exists():
-        print(f"No {_SKELETON.name} — run `python -m scripts.gen_terms skeleton` first.")
+        print(f"No {_SKELETON.name}, run `python -m scripts.gen_terms skeleton` first.")
         return 1
     proposed = json.loads(_SKELETON.read_text(encoding="utf-8")).get("proposed", [])
     doc = json.loads(_TERMS.read_text(encoding="utf-8"))
     by_id = {t["id"]: t for t in doc["terms"]}
     fewshot = _fewshot(by_id)
     if not fewshot:
-        print("! seed cards FW-151/FW-109 missing — style would drift. Aborting.")
+        print("! seed cards FW-151/FW-109 missing, style would drift. Aborting.")
         return 1
 
     todo = [p for p in proposed if args.force or not by_id.get(p["id"], {}).get("definition")]
@@ -379,7 +379,7 @@ def cmd_content(args) -> int:
                     **fut.result(),
                 }
                 done += 1
-            except Exception as e:  # noqa: BLE001 — log and continue; re-run fills gaps
+            except Exception as e:  # noqa: BLE001, log and continue; re-run fills gaps
                 failed += 1
                 print(f"  ! {p['id']} {p['name']}: {e}", flush=True)
             if (done + failed) % 25 == 0:
@@ -402,7 +402,7 @@ def cmd_prune(args) -> int:
 
     The last step of the loop: skeleton -> content -> check_independence -> prune.
     check_independence compares name AND definition, so it catches same-card-twice
-    pairs that the skeleton's name-only dedupe can't — "Conflict of Interest
+    pairs that the skeleton's name-only dedupe can't, "Conflict of Interest
     Recognition" vs "Recognizing Conflicts of Interest" are only 0.81 alike by name
     but say the same thing. Which twin to keep is a judgment about the better home
     for the concept, which is why this takes ids rather than deciding for you.

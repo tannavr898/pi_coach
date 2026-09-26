@@ -1,6 +1,6 @@
 """Scenario-variety taxonomy (Phase 3).
 
-Repetition isn't fixed by telling the model to "be more creative" — given the same
+Repetition isn't fixed by telling the model to "be more creative", given the same
 prompt it collapses to the same few outputs. Instead we force variety from the
 INPUT side: each event has a structured pool of dimension values (subtopic,
 business type, company size, stakeholder, problem, constraint), and on every
@@ -8,7 +8,7 @@ no-focus generation we RANDOMLY SAMPLE one value per dimension and inject them a
 fixed parameters. The model then executes on a given combination rather than
 inventing diversity itself.
 
-The taxonomy is OUR own general-business categorization (see the file's `note`) —
+The taxonomy is OUR own general-business categorization (see the file's `note`),
 not DECA/MBA Research performance indicators or event blueprints.
 
 Data shape (scenario_taxonomy.json):
@@ -66,7 +66,7 @@ def dimensions_for(event_id: str) -> dict[str, list[dict]]:
 
 
 def _signature(dims: dict[str, dict]) -> str:
-    """Stable, decodable combo id — e.g. "subtopic:pricing|business_type:bike-shop|...".
+    """Stable, decodable combo id, e.g. "subtopic:pricing|business_type:bike-shop|...".
     Only the dimensions actually present (in canonical order) appear. Used
     client-side to remember recent combos and skip immediate repeats."""
     return "|".join(f"{d}:{dims[d]['id']}" for d in DIMENSIONS if d in dims)
@@ -102,7 +102,7 @@ def sample(event_id: str, avoid: list[str] | None = None) -> dict | None:
 
     avoid = avoid or []
     avoid_set = set(avoid)
-    last = _decode(avoid[-1]) if avoid else {}  # newest combo — differ from it per-axis
+    last = _decode(avoid[-1]) if avoid else {}  # newest combo, differ from it per-axis
 
     fallback: dict | None = None
     for _ in range(12):
@@ -120,5 +120,5 @@ def sample(event_id: str, avoid: list[str] | None = None) -> dict | None:
         }
         if sig not in avoid_set:
             return result
-        fallback = result  # everything collided (tiny pool) — return the last try
+        fallback = result  # everything collided (tiny pool), return the last try
     return fallback

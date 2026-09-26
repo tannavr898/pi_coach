@@ -1,10 +1,10 @@
-"""Cross-session progress — deterministic math over a user's stored sessions.
+"""Cross-session progress, deterministic math over a user's stored sessions.
 
 Design principle (matches the product brief): headline what the student CONTROLS
 and can improve, never what swings with scenario difficulty.
 
 - Delivery trend is the lead signal: filler rate / pace are measured from audio
-  and are independent of which scenario was drawn — an honest, earned "you got
+  and are independent of which scenario was drawn, an honest, earned "you got
   better."
 - Criterion mastery is the most useful diagnostic: a pattern across sessions
   ("Developing on X in 4 of your last 5"), which is scenario-robust.
@@ -56,7 +56,7 @@ def _delivery_trend(ordered: list[dict]) -> dict:
     if len(spoken) < 2:
         return {
             "available": False,
-            "note": "Do a couple of spoken reps and we'll track your filler rate and pace over time — the most reliable sign you're improving.",
+            "note": "Do a couple of spoken reps and we'll track your filler rate and pace over time, the most reliable sign you're improving.",
         }
     fpm = [float(r["filler_per_min"]) for r in spoken]
     tail = min(3, len(fpm))
@@ -67,11 +67,11 @@ def _delivery_trend(ordered: list[dict]) -> dict:
     recent_wpm = round(mean(wpm_vals[-tail:])) if wpm_vals else None
 
     if recent + 0.3 < early:
-        note = f"Fillers: {early}/min → {recent}/min across your spoken sessions. That's real progress — keep trading “ums” for a short pause."
+        note = f"Fillers: {early}/min → {recent}/min across your spoken sessions. That's real progress, keep trading “ums” for a short pause."
     elif recent > early + 0.3:
         note = f"Fillers ticked up: {early}/min → {recent}/min. Slow down a touch and let a silent pause do the work instead of a filler."
     else:
-        note = f"Fillers are steady around {recent}/min. Solid — a silent beat instead of an “um” is the next gain."
+        note = f"Fillers are steady around {recent}/min. Solid, a silent beat instead of an “um” is the next gain."
 
     return {
         "available": True,
@@ -154,7 +154,7 @@ def _weakest(ordered: list[dict]) -> dict | None:
     at_level = sum(1 for l in window if _rank(l) <= _rank(consistent))
     label = LEVEL_LABEL.get(consistent, "Developing")
 
-    if _rank(consistent) >= 2:  # proficient or above — sharpen, don't alarm
+    if _rank(consistent) >= 2:  # proficient or above, sharpen, don't alarm
         note = (
             f"Your thinnest area lately is {target['name']}, and you're already {label} on it "
             f"in {at_level} of your last {len(window)} sessions. Push it toward exemplary."
@@ -180,7 +180,7 @@ def _score_trend(ordered: list[dict]) -> dict:
         {"created_at": r.get("created_at"), "score": int(r.get("content_score", 0))}
         for r in ordered
     ]
-    note = "Scores swing with scenario difficulty, so watch the overall trend — not any single session."
+    note = "Scores swing with scenario difficulty, so watch the overall trend, not any single session."
     direction = "flat"
     if len(points) >= 3:
         third = max(1, len(points) // 3)

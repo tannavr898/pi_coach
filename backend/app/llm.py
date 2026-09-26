@@ -1,6 +1,6 @@
 """Thin Anthropic wrapper + defensive JSON parsing.
 
-The frontend never calls Anthropic — only this backend does, with the key read
+The frontend never calls Anthropic, only this backend does, with the key read
 from the environment. Keep this module small: build a client lazily, make one
 text completion, and parse model JSON defensively (the roadmap §7 rule).
 """
@@ -34,7 +34,7 @@ class LLMTruncated(LLMError):
     responses: a truncated reply is a capacity problem we caused (raise the cap),
     while a malformed one is a model slip that a retry usually clears. Before
     this existed, truncation surfaced as "Could not parse model JSON: Expecting
-    ',' delimiter" — a message that pointed at the wrong bug and reached the
+    ',' delimiter", a message that pointed at the wrong bug and reached the
     student verbatim.
     """
 
@@ -86,7 +86,7 @@ def complete_vision(
 ) -> str:
     """One completion over a BATCH of images plus a text instruction.
 
-    `images` is a list of ``(media_type, base64_data)`` — already downscaled by the
+    `images` is a list of ``(media_type, base64_data)``, already downscaled by the
     caller. Batching matters here: one call carrying 15 frames costs a fraction of
     15 calls carrying one frame each, because the system prompt and instruction are
     charged once instead of fifteen times, and it collapses fifteen round-trips of
@@ -161,7 +161,7 @@ def complete_json(
     WHY THIS EXISTS. The Anthropic SDK already retries transport-level failures
     (429s, 5xx, dropped connections) on its own, so those are covered. What it
     cannot retry is the failure that actually reached students: a 200 OK whose
-    body is not parseable JSON — the model dropped a comma, wrapped the object in
+    body is not parseable JSON, the model dropped a comma, wrapped the object in
     prose, or ran into `max_tokens` and stopped mid-string. Every one of those
     turned into a 502 and cost the student the rep they had just recorded, even
     though the very same request succeeds on a second attempt the overwhelming

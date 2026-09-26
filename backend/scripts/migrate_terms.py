@@ -6,7 +6,7 @@ real object, so the study corpus can grow past the 282 graded criteria while gra
 keeps reading framework.json alone.
 
 The migrated terms keep their FW-* id (so saved ★ flags, dashboard deep links, and
-Blitz all keep resolving) and carry criterion_id + tier="core" — core means "a skill
+Blitz all keep resolving) and carry criterion_id + tier="core", core means "a skill
 we actually grade you on", which is what makes the Core study path a real promise.
 
 Idempotent: re-running rebuilds terms.json from the same two sources. Study-only
@@ -31,13 +31,13 @@ _OUT = _DATA / "terms.json"
 
 _NOTE = (
     "Our own study corpus. Terms are authored from public-domain business "
-    "fundamentals in our own wording and structure — this file contains no DECA / "
+    "fundamentals in our own wording and structure, this file contains no DECA / "
     "MBA Research performance-indicator text, codes, groupings, or event mapping. "
     "`criterion_id` links a term to our framework.json criterion when one exists "
     "(tier=core); study-only terms are tier=extended. See framework-notes.md."
 )
 
-# Term field order — kept explicit so regenerated files diff cleanly.
+# Term field order, kept explicit so regenerated files diff cleanly.
 _FIELDS = ("id", "criterion_id", "tier", "domain_id", "domain", "topic", "name",
            "coaches", "definition", "example", "mistake")
 _BEATS = ("define", "explain", "connect", "above")

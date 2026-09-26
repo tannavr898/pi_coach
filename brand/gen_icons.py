@@ -5,13 +5,13 @@ Run from the repo root with any Python that has Pillow:
     backend/.venv/Scripts/python.exe brand/gen_icons.py
 
 Everything lands in frontend/public/, which Vite copies to dist/ verbatim, so the
-files are served from the site root (/favicon.ico, /icon-512.png, ...). The
-outputs are committed — this script exists so the set can be rebuilt when the
+files are served from the site root (/favicon.ico, /icon-512.png...). The
+outputs are committed, this script exists so the set can be rebuilt when the
 mark changes, not as part of the build.
 
 WHY THE FAVICON IS NOT THE LOGO. brand/logo-120.png is the mark as it appears in
 the product: three light indigo rings on white. That design disappears in a
-browser tab — a white tile on a white tab strip, with 2.5px strokes rendered at
+browser tab, a white tile on a white tab strip, with 2.5px strokes rendered at
 16px. So the icon set inverts it: an opaque indigo tile with a two-element white
 bullseye. Same idea (concentric target = hit the mark), sized for 16px. Anything
 with a third ring turns to mush at tab size; that was measured, not guessed.
@@ -31,8 +31,8 @@ OUT = ROOT / "frontend" / "public"
 
 SS = 8  # supersample factor
 
-INDIGO = (79, 70, 229, 255)     # #4f46e5 — brand indigo-600, the tile ground
-INDIGO_DEEP = (67, 56, 202, 255)  # #4338ca — indigo-700, for the social card
+INDIGO = (79, 70, 229, 255)     # #4f46e5, brand indigo-600, the tile ground
+INDIGO_DEEP = (67, 56, 202, 255)  # #4338ca, indigo-700, for the social card
 WHITE = (255, 255, 255, 255)
 SLATE = (15, 23, 42, 255)       # #0f172a
 SLATE_MID = (148, 163, 184, 255)  # #94a3b8
@@ -68,7 +68,7 @@ def _bullseye(size: int, rounded: bool) -> Image.Image:
 
 
 def _ring_only(size: int) -> Image.Image:
-    """The bullseye alone, white on transparent — for use over a colored ground."""
+    """The bullseye alone, white on transparent, for use over a colored ground."""
     n = size * SS
     img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -90,7 +90,7 @@ def _font(*names: str, size: int) -> ImageFont.FreeTypeFont:
 
 
 def _og_card() -> Image.Image:
-    """1200x630 social card — what Google, iMessage, Slack and X show for a link."""
+    """1200x630 social card, what Google, iMessage, Slack and X show for a link."""
     w, h = 1200, 630
     img = Image.new("RGB", (w, h), INDIGO_DEEP[:3])
     d = ImageDraw.Draw(img)
@@ -153,7 +153,7 @@ def main() -> None:
     # .ico carries 16/32/48/64 so the tab strip, the bookmarks bar and Windows
     # each get a frame drawn AT that size. Passing one big image and letting
     # Pillow's `sizes=` downscale it is visibly softer at 16px, where a 1px ring
-    # has no pixels to spare — so each frame is supersampled and resolved
+    # has no pixels to spare, so each frame is supersampled and resolved
     # independently, then stapled together with append_images.
     frames = [_bullseye(s, rounded=True) for s in (16, 32, 48, 64)]
     frames[0].save(

@@ -1,8 +1,8 @@
-"""Study plans — turn an event's course into a dated, daily schedule.
+"""Study plans, turn an event's course into a dated, daily schedule.
 
 The course (courses.py) answers WHAT to study. It can't answer the question a
 student with nine weeks until District actually has: "am I on track, and what do I
-do today?" This module answers that from four inputs — the event, the competition
+do today?" This module answers that from four inputs, the event, the competition
 dates, the minutes they have on each weekday, and whether they're aiming for the
 Core path or everything.
 
@@ -18,7 +18,7 @@ current progress, which is what makes three of the features free:
     the plan loads.
 
 TODAY IS FROZEN. If today were recomputed too, finishing a unit would slide the
-next one into today while the student was still working — a checklist that grows
+next one into today while the student was still working, a checklist that grows
 as you tick it. main.py stores today's tasks on first load of the day and passes
 them back in as `frozen_today`.
 
@@ -310,8 +310,8 @@ def _fill_day(day: date, budget: int, phase: str, target: dict | None, queue: li
             remaining -= BLITZ_MIN
         return tasks
 
-    # Role-play on cadence. A day shorter than a full rep still gets one — it just
-    # takes the whole day — or a 15-minutes-a-day student would never practice.
+    # Role-play on cadence. A day shorter than a full rep still gets one, it just
+    # takes the whole day, or a 15-minutes-a-day student would never practice.
     last = ctx["last_roleplay"]
     if (day - last).days >= ROLEPLAY_EVERY[phase]:
         mins = min(ROLEPLAY_MIN, remaining)

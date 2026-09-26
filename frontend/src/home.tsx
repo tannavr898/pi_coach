@@ -2,7 +2,7 @@
 // (Start a role-play), then visualizes progress so a student sees at a glance
 // what's strong and what to drill:
 //   - a skill radar of criterion mastery (the "at a glance" view)
-//   - the written weakest-criterion nudge + actions (kept — it names the fix)
+//   - the written weakest-criterion nudge + actions (kept, it names the fix)
 //   - score trend + delivery trend as line charts
 //   - a consistency (sessions/week) bar chart
 //   - recent sessions, and a flashcards deck with a recommendation
@@ -69,11 +69,11 @@ export function HomePage(props: {
   const [domains, setDomains] = useState<DomainSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   // The event they're studying for, if they've enrolled in a course. Drives the
-  // radar filter — 404 just means "hasn't picked one", which is not an error.
+  // radar filter, 404 just means "hasn't picked one", which is not an error.
   const [course, setCourse] = useState<Course | null>(null);
   const [radarScope, setRadarScope] = useState<"event" | "all">("event");
   // Today's slice of their study plan, if they've made one. A failure here just
-  // hides the card — the dashboard's other numbers don't depend on it.
+  // hides the card, the dashboard's other numbers don't depend on it.
   const [plan, setPlan] = useState<StudyPlan | null>(null);
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export function HomePage(props: {
 
   // Skill radar. Each domain's value is the average mastery rank (0 Novice →
   // 3 Exemplary) of the criteria you've been graded on in it; domains you haven't
-  // touched sit at 0 — the "fill in your skills" view. Note the join is on domain
+  // touched sit at 0, the "fill in your skills" view. Note the join is on domain
   // NAME: CriterionMastery carries the display name, not the id.
   const radarData = shownDomains.map((d) => {
     const crits = mastery.filter((m) => m.domain === d.name);

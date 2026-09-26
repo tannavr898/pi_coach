@@ -1,4 +1,4 @@
-"""Video analysis: the sampling math, the aggregation, and — most importantly —
+"""Video analysis: the sampling math, the aggregation, and, most importantly,
 the honesty rules. Everything here is pure; the vision call itself is the only
 part that isn't, and it produces booleans, not prose."""
 
@@ -29,7 +29,7 @@ def test_short_sessions_are_untouched():
 
 def test_decimation_spans_the_whole_session():
     """Truncating to the first N frames would report only on the opening minutes
-    and say nothing about how the student finished — often the part that changed.
+    and say nothing about how the student finished, often the part that changed.
     Sampling must reach the end of the recording."""
     frames = [("image/jpeg", str(i)) for i in range(600)]
     kept = video._decimate(frames)
@@ -39,7 +39,7 @@ def test_decimation_spans_the_whole_session():
 
 
 def test_batching_math_covers_every_frame():
-    """Batches must tile the frame list exactly — no frame analyzed twice, none
+    """Batches must tile the frame list exactly, no frame analyzed twice, none
     silently dropped (a dropped frame would skew every percentage we report)."""
     n = video.MAX_FRAMES
     batches = [
@@ -69,7 +69,7 @@ def test_missing_face_counts_as_off_frame():
 
 def test_no_face_cannot_count_as_eye_contact_or_smile():
     """A frame with no face must not quietly become a 'not looking' data point in
-    a way that also credits gaze or expression — those are unobservable there."""
+    a way that also credits gaze or expression, those are unobservable there."""
     got = video._aggregate([_entry(face=False, eye=True, smile=True)] * 4)
     assert got["eye_contact_count"] == 0
     assert got["positive_expression_count"] == 0
@@ -77,7 +77,7 @@ def test_no_face_cannot_count_as_eye_contact_or_smile():
 
 
 def test_zero_checks_is_safe():
-    """Every batch failing must not divide by zero — it must report nothing."""
+    """Every batch failing must not divide by zero, it must report nothing."""
     got = video._aggregate([])
     assert got["checks"] == 0
     assert got["eye_contact_percent"] == 0.0

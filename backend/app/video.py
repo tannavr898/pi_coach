@@ -1,4 +1,4 @@
-"""Video analysis — observable eye-contact and expression checks on sampled frames.
+"""Video analysis, observable eye-contact and expression checks on sampled frames.
 
 THE CLAIM RULE, AND HOW IT'S ENFORCED
 This module reports only what is directly observable in a frame:
@@ -7,7 +7,7 @@ This module reports only what is directly observable in a frame:
     "Smiled or showed a positive expression in 12 of 45"   <- observable
     "Face not detected in 6 checks"                        <- observable
 
-It never reports an inferred internal state — no confidence score, no charisma
+It never reports an inferred internal state, no confidence score, no charisma
 rating, no "you seemed nervous". Two reasons, and the second is the one that
 matters: inferring internal state from sampled frames is unreliable, and telling
 an already-anxious student that they "seemed unconfident" is actively harmful
@@ -22,12 +22,12 @@ there is no path from the model's output to user-facing text.
 PRIVACY (users are minors, so this is stricter than the audio path)
 No video and no frames are ever persisted. Frames arrive in the request body,
 are held in memory for the length of the call, and are gone when it returns.
-The full video file is never uploaded — never even recorded: the client samples
+The full video file is never uploaded, never even recorded: the client samples
 still frames from the live camera preview (see the frontend capture code), so
 there is no video file to leak in the first place.
 
 COST (this is why the caps exist)
-Vision is the expensive part of a session — roughly 2-3x an audio-only rep — so
+Vision is the expensive part of a session, roughly 2-3x an audio-only rep, so
 sampling and batching are doing real work:
   - frames are downscaled client-side to ~512px before upload. Image tokens scale
     with pixel area (~w*h/750), so a 512x384 frame is ~260 tokens instead of the
@@ -37,7 +37,7 @@ sampling and batching are doing real work:
     not cost more than a 5-minute one.
   - frames are batched BATCH_SIZE per call, so the system prompt and instruction
     are charged once per batch rather than once per frame.
-At 60 frames that's ~5 calls of ~4k input tokens each on a fast/cheap model —
+At 60 frames that's ~5 calls of ~4k input tokens each on a fast/cheap model,
 cents per session, not dollars.
 """
 
@@ -66,17 +66,17 @@ _SYSTEM = """You are a precise visual annotator for a presentation-practice app.
 You will be shown numbered still frames sampled from a student's practice
 presentation. For EACH frame, answer three factual yes/no questions:
 
-1. face_detected  — is a human face visible in the frame at all?
-2. eye_contact    — is the person looking at or near the camera (roughly toward
+1. face_detected, is a human face visible in the frame at all?
+2. eye_contact, is the person looking at or near the camera (roughly toward
                     the viewer), as opposed to clearly away, down, or to the side?
-3. positive_expression — is the person smiling or showing a clearly positive
+3. positive_expression, is the person smiling or showing a clearly positive
                     facial expression (raised cheeks, open mouth smile, warm
                     expression)? A neutral face is NOT a positive expression.
 
 If face_detected is false, set the other two to false for that frame.
 
 Answer ONLY these observable questions. Do NOT assess confidence, nervousness,
-engagement, enthusiasm, charisma, competence, or any internal state — you cannot
+engagement, enthusiasm, charisma, competence, or any internal state, you cannot
 observe those and must not guess at them.
 
 Return ONLY a JSON object of this exact shape, with one entry per frame shown:
@@ -101,7 +101,7 @@ def _decimate(frames: list[tuple[str, str]]) -> list[tuple[str, str]]:
     """Reduce an oversized frame list to MAX_FRAMES, evenly across the session.
 
     Evenly, not "the first 60": truncating would analyze only the opening minutes
-    and silently report nothing about how the student finished — which is often
+    and silently report nothing about how the student finished, which is often
     the part that changed. Sampling across the whole recording keeps every
     reported percentage representative of the session the student actually gave.
     """
@@ -116,7 +116,7 @@ def analyze(frames: list[tuple[str, str]]) -> dict:
     """Analyze sampled frames and return observable counts + coaching notes.
 
     `frames` is ``(media_type, base64_data)``, already downscaled client-side.
-    Frames are discarded when this function returns — nothing is written anywhere.
+    Frames are discarded when this function returns, nothing is written anywhere.
     """
     if not config.has_api_key():
         raise VideoNotConfigured("Video analysis isn't configured on this server.")
@@ -138,7 +138,7 @@ def analyze(frames: list[tuple[str, str]]) -> dict:
             data = llm.parse_json_object(raw)
         except llm.LLMError as exc:
             # One bad batch shouldn't lose the whole session's video feedback.
-            # We drop the batch and report on what we could read — the
+            # We drop the batch and report on what we could read, the
             # denominator the student sees is the number of checks we ACTUALLY
             # made, so the percentages stay honest rather than being padded with
             # frames we never looked at.
@@ -155,7 +155,7 @@ def analyze(frames: list[tuple[str, str]]) -> dict:
 def _aggregate(entries: list[dict]) -> dict:
     """Turn per-frame booleans into the counts and notes the UI renders.
 
-    All arithmetic is done here, in Python — the model is never asked for a
+    All arithmetic is done here, in Python, the model is never asked for a
     percentage, a score, or a sentence.
     """
     checks = len(entries)
@@ -191,7 +191,7 @@ def _notes(checks: int, eye: int, smile: int, off_frame: int) -> list[str]:
     Written in Python rather than asked of the model for two reasons. First, it
     makes the no-inferred-states rule structural: there is no way for "you seemed
     nervous" to reach a student, because no model output becomes user-facing text.
-    Second, every line answers "so what do I do next?" — a number a student can't
+    Second, every line answers "so what do I do next?", a number a student can't
     act on is just a scoreboard, and this product is coaching, not judging.
     """
     if not checks:
@@ -205,7 +205,7 @@ def _notes(checks: int, eye: int, smile: int, off_frame: int) -> list[str]:
     # is measured against a smaller sample and framing is the fix that unlocks it.
     if off_frame:
         out.append(
-            f"Your face wasn't visible in {off_frame} of {checks} checks — try centering "
+            f"Your face wasn't visible in {off_frame} of {checks} checks, try centering "
             "yourself in frame before you start, and check you stay in shot if you move "
             "while you talk."
         )
@@ -213,7 +213,7 @@ def _notes(checks: int, eye: int, smile: int, off_frame: int) -> list[str]:
     if eye_pct >= 80:
         out.append(
             f"You looked at the camera in {eye} of {checks} checks. That's the habit judges "
-            "read as directness — keep it when you move to notes."
+            "read as directness, keep it when you move to notes."
         )
     elif eye_pct >= 50:
         out.append(
@@ -223,7 +223,7 @@ def _notes(checks: int, eye: int, smile: int, off_frame: int) -> list[str]:
     else:
         out.append(
             f"You looked at the camera in {eye} of {checks} checks. Pick two or three moments "
-            "in your response — your opening line, your recommendation, your close — and "
+            "in your response, your opening line, your recommendation, your close, and "
             "deliver those straight to the lens."
         )
 
@@ -234,7 +234,7 @@ def _notes(checks: int, eye: int, smile: int, off_frame: int) -> list[str]:
         )
     else:
         out.append(
-            f"A smile or positive expression showed up in {smile} of {checks} checks — the "
+            f"A smile or positive expression showed up in {smile} of {checks} checks, the "
             "greeting and the close are the two moments where it lands hardest."
         )
 
@@ -245,7 +245,7 @@ def _notes(checks: int, eye: int, smile: int, off_frame: int) -> list[str]:
 
 DISCLAIMER = (
     "Video measures eye contact and expression as observable checks on sampled "
-    "frames — not confidence, charisma, or how you felt. It's practice coaching, "
+    "frames, not confidence, charisma, or how you felt. It's practice coaching, "
     "never an official or predicted judge score. Your video is never uploaded or "
     "stored: frames are sampled in your browser, analyzed, and discarded."
 )

@@ -2,7 +2,7 @@
 
 The rule for quantitative events (accounting, finance): **the model may set up a
 calculation, but it may never be trusted to do the arithmetic.** LLMs are strong
-at choosing the right formula and weak at computing it reliably — so for these
+at choosing the right formula and weak at computing it reliably, so for these
 events the grader hands us each calculation as a raw expression (e.g.
 `"(50000 - 30000) / 50000 * 100"`) plus the value the student claimed, and this
 module recomputes it with Python. The recomputed number is authoritative; that is
@@ -12,7 +12,7 @@ wrong (or bless a wrong number) on the model's say-so.
 The evaluator is a tiny, safe arithmetic interpreter over Python's AST: numeric
 literals and + - * / // % ** with parentheses and unary minus, plus a short
 whitelist of pure functions (round/abs/min/max/sum). No names, attributes, calls
-to anything else, comprehensions, or indexing are allowed — so an expression can
+to anything else, comprehensions, or indexing are allowed, so an expression can
 never reach the interpreter, the filesystem, or the network.
 """
 
@@ -147,7 +147,7 @@ _MAX_CHECKS = 8
 
 def _dedup_key(check: dict) -> str:
     """Two checks are 'the same' if they compute the same expression (ignoring
-    whitespace) — this drops the model's duplicate/contradictory variants."""
+    whitespace), this drops the model's duplicate/contradictory variants."""
     return "".join((check.get("expression") or "").split())
 
 

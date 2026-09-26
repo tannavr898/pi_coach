@@ -37,7 +37,7 @@ export function PreSessionScreen(props: {
             You get <strong className="font-semibold">{prepMin} minutes</strong> to think and jot a few notes.
           </Step>
           <Step n={3}>
-            You give a <strong className="font-semibold">60–90 second</strong> recommendation out loud (or typed).
+            You give a <strong className="font-semibold">60-90 second</strong> recommendation out loud (or typed).
           </Step>
           <Step n={4}>
             You get real feedback: how your ideas scored on three business skills, and, if you speak, your delivery.

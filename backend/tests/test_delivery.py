@@ -141,7 +141,7 @@ def test_endpoint_502_gives_actionable_message(monkeypatch):
 
 
 def test_too_few_frames_never_moves_the_score():
-    """Under the floor we adjust by exactly zero — and say why."""
+    """Under the floor we adjust by exactly zero, and say why."""
     for checks in range(0, delivery.VIDEO_MIN_CHECKS):
         delta, reason = delivery.video_adjustment(checks, eye_contact_count=checks)
         assert delta == 0.0, f"{checks} frames should not move the score"
@@ -162,7 +162,7 @@ def test_more_frames_earn_more_influence():
     small, _ = delivery.video_adjustment(10, eye_contact_count=10)
     large, _ = delivery.video_adjustment(30, eye_contact_count=30)
     assert small < large
-    # And past the full-confidence point it stops growing — the cap is a cap.
+    # And past the full-confidence point it stops growing, the cap is a cap.
     huge, _ = delivery.video_adjustment(60, eye_contact_count=60)
     assert huge == large
 

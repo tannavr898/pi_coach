@@ -2,7 +2,7 @@
 // auth, home, flashcards). These mirror the look of the equivalents defined
 // locally in App.tsx; they live here so the new modules can share them without
 // importing from App.tsx (which would create a circular dependency). App.tsx
-// keeps its own copies — this file is only for the new surfaces.
+// keeps its own copies, this file is only for the new surfaces.
 
 import type { ReactNode } from "react";
 
@@ -22,7 +22,7 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
   );
 }
 
-// The bullseye wordmark. Concentric target = "hit the mark" — practice until you
+// The bullseye wordmark. Concentric target = "hit the mark", practice until you
 // nail it. Lives here rather than in App.tsx because the share card renders it too,
 // and the card must not import from App.tsx (see the note at the top of this file).
 //

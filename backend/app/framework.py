@@ -1,8 +1,8 @@
-"""The independent evaluation framework — the single source of truth for the
+"""The independent evaluation framework, the single source of truth for the
 criteria the app generates against and grades on.
 
 This replaces the old official-PI data layer. It loads framework.json (our own
-authored criteria — see backend/app/data/framework-notes.md) and exposes thin,
+authored criteria, see backend/app/data/framework-notes.md) and exposes thin,
 deterministic lookups. Nothing here reads DECA's PI list; the framework stands on
 public-domain business concepts in our own wording, structure, and id scheme.
 """
@@ -50,7 +50,7 @@ def _index() -> dict[str, dict]:
 
 def get_criteria(ids: list[str]) -> list[dict]:
     """Resolve criterion ids against the framework, preserving order and
-    skipping unknowns. This is the authoritative text — never trust the client
+    skipping unknowns. This is the authoritative text, never trust the client
     (or the model) for criterion wording; always re-pin from here."""
     idx = _index()
     return [idx[i] for i in ids if i in idx]

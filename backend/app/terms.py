@@ -1,4 +1,4 @@
-"""The study-term corpus — the single source of flashcard and course content.
+"""The study-term corpus, the single source of flashcard and course content.
 
 A **term** is what a student studies; a **criterion** (framework.py) is what the
 app grades. Those were the same object while the corpus matched the framework
@@ -13,10 +13,10 @@ lets the study corpus grow past the framework without touching grading:
 
 Ids: the 282 terms that predate the split keep their `FW-*` id, so saved ★ flags,
 dashboard deep links, and Blitz all keep resolving. Study-only terms are `T-*`.
-Ids are opaque — nothing derives meaning from the prefix; use `criterion_id`.
+Ids are opaque, nothing derives meaning from the prefix; use `criterion_id`.
 
 Grading never reads this file. Nothing here reads DECA's PI list; terms stand on
-public-domain business concepts in our own wording, structure, and id scheme —
+public-domain business concepts in our own wording, structure, and id scheme,
 see data/framework-notes.md.
 """
 
@@ -57,7 +57,7 @@ def _by_criterion() -> dict[str, dict]:
 def get_terms(ids: list[str]) -> list[dict]:
     """Resolve term ids, preserving the caller's order and skipping unknowns.
 
-    This is the authoritative text — never trust the client (or the model) for a
+    This is the authoritative text, never trust the client (or the model) for a
     term's wording; always re-pin from here.
     """
     idx = _index()
@@ -87,11 +87,11 @@ def terms_for_topics(topics_wanted: list[tuple[str, str]]) -> list[dict]:
 
 
 def depth_vocab_for(criteria: list[dict], limit: int = 16) -> list[dict]:
-    """Terms related to the criteria being graded — the pool a competitor can earn
+    """Terms related to the criteria being graded, the pool a competitor can earn
     Section 2's depth bonus from by bringing one in and actually applying it.
 
     Widening rings, nearest first:
-      1. the graded criteria's own TOPICS — the most obviously related terms;
+      1. the graded criteria's own TOPICS, the most obviously related terms;
       2. then the rest of those DOMAINS, to fill out to `limit`.
 
     The second ring is load-bearing, not padding. Topic-only was the first cut and it
@@ -100,7 +100,7 @@ def depth_vocab_for(criteria: list[dict], limit: int = 16) -> list[dict]:
     promotion idea got nothing, because we never offered it. A marketing role-play can
     fairly reward any marketing term the participant actually applies.
 
-    Terms whose criterion is graded in THIS role-play are excluded — those are scored
+    Terms whose criterion is graded in THIS role-play are excluded, those are scored
     in Section 1, and paying again here would count the same knowledge twice.
     Study-only terms sort first within each ring: they're what the course teaches
     beyond what we grade, which is the reach this bonus exists to reward.

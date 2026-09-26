@@ -5,7 +5,7 @@
 // Same storage posture as flags.ts: per-account localStorage, keyed by user id so
 // two accounts on one browser don't share state, and every access wrapped so that
 // a disabled/quota-full store degrades to "show the dots again" rather than
-// throwing. Like flags.ts, this does NOT sync across devices — that would need a
+// throwing. Like flags.ts, this does NOT sync across devices, that would need a
 // user-preferences table, which the backend doesn't have.
 
 import { useCallback, useEffect, useState } from "react";
@@ -39,7 +39,7 @@ function persistVisited(key: string, visited: Set<Surface>): void {
   try {
     localStorage.setItem(key, JSON.stringify([...visited]));
   } catch {
-    /* storage disabled — the dots just reappear next load */
+    /* storage disabled, the dots just reappear next load */
   }
 }
 
@@ -55,7 +55,7 @@ export type VisitedApi = {
   visited: Set<Surface>;
   isVisited: (s: Surface) => boolean;
   markVisited: (s: Surface) => void;
-  /** How many surfaces are still unseen — for a single "N to explore" badge. */
+  /** How many surfaces are still unseen, for a single "N to explore" badge. */
   unvisitedCount: number;
   tourDone: boolean;
   setTourDone: (done: boolean) => void;
@@ -93,7 +93,7 @@ export function useVisited(userId: string | null): VisitedApi {
         if (done) localStorage.setItem(tKey, "1");
         else localStorage.removeItem(tKey);
       } catch {
-        /* storage disabled — the tour may offer itself again */
+        /* storage disabled, the tour may offer itself again */
       }
     },
     [tKey],

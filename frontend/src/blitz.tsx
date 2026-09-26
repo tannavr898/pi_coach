@@ -1,9 +1,9 @@
-// Mastery Blitz (Phase 5) — a rapid drill over the flashcard terms. One short
+// Mastery Blitz (Phase 5), a rapid drill over the flashcard terms. One short
 // predetermined scenario; then, under a per-term timer, the student applies each
-// term in DECA format (typed or spoken). The loop is model-free — the ONLY model
+// term in DECA format (typed or spoken). The loop is model-free, the ONLY model
 // call is a single batched grade at the END (fast/cheap). Spoken answers are
 // transcribed in the background as they're captured, so nothing waits. Streak/score
-// is session-local (sessionStorage) — no accounts, no backend, per your scope.
+// is session-local (sessionStorage), no accounts, no backend, per your scope.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -38,7 +38,7 @@ function saveStats(s: Stats) {
   try {
     sessionStorage.setItem("pic-blitz-stats", JSON.stringify(s));
   } catch {
-    /* private mode — streak just won't persist across reopens */
+    /* private mode, streak just won't persist across reopens */
   }
 }
 

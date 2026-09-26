@@ -1,4 +1,4 @@
-// Video practice (beta) — opt-in camera capture, client-side frame sampling, and
+// Video practice (beta), opt-in camera capture, client-side frame sampling, and
 // the observable-only results panel.
 //
 // WHAT THIS DOES NOT DO, AND WHY
@@ -6,7 +6,7 @@
 // and there is nothing on disk to leak: the camera stream feeds a hidden <video>
 // element purely as a preview surface, and every few seconds we copy one frame
 // out of it onto a canvas. When the session ends the stream's tracks are stopped
-// and the frames are dropped. Users here are minors — the safest way to not
+// and the frames are dropped. Users here are minors, the safest way to not
 // retain a recording is to never make one.
 //
 // The audio pipeline is completely untouched. Video runs alongside the existing
@@ -18,7 +18,7 @@
 // Vision is the expensive part of a session, and image tokens scale with pixel
 // area (~w*h/750), so two things bound the bill:
 //
-//   1. DOWNSCALE. Frames go out at ~512px on the long edge as JPEG q0.6 — about
+//   1. DOWNSCALE. Frames go out at ~512px on the long edge as JPEG q0.6, about
 //      260 image tokens each, versus ~1,600 for a full-resolution frame. Face
 //      presence, gaze direction, and a smile are coarse features; paying for
 //      more fidelity would buy nothing.
@@ -28,7 +28,7 @@
 //      stop: drop every other frame already held and double the interval. That
 //      halves density each time while keeping coverage spread across the entire
 //      session, so a 20-minute rep costs exactly what an 8-minute one does and
-//      still reports on how the student finished — which is usually the part
+//      still reports on how the student finished, which is usually the part
 //      that changed.
 //
 // Decimating (rather than truncating at 60) is the difference between "we
@@ -42,7 +42,7 @@ export const CAN_CAPTURE_VIDEO =
   typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof document !== "undefined";
 
 // Must not exceed the server's MAX_FRAMES (backend/app/video.py), which is the
-// real backstop — this is the client doing its share so we don't upload frames
+// real backstop, this is the client doing its share so we don't upload frames
 // the server would only discard.
 const MAX_FRAMES = 60;
 const BASE_INTERVAL_MS = 8000;
@@ -68,7 +68,7 @@ export type FrameSampler = {
   cancel: () => void;
 };
 
-/** Strip the `data:image/jpeg;base64,` prefix — the API wants raw base64. */
+/** Strip the `data:image/jpeg;base64,` prefix, the API wants raw base64. */
 function stripDataUri(dataUrl: string): string {
   const comma = dataUrl.indexOf(",");
   return comma === -1 ? dataUrl : dataUrl.slice(comma + 1);
@@ -91,8 +91,8 @@ export function useFrameSampler(): FrameSampler {
    * session, rather than rendered by React. Two bugs made that necessary:
    *
    *   1. MOUNT ORDER. `start()` runs while the CONSENT card is on screen. A
-   *      React-rendered preview only mounts once state is "running" — i.e.
-   *      after start() has already finished — so the ref was still null at the
+   *      React-rendered preview only mounts once state is "running", i.e.
+   *      after start() has already finished, so the ref was still null at the
    *      moment we needed to assign `srcObject`. The stream attached to
    *      nothing: no preview, and `capture()` bailed on its null guard every
    *      tick, silently, for the entire rep.
@@ -109,7 +109,7 @@ export function useFrameSampler(): FrameSampler {
 
   const ensureEl = useCallback((): HTMLVideoElement => {
     if (elRef.current) return elRef.current;
-    // Off-screen rather than display:none — a hidden video is throttled or
+    // Off-screen rather than display:none, a hidden video is throttled or
     // paused by some browsers, and a paused element yields blank frames.
     const host = document.createElement("div");
     host.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden";
@@ -142,7 +142,7 @@ export function useFrameSampler(): FrameSampler {
     // detaches the old preview and attaches the new one in the same commit, and
     // reclaiming eagerly would yank the stream out of the container that just
     // took it. Settle on a microtask and only rescue the element if it was
-    // genuinely orphaned — a detached parent no longer renders, which stops
+    // genuinely orphaned, a detached parent no longer renders, which stops
     // playback and would freeze every subsequent frame.
     queueMicrotask(() => {
       if (elRef.current !== el || el.parentElement?.isConnected) return;
@@ -181,7 +181,7 @@ export function useFrameSampler(): FrameSampler {
       canvas = document.createElement("canvas");
       canvasRef.current = canvas;
     }
-    // Downscale on the way in — see the sampling math at the top of this file.
+    // Downscale on the way in, see the sampling math at the top of this file.
     const scale = Math.min(1, TARGET_LONG_EDGE / Math.max(video.videoWidth, video.videoHeight));
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
@@ -192,7 +192,7 @@ export function useFrameSampler(): FrameSampler {
 
     // At the cap, halve density instead of stopping: keep every other frame and
     // double the interval. Coverage still spans the whole session, and the frame
-    // count — and therefore the cost — stays flat no matter how long they talk.
+    // count, and therefore the cost, stays flat no matter how long they talk.
     if (framesRef.current.length >= MAX_FRAMES) {
       framesRef.current = framesRef.current.filter((_, i) => i % 2 === 0);
       intervalRef.current *= 2;
@@ -218,7 +218,7 @@ export function useFrameSampler(): FrameSampler {
 
       // Wait for the first decoded frame before sampling. `videoWidth` is 0
       // until metadata arrives, and `capture()` treats that as "not ready" and
-      // returns — so without this the immediate frame below is silently lost on
+      // returns, so without this the immediate frame below is silently lost on
       // every session. Bounded, because a camera that never produces a frame
       // must not block the rep from starting.
       if (!el.videoWidth) {
@@ -242,7 +242,7 @@ export function useFrameSampler(): FrameSampler {
       setState("running");
       return true;
     } catch (e) {
-      // Name the actual failure — on mobile especially, "it didn't work" is not
+      // Name the actual failure, on mobile especially, "it didn't work" is not
       // something a student can act on.
       const name = e instanceof DOMException ? e.name : "";
       if (name === "NotAllowedError" || name === "SecurityError") {
@@ -282,7 +282,7 @@ export function useFrameSampler(): FrameSampler {
  * Deliberately not a checkbox buried in settings: it states exactly what is
  * captured, that it is sampled rather than recorded, that it is deleted, and
  * what we will and will not report. Users are minors, so the bar is "a student
- * (or their parent) could read this and know precisely what happens" — not
+ * (or their parent) could read this and know precisely what happens", not
  * "we technically disclosed it".
  */
 export function VideoConsent(props: { onAccept: () => void; onDecline: () => void; error?: string | null }) {
@@ -300,7 +300,7 @@ export function VideoConsent(props: { onAccept: () => void; onDecline: () => voi
       <ul className="mt-3 space-y-1.5 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
         <li>
           <strong>What we capture:</strong> a still frame from your camera every ~8 seconds while you
-          present. We never record or upload video — only those sampled stills.
+          present. We never record or upload video, only those sampled stills.
         </li>
         <li>
           <strong>What we measure:</strong> whether your face is in frame, whether you're looking at the
@@ -333,7 +333,7 @@ export function VideoConsent(props: { onAccept: () => void; onDecline: () => voi
           onClick={props.onDecline}
           className="inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
         >
-          No thanks — voice only
+          No thanks, voice only
         </button>
       </div>
       <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
@@ -353,7 +353,7 @@ export function VideoIndicator(props: { sampler: FrameSampler; onDisable: () => 
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium text-red-700 dark:text-red-400">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" aria-hidden />
-          Camera on — {sampler.frameCount} {sampler.frameCount === 1 ? "frame" : "frames"} sampled
+          Camera on, {sampler.frameCount} {sampler.frameCount === 1 ? "frame" : "frames"} sampled
         </div>
         <button
           onClick={props.onDisable}
@@ -362,7 +362,7 @@ export function VideoIndicator(props: { sampler: FrameSampler; onDisable: () => 
           Turn off
         </button>
       </div>
-      {/* The sampler moves its own long-lived <video> in here — see `ensureEl`.
+      {/* The sampler moves its own long-lived <video> in here, see `ensureEl`.
           Rendering the element from React would tie the live stream to this
           component's mount cycle, which is exactly what broke capture before. */}
       <div
@@ -382,22 +382,22 @@ export function VideoIndicator(props: { sampler: FrameSampler; onDisable: () => 
  *
  * WHY IT EXISTS: eye contact is scored against the CAMERA, and the camera sits
  * above the screen. A student watching their own preview, the timer, or their
- * notes is looking down — correctly presenting, and correctly scored as not
+ * notes is looking down, correctly presenting, and correctly scored as not
  * making eye contact. Telling them that only after the rep is a gotcha. Giving
  * them a fixed point near the lens to present to turns the metric into something
  * they can act on DURING the rep, which is the whole difference between a score
  * and coaching.
  *
  * WHY A FACE: presenting to a dot is unnatural; presenting to a person is the
- * skill being rehearsed. The portrait is deliberately restrained — tonal slate,
- * business attire, adult proportions — because PRODUCT.md rules out mascots and
+ * skill being rehearsed. The portrait is deliberately restrained, tonal slate,
+ * business attire, adult proportions, because PRODUCT.md rules out mascots and
  * cartoon characters, and a competitor practicing for a real event should be
  * looking at something that reads as a judge, not a game character. It is drawn
  * in flat tones rather than any skin color so it stands for "the judge" without
  * casting a specific person.
  *
  * The eyes are the one indigo element on the screen while it's up. Indigo is
- * this product's signal color — reserved for the single thing to act on — and
+ * this product's signal color, reserved for the single thing to act on, and
  * here the thing to act on is exactly "look here".
  */
 export function GazeAnchor({ frameCount }: { frameCount: number }) {
@@ -415,7 +415,7 @@ export function GazeAnchor({ frameCount }: { frameCount: number }) {
           </defs>
           <g clipPath="url(#pic-gaze-clip)">
             <rect width="40" height="40" className="fill-slate-100 dark:fill-slate-800" />
-            {/* shoulders — a blazer, because the room this rehearses is a formal one */}
+            {/* shoulders, a blazer, because the room this rehearses is a formal one */}
             <path d="M4 40c0-7.4 5.6-12.8 16-12.8S36 32.6 36 40Z" className="fill-slate-500 dark:fill-slate-400" />
             {/* collar, in the circle's own background tone so it reads as a shirt */}
             <path
@@ -490,7 +490,7 @@ function Stat(props: { label: string; count: number; total: number; percent?: nu
  * Every number here is a count of observable checks with its denominator shown,
  * because "38 of 45" is a fact a student can verify and "84% confident" is a
  * claim we have no basis for. The notes come from the backend already computed
- * from those counts — no model prose reaches this component, which is what makes
+ * from those counts, no model prose reaches this component, which is what makes
  * the no-inferred-states rule structural rather than a matter of prompt care.
  */
 export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
@@ -522,7 +522,7 @@ export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
 
       {/* What video did to the delivery score, stated before the coaching notes.
           A score that moved without an explanation is the kind of unexplained
-          number this product exists to not produce — and when the sample was too
+          number this product exists to not produce, and when the sample was too
           small to move anything, saying THAT is the honest result, not a gap. */}
       {metrics.adjustment_reason && (
         <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
@@ -558,7 +558,7 @@ export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
         </ul>
       )}
 
-      {/* The disclaimer is part of the result, not fine print tucked elsewhere —
+      {/* The disclaimer is part of the result, not fine print tucked elsewhere,
           the credibility of every number above depends on it being read. */}
       <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
         {metrics.disclaimer}
@@ -581,7 +581,7 @@ export type VideoGate =
  * Every branch that can't proceed still leaves the student a way forward, because
  * the point of the session is the rep, not the upsell. A capped or signed-out
  * student is told plainly that voice and typing still work and are graded the
- * same — which is true, and is why we can say it.
+ * same, which is true, and is why we can say it.
  */
 export function VideoOptIn(props: {
   gate: VideoGate;
@@ -619,7 +619,7 @@ export function VideoOptIn(props: {
         <button onClick={props.onSignIn} className="font-semibold text-indigo-700 underline dark:text-indigo-300">
           Create a free account
         </button>{" "}
-        — or just keep going with voice, which is graded exactly the same.
+        or just keep going with voice, which is graded exactly the same.
       </Notice>
     );
   }
@@ -627,7 +627,7 @@ export function VideoOptIn(props: {
   if (gate.kind === "capped") {
     return (
       <Notice>
-        You've used your video sessions this month — they reset on {gate.resetsOn}. This rep will be
+        You've used your video sessions this month, they reset on {gate.resetsOn}. This rep will be
         recorded with voice only, which is graded exactly the same on content and delivery.
       </Notice>
     );

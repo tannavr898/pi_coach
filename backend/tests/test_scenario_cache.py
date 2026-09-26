@@ -1,4 +1,4 @@
-"""Scenario cache key normalization — the part that decides whether the cache
+"""Scenario cache key normalization, the part that decides whether the cache
 ever hits. Everything else in scenario_cache.py is I/O against Supabase; these
 are the pure functions the hit rate actually depends on."""
 
@@ -34,7 +34,7 @@ def test_level_and_event_still_separate_keys():
 
 def test_free_text_never_reaches_the_key():
     """Two phrasings of the same request interpret to the same plan, so they must
-    produce the same key — this is the whole point of keying on the interpreted
+    produce the same key, this is the whole point of keying on the interpreted
     result instead of the raw string."""
     # "marketing for a restaurant" and "restaurant marketing" both interpret to
     # the marketing domain at the same level for the same event.
@@ -59,7 +59,7 @@ def test_distinct_industries_stay_distinct():
 
 
 def test_empty_industry_normalizes_to_empty():
-    """An empty context must not match everything by accident — the caller treats
+    """An empty context must not match everything by accident, the caller treats
     "" as 'no preference expressed', not as a wildcard industry."""
     assert sc.normalize_context("") == ""
     assert sc.normalize_context("general business") == ""
@@ -77,7 +77,7 @@ def test_multiword_industry_is_kept_but_bounded():
 def test_cache_is_inert_under_test_config():
     """Regression guard for a real incident: `config.load_dotenv()` runs at import
     time, so a developer's real .env made the suite read AND WRITE the production
-    Supabase — and the scenario cache (the first anonymous write path) inserted
+    Supabase, and the scenario cache (the first anonymous write path) inserted
     test-fixture scenarios into the live pool, where students would have been
     served them.
 

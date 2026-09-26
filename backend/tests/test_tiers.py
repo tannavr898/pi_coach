@@ -1,4 +1,4 @@
-"""Tier allowances, period math, and the founding-user reward. All pure — the
+"""Tier allowances, period math, and the founding-user reward. All pure, the
 enforcement itself is one atomic SQL statement (see supabase/schema.sql)."""
 
 from datetime import datetime, timezone
@@ -19,7 +19,7 @@ def test_reset_date_is_the_first_of_next_month():
 
 
 def test_reset_date_rolls_over_the_year():
-    """December must roll to January of the NEXT year — an off-by-one here would
+    """December must roll to January of the NEXT year, an off-by-one here would
     show a student a reset date in the past."""
     assert tiers.resets_on(datetime(2026, 12, 15, tzinfo=timezone.utc)) == "2027-01-01"
 
@@ -63,7 +63,7 @@ def test_founder_needs_both_early_signup_and_real_usage():
 
 
 def test_early_signup_alone_is_not_enough():
-    """Rewards loyalty, not just timing — a dormant account hasn't earned it."""
+    """Rewards loyalty, not just timing, a dormant account hasn't earned it."""
     assert tiers.founder_eligible("2026-03-01T12:00:00Z", 0) is False
     assert tiers.founder_eligible("2026-03-01T12:00:00Z", tiers.FOUNDER_MIN_ROLEPLAYS - 1) is False
 
@@ -73,7 +73,7 @@ def test_late_signup_is_not_eligible_however_active():
 
 
 def test_missing_or_malformed_signup_date_is_not_eligible():
-    """Fail closed on bad data — quietly granting a reward we can't justify is
+    """Fail closed on bad data, quietly granting a reward we can't justify is
     worse than withholding one we can't verify."""
     assert tiers.founder_eligible(None, 500) is False
     assert tiers.founder_eligible("", 500) is False

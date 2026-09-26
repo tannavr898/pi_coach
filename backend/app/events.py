@@ -1,9 +1,9 @@
-"""The role-play event catalog — what students pick before practicing.
+"""The role-play event catalog, what students pick before practicing.
 
 Loads events.json (our own catalog) and exposes lookups. Each event maps to a set
 of OUR framework domains (framework.json), which is the pool scenario generation
 draws criteria from. That mapping is the obvious business-discipline mapping any
-educator would make — it is NOT DECA's licensed event-to-performance-indicator
+educator would make, it is NOT DECA's licensed event-to-performance-indicator
 blueprint, and no PI text or codes appear here. Focus suggestions are original.
 """
 

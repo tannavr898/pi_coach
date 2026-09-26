@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Proposed study terms, authored blind from business fundamentals. REVIEW THIS BY HAND before running `gen_terms content`: check the grain (one coachable skill, a sibling of its neighbours — not a fragment of one) and delete anything duplicative. Deleting a row is free; its id is simply retired.",
+  "note": "Proposed study terms, authored blind from business fundamentals. REVIEW THIS BY HAND before running `gen_terms content`: check the grain (one coachable skill, a sibling of its neighbours, not a fragment of one) and delete anything duplicative. Deleting a row is free; its id is simply retired.",
   "proposed": [
     {
       "domain_id": "business_law",

@@ -1,10 +1,10 @@
-// The study plan — the dated half of the Study page. The course says WHAT to study;
+// The study plan, the dated half of the Study page. The course says WHAT to study;
 // the plan says what to do TODAY, and whether that's enough to be ready for District.
 //
 // Three rules shape the screen:
 //   - Today leads. The runway and the week are context; the checklist is the task.
 //   - One indigo action: the next unfinished task. Everything else is secondary.
-//   - Honest pace. "Behind" is said plainly, with the minutes that would fix it —
+//   - Honest pace. "Behind" is said plainly, with the minutes that would fix it,
 //     never softened, and never painted in the scoring ramp's alarm colors.
 //
 // Nothing here schedules anything: the backend (plan.py) recomputes the plan from
@@ -290,7 +290,7 @@ function initialDraft(eventId: string, plan: StudyPlan | null): Draft {
       if (d?.dates && Array.isArray(d.minutes) && d.minutes.length === 7) return d;
     }
   } catch {
-    /* storage unavailable — start fresh */
+    /* storage unavailable, start fresh */
   }
   return { dates: { District: "", State: "", ICDC: "" }, minutes: [0, 30, 30, 30, 30, 30, 0], goal: "core" };
 }
@@ -1145,13 +1145,13 @@ function AheadCard({ plan }: { plan: StudyPlan }) {
                         </span>
                       </td>
                       <td className="py-2 pr-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
-                        {w.new_terms || "–"}
+                        {w.new_terms || "-"}
                       </td>
                       <td className="py-2 pr-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
-                        {w.roleplays || "–"}
+                        {w.roleplays || "-"}
                       </td>
                       <td className="py-2 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
-                        {w.minutes ? fmtMinutes(w.minutes) : "–"}
+                        {w.minutes ? fmtMinutes(w.minutes) : "-"}
                       </td>
                     </tr>
                   );

@@ -1,10 +1,10 @@
-"""Persistence for logged-in users — a thin async wrapper over Supabase's REST
+"""Persistence for logged-in users, a thin async wrapper over Supabase's REST
 (PostgREST) API, using the SECRET service-role key (backend-only).
 
 We deliberately avoid an ORM/DB driver: httpx is already a dependency (it talks
 to AssemblyAI), and the data shape is a single flat table. Every query is scoped
 by ``user_id`` here in code; Row-Level Security on the table is a second line of
-defense. Only completed sessions for signed-in users are ever written — the
+defense. Only completed sessions for signed-in users are ever written, the
 anonymous practice loop never touches this module.
 """
 
@@ -277,7 +277,7 @@ async def insert_cached_scenario(row: dict) -> dict:
 
 
 async def delete_cached_scenario(scenario_id: str) -> None:
-    """Remove a cached scenario (invalidation — a bad one gets amplified)."""
+    """Remove a cached scenario (invalidation, a bad one gets amplified)."""
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.delete(
             f"{_base()}/cached_scenario",

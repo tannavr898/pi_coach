@@ -1,8 +1,8 @@
-"""Site-wide usage counters — role-plays graded, Blitz drills, scenarios written.
+"""Site-wide usage counters, role-plays graded, Blitz drills, scenarios written.
 
 Three running totals, for two readers: the owner (is anyone using this?) and a
 signed-out visitor on the landing page (is anyone using this?). Nothing here is
-per-user, nothing identifies anyone, and nothing records WHAT was practiced — a
+per-user, nothing identifies anyone, and nothing records WHAT was practiced, a
 count is all either reader needs, the same posture as usage_counter.
 
 WHAT COUNTS
@@ -10,7 +10,7 @@ WHAT COUNTS
             Anonymous reps count too; the sessions table only sees signed-in ones.
   blitz     a drill that was actually graded (/api/blitz-score succeeded).
   scenario  a scenario the model freshly wrote. A cache hit is a scenario being
-            REUSED, so it doesn't count — "unique scenarios" has to mean unique.
+            REUSED, so it doesn't count, "unique scenarios" has to mean unique.
 
 Only successes count, so a failed grade followed by "try again" is one rep, not two.
 

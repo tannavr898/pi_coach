@@ -35,11 +35,11 @@ def test_framework_has_expected_shape():
     crit = framework.all_criteria()
     # Pinned, not a floor: the graded framework is deliberately fixed at 282 while the
     # STUDY corpus grows past it (see app/terms.py). A change here should be a decision
-    # — it moves scenario selection and mastery math — so make the test argue back.
+    # it moves scenario selection and mastery math, so make the test argue back.
     assert len(crit) == 282
     ids = [c["id"] for c in crit]
     assert len(ids) == len(set(ids))
-    # no leftover PI-style codes (e.g. "CRM:001") — ids are our own FW-NNN scheme
+    # no leftover PI-style codes (e.g. "CRM:001"), ids are our own FW-NNN scheme
     assert all(c["id"].startswith("FW-") for c in crit)
     for c in crit:
         # The grading question is the anti-inflation bar; a criterion without one
@@ -55,13 +55,15 @@ def _interp_and_scenario(crit_ids):
                 "in_scope": True, "redirect_message": "",
                 "topic": "Marketing for a smoothie bar", "industry": "food service",
                 "domain_ids": ["marketing"],
-            })
+            },
+    )
         # scenario generation call
         return json.dumps({
             "criteria_ids": crit_ids,
             "situation": "You are a marketing consultant at BrightPath Co. ...",
             "followup_questions": ["Why that channel?", "What would you measure?"],
-        })
+        },
+    )
     return fake
 
 
@@ -131,7 +133,7 @@ def test_scenario_from_event_without_focus(monkeypatch):
     d = r.json()
     assert d["event"] == "Principles of Marketing"
     assert len(d["criteria"]) == 4  # exactly 4 indicators per scenario
-    assert len(calls) == 1  # generation only — interpretation was skipped
+    assert len(calls) == 1  # generation only, interpretation was skipped
 
 
 def test_scenario_unknown_event_rejected(monkeypatch):

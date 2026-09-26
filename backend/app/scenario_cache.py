@@ -1,4 +1,4 @@
-"""Scenario caching — serve an already-generated role-play instead of paying to
+"""Scenario caching, serve an already-generated role-play instead of paying to
 write a new one.
 
 Two things motivated this, and they pull in the same direction:
@@ -13,7 +13,7 @@ Two things motivated this, and they pull in the same direction:
 Nothing here is allowed to break the practice loop. Every call site treats the
 cache as advisory: any failure (Supabase down, malformed row, no pool yet) falls
 through to normal generation. That is why the helpers below swallow their own
-errors rather than raising — a caching problem must never become a user problem.
+errors rather than raising, a caching problem must never become a user problem.
 
 --------------------------------------------------------------------------
 THE CACHE KEY
@@ -23,7 +23,7 @@ for a restaurant", "restaurant marketing", and "how do I market a restaurant"
 are the same request and would be three different keys with zero hits between
 them.
 
-So we key on the INTERPRETED result — but only on the parts that exist BEFORE
+So we key on the INTERPRETED result, but only on the parts that exist BEFORE
 generation runs:
 
     level | sorted(domain_ids) | event_id
@@ -31,7 +31,7 @@ generation runs:
 Two notes on what is deliberately absent:
 
   - CRITERIA are not in the key. The brief calls for them, but the criteria are
-    selected by the model as PART of generation — at lookup time we have not run
+    selected by the model as PART of generation, at lookup time we have not run
     generation yet, so they cannot be known. What we do know is the candidate
     POOL the criteria will be drawn from, which is exactly `domain_ids`. Two
     requests with the same domains at the same level draw from the same pool and
@@ -52,14 +52,14 @@ asked. That is true in one case and conditional in the other:
 
   - NO FREE-TEXT FOCUS ("just give me a Marketing rep"). The user expressed no
     preference beyond the event, so any scenario under the key is a correct
-    answer. Serve any unseen one. This is also the prefetch path — by far the
-    most common — so it is where the savings actually land.
+    answer. Serve any unseen one. This is also the prefetch path, by far the
+    most common, so it is where the savings actually land.
 
   - WITH FREE-TEXT FOCUS ("marketing for a restaurant"). They asked for
     something specific. Handing back a gym scenario because it shares a domain
     would be a visible quality regression, so we only serve a cached scenario
     whose `industry_hint` matches what we interpreted. No match means we
-    generate fresh — and that fresh scenario joins the pool tagged with its
+    generate fresh, and that fresh scenario joins the pool tagged with its
     industry, so the NEXT restaurant request hits.
 
 Cost control that degrades the product isn't cost control, it's just a worse
@@ -82,7 +82,7 @@ log = logging.getLogger("uvicorn.error")
 # is spend with no variety left to buy.
 MAX_PER_KEY = 25
 
-# Words that carry no distinguishing signal in an industry phrase — dropping them
+# Words that carry no distinguishing signal in an industry phrase, dropping them
 # is what makes "a restaurant", "restaurants", and "the restaurant business" all
 # normalize to the same token.
 _STOPWORDS = {"a", "an", "the", "business", "businesses", "company", "companies",
@@ -114,7 +114,7 @@ def enabled() -> bool:
 def build_key(level: str, domain_ids: list[str], event_id: str) -> str:
     """The cache key: level | sorted domains | event.
 
-    Sorting the domains is the load-bearing part — the interpreter returns them in
+    Sorting the domains is the load-bearing part, the interpreter returns them in
     whatever order the model emitted, so two identical requests would otherwise
     produce two different keys and never collide.
     """
@@ -193,7 +193,7 @@ async def lookup(
         hit = available[0]
         scenario = hit.get("scenario_json")
         if not isinstance(scenario, dict) or not scenario.get("situation"):
-            # A row that can't render is worse than no row — it would 500 the loop.
+            # A row that can't render is worse than no row, it would 500 the loop.
             # Drop it rather than serve it, and generate instead.
             log.warning("dropping malformed cached scenario %s", hit.get("id"))
             await _safe_delete(str(hit["id"]))
@@ -210,7 +210,7 @@ async def lookup(
 async def get_by_id(scenario_id: str) -> dict | None:
     """Fetch one pooled scenario by id for a shared challenge link.
 
-    Unlike `lookup`, this bypasses the variety machinery entirely — no cache key,
+    Unlike `lookup`, this bypasses the variety machinery entirely, no cache key,
     no least-served ordering, no `seen` filter. Someone following a friend's
     challenge must land on THAT role-play, even one they've already played.
 
@@ -237,13 +237,13 @@ async def record_served(scenario_id: str) -> None:
 
     NOTE what this deliberately does NOT do: it does not mark the scenario as
     seen by the user. The client PREFETCHES a scenario the moment an event is
-    picked, before the student has committed to it — so "served" and "seen" are
+    picked, before the student has committed to it, so "served" and "seen" are
     genuinely different events. Marking seen here would burn a pool entry every
     time someone flipped between events, permanently, for a role-play they never
     laid eyes on. Seen is recorded by `mark_seen` when the client confirms it
     actually put the scenario on screen.
 
-    Runs as a background task — the user already has their scenario, and this
+    Runs as a background task, the user already has their scenario, and this
     counter should never be able to delay or fail delivering it.
     """
     if not enabled():
@@ -285,8 +285,8 @@ async def store(
     QUALITY GUARD: a cached scenario is served to many people, so a bad one is
     amplified rather than absorbed. Only scenarios that already passed the
     caller's validation reach this function, and we re-check the two invariants
-    that would break rendering or grading — a non-empty situation and the exact
-    criteria count — before anything is written. This is also the reason the pool
+    that would break rendering or grading, a non-empty situation and the exact
+    criteria count, before anything is written. This is also the reason the pool
     can only grow through this one door.
 
     Returns the new scenario's id (so the caller can attribute it to the user),
@@ -311,7 +311,7 @@ async def store(
             "times_served": 1,  # this generation IS its first serve
         })
         _STATS["stored"] += 1
-        # Seen is NOT recorded here — same reason as in `record_served`: a
+        # Seen is NOT recorded here, same reason as in `record_served`: a
         # prefetched generation may never reach the screen.
         return str(row.get("id")) if row else None
     except httpx.HTTPError as exc:

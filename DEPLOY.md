@@ -2,7 +2,7 @@
 
 PI Coach ships as **one Docker image**: the Vite SPA is built and served by the
 FastAPI process, which also serves `/api/*`. One service, one origin, no CORS,
-keys in one place. The image is host-agnostic — these steps use **Render's free
+keys in one place. The image is host-agnostic, these steps use **Render's free
 tier**; Railway and Fly.io run the same `Dockerfile` (notes at the bottom).
 
 > **Why a server with HTTPS is required:** the microphone (`getUserMedia`) only
@@ -10,7 +10,7 @@ tier**; Railway and Fly.io run the same `Dockerfile` (notes at the bottom).
 
 > **Speed reality check:** grading latency is the AI calls (a Claude scoring call
 > + AssemblyAI transcription), not the host. A bigger server won't make grading
-> faster — it mainly avoids cold-start delay on the first hit.
+> faster, it mainly avoids cold-start delay on the first hit.
 
 ---
 
@@ -19,22 +19,22 @@ tier**; Railway and Fly.io run the same `Dockerfile` (notes at the bottom).
 A public URL means anyone can spend your API credits. Three layers, set them up
 *before* sharing the link:
 
-1. **Anthropic spend cap** — console.anthropic.com → Billing → set a monthly
-   limit (e.g. $10–20 to start).
-2. **AssemblyAI spend cap** — you've done this; confirm it's still set.
-3. **App-level daily guard** — `DAILY_REQUEST_CAP` (set in step 3) stops paid
+1. **Anthropic spend cap**, console.anthropic.com → Billing → set a monthly
+   limit (e.g. $10-20 to start).
+2. **AssemblyAI spend cap**, you've done this; confirm it's still set.
+3. **App-level daily guard**, `DAILY_REQUEST_CAP` (set in step 3) stops paid
    calls for the day with a friendly message *before* the hard provider cap is
    hit. Tune it to your budget; ~500/day is a safe start. Count it in *sessions*,
    not requests: one spoken role-play is ~3 counted calls (scenario, transcribe,
    grade), so 500 is roughly 165 role-plays a day across every user combined.
 
-There's also a per-IP burst limit (`RATE_LIMIT_PER_MIN`, default 120/min) — sized
+There's also a per-IP burst limit (`RATE_LIMIT_PER_MIN`, default 120/min), sized
 for a shared school NAT, where a whole class arrives from one address.
 
 Both guards are deliberately asymmetric: they gate the calls that *start* a
 session, while transcription and grading get a higher ceiling and a grace band
 above the daily cap. Refusing a submit would throw away a rep the student already
-recorded, after we had already paid for the expensive half of it — the tokens are
+recorded, after we had already paid for the expensive half of it, the tokens are
 spent by then, so turning it away saves nothing and costs them everything. See the
 header of `backend/app/ratelimit.py`.
 
@@ -53,26 +53,26 @@ git push origin HEAD          # push the current branch
 2. **New → Blueprint** → pick the `deca_roleplay_trainer` repo. Render reads
    [`render.yaml`](./render.yaml) and proposes the `pi-coach` web service.
 3. Choose the branch to deploy, then **Apply**.
-4. When prompted (or in the service's **Environment** tab), set the two secrets —
+4. When prompted (or in the service's **Environment** tab), set the two secrets,
    they are `sync: false` so they live only in the dashboard, never in git:
    - `ANTHROPIC_API_KEY`
    - `TRANSCRIPTION_API_KEY`
    `ANTHROPIC_MODEL`, `DAILY_REQUEST_CAP`, and `RATE_LIMIT_PER_MIN` come from
-   `render.yaml` — adjust in the dashboard anytime.
+   `render.yaml`, adjust in the dashboard anytime.
 5. Render builds the Docker image and deploys. First build takes a few minutes.
    Health check: `GET /api/health`. When it's live you get a
-   `https://pi-coach-xxxx.onrender.com` URL — open it and run a full loop.
+   `https://pi-coach-xxxx.onrender.com` URL, open it and run a full loop.
 
 > **Free-tier cold starts:** the free instance sleeps after ~15 min idle, so the
-> first request then takes ~30–50s. Two fixes: (a) a free keep-alive — create a
+> first request then takes ~30-50s. Two fixes: (a) a free keep-alive, create a
 > job at [cron-job.org](https://cron-job.org) that GETs `/api/health` every
 > 10 min; or (b) upgrade to `plan: starter` ($7/mo, always warm) in `render.yaml`.
 
 ## 4. Custom domain (your ~$12)
 
-1. Buy a domain — [Porkbun](https://porkbun.com) or
+1. Buy a domain, [Porkbun](https://porkbun.com) or
    [Cloudflare](https://www.cloudflare.com/products/registrar/) are cheapest.
-   A **`.app`** domain (~$12–14/yr) is a nice fit: the whole TLD is HTTPS-only
+   A **`.app`** domain (~$12-14/yr) is a nice fit: the whole TLD is HTTPS-only
    (HSTS-preloaded), which the mic feature needs anyway. `picoach.app` /
    `getpicoach.app` if available.
 2. In Render: service → **Settings → Custom Domains → Add** your domain.
@@ -86,11 +86,11 @@ git push origin HEAD          # push the current branch
   Delivery tab numbers look right.
 - Watch the first day's provider usage; tighten `DAILY_REQUEST_CAP` if needed.
 - Going truly public? Consider a shared access passcode or Cloudflare Access in
-  front of it — the spend guards cap the damage, but a gate prevents it.
+  front of it, the spend guards cap the damage, but a gate prevents it.
 
 ## 6. Accounts: Supabase auth + Google sign-in
 
-Login is optional in the product, so this whole section is optional too — with
+Login is optional in the product, so this whole section is optional too, with
 `SUPABASE_URL` / `SUPABASE_ANON_KEY` unset, the app hides every account feature
 and anonymous practice is unaffected.
 
@@ -99,8 +99,8 @@ and anonymous practice is unaffected.
 1. **Google Cloud Console** → create (or pick) a project → **APIs & Services →
    OAuth consent screen**. Choose **External**, then fill in:
    - **App name:** `PI Coach`. Setting this alone does **not** change what users
-     see — read 6b before assuming it did.
-   - **App logo:** upload [`brand/logo-120.png`](./brand/logo-120.png) — the
+     see, read 6b before assuming it did.
+   - **App logo:** upload [`brand/logo-120.png`](./brand/logo-120.png), the
      bullseye mark at Google's 120×120 limit. Do not skip this: without a logo
      and a verified brand, Google shows only your app *domain*, which is the
      whole problem you are trying to fix.
@@ -109,21 +109,21 @@ and anonymous practice is unaffected.
      service URL:** `https://trypicoach.com/terms`. Both ship with the app
      (`frontend/src/legal.tsx`) and both are required for branding. Before
      pointing Google at them, set `CONTACT_EMAIL` and `GOVERNING_LAW` at the top
-     of that file — the contact address must be one you actually monitor.
+     of that file, the contact address must be one you actually monitor.
    - **Authorized domain:** `trypicoach.com`. You can only save this if the
      domain is already verified in [Google Search
      Console](https://search.google.com/search-console) under the *same* Google
      account as the Cloud project.
    - **Scopes:** leave the defaults. We only need `email` and `profile`, which
-     are *non-sensitive* — so no Google security review is required, and users
+     are *non-sensitive*, so no Google security review is required, and users
      see no "unverified app" interstitial.
 2. Set publishing status to **In production**. In *Testing* only addresses you
-   list by hand can sign in, capped at 100 — a silent way to lose every real
+   list by hand can sign in, capped at 100, a silent way to lose every real
    signup.
 3. **Credentials → Create credentials → OAuth client ID → Web application**:
    - **Authorized JavaScript origins:** `https://trypicoach.com`
    - **Authorized redirect URI:** `https://<project-ref>.supabase.co/auth/v1/callback`
-     (or your Supabase custom domain — see 6b). Copy this exactly from the
+     (or your Supabase custom domain, see 6b). Copy this exactly from the
      Supabase provider page; a trailing-slash mismatch is the usual cause of
      `redirect_uri_mismatch`.
 4. **Supabase dashboard → Authentication → Providers → Google**: enable it and
@@ -131,14 +131,14 @@ and anonymous practice is unaffected.
 5. **Supabase → Authentication → URL Configuration**:
    - **Site URL:** `https://trypicoach.com`
    - **Redirect URLs:** add `https://trypicoach.com/**` (and
-     `http://localhost:5173/**` for dev). The wildcard matters — the app returns
+     `http://localhost:5173/**` for dev). The wildcard matters, the app returns
      you to the exact path you left from, not just the root.
 
 ### 6b. Making the consent screen say "trypicoach.com"
 
 Google's screen reads *"to continue to `<project-ref>.supabase.co`"* because it
 displays the host that owns the **callback URL**, not your App name. Typing an
-App name into the consent screen changes nothing on its own — this is the part
+App name into the consent screen changes nothing on its own, this is the part
 that surprises everyone. Two ways out:
 
 - **Google brand verification** (free, slow). Google swaps the hostname for your
@@ -156,7 +156,7 @@ that surprises everyone. Two ways out:
   Domains); check the current price before committing. After enabling it, update
   the redirect URI in the Google credential (step 6a.3) to the new host.
 
-The two are independent — the custom domain works whether or not Google ever
+The two are independent, the custom domain works whether or not Google ever
 verifies your brand, which is why it's the reliable option if you need this
 fixed on a deadline.
 
@@ -168,7 +168,7 @@ real signup volume regardless of branding.
 
 ### 6c. Session replay and what it records
 
-Replay masking is configured in `frontend/src/analytics.ts` — read the comment
+Replay masking is configured in `frontend/src/analytics.ts`, read the comment
 at the top of that file before changing it. The short version: the product's own
 UI records as readable text so you can see where people get stuck, while
 passwords, email fields, every textarea, and any rendered text tagged `PH_MASK`
@@ -182,7 +182,7 @@ a free-text input holding anything personal, make it a `textarea` or
 ## 7. Getting found in search
 
 The app ships the technical half of this. **The other half is manual and nothing in
-the repo can do it for you** — a brand-new domain is not in Google's index at all
+the repo can do it for you**, a brand-new domain is not in Google's index at all
 until you tell Google it exists.
 
 ### What the code already does
@@ -191,25 +191,25 @@ until you tell Google it exists.
   with an empty `<div id="root">`, so there is nothing in it for a crawler to match
   against a query like "BLTDM flashcards". These routes render the study corpus as
   real HTML instead:
-  - `/flashcards` — hub linking all 28 event decks
-  - `/flashcards/business-law-ethics-team` — one deck, ~14,000 words of real content
-  - `/flashcards/bltdm` — DECA event codes 301 to the canonical slug
+  - `/flashcards`, hub linking all 28 event decks
+  - `/flashcards/business-law-ethics-team`, one deck, ~14,000 words of real content
+  - `/flashcards/bltdm`, DECA event codes 301 to the canonical slug
 - **`/robots.txt` and `/sitemap.xml`**, both generated from the live event catalog,
   so adding an event to `events.json` adds its page to the sitemap automatically.
 - **Titles, meta descriptions, canonicals, Open Graph/Twitter cards** on every page,
   plus `BreadcrumbList` / `LearningResource` / `FAQPage` structured data.
-- **Favicons and the social card** — `brand/gen_icons.py` regenerates the whole set
+- **Favicons and the social card**, `brand/gen_icons.py` regenerates the whole set
   into `frontend/public/` if the mark ever changes.
 
 `SITE_URL` (set in `render.yaml`) is what all of that resolves canonicals against.
 If it ever points at `pi-coach-xxxx.onrender.com`, Google indexes that hostname
-instead of your domain — check it first when something looks wrong.
+instead of your domain, check it first when something looks wrong.
 
 ### What you have to do by hand (~15 min, once)
 
 1. **Google Search Console** → [search.google.com/search-console](https://search.google.com/search-console)
    → add `trypicoach.com` as a **Domain** property → add the TXT record it gives you
-   at your registrar. (§6b already needed this property for OAuth verification — the
+   at your registrar. (§6b already needed this property for OAuth verification, the
    same one works here.)
 2. **Submit the sitemap**: Search Console → *Sitemaps* → enter `sitemap.xml` → Submit.
 3. **Request indexing** for the two pages that matter most: paste
@@ -217,7 +217,7 @@ instead of your domain — check it first when something looks wrong.
    Inspection bar at the top, then click **Request Indexing** on each. This is the
    thing that turns "invisible" into "crawled in a few days" rather than a few weeks.
 4. **Bing Webmaster Tools** ([bing.com/webmasters](https://www.bing.com/webmasters))
-   — it imports directly from Search Console in about two clicks, and it is where
+   it imports directly from Search Console in about two clicks, and it is where
    ChatGPT's web results come from.
 
 ### What to expect
@@ -228,7 +228,7 @@ show up for specific long-tail queries ("BLTDM flashcards", "DECA business law
 ethics flashcards") well before anything broad. The two things that actually move
 this, in order:
 
-- **Links from places DECA students already are** — your chapter's site, a state
+- **Links from places DECA students already are**, your chapter's site, a state
   association page, a teacher's resource list, a Reddit/Discord comment that is
   genuinely useful rather than a drive-by link.
 - **Not breaking what's there**: keep the URLs stable. A page that changes address
@@ -242,9 +242,9 @@ indexed.
 
 ## Other hosts (same Dockerfile)
 
-- **Railway** — New Project → Deploy from repo → it detects the `Dockerfile`. Add
+- **Railway**, New Project → Deploy from repo → it detects the `Dockerfile`. Add
   the same env vars. No cold starts; usage-based after a small monthly credit.
-- **Fly.io** — `fly launch` (it detects the `Dockerfile`), set secrets with
+- **Fly.io**, `fly launch` (it detects the `Dockerfile`), set secrets with
   `fly secrets set ANTHROPIC_API_KEY=… TRANSCRIPTION_API_KEY=…`. Keep one machine
   warm within the free allowance to avoid cold starts.
 

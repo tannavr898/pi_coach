@@ -1,4 +1,4 @@
-// The Gauntlet card — a shareable 4:5 results image whose only job is to DARE the
+// The Gauntlet card, a shareable 4:5 results image whose only job is to DARE the
 // viewer into attempting the same role-play.
 //
 // Deliberately NOT a stat breakdown. It carries the scenario hook, the score to
@@ -11,7 +11,7 @@
 //     colors and the app palette is theme-conditional; html-to-image serializes
 //     computed styles, so both are export hazards. Every value here is a literal
 //     hex/px in an inline style object, and the card is always dark regardless of
-//     the app theme — what you see is what lands in the PNG.
+//     the app theme, what you see is what lands in the PNG.
 //  2. Every font-family carries a concrete system fallback. The webfonts come from
 //     Google Fonts over the network; if that fetch is blocked the card degrades to
 //     a legible system stack instead of Times New Roman.
@@ -23,7 +23,7 @@ import type { ScenarioResponse, ScoreResponse } from "./api";
 import { track } from "./analytics";
 import { BrandMark } from "./ui";
 
-// Logical card size. 4:5 portrait — screenshots and shares clean into IG / TikTok /
+// Logical card size. 4:5 portrait, screenshots and shares clean into IG / TikTok /
 // Discord. Exported at pixelRatio 2 → 1080x1350, which is IG's native asset size.
 const CARD_W = 540;
 const CARD_H = 675;
@@ -35,7 +35,7 @@ const SITE_URL = "https://trypicoach.com";
  * The link that closes the loop: it drops the viewer into the SAME scenario
  * rather than a random one, so the score on the card is actually something to
  * beat. Falls back to the bare site when the scenario has no pool id (nothing
- * to deep-link to — e.g. the onboarding and demo fixtures).
+ * to deep-link to, e.g. the onboarding and demo fixtures).
  */
 function challengeUrl(scenario: ScenarioResponse): string {
   return scenario.scenario_id ? `${SITE_URL}/?s=${encodeURIComponent(scenario.scenario_id)}` : SITE_URL;
@@ -47,7 +47,7 @@ const MONO = '"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas,
 
 // --- copy derivation --------------------------------------------------------
 
-/** The hero line. Falls back through topic to a generic dare — never blank. */
+/** The hero line. Falls back through topic to a generic dare, never blank. */
 export function cardHook(scenario: ScenarioResponse): string {
   const hook = (scenario.hook || "").trim();
   if (hook) return hook;
@@ -59,12 +59,12 @@ export function cardHook(scenario: ScenarioResponse): string {
 /**
  * One taunt line drawn from the run's weakest indicator, or null.
  *
- * Uses only the criterion's public NAME — never `feedback`, `gaps`, or
+ * Uses only the criterion's public NAME, never `feedback`, `gaps`, or
  * `final.biggest_weakness`. Those are written at the student about their own run;
  * putting them on a card they hand to other people would broadcast their personal
  * critique. The name alone reads as a dare about the scenario.
  *
- * Returns null when every indicator landed proficient or above — there is no honest
+ * Returns null when every indicator landed proficient or above, there is no honest
  * taunt to make, and the layout closes the gap rather than reserving an empty row.
  */
 export function cardTaunt(score: ScoreResponse): string | null {
@@ -77,7 +77,7 @@ export function cardTaunt(score: ScoreResponse): string | null {
   return `Most people fumble ${worst.name.toLowerCase()}.`;
 }
 
-/** Coarse score bucket for analytics — never the raw score, never the hook text. */
+/** Coarse score bucket for analytics, never the raw score, never the hook text. */
 function scoreBucket(pct: number): string {
   const lo = Math.max(0, Math.min(90, Math.floor(pct / 10) * 10));
   return `${lo}-${lo + 9}`;
@@ -243,7 +243,7 @@ export function GauntletCard({
  *    the second.
  */
 // Resolved once per page load. getFontEmbedCSS walks the document's stylesheets,
-// and html-to-image's own injected <style> elements accumulate in that sweep — so
+// and html-to-image's own injected <style> elements accumulate in that sweep, so
 // calling it per export returns a progressively larger blob (measured: 1.5MB on the
 // first call, 7.7MB by the fifth in one page). Memoizing keeps every export the
 // same size and skips a ~1.5MB refetch each time the card is opened.
@@ -310,7 +310,7 @@ export function GauntletCardModal({
   const [done, setDone] = useState<null | "shared" | "downloaded">(null);
   const [scale, setScale] = useState(() => displayScale());
 
-  // Coarse metadata only. NEVER the hook, the situation, or any criterion text —
+  // Coarse metadata only. NEVER the hook, the situation, or any criterion text,
   // see the privacy note at the top of analytics.ts. `has_hook` is what tells us
   // whether the hook is doing work, without shipping scenario content to PostHog.
   const baseProps = {
@@ -377,7 +377,7 @@ export function GauntletCardModal({
         setDone("shared");
         return;
       } catch (err) {
-        // The user dismissing the OS share sheet is not a failure — don't fall
+        // The user dismissing the OS share sheet is not a failure, don't fall
         // through to a surprise download for it.
         if ((err as DOMException)?.name === "AbortError") return;
       }

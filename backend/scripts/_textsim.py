@@ -1,7 +1,7 @@
 """Small text-similarity helpers shared by the build scripts. Stdlib only.
 
 Lives on its own so that gen_terms.py can dedupe its own output WITHOUT importing
-check_independence.py — the module that reads DECA's PI list. Terms are authored
+check_independence.py, the module that reads DECA's PI list. Terms are authored
 blind and audited afterwards (see both scripts' docstrings); keeping the authoring
 path structurally unable to reach the reference file is how that invariant is kept
 honest rather than merely intended.
@@ -30,7 +30,7 @@ def tokens(text: str) -> list[str]:
 
 
 def jaccard(a: set[str], b: set[str]) -> float:
-    """Bag-of-words overlap. Topical, not evidential — two people writing about
+    """Bag-of-words overlap. Topical, not evidential, two people writing about
     break-even will both say "fixed costs"."""
     if not a or not b:
         return 0.0
@@ -43,6 +43,6 @@ def ratio(a: list[str], b: list[str]) -> float:
 
 
 def longest_run(a: list[str], b: list[str]) -> int:
-    """Longest run of consecutive content words shared by both — the signal that
+    """Longest run of consecutive content words shared by both, the signal that
     separates copied phrasing from a shared subject."""
     return SequenceMatcher(None, a, b, autojunk=False).find_longest_match(0, len(a), 0, len(b)).size

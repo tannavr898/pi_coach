@@ -6,7 +6,7 @@
 // resolve on the authorized domain (see DEPLOY.md §6b). The second is that a
 // tool used by minors should say plainly what it does with their data.
 //
-// KEEP THIS HONEST. Every claim below is a claim about code that exists — raw
+// KEEP THIS HONEST. Every claim below is a claim about code that exists, raw
 // audio never persisted, no video file ever created, analytics carrying no
 // response text. If any of those change, this page changes in the same commit.
 // A privacy policy that has drifted from the implementation is worse than none,
@@ -21,7 +21,7 @@ import { BrandMark } from "./ui";
 
 // --- the bits that are yours to set ----------------------------------------
 
-// Must be an address that is actually monitored — Google checks that the
+// Must be an address that is actually monitored, Google checks that the
 // contact route on a privacy policy is real during brand verification, and it
 // is the address a parent or guardian would write to asking for a deletion.
 const CONTACT_EMAIL = "yourpicoach@gmail.com";
@@ -30,7 +30,7 @@ const CONTACT_EMAIL = "yourpicoach@gmail.com";
 const GOVERNING_LAW = "the State of Pennsylvania, USA";
 
 // Shown on both pages. Bump it whenever the substance changes, not for typo
-// fixes — a date that moves for nothing trains people to ignore it.
+// fixes, a date that moves for nothing trains people to ignore it.
 const LAST_UPDATED = "August 18, 2026";
 
 // --- shell ------------------------------------------------------------------
@@ -54,7 +54,7 @@ function useStoredTheme() {
 function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   useStoredTheme();
   useEffect(() => {
-    document.title = `${title} — PI Coach`;
+    document.title = `${title}, PI Coach`;
   }, [title]);
 
   return (
@@ -157,7 +157,7 @@ export function PrivacyApp() {
 
       <Section heading="Practicing without an account">
         <p>
-          The core loop — get a scenario, present, get feedback — requires no account and stores nothing about you on
+          The core loop, get a scenario, present, get feedback, requires no account and stores nothing about you on
           our servers beyond ordinary web request logs. Your answer is sent to our grader, scored, and returned. We do
           not write it to a database.
         </p>
@@ -168,7 +168,7 @@ export function PrivacyApp() {
           items={[
             <>
               <strong className="font-semibold text-slate-900 dark:text-slate-100">Your email address.</strong> If you
-              sign in with Google, we receive your email and basic profile information from Google — never your Google
+              sign in with Google, we receive your email and basic profile information from Google, never your Google
               password, and no access to anything else in your Google account.
             </>,
             <>
@@ -212,14 +212,14 @@ export function PrivacyApp() {
       <Section heading="Analytics and session replay">
         <p>
           We use product analytics to see which parts of the app work and where people get stuck. This includes session
-          replay, which records how the interface was used — clicks, scrolling, navigation, hesitation — so we can watch
+          replay, which records how the interface was used, clicks, scrolling, navigation, hesitation, so we can watch
           a confusing screen back rather than guess at it.
         </p>
         <p>
           Replay is deliberately blinded to your content. Passwords, email fields, and every free-text box are masked
           before anything leaves your browser, as is text we display back to you from your own work: your transcript,
           the quoted phrases in your feedback, and your email address in the header. Analytics events carry only coarse
-          metadata — an event code, a level, a score number — never your response text, transcript, or scenario content.
+          metadata, an event code, a level, a score number, never your response text, transcript, or scenario content.
         </p>
       </Section>
 
@@ -227,12 +227,12 @@ export function PrivacyApp() {
         <p>We use a small number of vendors to run the service. They process data on our behalf, not for their own purposes:</p>
         <Bullets
           items={[
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Anthropic</strong> — generates practice scenarios and grades your responses.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">AssemblyAI</strong> — transcribes spoken reps to text.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Supabase</strong> — authentication and the database holding your sessions.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">PostHog</strong> — product analytics and session replay.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Google</strong> — only if you choose to sign in with Google.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Render</strong> — hosting.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Anthropic</strong>: generates practice scenarios and grades your responses.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">AssemblyAI</strong>, transcribes spoken reps to text.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Supabase</strong>, authentication and the database holding your sessions.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">PostHog</strong>, product analytics and session replay.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Google</strong>, only if you choose to sign in with Google.</>,
+            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Render</strong>, hosting.</>,
           ]}
         />
       </Section>
@@ -282,7 +282,7 @@ export function PrivacyApp() {
         <p>
           Traffic is encrypted in transit. Database rows are protected by row-level security so a session can only ever
           be read by the account that created it, and our server keys never ship to the browser. No system is perfect,
-          and we do not claim otherwise — but we hold much less about you than we could, which is the most reliable
+          and we do not claim otherwise, but we hold much less about you than we could, which is the most reliable
           protection there is.
         </p>
       </Section>
@@ -322,7 +322,7 @@ export function TermsApp() {
       <Section heading="What PI Coach is, and is not">
         <Callout>
           PI Coach is independent practice software. It is not affiliated with, endorsed by, or sponsored by DECA Inc.,
-          it does not reproduce official DECA materials, and its scores are practice coaching — never an official
+          it does not reproduce official DECA materials, and its scores are practice coaching, never an official
           competition result or any indication of how a real judge will score you.
         </Callout>
         <p>
@@ -365,7 +365,7 @@ export function TermsApp() {
       <Section heading="What you write stays yours">
         <p>
           You keep ownership of the responses you write or speak. You give us permission to process them for one
-          purpose: running the service for you — transcribing, grading, showing your feedback, and tracking your
+          purpose: running the service for you, transcribing, grading, showing your feedback, and tracking your
           progress. We do not claim your work, publish it, or sell it. See our{" "}
           <a className="font-medium text-indigo-600 hover:underline dark:text-indigo-400" href="/privacy">
             Privacy Policy

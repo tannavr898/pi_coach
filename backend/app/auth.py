@@ -1,4 +1,4 @@
-"""Authentication — identify the user behind a Supabase access token.
+"""Authentication, identify the user behind a Supabase access token.
 
 The frontend signs in with Supabase's managed email/password auth and sends the
 resulting access token as ``Authorization: Bearer <jwt>``. We verify it by asking
@@ -7,7 +7,7 @@ to manage JWT secrets/algorithms ourselves and is always correct even as Supabas
 rotates signing keys. The account endpoints are low-volume (save/list history),
 so the extra round-trip is a non-issue.
 
-Anonymous practice never calls anything that depends on this — login is additive.
+Anonymous practice never calls anything that depends on this, login is additive.
 """
 
 from __future__ import annotations
@@ -42,12 +42,12 @@ async def current_user(authorization: str = Header(default="")) -> dict[str, str
         raise HTTPException(status_code=503, detail="Couldn't reach the auth service.") from exc
 
     if resp.status_code != 200:
-        raise HTTPException(status_code=401, detail="Your session expired — sign in again.")
+        raise HTTPException(status_code=401, detail="Your session expired, sign in again.")
 
     data = resp.json()
     uid = data.get("id")
     if not uid:
-        raise HTTPException(status_code=401, detail="Your session expired — sign in again.")
+        raise HTTPException(status_code=401, detail="Your session expired, sign in again.")
     # `created_at` is carried through for the founding-user reward: "signed up
     # before the cutoff" is one of its two gates, and Supabase already hands it to
     # us here, so there is no extra round-trip to pay for it.
@@ -57,7 +57,7 @@ async def current_user(authorization: str = Header(default="")) -> dict[str, str
 async def optional_user(authorization: str = Header(default="")) -> dict[str, str] | None:
     """FastAPI dependency: the signed-in user, or None if there isn't one.
 
-    For endpoints that work logged-out but get richer with an account — the study
+    For endpoints that work logged-out but get richer with an account, the study
     course renders its path for anyone, and only overlays progress when we know who
     is asking. Deliberately never raises: on these paths a missing, expired, or
     unverifiable token just means "anonymous", because there is nothing here to

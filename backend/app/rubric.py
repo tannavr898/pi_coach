@@ -4,7 +4,7 @@ Every selected criterion is graded on the same four quality levels
 (Novice / Developing / Proficient / Exemplary) against its own
 strong_looks_like / weak_looks_like bar, on a 0-10 band. The model picks a level
 and a score; we clamp the score into that level's band so every result is valid
-and the total stays honest. These are generic rubric quality levels — not any
+and the total stays honest. These are generic rubric quality levels, not any
 organization's proprietary rubric (see rubric.json).
 """
 

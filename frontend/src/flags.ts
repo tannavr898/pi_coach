@@ -1,7 +1,7 @@
 // "Flag to study later" for flashcards. Stored per-account in localStorage so
 // toggling is instant (no round-trip) and survives reloads. Keyed by user id so
 // two accounts on the same browser don't share flags. (Cross-device sync would
-// need a DB table — a later upgrade.)
+// need a DB table, a later upgrade.)
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -24,7 +24,7 @@ function persist(key: string, flags: Set<string>): void {
   try {
     localStorage.setItem(key, JSON.stringify([...flags]));
   } catch {
-    /* storage disabled — flags just won't persist this session */
+    /* storage disabled, flags just won't persist this session */
   }
 }
 

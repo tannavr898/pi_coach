@@ -1,4 +1,4 @@
-// Supabase browser client — used ONLY for auth (managed sign-up / sign-in /
+// Supabase browser client, used ONLY for auth (managed sign-up / sign-in /
 // session). All database access goes through our FastAPI backend, not from here.
 //
 // The URL + anon key are public and fetched at runtime from /api/config (like the
@@ -46,7 +46,7 @@ export function getSupabase(): Promise<SupabaseClient | null> {
 /**
  * A fresh access token (JWT) for the signed-in user, or null when logged out.
  * Reads from getSession() each call so the token is always current (supabase-js
- * auto-refreshes it) — api.ts uses this to authorize backend calls.
+ * auto-refreshes it), api.ts uses this to authorize backend calls.
  */
 export async function getAccessToken(): Promise<string | null> {
   const sb = await getSupabase();

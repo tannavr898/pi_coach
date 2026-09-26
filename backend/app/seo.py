@@ -1,4 +1,4 @@
-"""Crawlable, server-rendered study pages — the app's only indexable surface.
+"""Crawlable, server-rendered study pages, the app's only indexable surface.
 
 WHY THIS EXISTS. Everything else here is a single-page app: one index.html with an
 empty ``<div id="root">``, and every word a student reads is painted by React after
@@ -16,7 +16,7 @@ that join as ordinary HTML at a stable URL, one page per event:
     /flashcards/business-law-ethics-team   the event page (BLTDM)
     /flashcards/bltdm                      301 -> the canonical slug above
 
-No JS, no API call, no bundle — the words are in the first response. That is what
+No JS, no API call, no bundle, the words are in the first response. That is what
 makes them indexable, and it is also why these pages open instantly on a school
 Chromebook on school wifi, which is the device most of these students have.
 
@@ -24,7 +24,7 @@ ON THE EVENT CODES. BLTDM, HRM, ETDM and the rest are DECA's own event
 abbreviations, used here descriptively: they are how a student actually searches,
 and naming the competition you are practicing for is nominative use, not a claim of
 affiliation. Every page carries the same disclaimer the app does. Nothing here
-reads DECA's performance-indicator list — the term text is our own corpus (see
+reads DECA's performance-indicator list, the term text is our own corpus (see
 data/framework-notes.md), and the event->domain mapping is ours (see events.py).
 
 Rendering is pure and deterministic, so every page is built once and cached. There
@@ -45,7 +45,7 @@ from . import config, courses, events, terms
 
 router = APIRouter(include_in_schema=False)
 
-# DECA's event codes, which are what students type into a search box — nobody
+# DECA's event codes, which are what students type into a search box, nobody
 # searches "Business Law and Ethics Team Decision Making flashcards", they search
 # "BLTDM flashcards". Kept here rather than in events.json because it is presentation
 # metadata for these pages only: no app code path resolves an event by its code.
@@ -92,7 +92,7 @@ _KIND_PHRASE = {
 
 _DISCLAIMER = (
     "PI Coach is independent practice software. It is not affiliated with, endorsed by, or "
-    "sponsored by DECA Inc. These are not official DECA materials — the cards here are our own "
+    "sponsored by DECA Inc. These are not official DECA materials: the cards here are our own "
     "study corpus, written from public business fundamentals."
 )
 
@@ -100,7 +100,7 @@ _DISCLAIMER = (
 # Cache-buster for the icon URLs. Browsers keep favicons in a store separate from
 # the HTTP cache, keyed by URL and not revalidated on an ordinary reload, so a
 # visitor whose browser already learned "no icon here" will keep showing the blank
-# globe until the URL itself changes. Must stay in step with frontend/index.html —
+# globe until the URL itself changes. Must stay in step with frontend/index.html,
 # the two surfaces should ask for the same icon.
 _ICON_V = "2"
 
@@ -126,7 +126,7 @@ def abbrev(event_id: str) -> str:
 # One stylesheet, inlined. An external CSS file would be a second round trip for a
 # page whose entire job is to be readable on the first one.
 #
-# These values are not "close to" the app's — they are the app's, lifted from
+# These values are not "close to" the app's, they are the app's, lifted from
 # index.css and the Tailwind classes in App.tsx/ui.tsx: the same #f6f7fb canvas with
 # its indigo wash and diamond lattice, the same Inter/Space Grotesk/JetBrains Mono
 # stack, the same rounded-2xl cards and two-layer shadow, the same indigo-600
@@ -163,7 +163,7 @@ a{color:var(--brand-ink);text-underline-offset:2px}
 a:hover{text-decoration:underline}
 .wrap{max-width:64rem;margin:0 auto;padding:0 1.25rem}
 h1,h2,h4,.brand-name{font-family:"Space Grotesk",Inter,sans-serif}
-/* Header: sticky, translucent, blurred — the app's exact shell. */
+/* Header: sticky, translucent, blurred, the app's exact shell. */
 header.site{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.7);
 backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .dark header.site{background:rgba(2,6,23,.6)}
@@ -247,7 +247,7 @@ footer.site nav{display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;font-weig
 """
 
 # The app's actual BrandMark (ui.tsx): three concentric rings, light to dark inward.
-# Deliberately NOT the favicon's simplified two-element version — this renders at
+# Deliberately NOT the favicon's simplified two-element version, this renders at
 # 30px next to the wordmark, exactly where the app renders it, so it should be the
 # same drawing the app uses.
 _MARK = (
@@ -260,7 +260,7 @@ _MARK = (
 # Theme, resolved before first paint. The app stores the choice in localStorage
 # under "pic-theme" and toggles a `dark` class on <html> (App.tsx useTheme); this
 # reads the SAME key, so a student who set dark mode in the app does not get
-# flashbanged on the way back from Google. Inline and blocking on purpose — in an
+# flashbanged on the way back from Google. Inline and blocking on purpose, in an
 # external file or a deferred script it would run after the first paint, which is
 # the flash it exists to prevent.
 _THEME_BOOT = (
@@ -363,13 +363,13 @@ def _graph(*nodes: dict) -> str:
 
 
 def _html(markup: str) -> HTMLResponse:
-    """An HTML response crawlers and CDNs may cache — these pages are static in
+    """An HTML response crawlers and CDNs may cache, these pages are static in
     everything but where they are built."""
     return HTMLResponse(markup, headers={"Cache-Control": "public, max-age=3600"})
 
 
 # --------------------------------------------------------------------------- #
-# The event page — the one that has to answer "BLTDM flashcards"
+# The event page, the one that has to answer "BLTDM flashcards"
 # --------------------------------------------------------------------------- #
 
 
@@ -429,7 +429,7 @@ def _event_faq(event: dict, course: dict, code: str) -> list[tuple[str, str]]:
     return [
         (
             f"What is {code} in DECA?",
-            f"{code} stands for {name} — {kind} in DECA's {event['cluster']} cluster. "
+            f"{code} stands for {name}, {kind} in DECA's {event['cluster']} cluster. "
             f"{event['blurb']} You get a scenario, prep against a timer, present your "
             "recommendation to a judge, then answer follow-up questions.",
         ),
@@ -443,7 +443,7 @@ def _event_faq(event: dict, course: dict, code: str) -> list[tuple[str, str]]:
         (f"How many flashcards are in the {code} deck?", f"{course['total']}. {graded_note}"),
         (
             f"Can I practice a {code} role-play, not just the cards?",
-            f"Yes — that is the main thing PI Coach does. It writes an original {code} scenario, "
+            f"Yes, that is the main thing PI Coach does. It writes an original {code} scenario, "
             "times your prep, listens while you present out loud, and grades the substance "
             "criterion by criterion alongside your delivery. Your first few role-plays are free "
             "and need no account.",
@@ -470,10 +470,10 @@ def render_event_page(event_id: str) -> str | None:
     groups = _domain_groups(course)
     domain_names = [g["name"] for g in groups]
 
-    # "BLTDM Flashcards — DECA Business Law & Ethics (Team) | PI Coach". Code first
+    # "BLTDM Flashcards, DECA Business Law & Ethics (Team) | PI Coach". Code first
     # because that is the literal query; the full event name follows it because a
     # searcher who typed the words out should still see their phrase in the result.
-    title = f"{code} Flashcards — DECA {name} | PI Coach"
+    title = f"{code} Flashcards, DECA {name} | PI Coach"
     description = (
         f"{course['total']} free {code} flashcards for DECA {name}: "
         f"{course['core_count']} graded skills plus supporting terms across "
@@ -483,14 +483,14 @@ def render_event_page(event_id: str) -> str | None:
     kind = _KIND_PHRASE.get(event["kind"], "a role-play event")
     suggestions = _prose_list(event.get("suggestions", [])[:3])
     intro = (
-        f'<p class="lede"><strong>{_e(code)}</strong> is DECA\'s {_e(name)} event — {_e(kind)} '
+        f'<p class="lede"><strong>{_e(code)}</strong> is DECA\'s {_e(name)} event, {_e(kind)} '
         f"in the {_e(event['cluster'])} cluster. {_e(event['blurb'])} This deck is every business "
         f"skill PI Coach grades for {_e(code)}, plus the supporting vocabulary that makes an "
         "answer sound like someone who actually knows the field.</p>"
     )
     if suggestions:
         intro += (
-            f"<p>A {_e(code)} case usually turns on something like {_e(suggestions)} — which is "
+            f"<p>A {_e(code)} case usually turns on something like {_e(suggestions)}, which is "
             f"why the deck leans hardest on {_e(_prose_list(domain_names[:2]))}. Cards marked "
             "<em>Graded</em> are the ones a PI Coach role-play scores you against directly.</p>"
         )
@@ -519,7 +519,7 @@ def render_event_page(event_id: str) -> str | None:
     toc = (
         '<div class="toc"><strong>What is in this deck</strong><ul>'
         + "".join(
-            f'<li><a href="#{_e(g["id"])}">{_e(g["name"])}</a> — {g["count"]} cards '
+            f'<li><a href="#{_e(g["id"])}">{_e(g["name"])}</a>, {g["count"]} cards '
             f"across {len(g['units'])} topics</li>"
             for g in groups
         )
@@ -574,7 +574,7 @@ def render_event_page(event_id: str) -> str | None:
             "@type": "LearningResource",
             "@id": f"{site_url()}{path}#deck",
             "url": f"{site_url()}{path}",
-            "name": f"{code} Flashcards — {name}",
+            "name": f"{code} Flashcards, {name}",
             "description": description,
             "learningResourceType": "Flashcard deck",
             "educationalLevel": "High school",
@@ -595,13 +595,13 @@ def render_event_page(event_id: str) -> str | None:
 _HUB_FAQ = [
     (
         "What are DECA flashcards?",
-        "Decks of the business skills and vocabulary a DECA judge scores in a role-play — reading "
+        "Decks of the business skills and vocabulary a DECA judge scores in a role-play, reading "
         "a target market, spotting a legal limit, explaining a cash-flow problem. PI Coach groups "
         "them by event, so you study the set that matters for the event you actually compete in.",
     ),
     (
         "Which deck should I study?",
-        "The one for your event. Pick it from the list above — the code (BLTDM, HRM, ETDM, and so "
+        "The one for your event. Pick it from the list above, the code (BLTDM, HRM, ETDM, and so "
         "on) is DECA's abbreviation for it. Each deck carries every skill we grade for that event "
         "plus the supporting terms that make an answer sound informed.",
     ),
@@ -614,7 +614,7 @@ _HUB_FAQ = [
     (
         "Do flashcards alone win a role-play?",
         "No, and that is the honest answer. Knowing a term is not the same as applying it out "
-        "loud to a judge under a timer. Study the deck, then run a role-play — PI Coach grades "
+        "loud to a judge under a timer. Study the deck, then run a role-play, PI Coach grades "
         "the substance criterion by criterion and measures delivery separately.",
     ),
     ("Are these official DECA materials?", _DISCLAIMER),
@@ -628,9 +628,9 @@ def render_hub_page() -> str:
     total_terms = len(terms.all_terms())
     all_events = events.all_events()
 
-    title = "DECA Flashcards by Event — All 28 Decks | PI Coach"
+    title = "DECA Flashcards by Event, All 28 Decks | PI Coach"
     description = (
-        "Free DECA flashcards for all 28 events — BLTDM, HRM, ETDM, MTDM, PFL and the rest. "
+        "Free DECA flashcards for all 28 events, BLTDM, HRM, ETDM, MTDM, PFL and the rest. "
         f"{total_terms} study cards with plain-English definitions and the mistake to avoid, "
         "grouped into the deck for your event."
     )
@@ -682,7 +682,7 @@ def render_hub_page() -> str:
                     {
                         "@type": "ListItem",
                         "position": i,
-                        "name": f"{abbrev(e['id'])} Flashcards — {e['name']}",
+                        "name": f"{abbrev(e['id'])} Flashcards, {e['name']}",
                         "url": f"{site_url()}/flashcards/{e['id']}",
                     }
                     for i, e in enumerate(all_events, start=1)
@@ -707,7 +707,7 @@ def flashcards_hub() -> HTMLResponse:
 @router.get("/flashcards/{slug}")
 def flashcards_event(slug: str):
     """One event's deck. Event codes redirect to the canonical slug rather than
-    serving the same page at two URLs — duplicates split whatever ranking the page
+    serving the same page at two URLs, duplicates split whatever ranking the page
     earns, which is the opposite of the point."""
     key = slug.strip().lower()
     if key in _ABBREV_TO_ID:
@@ -723,7 +723,7 @@ def robots() -> PlainTextResponse:
     lines = [
         "User-agent: *",
         "Allow: /",
-        # Nothing here is secret — /admin is passphrase-gated and /api is JSON — but
+        # Nothing here is secret, /admin is passphrase-gated and /api is JSON, but
         # neither belongs in an index, and crawling them only burns budget that
         # should go to the study pages.
         "Disallow: /admin",

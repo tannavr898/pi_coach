@@ -23,17 +23,17 @@ except Exception:
 
 # We split the model by job (Phase 2, latency). Scenario generation is creative
 # writing with a lower accuracy bar; scoring is where grading accuracy matters.
-# Both currently run Sonnet 5 (near-Opus quality at Sonnet price) — a quality
-# upgrade over the old Sonnet 4.6 — but they're separate knobs so scoring can be
+# Both currently run Sonnet 5 (near-Opus quality at Sonnet price), a quality
+# upgrade over the old Sonnet 4.6, but they're separate knobs so scoring can be
 # moved to a stronger model later without touching scenario latency. Overridable
 # via env without a code change. MODEL stays as the shared fallback/back-compat.
 MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
 SCENARIO_MODEL = os.getenv("ANTHROPIC_SCENARIO_MODEL", MODEL)
 SCORING_MODEL = os.getenv("ANTHROPIC_SCORING_MODEL", MODEL)
 # Mastery Blitz (Phase 5): a single "used correctly in context?" judgment, batched
-# into ONE call per drill — a fast/cheap model is the right fit, so Haiku by default.
+# into ONE call per drill, a fast/cheap model is the right fit, so Haiku by default.
 BLITZ_MODEL = os.getenv("ANTHROPIC_BLITZ_MODEL", "claude-haiku-4-5")
-# Video analysis (Phase 6): per sampled frame, three yes/no observations —
+# Video analysis (Phase 6): per sampled frame, three yes/no observations,
 # face present, looking at camera, positive expression. That is a coarse
 # perception task on deliberately downscaled frames, not a reasoning one, so the
 # fast/cheap model is the right fit and is what keeps a video session at cents
@@ -41,7 +41,7 @@ BLITZ_MODEL = os.getenv("ANTHROPIC_BLITZ_MODEL", "claude-haiku-4-5")
 # scenario or scoring paths.
 VIDEO_MODEL = os.getenv("ANTHROPIC_VIDEO_MODEL", "claude-haiku-4-5")
 
-# Transcription (Phase 3, voice). Provider is swappable; default AssemblyAI —
+# Transcription (Phase 3, voice). Provider is swappable; default AssemblyAI,
 # simplest REST integration with word timestamps + filler/disfluency detection.
 TRANSCRIPTION_PROVIDER = os.getenv("TRANSCRIPTION_PROVIDER", "assemblyai")
 
@@ -62,7 +62,7 @@ FEEDBACK_EMAIL_TO = os.getenv("FEEDBACK_EMAIL_TO", "tannavr898@gmail.com")
 FEEDBACK_EMAIL_FROM = os.getenv("FEEDBACK_EMAIL_FROM", "PI Coach <onboarding@resend.dev>")
 
 # Supabase (optional login + cross-session progress). Anonymous practice never
-# needs these — they only gate the account features.
+# needs these, they only gate the account features.
 #  - URL + ANON_KEY are PUBLIC (the anon key is safe client-side, guarded by RLS);
 #    we serve them to the SPA via /api/config, like the PostHog key.
 #  - SERVICE_ROLE_KEY is a SECRET (backend-only). It lets FastAPI read/write the
@@ -78,7 +78,7 @@ ADMIN_PASSPHRASE = os.getenv("ADMIN_PASSPHRASE", "")
 # Public origin, used to build the absolute URLs search engines need: canonical
 # links, Open Graph tags and every <loc> in sitemap.xml (see seo.py). Those have to
 # be absolute and have to name the domain we actually want indexed, which a request's
-# own Host header can't be trusted for — a preview deploy or the raw
+# own Host header can't be trusted for, a preview deploy or the raw
 # pi-coach-xxxx.onrender.com hostname would otherwise emit canonicals pointing at
 # itself and split the site's ranking across hostnames. Override only if the
 # production domain changes; no trailing slash.

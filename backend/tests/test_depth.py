@@ -3,7 +3,7 @@
 These tests exist because the depth award is the one feature that could quietly undo
 the app's best property. framework-notes.md calls the strong/weak bar "the
 anti-inflation bar" and the grader is told a name-drop is Developing, not Proficient.
-Paying out for vocabulary would walk that back — so the guards are deterministic
+Paying out for vocabulary would walk that back, so the guards are deterministic
 (main.py), not merely requested in the prompt, and these tests pin them.
 """
 
@@ -147,7 +147,7 @@ def test_old_sessions_without_depth_still_parse():
 
 
 def test_depth_vocab_never_offers_a_criterion_being_graded():
-    """Those are scored in Section 1 — offering them here would pay twice."""
+    """Those are scored in Section 1, offering them here would pay twice."""
     from app import framework
 
     criteria = framework.criteria_for_domains(["marketing"])[:4]
@@ -163,7 +163,7 @@ def test_depth_vocab_stays_in_the_graded_domains_and_is_bounded():
     criteria = framework.criteria_for_domains(["marketing"])[:4]
     vocab = terms.depth_vocab_for(criteria, limit=16)
     assert len(vocab) <= 16
-    # In-domain, but NOT restricted to the criteria's own topics — see depth_vocab_for.
+    # In-domain, but NOT restricted to the criteria's own topics, see depth_vocab_for.
     assert all(t["domain_id"] == "marketing" for t in vocab)
 
 

@@ -7,7 +7,7 @@ Two kinds of test live here:
 - The real text audit against DECA's PI list, which can only run on a machine that
   has backend/reference/. That directory is git-ignored and docker-ignored on
   purpose, so in CI and in the image these SKIP rather than fail. A skip here is
-  the designed outcome, not a gap — the audit is a dev-time gate, and shipping
+  the designed outcome, not a gap, the audit is a dev-time gate, and shipping
   without the licensed reference present is exactly the point.
 
 See scripts/check_independence.py for what the thresholds mean and why shared
@@ -43,7 +43,7 @@ def test_terms_are_well_formed():
     assert len(ids) == len(set(ids)), "duplicate term ids"
     for t in all_terms:
         assert t["tier"] in ("core", "extended"), f"{t['id']}: bad tier {t['tier']!r}"
-        # core means "we grade this" — the tier and the link must not drift apart.
+        # core means "we grade this", the tier and the link must not drift apart.
         assert (t["tier"] == "core") == bool(t.get("criterion_id")), (
             f"{t['id']}: tier={t['tier']} but criterion_id={t.get('criterion_id')!r}"
         )
@@ -75,11 +75,11 @@ def test_no_dashes_in_anything_a_student_reads():
         for k, v in t.items():
             vals = v.values() if isinstance(v, dict) else ([v] if isinstance(v, str) else [])
             for s in vals:
-                if "—" in s or "–" in s:
+                if "\u2014" in s or "\u2013" in s:
                     bad.append(f"{t['id']}.{k}")
     for c in framework.all_criteria():
         for k, v in c.items():
-            if isinstance(v, str) and ("—" in v or "–" in v):
+            if isinstance(v, str) and ("\u2014" in v or "\u2013" in v):
                 bad.append(f"{c['id']}.{k}")
     assert not bad, f"em/en dashes in student-facing copy: {bad[:10]}"
 
@@ -93,7 +93,7 @@ def _load_checker():
     from scripts import check_independence as chk
 
     if not chk._REF.exists():
-        pytest.skip("no backend/reference/ PI list on this machine — audit is dev-time only")
+        pytest.skip("no backend/reference/ PI list on this machine, audit is dev-time only")
     return chk
 
 

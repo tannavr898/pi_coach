@@ -1,4 +1,4 @@
-"""Cross-session progress math (app/progress.py) — pure functions over rows."""
+"""Cross-session progress math (app/progress.py), pure functions over rows."""
 
 from app import progress
 
