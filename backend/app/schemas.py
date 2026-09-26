@@ -92,6 +92,10 @@ class EventSummary(BaseModel):
     blurb: str = ""
     # Original example prompts that pre-fill the "what to focus on" box.
     suggestions: list[str] = []
+    # Scope hints for the Knowledge Check: the domains this event draws on, and the
+    # union across its whole cluster, which is what the cluster exam actually asks.
+    domain_ids: list[str] = []
+    cluster_domain_ids: list[str] = []
 
 
 class Timing(BaseModel):

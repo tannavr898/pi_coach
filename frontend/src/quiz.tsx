@@ -35,6 +35,23 @@ const LEVEL_BLURB: Record<Level, string> = {
 
 type Phase = "intro" | "quiz" | "results";
 
+/**
+ * How wide the draw is.
+ *
+ * `deck` is the cards on screen, which is what you want straight after studying a
+ * unit. `cluster` is every domain any event in your cluster touches, which is the
+ * scope of the exam you actually sit: Business Finance is tested on the Finance
+ * cluster, not on the four domains its role-play happens to use. `all` is the
+ * whole bank, for anyone revising across clusters.
+ */
+export type Scope = "deck" | "cluster" | "all";
+
+const SCOPE_BLURB: Record<Scope, string> = {
+  deck: "Only the cards in front of you.",
+  cluster: "The whole cluster exam, the realistic one.",
+  all: "Every domain in the corpus.",
+};
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -52,13 +69,27 @@ function shuffle<T>(arr: T[]): T[] {
 const MAX_IDS_IN_URL = 120;
 const MAX_DOMAINS_IN_URL = 8;
 
-export function KnowledgeCheck({ cards, title, onClose }: { cards: Term[]; title?: string; onClose: () => void }) {
+export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", onClose }: {
+  cards: Term[];
+  title?: string;
+  // The student's cluster, when the launcher knows it. Its presence is what makes
+  // the cluster scope offerable at all, and its name is what labels the button.
+  cluster?: string;
+  // Which scope this particular launcher should open on. A course unit means
+  // "quiz me on what I just studied"; the course-wide button means "test me",
+  // and a test that only covers one event's four domains is not the test they sit.
+  defaultScope?: Scope;
+  onClose: () => void;
+}) {
+  const [scope, setScope] = useState<Scope>(() => (defaultScope === "cluster" && !cluster ? "deck" : defaultScope));
   const filter = useMemo(() => {
+    if (scope === "all") return {};
+    if (scope === "cluster") return cluster ? { cluster } : {};
     const ids = cards.map((c) => c.id);
     if (ids.length <= MAX_IDS_IN_URL) return { termIds: ids };
     const domainIds = [...new Set(cards.map((c) => c.domain_id).filter(Boolean))];
     return domainIds.length && domainIds.length <= MAX_DOMAINS_IN_URL ? { domainIds } : {};
-  }, [cards]);
+  }, [cards, scope, cluster]);
   const [drawn, setDrawn] = useState<QuizQuestion[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [level, setLevel] = useState<Level>("district");
@@ -101,7 +132,7 @@ export function KnowledgeCheck({ cards, title, onClose }: { cards: Term[]; title
     setPicks({});
     setI(0);
     setPhase("quiz");
-    track("quiz_started", { level, count: picked.length, deck: title ?? "" });
+    track("quiz_started", { level, scope, count: picked.length, deck: title ?? "" });
   }
 
   const current = questions[i];
@@ -203,6 +234,10 @@ export function KnowledgeCheck({ cards, title, onClose }: { cards: Term[]; title
               byLevel={byLevel}
               level={level}
               onLevel={setLevel}
+              scope={scope}
+              onScope={setScope}
+              cluster={cluster}
+              deckSize={cards.length}
               onStart={start}
             />
           )}
@@ -228,15 +263,27 @@ export function KnowledgeCheck({ cards, title, onClose }: { cards: Term[]; title
   );
 }
 
-function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, onStart }: {
+function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, scope, onScope, cluster, deckSize, onStart }: {
   title?: string;
   loading: boolean;
   loadErr: string | null;
   byLevel: Record<Level, QuizQuestion[]>;
   level: Level;
   onLevel: (l: Level) => void;
+  scope: Scope;
+  onScope: (s: Scope) => void;
+  // Absent when the launcher has no event in hand, which is what hides the
+  // cluster option rather than showing one that cannot be labelled.
+  cluster?: string;
+  deckSize: number;
   onStart: () => void;
 }) {
+  const scopes: Scope[] = cluster ? ["deck", "cluster", "all"] : ["deck", "all"];
+  const scopeLabel: Record<Scope, string> = {
+    deck: `This deck (${deckSize})`,
+    cluster: cluster ? `${cluster} exam` : "Cluster exam",
+    all: "Everything",
+  };
   const available = byLevel[level].length;
   const anywhere = LEVELS.some((l) => byLevel[l].length);
   return (
@@ -248,6 +295,31 @@ function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, onStart 
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Multiple choice over the terms you're studying. No clock. Every answer, right or wrong, explains itself the moment you pick it.
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <div className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">Draw from</div>
+        <div className="flex flex-wrap gap-2">
+          {scopes.map((s) => {
+            const active = s === scope;
+            return (
+              <button
+                key={s}
+                aria-pressed={active}
+                onClick={() => onScope(s)}
+                title={SCOPE_BLURB[s]}
+                className={`tap rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  active
+                    ? "border-indigo-400 bg-indigo-50 text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                {scopeLabel[s]}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs leading-snug text-slate-500 dark:text-slate-400">{SCOPE_BLURB[scope]}</p>
       </div>
 
       <div className="space-y-2">

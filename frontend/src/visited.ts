@@ -11,9 +11,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 /** Every surface a first-timer can be pointed at. */
-export type Surface = "home" | "course" | "flashcards" | "blitz" | "tips" | "faq";
+export type Surface = "home" | "course" | "blitz" | "tips" | "faq";
 
-export const SURFACES: Surface[] = ["home", "course", "flashcards", "blitz", "tips", "faq"];
+export const SURFACES: Surface[] = ["home", "course", "blitz", "tips", "faq"];
 
 function visitedKey(userId: string | null): string {
   return `pic-visited-${userId ?? "anon"}`;

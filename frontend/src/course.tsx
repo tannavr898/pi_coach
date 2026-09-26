@@ -24,16 +24,21 @@ export function StudyCourse({
   onQuiz,
   onPractice,
   onSignup,
+  onBrowseAll,
 }: {
   authed: boolean;
   // Changes each time a study overlay or a Blitz closes. See the refetch below.
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
-  onQuiz: (cards: Term[], title?: string) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all" }) => void;
   // A plan's role-play task. With a name, practice is focused on that skill.
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
+  // Switch the Study tab over to the all-domains browser. Offered from the event
+  // picker especially: someone who has not chosen an event yet still wants to be
+  // able to read a card without committing to a path first.
+  onBrowseAll?: () => void;
 }) {
   const [events, setEvents] = useState<EventSummary[] | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -111,11 +116,16 @@ export function StudyCourse({
   // Units hand ids to the overlay, so fetch the cards only when one is opened,
   // a course is ~250 terms and almost none of them are needed to render this page.
   const launch = useCallback(
-    async (ids: string[], title: string, fn: (c: Term[], t?: string) => void) => {
+    async (
+      ids: string[],
+      title: string,
+      fn: (c: Term[], t?: string, o?: { cluster?: string; scope?: "deck" | "cluster" | "all" }) => void,
+      opts?: { cluster?: string; scope?: "deck" | "cluster" | "all" },
+    ) => {
       if (!ids.length) return;
       setBusy(true);
       try {
-        fn(await getTerms(ids), title);
+        fn(await getTerms(ids), title, opts);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -150,7 +160,7 @@ export function StudyCourse({
   if (error && !course) {
     return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-red-600 dark:text-red-400">{error}</p>;
   }
-  if (!course) return <EventPicker events={events} busy={busy} onPick={pick} />;
+  if (!course) return <EventPicker events={events} busy={busy} onPick={pick} onBrowseAll={onBrowseAll} />;
 
   const done = tier === "core" ? course.core_known : course.known_count;
   const total = tier === "core" ? course.core_count : course.total;
@@ -279,12 +289,16 @@ export function StudyCourse({
           >
             Blitz {allIds.length} terms →
           </button>
-          {/* The no-cost counterpart: multiple choice over the same terms, open
-              whether or not you're signed in. */}
+          {/* The no-cost counterpart, open whether or not you're signed in. This
+              is the whole-course button, so it opens on the CLUSTER rather than on
+              this event's terms: the paper a Business Finance competitor sits
+              covers the Finance cluster, and a test that quietly narrows to one
+              event's four domains is the wrong rehearsal. The deck scope is still
+              one tap away inside. */}
           <button
             className={BTN_SECONDARY}
             disabled={busy || !allIds.length}
-            onClick={() => launch(allIds, course.event, onQuiz)}
+            onClick={() => launch(allIds, course.event, onQuiz, { cluster: course.cluster, scope: "cluster" })}
           >
             ◎ Quiz
           </button>
@@ -325,7 +339,7 @@ export function StudyCourse({
                 <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
                   ⚡ Blitz
                 </button>
-                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz)}>
+                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz, { cluster: course.cluster, scope: "deck" })}>
                   ◎ Quiz
                 </button>
                 <button
@@ -412,10 +426,12 @@ function EventPicker({
   events,
   busy,
   onPick,
+  onBrowseAll,
 }: {
   events: EventSummary[] | null;
   busy: boolean;
   onPick: (id: string) => void;
+  onBrowseAll?: () => void;
 }) {
   const byCluster = useMemo(() => {
     const order: string[] = [];
@@ -445,6 +461,17 @@ function EventPicker({
           Pick your event and we'll build the study path for it: the business terms that event actually draws on,
           ordered, in units you can finish one at a time. Start in the summer and the season is about delivery.
         </p>
+        {/* Not everyone arrives ready to commit to an event, and making the whole
+            corpus unreachable until they do is a wall in front of the thing they
+            came to read. */}
+        {onBrowseAll && (
+          <button
+            onClick={onBrowseAll}
+            className="mt-3 text-sm font-semibold text-indigo-600 underline-offset-2 transition hover:underline dark:text-indigo-400"
+          >
+            Or browse all domains without picking one →
+          </button>
+        )}
       </div>
 
       {byCluster.map(({ cluster, events: list }) => (

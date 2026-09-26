@@ -39,10 +39,10 @@ import { AuthModal, useAuth } from "./auth";
 import { clearSamples, confirmScenarioSeen, fetchUsage, getSession, markStudy, saveSession, scoreVideo, seedSamples, type SaveSessionBody } from "./progress";
 import { CAN_CAPTURE_VIDEO, GazeAnchor, VideoIndicator, VideoOptIn, VideoPanel, useFrameSampler, type VideoGate } from "./video";
 import { HomePage } from "./home";
-import { StudyCourse } from "./course";
-import { Flashcards, FlashcardLibrary } from "./flashcards";
+import { Flashcards } from "./flashcards";
 import { MasteryBlitz } from "./blitz";
-import { KnowledgeCheck } from "./quiz";
+import { KnowledgeCheck, type Scope as QuizScope } from "./quiz";
+import { StudyTab } from "./studytab";
 import { useFlags } from "./flags";
 
 type ResponseMode = "type" | "speak";
@@ -71,7 +71,10 @@ function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
 // "home" is the scroll-based marketing landing page (the default). "practice" is
 // the role-play flow, whose first screen is now just the setup form, the hero and
 // how-it-works copy moved to the landing page.
-type View = "home" | "practice" | "tips" | "faq" | "flashcards" | "course";
+// "course" is the Study tab. It carries both halves (the event path and the
+// all-domains browser); which one is showing is StudyTab's own business, not a
+// route. The old separate "flashcards" view is gone with the Library nav item.
+type View = "home" | "practice" | "tips" | "faq" | "course";
 // What the flashcard study overlay is showing: either ids to fetch, or preloaded
 // cards (from the library), optionally opened at a specific card.
 type FlashcardTarget = { ids?: string[]; cards?: Term[]; startId?: string; title?: string };
@@ -248,7 +251,7 @@ export default function App() {
   const [errorAction, setErrorAction] = useState<{ label: string; run: () => void; forError: string } | null>(null);
   // Arriving from a public deck page opens the library on that deck.
   const [handoffDeck] = useState<string | null>(() => readDeckParam());
-  const [view, setView] = useState<View>(() => (readDeckParam() ? "flashcards" : "home"));
+  const [view, setView] = useState<View>(() => (readDeckParam() ? "course" : "home"));
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const nudge = useLandingNudge();
@@ -300,7 +303,7 @@ export default function App() {
   // Opening a surface for the first time clears its nav dot.
   function goToView(v: View) {
     setView(v);
-    if (v === "course" || v === "flashcards" || v === "tips" || v === "faq" || v === "home") {
+    if (v === "course" || v === "tips" || v === "faq" || v === "home") {
       visited.markVisited(v);
     }
   }
@@ -342,7 +345,7 @@ export default function App() {
   // Knowledge Check: the term set to quiz, or null when closed. Unlike Blitz this
   // is served from a pre-generated bank, so it spends nothing and stays open to
   // signed-out visitors -- no gate, no allowance.
-  const [quizCards, setQuizCards] = useState<{ cards: Term[]; title?: string } | null>(null);
+  const [quizCards, setQuizCards] = useState<{ cards: Term[]; title?: string; cluster?: string; scope?: QuizScope } | null>(null);
   // Bumped whenever a study surface closes. Flipping a card or finishing a Blitz
   // writes progress on the SERVER, but the course on screen was fetched when the
   // view mounted and has no idea -- so without this the counters sit unchanged
@@ -441,8 +444,8 @@ export default function App() {
   // (backend/app/quiz.py), so a round costs nothing to run and a signed-out visitor
   // can take as many as they like. It also gets no "unvisited" dot, because it is
   // reached from the two surfaces that already have one.
-  function startQuiz(cards: Term[], title?: string) {
-    setQuizCards({ cards, title });
+  function startQuiz(cards: Term[], title?: string, opts?: { cluster?: string; scope?: QuizScope }) {
+    setQuizCards({ cards, title, cluster: opts?.cluster, scope: opts?.scope });
   }
 
   // Open a stored session's feedback (from the home "recent sessions" list).
@@ -1171,7 +1174,6 @@ export default function App() {
         onView={goToView}
         onPractice={() => enterPractice()}
         onHome={() => goToView("home")}
-        onFlashcards={() => goToView("flashcards")}
         theme={theme}
         onToggleTheme={toggleTheme}
         onFeedback={() => setFeedbackOpen(true)}
@@ -1201,6 +1203,8 @@ export default function App() {
         <KnowledgeCheck
           cards={quizCards.cards}
           title={quizCards.title}
+          cluster={quizCards.cluster}
+          defaultScope={quizCards.scope}
           onClose={() => { setQuizCards(null); endStudy(); }}
         />
       )}
@@ -1221,7 +1225,7 @@ export default function App() {
           }}
         />
       )}
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "flashcards" ? "max-w-[88rem]" : view === "course" ? "max-w-5xl" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
+      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "course" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
         {error && (
           <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
@@ -1272,7 +1276,7 @@ export default function App() {
             onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(); }}
             onPracticeCriterion={practiceCriterion}
             onOpenFlashcards={(ids) => setFlashcard({ ids })}
-            onOpenLibrary={() => goToView("flashcards")}
+            onOpenLibrary={() => goToView("course")}
             onOpenSession={loadSession}
             onOpenStudy={() => goToView("course")}
           />
@@ -1296,21 +1300,18 @@ export default function App() {
             onSignIn={() => openAuth("login", "Log in to pick up your progress and session history.")}
             onSignup={() => openAuth("signup", "Create a free account to start tracking your progress.")}
           />
-        ) : view === "flashcards" ? (
-          <FlashcardLibrary
-            flags={flags}
-            initialDeck={handoffDeck}
-            onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
-            onBlitz={(cards) => startBlitz(cards)}
-            onQuiz={(cards, title) => startQuiz(cards, title)}
-          />
         ) : view === "course" ? (
-          <StudyCourse
+          <StudyTab
             authed={!!authUser}
             refreshKey={studyEpoch}
+            flags={flags}
+            initialDeck={handoffDeck}
+            // Following a public deck link means "show me THIS deck", which is the
+            // browser, whatever mode was last remembered.
+            initialMode={handoffDeck ? "domains" : undefined}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards, title) => startBlitz(cards, { from: "course", unit: title })}
-            onQuiz={(cards, title) => startQuiz(cards, title)}
+            onQuiz={(cards, title, opts) => startQuiz(cards, title, opts)}
             onPractice={(name) => (name ? practiceCriterion(name) : enterPractice())}
             onSignup={() => openAuth("signup", "Create a free account to save your study plan and track it day by day.")}
           />
@@ -1556,7 +1557,7 @@ export function DemoApp() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} onFlashcards={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
       <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
         {step === "scenario" ? (
@@ -2304,11 +2305,7 @@ function TourShareStep() {
 const FEATURE_SUMMARY: { label: string; line: string }[] = [
   {
     label: "Study",
-    line: "An ordered, finishable path through every skill your event is graded on.",
-  },
-  {
-    label: "Flashcards",
-    line: "The full term library, with the ones you keep scoring low on marked for you.",
+    line: "An ordered, finishable path through every skill your event is graded on, plus the full term library when you want to range wider.",
   },
   {
     label: "Mastery Blitz",
@@ -2402,10 +2399,9 @@ export function TourPreview() {
  */
 function IntroPreview(props: { onReplay: () => void }) {
   const [dismissed, setDismissed] = useState<Surface[]>([]);
-  const order: Surface[] = ["course", "flashcards", "blitz", "tips", "faq", "home"];
+  const order: Surface[] = ["course", "blitz", "tips", "faq", "home"];
   const label: Record<Surface, string> = {
     course: "Study",
-    flashcards: "Flashcards",
     blitz: "Mastery Blitz",
     tips: "Tips",
     faq: "FAQ",
@@ -2427,7 +2423,7 @@ function IntroPreview(props: { onReplay: () => void }) {
       {/* The nav as a new account sees it: a dot on everything unopened. */}
       <div className="mt-6 flex flex-wrap items-center gap-5 rounded-xl border border-slate-200 bg-white px-5 py-3.5 dark:border-slate-800 dark:bg-slate-900">
         <span className="text-sm font-medium text-slate-900 dark:text-slate-100">Home</span>
-        {(["course", "flashcards", "tips", "faq"] as Surface[]).map((s) => (
+        {(["course", "tips", "faq"] as Surface[]).map((s) => (
           <span key={s} className="text-sm font-medium text-slate-600 dark:text-slate-300">
             {label[s]}
             {!dismissed.includes(s) && <NavDot />}
@@ -2473,12 +2469,11 @@ function IntroPreview(props: { onReplay: () => void }) {
 
 // --- brand / shell ---------------------------------------------------------
 
-function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, unvisited, onReplayTour }: {
+function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, unvisited, onReplayTour }: {
   view: View;
   onView: (v: View) => void;
   onPractice: () => void;
   onHome: () => void;
-  onFlashcards: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
   onFeedback: () => void;
@@ -2524,14 +2519,12 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           ) : (
             <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
           )}
-          {/* Study is open to everyone: browsing your event's path is the whole
-              pitch for making an account, so gating it behind one is backwards. */}
+          {/* One Study item, and it is open to everyone. It used to be three:
+              Study (the event path), Library (the in-app browser) and Flashcards
+              (the public SEO pages). Those first two are now modes inside this
+              tab, and the public pages are still at /flashcards, still in the
+              sitemap and still linked from the footer, they just aren't nav. */}
           <NavLink active={view === "course"} onClick={() => onView("course")}>Study{dot("course")}</NavLink>
-          {/* Flashcards is the PUBLIC decks page, a real URL anyone can open or
-              share, signed in or not. The in-app browser (search, flags, Blitz,
-              progress) is a different thing and says so. */}
-          <NavAnchor href="/flashcards">Flashcards</NavAnchor>
-          {userEmail && <NavLink active={view === "flashcards"} onClick={onFlashcards}>Library{dot("flashcards")}</NavLink>}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips{dot("tips")}</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ{dot("faq")}</NavLink>
           <button
@@ -2590,8 +2583,6 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
               <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
             )}
             <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study{dot("course")}</MobileNavItem>
-            <MobileNavAnchor href="/flashcards">Flashcards</MobileNavAnchor>
-            {userEmail && <MobileNavItem active={view === "flashcards"} onClick={pick(onFlashcards)}>Library{dot("flashcards")}</MobileNavItem>}
             <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips{dot("tips")}</MobileNavItem>
             <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ{dot("faq")}</MobileNavItem>
             <MobileNavItem active={false} onClick={pick(onFeedback)}>💬 Feedback</MobileNavItem>
@@ -2696,32 +2687,6 @@ function NavLink({ active, onClick, children }: { active: boolean; onClick: () =
         }`}
       />
     </button>
-  );
-}
-
-// Nav item that is a real link rather than a view switch. Same look as NavLink,
-// but it navigates, /flashcards is served by the backend (app/seo.py), so the
-// SPA cannot render it and a button would have nowhere to go.
-function NavAnchor({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <a
-      href={href}
-      className="group relative px-0.5 py-1 text-sm font-medium tracking-tight text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-    >
-      {children}
-      <span className="pointer-events-none absolute -bottom-0.5 left-0 right-0 h-0.5 origin-left scale-x-0 rounded-full bg-indigo-500 transition-transform duration-300 ease-out group-hover:scale-x-100 dark:bg-indigo-400" />
-    </a>
-  );
-}
-
-function MobileNavAnchor({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <a
-      href={href}
-      className="flex min-h-11 items-center rounded-xl px-3 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-    >
-      {children}
-    </a>
   );
 }
 
@@ -4495,14 +4460,14 @@ function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSna
         />
         <BeforeAfterStat
           label="Fillers/min"
-          before={before.fillerPerMin != null ? before.fillerPerMin.toFixed(1) : ": "}
-          after={after.fillerPerMin != null ? after.fillerPerMin.toFixed(1) : ": "}
+          before={before.fillerPerMin != null ? before.fillerPerMin.toFixed(1) : "n/a"}
+          after={after.fillerPerMin != null ? after.fillerPerMin.toFixed(1) : "n/a"}
           improved={after.fillerPerMin != null && before.fillerPerMin != null ? after.fillerPerMin <= before.fillerPerMin : true}
         />
         <BeforeAfterStat
           label="Pace (WPM)"
-          before={before.wpm != null ? String(before.wpm) : ": "}
-          after={after.wpm != null ? String(after.wpm) : ": "}
+          before={before.wpm != null ? String(before.wpm) : "n/a"}
+          after={after.wpm != null ? String(after.wpm) : "n/a"}
           improved
         />
       </div>

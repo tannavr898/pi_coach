@@ -63,6 +63,25 @@ def clusters() -> list[str]:
     return load_events().get("clusters", [])
 
 
+def domains_for_cluster(cluster: str) -> list[str]:
+    """Every domain any event in this cluster exercises, in catalog order.
+
+    This is the honest scope of a cluster exam. A Business Finance competitor sits
+    the Finance cluster paper, not a paper about the four domains their particular
+    role-play happens to draw on, so a quiz scoped to the single event quietly
+    under-prepares them for the test they will actually take. The union across the
+    cluster's events is the closest thing the catalog has to that scope.
+    """
+    out: list[str] = []
+    for e in all_events():
+        if e.get("cluster", "").casefold() != cluster.casefold():
+            continue
+        for d in e.get("domain_ids", []):
+            if d not in out:
+                out.append(d)
+    return out
+
+
 @lru_cache(maxsize=1)
 def _index() -> dict[str, dict]:
     return {e["id"]: e for e in all_events()}
@@ -85,6 +104,11 @@ def event_summaries() -> list[dict]:
             "quantitative": bool(e.get("quantitative")),
             "blurb": e.get("blurb", ""),
             "suggestions": e.get("suggestions", []),
+            # The domains this event exercises, and the wider set its cluster exam
+            # covers. Both ship with the picker so the Knowledge Check can offer
+            # "my event" against "my cluster" without a second round trip.
+            "domain_ids": list(e.get("domain_ids", [])),
+            "cluster_domain_ids": domains_for_cluster(e.get("cluster", "")),
         }
         for e in all_events()
     ]

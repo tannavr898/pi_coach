@@ -233,12 +233,8 @@ export const FEATURE_INTROS: Record<Surface, { title: string; body: string }> = 
     body: "Every number here points at a next action. The radar shows which business skills you've actually demonstrated, spokes at zero mean 'not practiced yet', not 'bad'.",
   },
   course: {
-    title: "A finishable path for your event",
-    body: "Pick the event you compete in and get an ordered route through every skill it's graded on, split into short units. Add your competition dates and study time, and it becomes a day-by-day plan that reflows when you miss a day.",
-  },
-  flashcards: {
-    title: "The full study library",
-    body: "Every term, each with a worked example run through the four beats. Terms you've been scoring low on are marked, so you can go straight to what's costing you points.",
+    title: "One place to study, two ways in",
+    body: "My path is your event: an ordered route through every skill it's graded on, split into short units, and a day-by-day plan once you add your competition dates. All domains is the whole library, searchable, with the terms you keep scoring low on marked. Progress counts the same in both.",
   },
   blitz: {
     title: "Mastery Blitz: five terms, 45 seconds each",

@@ -4,6 +4,7 @@ import App, { DemoApp, AdminApp, TourPreview } from "./App.tsx";
 import { PrivacyApp, TermsApp } from "./legal";
 import "./index.css";
 import { initAnalytics } from "./analytics";
+import { prefetchStatic } from "./api";
 import { AuthProvider } from "./auth";
 
 // The onboarding tour, viewable without signing up. Analytics is deliberately
@@ -46,6 +47,11 @@ function legalRoute(): "privacy" | "terms" | null {
 }
 
 const legal = legalRoute();
+
+// Warm the reference data while React is still mounting, so the Study tab has its
+// catalog and corpus in hand by the time anyone clicks it. Skipped on the legal,
+// tour and admin routes, which never read any of it.
+if (!legal && !isTourRoute() && !isAdminRoute()) void prefetchStatic();
 
 const Root = legal === "privacy"
   ? PrivacyApp

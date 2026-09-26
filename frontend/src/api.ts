@@ -62,6 +62,9 @@ export type EventSummary = {
   quantitative: boolean;
   blurb: string;
   suggestions: string[];
+  // The domains this event exercises, and the wider union its cluster exam covers.
+  domain_ids: string[];
+  cluster_domain_ids: string[];
 };
 
 export type Timing = {
@@ -329,12 +332,62 @@ async function request<T>(
   return res.json() as Promise<T>;
 }
 
+/**
+ * Reference data that is identical for every visitor and only changes when we
+ * deploy: the event catalog, the domain list, and the 830-term study corpus.
+ *
+ * Nothing used to hold on to these, so every tab switch paid for them again and
+ * the Study tab opened with a visible pause. What is cached here is the PROMISE,
+ * not the result, which matters more than it sounds: two components mounting in
+ * the same tick share one request instead of racing and firing two.
+ *
+ * A rejection is evicted. Caching a failure would mean one flaky load leaves the
+ * tab broken for the rest of the session with no way to retry.
+ */
+const staticCache = new Map<string, Promise<unknown>>();
+
+function cached<T>(key: string, run: () => Promise<T>): Promise<T> {
+  const hit = staticCache.get(key) as Promise<T> | undefined;
+  if (hit) return hit;
+  const p = run().catch((e) => {
+    staticCache.delete(key);
+    throw e;
+  });
+  staticCache.set(key, p);
+  return p;
+}
+
+/** Drop the memo. For tests, and for a "reload the data" affordance if we add one. */
+export function clearStaticCache(): void {
+  staticCache.clear();
+}
+
+/**
+ * Warm the cache before anything asks for it. Called once at startup.
+ *
+ * The catalog and the domain list are small (about 3KB and 1KB gzipped) and go
+ * out immediately. The corpus is 363KB gzipped, which is worth having ready but
+ * not worth putting in front of the first paint, so it waits for an idle moment
+ * and falls back to a short timer where requestIdleCallback is missing (Safari).
+ * Failures are swallowed on purpose: this is an optimisation, and the real call
+ * later will surface any error properly.
+ */
+export function prefetchStatic(): void {
+  void getEvents().catch(() => {});
+  void getDomains().catch(() => {});
+  const warmCorpus = () => void getAllTerms().catch(() => {});
+  const idle = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void })
+    .requestIdleCallback;
+  if (idle) idle(warmCorpus, { timeout: 4000 });
+  else window.setTimeout(warmCorpus, 1200);
+}
+
 export function getDomains(): Promise<DomainSummary[]> {
-  return request<DomainSummary[]>("/api/framework");
+  return cached("framework", () => request<DomainSummary[]>("/api/framework"));
 }
 
 export function getEvents(): Promise<EventSummary[]> {
-  return request<EventSummary[]>("/api/events");
+  return cached("events", () => request<EventSummary[]>("/api/events"));
 }
 
 // Site-wide totals. `show` is false until there are enough to be worth showing.
@@ -348,12 +401,29 @@ export function getPublicStats(): Promise<PublicStats> {
 // terms share their criterion's id, so a criterion id resolves here directly.
 export function getTerms(ids: string[]): Promise<Term[]> {
   if (ids.length === 0) return Promise.resolve([]);
-  return request<Term[]>(`/api/terms?ids=${encodeURIComponent(ids.join(","))}`);
+  // Once the corpus is in hand, a subset is a filter, not a request. Course units
+  // and weak-term decks are opened and closed constantly, and each one used to be
+  // a round trip for cards already sitting in memory.
+  const whole = staticCache.get("terms") as Promise<Term[]> | undefined;
+  if (whole) {
+    return whole.then((all) => {
+      const want = new Set(ids);
+      const found = all.filter((t) => want.has(t.id));
+      // An id the corpus does not carry means the two are out of step; ask the
+      // server rather than quietly returning a short deck.
+      return found.length === want.size ? found : request<Term[]>(termsUrl(ids));
+    });
+  }
+  return cached(`terms:${[...ids].sort().join(",")}`, () => request<Term[]>(termsUrl(ids)));
+}
+
+function termsUrl(ids: string[]): string {
+  return `/api/terms?ids=${encodeURIComponent(ids.join(","))}`;
 }
 
 // The whole study corpus, powers the flashcard library.
 export function getAllTerms(): Promise<Term[]> {
-  return request<Term[]>("/api/terms");
+  return cached("terms", () => request<Term[]>("/api/terms"));
 }
 
 // Admin QA page: verify the secret passphrase server-side (throws 404 when the
@@ -460,11 +530,16 @@ export type QuizQuestion = {
 // has not been generated yet instead of opening an empty quiz.
 export type QuizResponse = { questions: QuizQuestion[]; counts: Record<string, number> };
 
-export function getQuiz(opts: { level?: Level; termIds?: string[]; domainIds?: string[]; count?: number } = {}): Promise<QuizResponse> {
+export function getQuiz(
+  opts: { level?: Level; termIds?: string[]; domainIds?: string[]; cluster?: string; count?: number } = {},
+): Promise<QuizResponse> {
   const params = new URLSearchParams();
   if (opts.level) params.set("level", opts.level);
   if (opts.termIds?.length) params.set("ids", opts.termIds.join(","));
   if (opts.domainIds?.length) params.set("domains", opts.domainIds.join(","));
+  // Expanded to its domains server-side: the widest cluster is nine of them, more
+  // than the client should be stuffing into a query string.
+  if (opts.cluster) params.set("cluster", opts.cluster);
   if (opts.count) params.set("count", String(opts.count));
   const qs = params.toString();
   return request<QuizResponse>(`/api/quiz${qs ? `?${qs}` : ""}`);

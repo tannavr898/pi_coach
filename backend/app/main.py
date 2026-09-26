@@ -46,7 +46,8 @@ from typing import Literal
 
 import anyio.to_thread
 import httpx
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi.middleware.gzip import GZipMiddleware
 from starlette.concurrency import run_in_threadpool
 
 from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
@@ -124,11 +125,25 @@ async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="PI Coach", version="1.0.0", lifespan=_lifespan)
 
+# Compress anything worth compressing. The study corpus is the reason: /api/terms
+# is 1.1MB of JSON and the server-rendered deck pages run to 14,000 words each,
+# both of which are almost entirely repeated prose and shrink by roughly 80
+# percent. On a phone on school wifi that is the difference between a visible
+# pause on the Study tab and none. 1KB floor so tiny replies don't pay the CPU.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+
 # Server-rendered study pages (/flashcards, /flashcards/{event}) plus robots.txt and
 # sitemap.xml. Included here, near the top, because Starlette matches routes in
 # registration order and the SPA is mounted at "/" at the very bottom of this file,
 # anything registered after that mount is unreachable.
 app.include_router(seo.router)
+
+# How long a browser may reuse the reference data without asking. These three
+# endpoints read files off disk that only change when we deploy, so the risk of a
+# stale copy is one release cycle at worst, and a student mid-session keeps the
+# copy they started with either way. `stale-while-revalidate` is what makes a
+# return visit feel instant: serve the old answer, refresh in the background.
+STATIC_CACHE = "public, max-age=600, stale-while-revalidate=86400"
 
 # Standard participant-facing procedures (our own wording, original material).
 PROCEDURES = [
@@ -161,20 +176,22 @@ def public_config() -> PublicConfig:
 
 
 @app.get("/api/framework", response_model=list[DomainSummary])
-def get_domains() -> list[DomainSummary]:
+def get_domains(response: Response) -> list[DomainSummary]:
     """Our business domains (with criterion counts), for UI hints/examples."""
+    response.headers["Cache-Control"] = STATIC_CACHE
     return [DomainSummary(**d) for d in framework.domain_summaries()]
 
 
 @app.get("/api/events", response_model=list[EventSummary])
-def get_events() -> list[EventSummary]:
+def get_events(response: Response) -> list[EventSummary]:
     """The role-play events students pick from (our own catalog), in file order.
     Each carries its cluster (for grouping) and original focus suggestions."""
+    response.headers["Cache-Control"] = STATIC_CACHE
     return [EventSummary(**e) for e in events.event_summaries()]
 
 
 @app.get("/api/terms", response_model=list[Term])
-def get_terms(ids: str = "") -> list[Term]:
+def get_terms(response: Response, ids: str = "") -> list[Term]:
     """Study terms. With `ids` (comma list) returns just those (a weak-term deck, a
     flagged set, or a course unit); with no `ids` returns the whole corpus (the
     library). Each term carries a plain definition, a worked example run through the
@@ -183,6 +200,7 @@ def get_terms(ids: str = "") -> list[Term]:
     These are study content, NOT the grading criteria, see app/terms.py. Terms that
     map to a graded criterion carry `criterion_id` and tier="core"; the rest are
     study-only. Grading reads framework.json and never touches this path."""
+    response.headers["Cache-Control"] = STATIC_CACHE
     wanted = [x.strip() for x in ids.split(",") if x.strip()]
     source = terms.get_terms(wanted) if wanted else terms.all_terms()
     return [Term(**t) for t in source]
@@ -866,15 +884,21 @@ def blitz_scenarios() -> list[BlitzScenario]:
 
 @app.get("/api/quiz", response_model=QuizResponse)
 def get_quiz(
+    response: Response,
     level: Literal["", "district", "state", "icdc"] = "",
     ids: str = "",
     domains: str = "",
+    cluster: str = "",
     count: int = Query(10, ge=1, le=40)) -> QuizResponse:
     """A drawn set of multiple-choice questions from the pre-generated bank.
 
     Filters: `level` (district | state | icdc), `ids` (comma list of term ids, a
     deck, a course unit, the student's weak terms), `domains` (comma list of domain
-    ids). Everything is optional; with none of them the draw is the whole bank.
+    ids), `cluster` (a catalog cluster name, expanded server-side to every domain
+    its events touch). Everything is optional; with none of them the draw is the
+    whole bank. `cluster` is resolved here rather than on the client because the
+    widest cluster covers nine domains, which is more than fits comfortably in the
+    query string the client would otherwise have to build.
 
     No model call happens here, the bank is written offline by scripts/gen_quiz.py
     and this is a file read (app/quiz.py). That is why the quiz is open to anonymous
@@ -884,8 +908,16 @@ def get_quiz(
 
     Questions are original, written from our own study cards. No competition
     organization's exam items or indicator wording is reproduced anywhere here."""
+    response.headers["Cache-Control"] = "no-store"  # a fresh draw every round
     term_ids = [x.strip() for x in ids.split(",") if x.strip()]
     domain_ids = [x.strip() for x in domains.split(",") if x.strip()]
+    if cluster.strip():
+        # An unknown cluster name resolves to nothing, and an empty domain filter
+        # means "the whole bank", which is the wrong answer to a typo. Fail loudly.
+        expanded = events.domains_for_cluster(cluster.strip())
+        if not expanded:
+            raise HTTPException(status_code=404, detail=f"Unknown cluster: {cluster}")
+        domain_ids = sorted(set(domain_ids) | set(expanded)) if domain_ids else expanded
     drawn = quiz.select(level=level, domain_ids=domain_ids, term_ids=term_ids, count=count)
     return QuizResponse(questions=[QuizQuestion(**q) for q in drawn], counts=quiz.counts())
 

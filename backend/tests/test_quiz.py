@@ -15,7 +15,10 @@ from types import SimpleNamespace
 
 import pytest
 
-from app import prompts, quiz, study, terms
+from fastapi.testclient import TestClient
+
+from app import events, prompts, quiz, study, terms
+from app.main import app
 from app.schemas import QuizQuestion
 from scripts import gen_quiz
 
@@ -405,3 +408,59 @@ def test_ordinary_prose_is_not_mistaken_for_an_all_of_the_above_option():
         bad["options"][3]["text"] = banned
         with pytest.raises(gen_quiz.Rejected, match="above"):
             gen_quiz._validate(bad, "district", cards)
+
+
+# --- cluster scope ----------------------------------------------------------
+# A cluster exam is the realistic target: Business Finance is tested on the whole
+# Finance cluster, not on the four domains its own role-play happens to draw on.
+
+
+def test_cluster_expands_to_every_domain_its_events_touch():
+    finance = events.domains_for_cluster("Finance")
+    one_event = events.get_event("business-finance")["domain_ids"]
+    assert set(one_event) < set(finance), "the cluster must be strictly wider than one event"
+    assert "information_management" in finance, "contributed by accounting-applications"
+    # Name matching is forgiving about case, because it arrives from a query string.
+    assert events.domains_for_cluster("finance") == finance
+
+
+def test_every_catalog_cluster_resolves_and_draws_questions():
+    client = TestClient(app)
+    for cluster in events.clusters():
+        assert events.domains_for_cluster(cluster), f"{cluster} resolved to no domains"
+        r = client.get("/api/quiz", params={"cluster": cluster, "count": 40})
+        assert r.status_code == 200
+        assert len(r.json()["questions"]) == 40, f"{cluster} could not fill a round"
+
+
+def test_unknown_cluster_is_rejected_rather_than_drawing_everything():
+    """An empty domain filter means "the whole bank", which is the wrong answer to
+    a typo: it would quietly serve a student questions from every other cluster."""
+    r = TestClient(app).get("/api/quiz", params={"cluster": "Finanace"})
+    assert r.status_code == 404
+
+
+def test_cluster_draw_stays_inside_the_cluster():
+    allowed = set(events.domains_for_cluster("Entrepreneurship"))
+    r = TestClient(app).get("/api/quiz", params={"cluster": "Entrepreneurship", "count": 40})
+    assert {q["domain_id"] for q in r.json()["questions"]} <= allowed
+
+
+def test_event_summaries_carry_both_scopes_for_the_client():
+    """The picker ships both so the Knowledge Check can offer "my event" against
+    "my cluster" without a second round trip."""
+    summary = next(e for e in events.event_summaries() if e["id"] == "business-finance")
+    assert summary["domain_ids"] == events.get_event("business-finance")["domain_ids"]
+    assert set(summary["domain_ids"]) <= set(summary["cluster_domain_ids"])
+
+
+# --- caching ----------------------------------------------------------------
+
+
+def test_reference_endpoints_are_cacheable_and_the_quiz_is_not():
+    """The catalog and corpus only change on deploy, so a browser may reuse them.
+    A quiz draw is random per call and must never be served from cache."""
+    client = TestClient(app)
+    for path in ("/api/framework", "/api/events", "/api/terms"):
+        assert "max-age" in client.get(path).headers.get("cache-control", "")
+    assert client.get("/api/quiz").headers.get("cache-control") == "no-store"
