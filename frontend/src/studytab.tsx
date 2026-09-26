@@ -43,7 +43,7 @@ function readMode(): StudyMode {
   }
 }
 
-type QuizOpts = { cluster?: string; scope?: "deck" | "cluster" | "all" };
+type QuizOpts = { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" };
 
 export function StudyTab({
   authed,

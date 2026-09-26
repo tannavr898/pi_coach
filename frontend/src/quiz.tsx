@@ -69,7 +69,7 @@ function shuffle<T>(arr: T[]): T[] {
 const MAX_IDS_IN_URL = 120;
 const MAX_DOMAINS_IN_URL = 8;
 
-export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", onClose }: {
+export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", defaultLevel, onClose }: {
   cards: Term[];
   title?: string;
   // The student's cluster, when the launcher knows it. Its presence is what makes
@@ -79,9 +79,20 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", o
   // "quiz me on what I just studied"; the course-wide button means "test me",
   // and a test that only covers one event's four domains is not the test they sit.
   defaultScope?: Scope;
+  // Which tier to open on. The study plan sets this: a practice test in the learn
+  // phase is a state-level check, one in the taper is ICDC. Still overridable, and
+  // still falls back to a tier this draw can actually fill.
+  defaultLevel?: Level;
   onClose: () => void;
 }) {
-  const [scope, setScope] = useState<Scope>(() => (defaultScope === "cluster" && !cluster ? "deck" : defaultScope));
+  // Resolve the requested scope against what this launch can actually offer: a
+  // cluster scope needs a cluster, a deck scope needs cards. Falling through to
+  // "all" is always possible, since the bank is never empty.
+  const [scope, setScope] = useState<Scope>(() => {
+    if (defaultScope === "cluster" && !cluster) return cards.length ? "deck" : "all";
+    if (defaultScope === "deck" && !cards.length) return cluster ? "cluster" : "all";
+    return defaultScope;
+  });
   const filter = useMemo(() => {
     if (scope === "all") return {};
     if (scope === "cluster") return cluster ? { cluster } : {};
@@ -92,7 +103,7 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", o
   }, [cards, scope, cluster]);
   const [drawn, setDrawn] = useState<QuizQuestion[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [level, setLevel] = useState<Level>("district");
+  const [level, setLevel] = useState<Level>(defaultLevel ?? "district");
   const [phase, setPhase] = useState<Phase>("intro");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [i, setI] = useState(0);
@@ -278,7 +289,15 @@ function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, scope, o
   deckSize: number;
   onStart: () => void;
 }) {
-  const scopes: Scope[] = cluster ? ["deck", "cluster", "all"] : ["deck", "all"];
+  // A scheduled practice test arrives with no cards at all: it rehearses the
+  // cluster exam, so there is no deck to offer and "This deck (0)" would be a
+  // dead option wearing a zero.
+  const hasDeck = deckSize > 0;
+  const scopes: Scope[] = [
+    ...(hasDeck ? (["deck"] as Scope[]) : []),
+    ...(cluster ? (["cluster"] as Scope[]) : []),
+    "all",
+  ];
   const scopeLabel: Record<Scope, string> = {
     deck: `This deck (${deckSize})`,
     cluster: cluster ? `${cluster} exam` : "Cluster exam",
@@ -293,7 +312,10 @@ function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, scope, o
           Knowledge Check{title ? `: ${title}` : ""}
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-          Multiple choice over the terms you're studying. No clock. Every answer, right or wrong, explains itself the moment you pick it.
+          {scope === "cluster"
+            ? `Multiple choice across everything the ${cluster} exam covers, not just your event's terms. `
+            : "Multiple choice over the terms you're studying. "}
+          No clock. Every answer, right or wrong, explains itself the moment you pick it.
         </p>
       </div>
 

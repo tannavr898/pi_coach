@@ -652,7 +652,9 @@ class PlanInputs(BaseModel):
 
 class PlanTask(BaseModel):
     id: str
-    kind: Literal["learn", "weak", "review", "roleplay", "mock"]
+    # "quiz" is a scheduled practice test: cluster-wide multiple choice, carrying
+    # no term_ids because it deliberately reaches past the day's deck.
+    kind: Literal["learn", "weak", "review", "roleplay", "mock", "quiz"]
     title: str
     detail: str = ""
     minutes: int = 0

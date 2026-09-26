@@ -45,6 +45,7 @@ LEARN_MIN_PER_TERM = 1.5   # flip a card, read the example
 BLITZ_MIN = 5              # one Mastery Blitz round
 TERMS_PER_BLITZ = 5        # matches blitz.tsx: a drill takes a random 5 of what it's given
 ROLEPLAY_MIN = 20          # prep + present + read the feedback
+QUIZ_MIN = 8               # one Knowledge Check round: 8 questions, no clock
 
 # --- scheduling rules ---------------------------------------------------------
 # Review is capped during the learn phase so it can never crowd out new material;
@@ -58,6 +59,13 @@ TAPER_DAYS_SHORT = 2       # when the whole runway is under SHORT_RUNWAY_DAYS
 SHORT_RUNWAY_DAYS = 21
 ROLEPLAY_EVERY = {"learn": 7, "sharpen": 2}
 FIRST_ROLEPLAY_AFTER = 3   # a brand-new plan leads with learning, not a cold rep
+# Written exam rehearsal, on its own cadence. More often than a role-play because
+# it costs nothing to serve (the bank is pre-generated, app/quiz.py) and because
+# the cluster exam is a separate skill from the role-play: a competitor who has
+# only ever practiced presenting walks into the written half cold. Tightens as the
+# date approaches, which is when knowing where the gaps are is worth most.
+QUIZ_EVERY = {"learn": 5, "sharpen": 3}
+FIRST_QUIZ_AFTER = 2       # early enough to expose gaps while there is time to fix them
 KEEP_SHARP_BATCHES = 2     # sharpen-phase filler, so free days aren't empty
 DETAIL_DAYS = 14
 HISTORY_KEEP = 60
@@ -297,6 +305,14 @@ def _fill_day(day: date, budget: int, phase: str, target: dict | None, queue: li
                            f"Full timing, as if it were {stage_name}. Present out loud if you can.", mins))
         remaining -= mins
         ctx["last_roleplay"] = day
+        # A mock run rehearses the presentation. The written exam is the other
+        # half of the day and nothing else in the taper touches it.
+        if remaining >= QUIZ_MIN:
+            tasks.append(_task("quiz", day, "Practice test",
+                               f"Cluster-wide multiple choice, ICDC difficulty. The written half of {stage_name}.",
+                               QUIZ_MIN, tier="icdc"))
+            remaining -= QUIZ_MIN
+            ctx["last_quiz"] = day
         used: set[str] = set()
         while remaining >= BLITZ_MIN:
             batch = _sharpen_pool(state, day, course_ids, used)[:TERMS_PER_BLITZ]
@@ -323,6 +339,18 @@ def _fill_day(day: date, budget: int, phase: str, target: dict | None, queue: li
         tasks.append(_task("roleplay", day, title, detail, mins, criterion_name=focus))
         remaining -= mins
         ctx["last_roleplay"] = day
+
+    # Practice test on its own cadence. Placed before review and new material so a
+    # short day still gets it: it is the cheapest task on the board and the only
+    # one that rehearses the written exam.
+    if (day - ctx["last_quiz"]).days >= QUIZ_EVERY[phase] and remaining >= QUIZ_MIN:
+        level = "state" if phase == "learn" else "icdc"
+        tasks.append(_task("quiz", day, "Practice test",
+                           "Cluster-wide multiple choice, the written half of competing. "
+                           "Every answer explains itself, so a miss tells you what to study next.",
+                           QUIZ_MIN, tier=level))
+        remaining -= QUIZ_MIN
+        ctx["last_quiz"] = day
 
     # Spaced review.
     if phase == "sharpen":
@@ -398,6 +426,11 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
     course_ids = {tid for u in course["units"] for t in tiers for tid in u[f"{t}_ids"]}
     ctx = {
         "last_roleplay": last_roleplay or today - timedelta(days=ROLEPLAY_EVERY["learn"] - FIRST_ROLEPLAY_AFTER),
+        # Not persisted the way last_roleplay is. A role-play is expensive enough
+        # that the cadence has to survive a reload; a practice test is free, so
+        # starting every simulation from the same offset is both simpler and
+        # harmless, the worst case is one extra test.
+        "last_quiz": today - timedelta(days=QUIZ_EVERY["learn"] - FIRST_QUIZ_AFTER),
         "weak_names": [w["name"] for w in weak],
         "proven_core": [],
         "proven_extended": [],
@@ -426,6 +459,8 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
                     _apply_learn(state, task["term_ids"], day)
                 if task["kind"] in ("roleplay", "mock"):
                     ctx["last_roleplay"] = day
+                if task["kind"] == "quiz":
+                    ctx["last_quiz"] = day
             _remove_from_queue(queue, done_ids)
         else:
             tasks = _fill_day(day, budget, phase, target, queue, state, course_ids, ctx)
@@ -587,6 +622,7 @@ def _phase_runs(days: list[dict], today: date) -> list[dict]:
 
 
 _CALENDAR_LABEL = {
+    "quiz": "Practice test",
     "weak": "Shore up flagged skills",
     "review": "Review Blitz",
     "roleplay": "Role-play",

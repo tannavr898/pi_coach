@@ -278,7 +278,7 @@ export type PlanInputs = {
   goal: PlanGoal;
 };
 
-export type PlanTaskKind = "learn" | "weak" | "review" | "roleplay" | "mock";
+export type PlanTaskKind = "learn" | "weak" | "review" | "roleplay" | "mock" | "quiz";
 export type PlanTask = {
   id: string;
   kind: PlanTaskKind;

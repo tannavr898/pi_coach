@@ -244,7 +244,7 @@ export function FlashcardLibrary({
   initialDeck?: string | null;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
-  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all" }) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
 }) {
   const [all, setAll] = useState<Term[] | null>(null);
   const [weakIds, setWeakIds] = useState<Set<string>>(new Set());

@@ -345,7 +345,7 @@ export default function App() {
   // Knowledge Check: the term set to quiz, or null when closed. Unlike Blitz this
   // is served from a pre-generated bank, so it spends nothing and stays open to
   // signed-out visitors -- no gate, no allowance.
-  const [quizCards, setQuizCards] = useState<{ cards: Term[]; title?: string; cluster?: string; scope?: QuizScope } | null>(null);
+  const [quizCards, setQuizCards] = useState<{ cards: Term[]; title?: string; cluster?: string; scope?: QuizScope; level?: Level } | null>(null);
   // Bumped whenever a study surface closes. Flipping a card or finishing a Blitz
   // writes progress on the SERVER, but the course on screen was fetched when the
   // view mounted and has no idea -- so without this the counters sit unchanged
@@ -444,8 +444,8 @@ export default function App() {
   // (backend/app/quiz.py), so a round costs nothing to run and a signed-out visitor
   // can take as many as they like. It also gets no "unvisited" dot, because it is
   // reached from the two surfaces that already have one.
-  function startQuiz(cards: Term[], title?: string, opts?: { cluster?: string; scope?: QuizScope }) {
-    setQuizCards({ cards, title, cluster: opts?.cluster, scope: opts?.scope });
+  function startQuiz(cards: Term[], title?: string, opts?: { cluster?: string; scope?: QuizScope; level?: Level }) {
+    setQuizCards({ cards, title, cluster: opts?.cluster, scope: opts?.scope, level: opts?.level });
   }
 
   // Open a stored session's feedback (from the home "recent sessions" list).
@@ -1205,6 +1205,7 @@ export default function App() {
           title={quizCards.title}
           cluster={quizCards.cluster}
           defaultScope={quizCards.scope}
+          defaultLevel={quizCards.level}
           onClose={() => { setQuizCards(null); endStudy(); }}
         />
       )}

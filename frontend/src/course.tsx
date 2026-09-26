@@ -31,7 +31,7 @@ export function StudyCourse({
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
-  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all" }) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
   // A plan's role-play task. With a name, practice is focused on that skill.
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
@@ -119,8 +119,8 @@ export function StudyCourse({
     async (
       ids: string[],
       title: string,
-      fn: (c: Term[], t?: string, o?: { cluster?: string; scope?: "deck" | "cluster" | "all" }) => void,
-      opts?: { cluster?: string; scope?: "deck" | "cluster" | "all" },
+      fn: (c: Term[], t?: string, o?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void,
+      opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" },
     ) => {
       if (!ids.length) return;
       setBusy(true);
@@ -210,6 +210,7 @@ export function StudyCourse({
         refreshKey={refreshKey}
         onStudy={onStudy}
         onBlitz={onBlitz}
+        onQuiz={onQuiz}
         onPractice={onPractice}
         onSignup={onSignup}
         onHasPlan={setHasPlan}

@@ -42,6 +42,7 @@ const KIND_LABEL: Record<PlanTask["kind"], string> = {
   review: "Review",
   roleplay: "Role-play",
   mock: "Mock run",
+  quiz: "Practice test",
 };
 
 // Indigo tints carry the working phases; taper steps to slate because it is the
@@ -99,6 +100,7 @@ export function StudyPlanSection({
   refreshKey,
   onStudy,
   onBlitz,
+  onQuiz,
   onPractice,
   onSignup,
   onSaved,
@@ -109,6 +111,7 @@ export function StudyPlanSection({
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
   onSaved?: () => void;
@@ -146,10 +149,18 @@ export function StudyPlanSection({
   }, [matches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const launch = useCallback(
-    async (task: PlanTask, how: "study" | "blitz" | "practice") => {
+    async (task: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => {
       track("plan_task_started", { kind: task.kind, how });
       if (how === "practice") {
         onPractice(task.criterion_name || undefined);
+        return;
+      }
+      // The scheduled practice test carries no terms on purpose: it rehearses the
+      // cluster exam, which is wider than anything in today's list. Its `tier` is
+      // the difficulty the plan intends for this point in the season.
+      if (task.kind === "quiz") {
+        const level = task.tier === "icdc" || task.tier === "state" ? task.tier : undefined;
+        onQuiz([], task.title, { cluster: course.cluster, scope: "cluster", level });
         return;
       }
       setBusy(true);
@@ -157,6 +168,7 @@ export function StudyPlanSection({
       try {
         const cards = await getTerms(task.term_ids);
         if (how === "study") onStudy(cards, undefined, task.title);
+        else if (how === "quiz") onQuiz(cards, task.title, { cluster: course.cluster, scope: "deck" });
         else onBlitz(cards, task.title);
       } catch (e) {
         setError(errText(e));
@@ -164,7 +176,7 @@ export function StudyPlanSection({
         setBusy(false);
       }
     },
-    [onBlitz, onPractice, onStudy],
+    [onBlitz, onPractice, onQuiz, onStudy, course.cluster],
   );
 
   const remove = useCallback(async () => {
@@ -662,7 +674,7 @@ function PlanPanel({
 }: {
   plan: StudyPlan;
   busy: boolean;
-  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice") => void;
+  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -853,7 +865,7 @@ function TodayCard({
 }: {
   plan: StudyPlan;
   busy: boolean;
-  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice") => void;
+  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
   onEdit: () => void;
 }) {
   const day = plan.today;
@@ -960,7 +972,7 @@ function TaskRow({
   task: PlanTask;
   isNext: boolean;
   busy: boolean;
-  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice") => void;
+  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
 }) {
   const termTask = task.kind === "learn" || task.kind === "weak";
   // Once every card has been flipped, the useful next move is proving them.
@@ -1006,11 +1018,27 @@ function TaskRow({
             <button className={primary(flipped)} disabled={busy} onClick={() => onLaunch(task, "blitz")}>
               ⚡ Blitz
             </button>
+            {/* Free to run, so it never competes with the Blitz for the day's
+                allowance. Secondary because a Blitz proves a term and a quiz
+                cannot (backend/app/study.py). */}
+            <button className={primary(false)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
+              ◎ Quiz
+            </button>
           </>
         )}
         {task.kind === "review" && (
-          <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "blitz")}>
-            ⚡ Blitz {task.term_ids.length}
+          <>
+            <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "blitz")}>
+              ⚡ Blitz {task.term_ids.length}
+            </button>
+            <button className={primary(false)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
+              ◎ Quiz
+            </button>
+          </>
+        )}
+        {task.kind === "quiz" && (
+          <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
+            Start practice test →
           </button>
         )}
         {(task.kind === "roleplay" || task.kind === "mock") && (

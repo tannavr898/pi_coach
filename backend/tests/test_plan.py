@@ -222,3 +222,77 @@ def test_validation_messages():
     assert "at least one day" in plan.validate_inputs(inputs(minutes=0), TODAY)
     assert "within about a year" in plan.validate_inputs(inputs(days_out=500), TODAY)
     assert plan.validate_inputs({**inputs(), "event_id": "nope"}, TODAY)
+
+
+# --- practice tests ---------------------------------------------------------
+# The written cluster exam is half of competing and nothing else in the plan
+# rehearses it. A practice test costs nothing to serve (the bank is pre-generated),
+# which is why it can run on a tighter cadence than a role-play.
+
+
+def test_the_plan_schedules_practice_tests():
+    kinds = [t["kind"] for t in all_tasks(full_days(inputs(days_out=60, minutes=45)))]
+    assert "quiz" in kinds
+
+
+def test_practice_tests_keep_their_cadence_while_there_is_still_material():
+    """Spaced out during learn and sharpen. The taper is deliberately exempt: in
+    the last few days a daily test is the point, and it costs nothing to run."""
+    days = [d for d in full_days(inputs(days_out=60, minutes=45)) if d["phase"] != "taper"]
+    dates = [d["date"] for d in days for t in d["tasks"] if t["kind"] == "quiz"]
+    assert len(dates) >= 2
+    gaps = [(b - a).days for a, b in zip(dates, dates[1:])]
+    assert min(gaps) >= min(plan.QUIZ_EVERY.values()), gaps
+
+
+def test_practice_tests_carry_no_terms_because_they_span_the_cluster():
+    """A scheduled test rehearses the cluster exam, which is wider than any deck
+    in the plan. The client reads the empty list as "draw from the cluster"."""
+    for t in all_tasks(full_days(inputs(days_out=60, minutes=45))):
+        if t["kind"] == "quiz":
+            assert t["term_ids"] == []
+            assert t["tier"] in ("state", "icdc")
+
+
+def test_the_taper_rehearses_both_halves_of_competing():
+    stage = TODAY + timedelta(days=60)
+    tapers = [d for d in full_days(inputs(days_out=60, minutes=45))
+              if 0 < (stage - d["date"]).days <= plan.TAPER_DAYS]
+    assert tapers
+    for d in tapers:
+        kinds = {t["kind"] for t in d["tasks"]}
+        assert {"mock", "quiz"} <= kinds, (d["date"], kinds)
+        # Late tests are ICDC difficulty: the taper is not the time for recognition.
+        assert all(t["tier"] == "icdc" for t in d["tasks"] if t["kind"] == "quiz")
+
+
+def test_a_short_day_is_not_spent_entirely_on_a_practice_test():
+    """The budget guard has to hold for the new task like every other one."""
+    for d in full_days(inputs(days_out=90, minutes=10)):
+        assert d["planned"] <= d["budget"], (d["date"], d["planned"], d["budget"])
+
+
+def test_practice_tests_appear_in_the_calendar_export():
+    days = full_days(inputs(days_out=60, minutes=45))
+    assert any("Practice test" in c["summary"] for c in plan._calendar(days))
+
+
+def test_a_previewed_plan_survives_the_response_model():
+    """The scheduling tests call _simulate directly, which skips the response
+    model entirely. Adding a task kind without widening PlanTask.kind therefore
+    passed every one of them and 500'd the real endpoint, so this goes through
+    the route the browser actually uses."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    body = {
+        "event_id": EVENT,
+        "stages": [{"name": "District", "date": (date.today() + timedelta(days=45)).isoformat()}],
+        "day_minutes": [0, 30, 30, 30, 30, 30, 0],
+        "goal": "core",
+    }
+    r = TestClient(app).post("/api/plan/preview", json=body)
+    assert r.status_code == 200, r.text
+    kinds = {t["kind"] for d in r.json()["days"] for t in d["tasks"]}
+    assert "quiz" in kinds, kinds
