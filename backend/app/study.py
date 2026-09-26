@@ -1,10 +1,17 @@
-"""Study progress — the pure state machine behind one term's mastery.
+"""Study progress, the pure state machine behind one term's mastery.
 
 Evidence is RANKED, because not all practice proves the same thing:
 
     flip      you looked at the card. Proves you saw it, nothing more.
+    quiz      you picked the right answer out of four. Recognition, under no clock.
     blitz     you used it under a 45-second clock and a model judged it.
     roleplay  you applied it inside a graded role-play. The strongest proof there is.
+
+A quiz sits above a flip and below a blitz, and it deliberately cannot finish a
+term. Recognizing the right answer among four is real evidence, it is why a quiz
+result moves a new term to "learning" and why missing one demotes a term you had
+known, but a quarter of it can be luck, and "known" in this app means you produced
+the skill, not that you spotted it. Promotion to "known" stays with blitz-or-better.
 
 A term only reaches "known" on blitz-or-better, so clicking through the library at
 speed cannot fake a finished course. That matters more here than it looks: the whole
@@ -12,8 +19,8 @@ promise of the Core path is "finish this and you know your event", and a path th
 can be completed by tapping Next is not a promise, it's a progress bar.
 
 Mastery can go DOWN. Missing a term you had known demotes it. This is the same value
-the rest of the app already holds — progress.py breaks mastery ties toward the weaker
-level, and the grader refuses to reward name-dropping — and a study path that only
+the rest of the app already holds, progress.py breaks mastery ties toward the weaker
+level, and the grader refuses to reward name-dropping, and a study path that only
 ratchets upward would flatter a student in exactly the way we refuse to elsewhere.
 
 Pure functions only: no DB, no user, no I/O. main.py reads the row, calls apply(),
@@ -23,11 +30,11 @@ writes it back. Same split as progress.py, and it keeps this unit-testable.
 from __future__ import annotations
 
 Status = str      # new | learning | known
-Evidence = str    # flip | blitz | roleplay
+Evidence = str    # flip | quiz | blitz | roleplay
 Verdict = str     # correct | partial | missed
 
 STATUS_RANK = {"new": 0, "learning": 1, "known": 2}
-EVIDENCE_RANK = {"flip": 0, "blitz": 1, "roleplay": 2}
+EVIDENCE_RANK = {"flip": 0, "quiz": 1, "blitz": 2, "roleplay": 3}
 
 
 def next_status(current: Status, evidence: Evidence, verdict: Verdict = "") -> Status:
@@ -36,6 +43,9 @@ def next_status(current: Status, evidence: Evidence, verdict: Verdict = "") -> S
         # Seeing a card can START a term moving but never finishes it, and never
         # un-proves something already demonstrated under pressure.
         return current if current in ("learning", "known") else "learning"
+    if evidence == "quiz":
+        # Recognition can start a term and can demote one, but never finishes it.
+        return "known" if (current == "known" and verdict == "correct") else "learning"
     if verdict == "correct":
         return "known"
     # partial / missed: honest demotion. A term you just missed is not "known".
@@ -46,7 +56,7 @@ def next_evidence(current: Evidence, evidence: Evidence, verdict: Verdict = "") 
     """The strongest evidence that has actually PROVEN this term.
 
     A missed drill is not evidence of mastery, so only a correct verdict can raise
-    this — otherwise a student who blitzed a term and failed would look, in the data,
+    this, otherwise a student who blitzed a term and failed would look, in the data,
     like a student who had demonstrated it.
     """
     if evidence != "flip" and verdict != "correct":

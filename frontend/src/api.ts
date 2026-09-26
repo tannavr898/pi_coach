@@ -1,6 +1,6 @@
 // Typed client for the backend. The SPA only ever talks to /api/* (Vite proxies
 // it to FastAPI in dev); keys live on the backend, never here. The judge's
-// instructions never cross this boundary — only participant-facing content does.
+// instructions never cross this boundary, only participant-facing content does.
 
 export type Level = "district" | "state" | "icdc";
 export type Mode = "learn" | "competition";
@@ -11,7 +11,7 @@ export type Criterion = {
   domain: string;
   topic: string;
   name: string;
-  // Teaching fields — populated in Learn mode, empty in Competition mode.
+  // Teaching fields, populated in Learn mode, empty in Competition mode.
   definition: string;
   strong_looks_like: string;
   weak_looks_like: string;
@@ -19,7 +19,7 @@ export type Criterion = {
 };
 
 // What a student STUDIES: one flashcard / course term (/api/terms). Distinct from
-// Criterion — the study corpus is larger than the framework we grade against, so a
+// Criterion, the study corpus is larger than the framework we grade against, so a
 // term need not have a criterion at all. `criterion_id` is set on the graded ones
 // (tier "core"), which is what weak-term highlighting keys off.
 export type Term = {
@@ -84,7 +84,7 @@ export type ScenarioResponse = {
   criteria: Criterion[];
   procedures: string[];
   situation: string;
-  // One-sentence challenge framing of the situation — the headline on the shareable
+  // One-sentence challenge framing of the situation, the headline on the shareable
   // results card. Optional: scenarios pooled before this field existed have none, so
   // the card falls back to `topic`.
   hook?: string;
@@ -145,7 +145,7 @@ export type CreativityScore = {
 };
 
 // Bonus-only credit for bringing in a related study term and actually applying it.
-// `terms` are the study-term ids the grader credited — they feed study progress as
+// `terms` are the study-term ids the grader credited, they feed study progress as
 // the strongest evidence there is.
 export type DepthScore = {
   bonus: number; // 0, 0.25, 0.5
@@ -208,7 +208,7 @@ export type DeliveryComponent = {
   label: string;
   score: number;
   hint: string;
-  /** Shown but weighted lightly — currently only the sampled video eye-contact row. */
+  /** Shown but weighted lightly, currently only the sampled video eye-contact row. */
   advisory?: boolean;
 };
 
@@ -260,9 +260,9 @@ export type DeliveryResponse = {
 
 // How long we'll wait before calling a request dead, per class of work.
 //
-// WHY THESE EXIST AT ALL. `fetch` has no default timeout: if a request stalls —
+// WHY THESE EXIST AT ALL. `fetch` has no default timeout: if a request stalls,
 // a phone that walked out of Wi-Fi range, a proxy that accepted the connection
-// and then went quiet, a cold backend — the promise simply never settles. The
+// and then went quiet, a cold backend, the promise simply never settles. The
 // loading screen then spins forever with no error, no retry, and no way back,
 // which is indistinguishable to the student from the app being broken. A bounded
 // wait turns that into a message they can act on.
@@ -271,7 +271,7 @@ export type DeliveryResponse = {
 // guess: transcription uploads audio and then polls a third party, so it is the
 // slowest by a wide margin and is given the most room.
 const TIMEOUT_MS = {
-  quick: 20_000,      // catalog/config reads — local JSON, no model call
+  quick: 20_000,      // catalog/config reads, local JSON, no model call
   model: 120_000,     // one LLM round trip (scenario, grading, blitz)
   transcribe: 300_000, // upload + provider polling; matches the server's own deadline
 };
@@ -279,7 +279,7 @@ const TIMEOUT_MS = {
 /** A user-facing message for a request that ran out of time, by class of work. */
 function timeoutMessage(kind: keyof typeof TIMEOUT_MS): string {
   if (kind === "transcribe") {
-    return "Your recording took too long to process. Check your connection and submit again — your recording is still here.";
+    return "Your recording took too long to process. Check your connection and submit again. Your recording is still here.";
   }
   return "That took too long to come back. Check your connection and try again.";
 }
@@ -344,14 +344,14 @@ export function getPublicStats(): Promise<PublicStats> {
   return request<PublicStats>("/api/stats");
 }
 
-// Study terms by id — a weak-term deck, a flagged set, or a course unit. Graded
+// Study terms by id, a weak-term deck, a flagged set, or a course unit. Graded
 // terms share their criterion's id, so a criterion id resolves here directly.
 export function getTerms(ids: string[]): Promise<Term[]> {
   if (ids.length === 0) return Promise.resolve([]);
   return request<Term[]>(`/api/terms?ids=${encodeURIComponent(ids.join(","))}`);
 }
 
-// The whole study corpus — powers the flashcard library.
+// The whole study corpus, powers the flashcard library.
 export function getAllTerms(): Promise<Term[]> {
   return request<Term[]>("/api/terms");
 }
@@ -397,7 +397,7 @@ export function postScenario(body: {
 }
 
 /**
- * Fetch one pooled scenario by id — the shared-challenge deep link (?s=<id>).
+ * Fetch one pooled scenario by id, the shared-challenge deep link (?s=<id>).
  *
  * Serves that exact role-play regardless of what this browser has already seen,
  * which is the point: a challenge is only fair if both people played the same one.
@@ -433,6 +433,43 @@ export type BlitzScenario = { id: string; text: string };
 export type BlitzVerdict = "correct" | "partial" | "missed";
 export type BlitzResult = { term_id: string; verdict: BlitzVerdict; note: string };
 
+// --- quiz ------------------------------------------------------------------
+// Multiple-choice questions from the pre-generated bank (backend/app/quiz.py).
+// No model call runs behind this endpoint, so a quiz costs nothing to serve and
+// needs no account and no allowance. The answer key and each option's rationale
+// come down with the question: the client grades the pick and teaches the miss
+// on the spot, with no round trip.
+
+export type QuizOption = { id: string; text: string; correct: boolean; rationale: string };
+
+export type QuizQuestion = {
+  id: string;
+  level: Level;
+  domain_id: string;
+  domain: string;
+  topic: string;
+  // The study terms this question is built from, what a result marks as studied.
+  term_ids: string[];
+  concepts: string[];
+  format: string;
+  question: string;
+  options: QuizOption[];
+};
+
+// `counts` is what the bank holds per level, so the UI can disable a tier that
+// has not been generated yet instead of opening an empty quiz.
+export type QuizResponse = { questions: QuizQuestion[]; counts: Record<string, number> };
+
+export function getQuiz(opts: { level?: Level; termIds?: string[]; domainIds?: string[]; count?: number } = {}): Promise<QuizResponse> {
+  const params = new URLSearchParams();
+  if (opts.level) params.set("level", opts.level);
+  if (opts.termIds?.length) params.set("ids", opts.termIds.join(","));
+  if (opts.domainIds?.length) params.set("domains", opts.domainIds.join(","));
+  if (opts.count) params.set("count", String(opts.count));
+  const qs = params.toString();
+  return request<QuizResponse>(`/api/quiz${qs ? `?${qs}` : ""}`);
+}
+
 export function getBlitzScenarios(): Promise<BlitzScenario[]> {
   return request<BlitzScenario[]>("/api/blitz/scenarios");
 }
@@ -448,7 +485,7 @@ export function postBlitzScore(body: {
   );
 }
 
-// Transcript only (no delivery metrics) — for spoken blitz answers, graded on content.
+// Transcript only (no delivery metrics), for spoken blitz answers, graded on content.
 export async function postTranscribe(audio: Blob): Promise<string> {
   const ext = audio.type.includes("webm") ? "webm" : audio.type.includes("ogg") ? "ogg" : audio.type.includes("mp4") ? "mp4" : "dat";
   const fd = new FormData();
@@ -479,7 +516,7 @@ export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = f
   const res = await fetchWithTimeout("/api/score-delivery", { method: "POST", body: fd }, "transcribe");
   if (!res.ok) {
     // Prefer the backend's specific reason (e.g. "silent or too short"); fall back
-    // to a plain-English message when the body isn't JSON — which is what a raw
+    // to a plain-English message when the body isn't JSON, which is what a raw
     // gateway 502/504 (proxy timeout, cold start) looks like, and where the bare
     // "HTTP 502" used to leak through to the user.
     let detail = "";
@@ -498,7 +535,7 @@ export async function postDelivery(audio: Blob, targetSeconds = 450, diarize = f
 }
 
 // --- usage caps + tiers ----------------------------------------------------
-// Fetched before a session starts so the UI can show what's left up front —
+// Fetched before a session starts so the UI can show what's left up front,
 // nobody should discover a cap halfway through a rep they've already prepped for.
 
 export type Tier = "anonymous" | "free" | "pro";
@@ -524,7 +561,7 @@ export const UNLIMITED = -1;
 
 // --- video analysis (beta) -------------------------------------------------
 // Observable checks only: eye contact, positive expression, off-frame. There is
-// deliberately no confidence/charisma/emotion score in this shape — those can't
+// deliberately no confidence/charisma/emotion score in this shape, those can't
 // be observed from sampled frames, and telling a nervous student they "seemed
 // unconfident" is harmful feedback, not coaching.
 
@@ -540,7 +577,7 @@ export type VideoMetrics = {
   disclaimer: string;
   // How much the sampled frames moved the delivery score (signed, capped at ±4
   // server-side and scaled by how many frames we actually read). 0 when the
-  // sample was too small to say anything — see delivery.video_adjustment.
+  // sample was too small to say anything, see delivery.video_adjustment.
   delivery_adjustment: number;
   adjusted_delivery_score: number | null;
   adjustment_reason: string;
@@ -549,6 +586,6 @@ export type VideoMetrics = {
 
 export type VideoFrame = { media_type: string; data: string };
 
-// The calls themselves live in progress.ts — they carry an auth token, and this
+// The calls themselves live in progress.ts, they carry an auth token, and this
 // module is deliberately the anonymous-only surface. Only the types live here,
 // next to the rest of the response shapes.

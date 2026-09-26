@@ -1,10 +1,10 @@
-// The study course — the summer half of the app. Pick the event you're competing
+// The study course, the summer half of the app. Pick the event you're competing
 // in, get an ordered path through the terms it actually exercises, and work it.
 //
 // Two ideas carry the whole screen:
 //   - The CORE path is the promise: every skill we actually grade for this event.
 //     It gets the headline number. "Everything" is the optional deeper pass.
-//   - A UNIT is one topic (~4-7 terms) — small enough to finish in a sitting, which
+//   - A UNIT is one topic (~4-7 terms), small enough to finish in a sitting, which
 //     is what makes a 250-term corpus feel like a path instead of a pile.
 //
 // Units hand off to the existing study overlay and Mastery Blitz rather than
@@ -21,6 +21,7 @@ export function StudyCourse({
   refreshKey,
   onStudy,
   onBlitz,
+  onQuiz,
   onPractice,
   onSignup,
 }: {
@@ -29,6 +30,7 @@ export function StudyCourse({
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
+  onQuiz: (cards: Term[], title?: string) => void;
   // A plan's role-play task. With a name, practice is focused on that skill.
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
@@ -106,7 +108,7 @@ export function StudyCourse({
     }
   }, [course]);
 
-  // Units hand ids to the overlay, so fetch the cards only when one is opened —
+  // Units hand ids to the overlay, so fetch the cards only when one is opened,
   // a course is ~250 terms and almost none of them are needed to render this page.
   const launch = useCallback(
     async (ids: string[], title: string, fn: (c: Term[], t?: string) => void) => {
@@ -269,13 +271,24 @@ export function StudyCourse({
             Five random terms from {tier === "core" ? "your core path" : "the whole course"}, 45 seconds each.
           </p>
         </div>
-        <button
-          className={hasPlan ? BTN_SECONDARY : BTN_PRIMARY}
-          disabled={busy || !allIds.length}
-          onClick={() => launch(allIds, course.event, onBlitz)}
-        >
-          Blitz {allIds.length} terms →
-        </button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            className={hasPlan ? BTN_SECONDARY : BTN_PRIMARY}
+            disabled={busy || !allIds.length}
+            onClick={() => launch(allIds, course.event, onBlitz)}
+          >
+            Blitz {allIds.length} terms →
+          </button>
+          {/* The no-cost counterpart: multiple choice over the same terms, open
+              whether or not you're signed in. */}
+          <button
+            className={BTN_SECONDARY}
+            disabled={busy || !allIds.length}
+            onClick={() => launch(allIds, course.event, onQuiz)}
+          >
+            ◎ Quiz
+          </button>
+        </div>
       </div>
 
       {visible.map((u) => {
@@ -311,6 +324,9 @@ export function StudyCourse({
                 </span>
                 <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
                   ⚡ Blitz
+                </button>
+                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz)}>
+                  ◎ Quiz
                 </button>
                 <button
                   className={BTN_SECONDARY}
@@ -351,7 +367,7 @@ function TierTab({ active, onClick, label }: { active: boolean; onClick: () => v
 // Two-layer progress. `percent` is what's been PROVEN (solid indigo); the optional
 // `behind` is proven-plus-seen (a pale wash under it), so flipping through a deck
 // visibly moves something without ever claiming the term is mastered. The solid
-// layer is the only one that means "done" — that distinction is the whole point.
+// layer is the only one that means "done", that distinction is the whole point.
 //
 // aria-valuenow stays on the proven figure: a screen reader must hear the honest
 // number, and the wash is a hint, not a second value.

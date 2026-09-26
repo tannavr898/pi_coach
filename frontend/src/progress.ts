@@ -43,7 +43,7 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 // Like authFetch, but anonymous is a valid answer rather than an error. The study
-// path renders for anyone — a token only adds "where you got to" on top of it — so
+// path renders for anyone, a token only adds "where you got to" on top of it, so
 // this attaches the header when we have one and just omits it when we don't.
 async function maybeAuthFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAccessToken().catch(() => null);
@@ -156,7 +156,7 @@ export type ProgressResponse = {
 
 /**
  * Confirm a scenario was actually shown, so it is never served to this user
- * again — even on a different device.
+ * again, even on a different device.
  *
  * Deliberately separate from requesting it: the app PREFETCHES a scenario as
  * soon as an event is picked, and marking that as seen would burn pool entries
@@ -227,7 +227,7 @@ export type Course = {
   enrolled: boolean;
 };
 
-export type StudyEvidence = "flip" | "blitz" | "roleplay";
+export type StudyEvidence = "flip" | "quiz" | "blitz" | "roleplay";
 export type StudyMark = { term_id: string; evidence: StudyEvidence; verdict?: BlitzVerdict | "" };
 
 // Browsable without an account: progress comes back all-zero when signed out.
@@ -248,7 +248,7 @@ export function enrollCourse(eventId: string): Promise<Course> {
 }
 
 // Fire-and-forget, and deliberately never throws. Anonymous users study too, and a
-// missing token just means there's nowhere to record it — recording progress must
+// missing token just means there's nowhere to record it, recording progress must
 // never be able to break a drill or a flip.
 export async function markStudy(marks: StudyMark[]): Promise<{ updated: number }> {
   if (!marks.length) return { updated: 0 };
@@ -273,7 +273,7 @@ export type PlanStageInput = { name: string; date: string };
 export type PlanInputs = {
   event_id: string;
   stages: PlanStageInput[];
-  // Minutes per weekday, Sunday first — the same order as Date.getDay().
+  // Minutes per weekday, Sunday first, the same order as Date.getDay().
   day_minutes: number[];
   goal: PlanGoal;
 };
@@ -395,8 +395,8 @@ export function clearSamples(): Promise<{ deleted: number }> {
 /**
  * This caller's tier and remaining monthly allowance.
  *
- * Anonymous is a valid answer — a signed-out visitor gets the anonymous tier's
- * numbers rather than an error — so this uses `maybeAuthFetch`. We fetch it
+ * Anonymous is a valid answer, a signed-out visitor gets the anonymous tier's
+ * numbers rather than an error, so this uses `maybeAuthFetch`. We fetch it
  * BEFORE a session starts so the UI can show what's left up front; discovering a
  * cap halfway through a rep you've already prepped for is exactly the surprise
  * this is meant to prevent.
@@ -410,12 +410,12 @@ export function fetchUsage(): Promise<Usage> {
  *
  * Requires an account (`authFetch`): video is the cost driver, and an account is
  * what makes its cap enforceable server-side. Only the already-downscaled stills
- * go over the wire — the full video is never recorded or uploaded — and the
+ * go over the wire, the full video is never recorded or uploaded, and the
  * backend discards them as soon as it has the counts.
  */
 /**
  * `deliveryScore` is the audio-only score for this rep. It goes up so the SERVER
- * can compute how much the sampled frames are allowed to move it — the cap and
+ * can compute how much the sampled frames are allowed to move it, the cap and
  * the sample-size floor are grading rules, and grading rules don't live in the
  * client. Omit it on a typed rep, where there's no delivery score to adjust.
  */

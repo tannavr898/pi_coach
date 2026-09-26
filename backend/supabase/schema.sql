@@ -1,9 +1,9 @@
--- PI Coach — Supabase schema. Run this once in the Supabase SQL editor
+-- PI Coach, Supabase schema. Run this once in the Supabase SQL editor
 -- (Dashboard → SQL → New query → paste → Run).
 --
 -- One table: `sessions`. It stores each COMPLETED practice run for a logged-in
 -- user, so we can show cross-session progress and re-render past feedback. The
--- anonymous practice loop never writes here — login is optional and additive.
+-- anonymous practice loop never writes here, login is optional and additive.
 --
 -- Data minimization (users are minors): we store the participant's own written/
 -- transcribed answer and the computed scores, but NEVER raw audio (that stays
@@ -64,10 +64,10 @@ create policy "own rows" on public.sessions
 -- `term_id` is text with NO foreign key on purpose: terms live in
 -- backend/app/data/terms.json, not in Postgres, so the app can regenerate and
 -- reshape the study corpus without a migration. A term that disappears leaves an
--- orphan row, which the API simply ignores — cheaper than coupling the content
+-- orphan row, which the API simply ignores, cheaper than coupling the content
 -- pipeline to the database.
 --
--- `best_evidence` ranks flip < blitz < roleplay: a term only reaches 'known' on
+-- `best_evidence` ranks flip < quiz < blitz < roleplay: a term only reaches 'known' on
 -- blitz-or-better, so tapping through cards can't fake a finished course. The rules
 -- live in app/study.py; this column just stores the result.
 -- ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ create table if not exists public.study_progress (
   user_id       uuid not null references auth.users(id) on delete cascade,
   term_id       text not null,             -- terms.json id (FW-* or T-*); no FK, see above
   status        text not null default 'new',    -- new | learning | known
-  best_evidence text not null default 'flip',   -- flip | blitz | roleplay
+  best_evidence text not null default 'flip',   -- flip | quiz | blitz | roleplay
   seen_count    int  not null default 0,
   correct_count int  not null default 0,
   last_seen_at  timestamptz not null default now(),
@@ -121,7 +121,7 @@ create policy "own rows" on public.study_progress
 -- already paid for makes the common path instant and free.
 --
 -- THE CACHE KEY IS THE WHOLE DESIGN. The user types free text ("marketing for a
--- restaurant" / "restaurant marketing"), so the raw string is a terrible key —
+-- restaurant" / "restaurant marketing"), so the raw string is a terrible key,
 -- near-zero hit rate. We key on the INTERPRETED result instead, and only on the
 -- parts that are known BEFORE generation runs:
 --
@@ -166,7 +166,7 @@ create index if not exists cached_scenario_key_idx
 
 -- Cached scenarios are shared inventory, not user rows: they contain no personal
 -- data and are read by every user. RLS stays ON with a read-only policy so the
--- anon key can never write here — only the backend's service key can.
+-- anon key can never write here, only the backend's service key can.
 alter table public.cached_scenario enable row level security;
 
 drop policy if exists "public read" on public.cached_scenario;
@@ -192,7 +192,7 @@ create policy "own rows" on public.seen_scenario
 
 
 -- Atomic serve counter. PostgREST can't express `times_served = times_served + 1`
--- in a PATCH, and a read-modify-write would lose counts under concurrency — which
+-- in a PATCH, and a read-modify-write would lose counts under concurrency, which
 -- would quietly corrupt the one number we use to measure whether the cache is
 -- working. A tiny function keeps it correct.
 create or replace function public.bump_scenario_served(sid uuid)
@@ -204,7 +204,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Usage counters: one row per (user, month, session kind).
 --
--- Caps are enforced SERVER-side for signed-in users — the client is never
+-- Caps are enforced SERVER-side for signed-in users, the client is never
 -- trusted with a limit that protects the bill. Anonymous voice usage is capped
 -- client-side instead, and that is a deliberate, documented tradeoff: the only
 -- server-side identifier available for a signed-out visitor is the IP, and our
@@ -245,7 +245,7 @@ create policy "own rows" on public.usage_counter
 --
 -- The check and the increment MUST happen in the same statement. Read-then-write
 -- from the application would let two concurrent requests both read count=2
--- against a cap of 3 and both proceed — the exact race a paying-for-vision
+-- against a cap of 3 and both proceed, the exact race a paying-for-vision
 -- endpoint cannot afford. The `where` clause makes the cap a condition of the
 -- write itself, so at most one of them commits.
 --
@@ -285,7 +285,7 @@ $$;
 -- Video results on a saved session.
 --
 -- Without this column a video rep loses its Video tab the moment the student
--- reopens it from their history — the whole point of saving a session is that
+-- reopens it from their history, the whole point of saving a session is that
 -- the feedback is still there later, and video feedback is no different.
 --
 -- Still no video and no frames: this stores only the observable COUNTS
@@ -299,15 +299,15 @@ alter table public.sessions add column if not exists video jsonb;
 -- Study plans: `study_plan` (one row per user).
 --
 -- A plan turns the event course into a dated daily schedule toward the student's
--- competitions. Only the INPUTS are stored — event, competition dates, minutes per
--- weekday, goal — because the schedule itself is recomputed from current progress
+-- competitions. Only the INPUTS are stored, event, competition dates, minutes per
+-- weekday, goal, because the schedule itself is recomputed from current progress
 -- on every load (app/plan.py). That is what lets a missed day reschedule itself
 -- instead of turning into a backlog, with nothing here to migrate or repair.
 --
 -- The one piece of computed state is today's task list (`today_tasks`, keyed by
 -- the student's local `today_date`). It is frozen on the first load of the day so
 -- the checklist doesn't reshuffle while they're working through it. When the day
--- rolls over, the old list is scored into `history` ({date, planned, done}) — a
+-- rolls over, the old list is scored into `history` ({date, planned, done}), a
 -- count, not a log of what they did, in keeping with the usage_counter posture.
 -- ---------------------------------------------------------------------------
 

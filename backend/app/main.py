@@ -1,4 +1,4 @@
-"""FastAPI application — content loop (independent evaluation framework).
+"""FastAPI application, content loop (independent evaluation framework).
 
 Endpoints:
 - GET  /api/health         liveness
@@ -6,6 +6,7 @@ Endpoints:
 - GET  /api/framework      our business domains (for UI hints)
 - GET  /api/rubric         the scoring levels (labels + descriptions) for the UI
 - GET  /api/terms          the study corpus (flashcards / course units)
+- GET  /api/quiz           multiple-choice questions from the pre-generated bank
 - POST /api/feedback       record a piece of user feedback
 - POST /api/scenario       interpret a free-text request, select framework
                            criteria, and generate an original scenario
@@ -16,17 +17,17 @@ Endpoints:
 - GET  /api/stats          site-wide totals: role-plays, Blitz drills, scenarios
 - GET  /api/course/{id}    an event's study path (anonymous-friendly)
 - POST /api/course/enroll  start/switch the signed-in user's path
-- POST /api/study/mark     fold a flip/blitz/role-play result into progress
+- POST /api/study/mark     fold a flip/quiz/blitz/role-play result into progress
 - POST /api/plan/preview   a study plan from inputs, unsaved (anonymous-friendly)
 - GET/PUT/DELETE /api/plan the signed-in user's saved study plan
 
 Plus the server-rendered study pages (app/seo.py): /flashcards, /flashcards/{event},
-/robots.txt and /sitemap.xml. Those are plain HTML rather than JSON — they are the
+/robots.txt and /sitemap.xml. Those are plain HTML rather than JSON, they are the
 only pages a search crawler can read without executing the SPA bundle.
 
 The Vite dev server proxies /api/* here, so no CORS in development. Provider keys
 stay server-side; the frontend only ever talks to /api/*. The judge's instructions
-are never returned to the client — only the participant-facing situation and (after
+are never returned to the client, only the participant-facing situation and (after
 the response) the follow-up questions.
 
 The evaluation layer references OUR framework (framework.json) only: no DECA
@@ -41,13 +42,14 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta, timezone
+from typing import Literal
 
 import anyio.to_thread
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
+from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
@@ -76,6 +78,8 @@ from .schemas import (
     PlanInputs,
     PlanResponse,
     PublicStats,
+    QuizQuestion,
+    QuizResponse,
     Sampling,
     StudyMarkRequest,
     StudyMarkResponse,
@@ -99,8 +103,8 @@ from . import mathcheck
 
 # How many blocking calls may be in flight at once.
 #
-# Everything slow in this app is I/O waiting on somebody else — the transcription
-# provider's poll loop, an Anthropic completion, a Supabase round trip — so these
+# Everything slow in this app is I/O waiting on somebody else, the transcription
+# provider's poll loop, an Anthropic completion, a Supabase round trip, so these
 # threads spend their lives asleep, not competing for CPU. The default of 40 is
 # tuned for short database calls; here a single transcription can hold its thread
 # for the length of a student's recording, and once all 40 are held every plain
@@ -122,11 +126,11 @@ app = FastAPI(title="PI Coach", version="1.0.0", lifespan=_lifespan)
 
 # Server-rendered study pages (/flashcards, /flashcards/{event}) plus robots.txt and
 # sitemap.xml. Included here, near the top, because Starlette matches routes in
-# registration order and the SPA is mounted at "/" at the very bottom of this file —
+# registration order and the SPA is mounted at "/" at the very bottom of this file,
 # anything registered after that mount is unreachable.
 app.include_router(seo.router)
 
-# Standard participant-facing procedures (our own wording — original material).
+# Standard participant-facing procedures (our own wording, original material).
 PROCEDURES = [
     "You have up to 10 minutes to review the situation and prepare. You may make notes to use during your presentation.",
     "You then have up to 10 minutes to present to the judge.",
@@ -158,7 +162,7 @@ def public_config() -> PublicConfig:
 
 @app.get("/api/framework", response_model=list[DomainSummary])
 def get_domains() -> list[DomainSummary]:
-    """Our business domains (with criterion counts) — for UI hints/examples."""
+    """Our business domains (with criterion counts), for UI hints/examples."""
     return [DomainSummary(**d) for d in framework.domain_summaries()]
 
 
@@ -176,7 +180,7 @@ def get_terms(ids: str = "") -> list[Term]:
     library). Each term carries a plain definition, a worked example run through the
     four DECA beats, and one term-specific common mistake.
 
-    These are study content, NOT the grading criteria — see app/terms.py. Terms that
+    These are study content, NOT the grading criteria, see app/terms.py. Terms that
     map to a graded criterion carry `criterion_id` and tier="core"; the rest are
     study-only. Grading reads framework.json and never touches this path."""
     wanted = [x.strip() for x in ids.split(",") if x.strip()]
@@ -234,7 +238,7 @@ async def scenario(
     criteria, and generate an original scenario built to require exactly those.
 
     Generation is attempted only on a cache MISS. On a hit we return a scenario
-    another user already paid for, instantly and for free — see app/scenario_cache.py
+    another user already paid for, instantly and for free, see app/scenario_cache.py
     for how the key is built and when a cached scenario is allowed to be served.
     `optional_user` is used (not `current_user`) because the practice loop stays
     fully anonymous; knowing who is asking only makes the never-repeat guarantee
@@ -374,7 +378,7 @@ async def scenario(
     # Only scenarios that reached this point are stored: a non-empty situation and
     # exactly the required criteria count are both already enforced above. That
     # matters more here than elsewhere because a cached scenario is served to many
-    # users — a bad one gets amplified instead of absorbed.
+    # users, a bad one gets amplified instead of absorbed.
     #
     # We cache the LEARN view of the criteria (teaching fields populated) and
     # re-derive the mode-specific view on the way out. Caching the Competition
@@ -438,7 +442,7 @@ def _quoted(evidence: str | None, haystack: str) -> bool:
 
     The model is asked for verbatim substrings; this checks it. Loose on whitespace
     and case (transcripts and the model both normalize unpredictably) but strict
-    about the words themselves — a quote we can't find is a quote they didn't say.
+    about the words themselves, a quote we can't find is a quote they didn't say.
     """
     if not evidence:
         return False
@@ -450,7 +454,7 @@ def _build_depth(raw: dict, response_text: str, offered: dict[str, dict]) -> Dep
     """Section 2's depth bonus: credit for genuinely APPLYING a related study term.
 
     Three deterministic gates, because the prompt alone can't be trusted with the
-    one rule that matters here — mention must not pay:
+    one rule that matters here, mention must not pay:
       1. the cited terms must be ones we actually offered (no inventing);
       2. the quote must be findable in the participant's own text (no hallucinating
          the evidence for a term they never used);
@@ -544,7 +548,7 @@ def _build_presentation(raw: dict, spoken: bool, delivery_score: int | None) -> 
 def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreResponse:
     """Grade a response against the selected framework criteria using the weighted
     three-section rubric (60% performance indicators, 25% analytical, 15% presentation)."""
-    # Resolve criteria from our framework — never trust the client for their text.
+    # Resolve criteria from our framework, never trust the client for their text.
     criteria = framework.get_criteria(req.criteria_ids)
     if not criteria:
         raise HTTPException(status_code=400, detail="Unknown evaluation criteria.")
@@ -563,7 +567,7 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
     try:
         # 8192, not 4096: the reply carries a full paragraph of feedback plus
         # verbatim evidence quotes for every criterion, and a wordy run on a long
-        # transcript could brush the old ceiling — at which point the JSON came
+        # transcript could brush the old ceiling, at which point the JSON came
         # back cut in half and the student lost a rep they had already recorded.
         # A ceiling is not a bill; unused headroom costs nothing.
         data = llm.complete_json(system, user, model=config.SCORING_MODEL, max_tokens=8192)
@@ -578,7 +582,7 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
             status_code=502,
             detail=(
                 "We couldn't finish grading this response. Your recording and "
-                "delivery feedback are safe — try grading again in a moment."
+                "delivery feedback are safe. Try grading again in a moment."
             ),
         )
 
@@ -591,7 +595,7 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
 
     # --- Section 2: Analytical & Problem-Solving (25%) ---
     # Evidence for the depth bonus is checked against what the participant actually
-    # said — main response and follow-up both count, since either can carry it.
+    # said, main response and follow-up both count, since either can carry it.
     said = f"{req.response}\n{req.followup_answer}"
     analytical = _build_analytical(data.get("analytical", {}) or {}, said, {t["id"]: t for t in depth_vocab})
 
@@ -612,7 +616,7 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
     overall = round(final_percent)
 
     # Deterministically recompute every calculation the model flagged. Python's
-    # result is authoritative — the model is never trusted for arithmetic.
+    # result is authoritative, the model is never trusted for arithmetic.
     math_checks = mathcheck.verify_all(data.get("math_checks", [])) if quantitative else []
 
     background.add_task(stats.bump, "roleplay")
@@ -648,7 +652,7 @@ async def mark_scenario_seen(
     Separate from serving it, because the client PREFETCHES: it requests a
     scenario the moment an event is picked, before the student has committed. If
     serving marked it seen, every browse through the event list would burn pool
-    entries for role-plays nobody ever read — permanently, since seen is forever.
+    entries for role-plays nobody ever read, permanently, since seen is forever.
     So the client tells us when it really showed one.
 
     Anonymous callers are a no-op here (there is no server-side history to write);
@@ -665,7 +669,7 @@ async def get_scenario_by_id(
     background: BackgroundTasks,
     mode: Mode = "competition",
 ) -> ScenarioResponse:
-    """Serve one pooled scenario by id — the shared-challenge deep link.
+    """Serve one pooled scenario by id, the shared-challenge deep link.
 
     This is how a Gauntlet card closes its loop: the card's URL carries the
     scenario_id, and whoever opens it gets the SAME role-play their friend played,
@@ -673,7 +677,7 @@ async def get_scenario_by_id(
 
     No `daily_cap` dependency: this spends no model tokens (the scenario already
     exists in the pool). The rep it leads to is metered where the tokens are
-    actually spent — scoring — and by the client-side signed-out roleplay cap.
+    actually spent, scoring, and by the client-side signed-out roleplay cap.
     """
     hit = await scenario_cache.get_by_id(scenario_id)
     if hit is None:
@@ -697,7 +701,7 @@ async def get_scenario_by_id(
 async def get_usage(user: dict | None = Depends(optional_user)) -> dict:
     """This caller's tier and remaining monthly allowance.
 
-    Fetched BEFORE a session starts so the UI can show what's left up front —
+    Fetched BEFORE a session starts so the UI can show what's left up front,
     nobody should discover a cap halfway through a rep they've already prepped
     for. Anonymous callers get the anonymous tier's numbers, which the client
     also enforces (see app/usage.py for why that one is client-side)."""
@@ -722,29 +726,29 @@ async def score_delivery(
 
     For team events (`diarize=true`) we also request speaker labels and add a
     per-speaker talk breakdown + turn-by-turn transcript, so the app can show who
-    dominated and attribute each turn. Audio is processed and discarded here — we
+    dominated and attribute each turn. Audio is processed and discarded here, we
     keep only the transcript + numbers (minors' data minimization; the browser
     holds the recording for playback, deleting it unless the user opts to keep it).
     """
     raw = await audio.read()
     if not raw:
-        # Nothing was captured (mic blocked, or "stop" hit before any audio) —
+        # Nothing was captured (mic blocked, or "stop" hit before any audio),
         # a client problem, so a clear 422 rather than a scary gateway-style 5xx.
         raise HTTPException(
             status_code=422,
-            detail="Nothing was recorded — no audio reached the server. Record your response, then submit again.",
+            detail="Nothing was recorded: no audio reached the server. Record your response, then submit again.",
         )
 
     # Claim the voice session AFTER the empty-audio check (a failed upload must
     # not cost the student an allowance) and BEFORE the paid transcription call.
     # For signed-in users this is atomic and server-enforced; anonymous callers
-    # are metered client-side — see app/usage.py for that tradeoff.
+    # are metered client-side, see app/usage.py for that tradeoff.
     receipt = await usage.claim(user, "voice")
 
     try:
         # Off the event loop, and this is the one that mattered most: `transcribe`
         # uploads the audio and then POLLS the provider with a blocking
-        # `time.sleep(2)` until the transcript is ready — tens of seconds on a
+        # `time.sleep(2)` until the transcript is ready, tens of seconds on a
         # normal rep. Awaiting that inline in an `async def` pinned the single
         # worker's event loop for the whole poll, so every other request (another
         # student's grade, the SPA's own assets, Render's health check) simply
@@ -763,7 +767,7 @@ async def score_delivery(
             status_code=502,
             detail=(
                 "We couldn't transcribe that recording. It may have been silent, too "
-                "short, or picked up no clear speech — check your microphone, then "
+                "short, or picked up no clear speech. Check your microphone, then "
                 "record and submit again."
             ),
         )
@@ -787,7 +791,7 @@ async def score_delivery(
 async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> VideoMetrics:
     """Analyze sampled frames for observable eye contact and expression.
 
-    REQUIRES AN ACCOUNT — deliberately. Video is the cost driver (roughly 2-3x an
+    REQUIRES AN ACCOUNT, deliberately. Video is the cost driver (roughly 2-3x an
     audio-only session), and an account is what makes the cap enforceable
     server-side. It is also always optional: the audio-only path is a first-class
     route through the whole loop and is never degraded by this endpoint existing.
@@ -795,13 +799,13 @@ async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> 
     Nothing is retained. Frames arrive in the request body, are analyzed, and are
     gone when this returns; the full video is never recorded or uploaded at all
     (the client samples stills from the live camera preview). See app/video.py for
-    the claim rules — every number here is an observable check, never an inferred
+    the claim rules, every number here is an observable check, never an inferred
     internal state.
     """
     if not req.frames:
         raise HTTPException(
             status_code=422,
-            detail="No frames were captured — check your camera permission and try again.",
+            detail="No frames were captured. Check your camera permission and try again.",
         )
 
     receipt = await usage.claim(user, "video")
@@ -821,7 +825,7 @@ async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> 
         )
 
     if metrics["checks"] == 0:
-        # Every batch failed to read — no usable checks means no honest numbers to
+        # Every batch failed to read, no usable checks means no honest numbers to
         # report, so refund rather than show a panel of zeroes.
         await usage.release(receipt, "video")
 
@@ -851,7 +855,7 @@ async def score_video(req: VideoRequest, user: dict = Depends(current_user)) -> 
 # --- Mastery Blitz (Phase 5) -----------------------------------------------
 # A rapid drill over the flashcard terms. The loop is model-free; the ONLY model
 # call is the single batched scoring pass below (fast/cheap Haiku). Everything is
-# session-local on the client — no accounts, no persistence.
+# session-local on the client, no accounts, no persistence.
 
 
 @app.get("/api/blitz/scenarios", response_model=list[BlitzScenario])
@@ -860,9 +864,35 @@ def blitz_scenarios() -> list[BlitzScenario]:
     return [BlitzScenario(**s) for s in blitz.scenarios()]
 
 
+@app.get("/api/quiz", response_model=QuizResponse)
+def get_quiz(
+    level: Literal["", "district", "state", "icdc"] = "",
+    ids: str = "",
+    domains: str = "",
+    count: int = Query(10, ge=1, le=40)) -> QuizResponse:
+    """A drawn set of multiple-choice questions from the pre-generated bank.
+
+    Filters: `level` (district | state | icdc), `ids` (comma list of term ids, a
+    deck, a course unit, the student's weak terms), `domains` (comma list of domain
+    ids). Everything is optional; with none of them the draw is the whole bank.
+
+    No model call happens here, the bank is written offline by scripts/gen_quiz.py
+    and this is a file read (app/quiz.py). That is why the quiz is open to anonymous
+    callers and carries no daily cap: a quiz round costs nothing to serve. The
+    answer key and each option's rationale ship with the question so the client can
+    grade the pick and teach the miss instantly; see app/quiz.py for that trade-off.
+
+    Questions are original, written from our own study cards. No competition
+    organization's exam items or indicator wording is reproduced anywhere here."""
+    term_ids = [x.strip() for x in ids.split(",") if x.strip()]
+    domain_ids = [x.strip() for x in domains.split(",") if x.strip()]
+    drawn = quiz.select(level=level, domain_ids=domain_ids, term_ids=term_ids, count=count)
+    return QuizResponse(questions=[QuizQuestion(**q) for q in drawn], counts=quiz.counts())
+
+
 @app.post("/api/transcribe", response_model=TranscribeResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
-    """Transcript only (no delivery metrics) — used for spoken blitz answers, which
+    """Transcript only (no delivery metrics), used for spoken blitz answers, which
     are graded on content, not delivery. Each recording is transcribed as it's
     captured so the drill never waits."""
     raw = audio.file.read()
@@ -873,7 +903,7 @@ def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
     except transcription.TranscriptionNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     except transcription.TranscriptionError:
-        raise HTTPException(status_code=502, detail="Couldn't transcribe that recording — try again or type your answer.")
+        raise HTTPException(status_code=502, detail="Couldn't transcribe that recording. Try again or type your answer.")
     return TranscribeResponse(transcript=result.text)
 
 
@@ -884,13 +914,13 @@ def blitz_score(req: BlitzScoreRequest, background: BackgroundTasks) -> BlitzSco
     re-pinned server-side by id (never trusted from the client)."""
     # Resolve each answer's term server-side: plain definition + the card's 'Connect'
     # beat as the gold-standard "correct use" reference. Drills run over study terms,
-    # so this reads terms.json — a drilled term may have no graded criterion at all.
+    # so this reads terms.json, a drilled term may have no graded criterion at all.
     items: list[dict] = []
     order: list[str] = []
     for a in req.answers:
         t = terms.get_term(a.term_id)
         if not t:
-            continue  # unknown id — skip rather than fail the whole drill
+            continue  # unknown id, skip rather than fail the whole drill
         good = (t.get("example") or {}).get("connect", "")
         items.append({"name": t["name"], "definition": t.get("definition", ""), "good_example": good, "response": a.response})
         order.append(a.term_id)
@@ -965,7 +995,7 @@ async def save_session(req: SessionSaveRequest, user: dict = Depends(current_use
         created = await db.insert_session(row)
     except httpx.HTTPError as exc:
         log.warning("session insert failed: %s", exc)
-        raise HTTPException(status_code=502, detail="Couldn't save your session — try again.") from exc
+        raise HTTPException(status_code=502, detail="Couldn't save your session. Try again.") from exc
     return SessionSaved(id=str(created.get("id")))
 
 
@@ -1036,7 +1066,7 @@ async def get_progress(user: dict = Depends(current_user)) -> ProgressResponse:
 async def get_course(event_id: str, user: dict | None = Depends(optional_user)) -> CourseResponse:
     """One event's study path, with the user's progress overlaid when signed in.
 
-    Renders fully for anonymous visitors — every term shows as "new" — so a student
+    Renders fully for anonymous visitors, every term shows as "new", so a student
     can see exactly what they'd be committing to before making an account."""
     course = courses.course_for(event_id)
     if not course:
@@ -1051,7 +1081,7 @@ async def get_course(event_id: str, user: dict | None = Depends(optional_user)) 
             prof = await db.get_study_profile(user["id"])
             enrolled = bool(prof and prof.get("event_id") == event_id)
         except httpx.HTTPError as exc:
-            # Progress is an overlay, not the point — show the path rather than 502.
+            # Progress is an overlay, not the point, show the path rather than 502.
             log.warning("course progress load failed: %s", exc)
 
     return CourseResponse(**courses.summarize(course, marks), enrolled=enrolled)
@@ -1067,7 +1097,7 @@ async def get_my_course(user: dict = Depends(current_user)) -> CourseResponse:
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="Couldn't load your course.") from exc
     if not prof:
-        raise HTTPException(status_code=404, detail="No course yet — pick an event to start one.")
+        raise HTTPException(status_code=404, detail="No course yet: pick an event to start one.")
     return await get_course(prof["event_id"], user)
 
 
@@ -1093,7 +1123,7 @@ async def mark_study(req: StudyMarkRequest, user: dict = Depends(current_user)) 
 
     Read-modify-write: the transition rules are a pure function (app/study.py) and
     mastery can go DOWN, so we need the current row to fold onto. Unknown term ids
-    are dropped rather than 400 — a stale client shouldn't fail a whole Blitz."""
+    are dropped rather than 400, a stale client shouldn't fail a whole Blitz."""
     if not config.has_supabase():
         raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
 
@@ -1131,7 +1161,7 @@ def _plan_day(local_date: str, tz_offset: int) -> tuple[date, int]:
 
 
 async def _plan_context(user: dict, tz: int) -> tuple[dict, list[dict], list[date]]:
-    """Progress map, weak criteria, and role-play dates — everything the planner reads."""
+    """Progress map, weak criteria, and role-play dates, everything the planner reads."""
     rows, sessions = await asyncio.gather(
         db.list_study_progress(user["id"]),
         db.list_sessions(user["id"], limit=200, select=db.PROGRESS_SELECT),
@@ -1157,7 +1187,7 @@ async def preview_plan(
     user: dict | None = Depends(optional_user),
 ) -> PlanResponse:
     """Build a plan without saving it. Anyone can see what their summer would look
-    like — the same pitch as the course rendering signed-out. Signed-in previews use
+    like, the same pitch as the course rendering signed-out. Signed-in previews use
     real progress, so editing a saved plan shows honest numbers before committing."""
     day, tz = _plan_day(local_date, tz_offset)
     inputs = req.model_dump(mode="json")
@@ -1220,7 +1250,7 @@ async def get_plan(
                 "history": history,
             })
         except httpx.HTTPError as exc:
-            # Unfrozen just means today may reshuffle — still show the plan.
+            # Unfrozen just means today may reshuffle, still show the plan.
             log.warning("plan snapshot save failed: %s", exc)
     else:
         built = plan.build_plan(inputs, prog, weak, day, frozen_today=frozen, last_roleplay=last_rp)
@@ -1256,7 +1286,7 @@ async def save_plan(
 
 @app.delete("/api/plan")
 async def delete_plan(user: dict = Depends(current_user)) -> dict:
-    """Remove the plan. Study progress is untouched — it belongs to the terms."""
+    """Remove the plan. Study progress is untouched, it belongs to the terms."""
     if not config.has_supabase():
         raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
     try:
@@ -1275,7 +1305,7 @@ class AdminVerify(BaseModel):
 @app.post("/api/admin/verify")
 def admin_verify(req: AdminVerify) -> dict:
     """Check the admin passphrase server-side (so the secret never ships in the
-    SPA bundle). 404 when no passphrase is configured — the admin page is off."""
+    SPA bundle). 404 when no passphrase is configured, the admin page is off."""
     import hmac
 
     if not config.ADMIN_PASSPHRASE:
@@ -1288,7 +1318,7 @@ def admin_verify(req: AdminVerify) -> dict:
 async def admin_cache_stats(user: dict = Depends(current_user)) -> dict:
     """Scenario-cache effectiveness since this process started.
 
-    The savings claim for the cache is only as good as this number — "we cache
+    The savings claim for the cache is only as good as this number, "we cache
     scenarios" means nothing without a hit rate to check it against. It's also
     the number that decides whether a background pool-warmer is ever worth
     building: if the hit rate is already high, warming would spend money to buy
@@ -1323,7 +1353,7 @@ async def admin_clear_sample(user: dict = Depends(current_user)) -> dict:
 # --- serve the built SPA (production) --------------------------------------
 # In dev, Vite serves the frontend and proxies /api here. In production we ship
 # one service: the built SPA is mounted at "/" (after all /api routes, so they
-# win), giving a single origin — no CORS, keys in one place. Skipped when the
+# win), giving a single origin, no CORS, keys in one place. Skipped when the
 # build isn't present (local dev, tests), so this stays a no-op there.
 import os  # noqa: E402
 from pathlib import Path  # noqa: E402

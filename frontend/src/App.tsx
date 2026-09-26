@@ -42,13 +42,14 @@ import { HomePage } from "./home";
 import { StudyCourse } from "./course";
 import { Flashcards, FlashcardLibrary } from "./flashcards";
 import { MasteryBlitz } from "./blitz";
+import { KnowledgeCheck } from "./quiz";
 import { useFlags } from "./flags";
 
 type ResponseMode = "type" | "speak";
 
 // A compact snapshot of a completed run, used to show a before/after when the
 // same scenario is re-attempted ("Try this again"). Because it's the SAME
-// scenario, the improvement is directly attributable — no difficulty confound.
+// scenario, the improvement is directly attributable, no difficulty confound.
 type RunSnapshot = {
   percent: number;
   criteriaHit: number; // criteria at proficient or above
@@ -68,7 +69,7 @@ function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
   };
 }
 // "home" is the scroll-based marketing landing page (the default). "practice" is
-// the role-play flow, whose first screen is now just the setup form — the hero and
+// the role-play flow, whose first screen is now just the setup form, the hero and
 // how-it-works copy moved to the landing page.
 type View = "home" | "practice" | "tips" | "faq" | "flashcards" | "course";
 // What the flashcard study overlay is showing: either ids to fetch, or preloaded
@@ -86,7 +87,7 @@ type Stage = "presession" | "pick" | "loading" | "ready" | "prep" | "walkin" | "
 // Stage ids read fine in code but are opaque in a PostHog breakdown, so the
 // abandonment funnel reports these instead. Two worth calling out: "respond" is
 // the speak-out-loud step (the one that asks for a microphone), and a live rep
-// can only be sitting on "feedback" while the content grade is still in flight —
+// can only be sitting on "feedback" while the content grade is still in flight,
 // they submitted successfully and were reading the delivery screen, which is a
 // wait, not a bail.
 const STEP_LABEL: Record<Stage, string> = {
@@ -113,7 +114,7 @@ const FREE_ROLEPLAYS = 3;
 
 // Phase 3: remember the last few scenario-variety combinations per event (locally,
 // per browser) so the backend can avoid handing the same user immediate repeats.
-// Session-local only — no backend/account involved.
+// Session-local only, no backend/account involved.
 const RECENT_COMBOS_MAX = 10;
 function recentCombos(eventId: string): string[] {
   if (!eventId) return [];
@@ -132,13 +133,13 @@ function recordCombo(eventId: string, signature: string) {
     list.push(signature); // newest last
     localStorage.setItem(`pic-combos-${eventId}`, JSON.stringify(list.slice(-RECENT_COMBOS_MAX)));
   } catch {
-    /* private mode / quota — variety just falls back to random */
+    /* private mode / quota, variety just falls back to random */
   }
 }
 
 // Scenario cache: the ids this browser has already been served, so the shared
 // pool never hands the same role-play to the same person twice. Signed-in users
-// are ALSO de-duped server-side (which survives a new device) — this list is
+// are ALSO de-duped server-side (which survives a new device), this list is
 // what makes the guarantee hold for anonymous visitors, who have no server-side
 // history to join against. Capped to match the backend's payload limit.
 const SEEN_SCENARIOS_MAX = 200;
@@ -158,7 +159,7 @@ function recordSeenScenario(id: string | null | undefined) {
     list.push(id); // newest last, so the slice below drops the oldest
     localStorage.setItem("pic-seen-scenarios", JSON.stringify(list.slice(-SEEN_SCENARIOS_MAX)));
   } catch {
-    /* private mode / quota — worst case we may see a scenario twice */
+    /* private mode / quota, worst case we may see a scenario twice */
   }
 }
 
@@ -177,7 +178,7 @@ function clearChallengeParam() {
     u.searchParams.delete("s");
     window.history.replaceState({}, "", `${u.pathname}${u.search}${u.hash}`);
   } catch {
-    /* history API unavailable — harmless, the param just lingers */
+    /* history API unavailable, harmless, the param just lingers */
   }
 }
 
@@ -206,7 +207,7 @@ export default function App() {
   const [responseText, setResponseText] = useState("");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   // Presentation clock: a shared window (response + judge's questions) that only
-  // counts down while `clockRunning` — it starts when the participant actually
+  // counts down while `clockRunning`, it starts when the participant actually
   // begins, and pauses between screens. `autoCountdown` is the 5-second nudge that
   // auto-starts it if they idle too long.
   const [presentRemaining, setPresentRemaining] = useState(0);
@@ -218,14 +219,14 @@ export default function App() {
   const [score, setScore] = useState<ScoreResponse | null>(null);
   const [delivery, setDelivery] = useState<DeliveryMetrics | null>(null);
   // Video (beta): opt-in per session. `videoOn` is the user's choice for THIS
-  // rep — it deliberately does not persist, so the camera is never on because of
+  // rep, it deliberately does not persist, so the camera is never on because of
   // a decision made days ago. `videoMetrics` is null on every voice-only rep,
   // which is the normal case and renders identically to before this shipped.
   const [videoOn, setVideoOn] = useState(false);
   const [videoMetrics, setVideoMetrics] = useState<VideoMetrics | null>(null);
   // The in-flight video analysis. Video and content scoring run in parallel, so
   // without this the save could fire first and persist the session with no video
-  // — the student would see a Video tab now and lose it when they reopened the
+  // the student would see a Video tab now and lose it when they reopened the
   // rep from history. The save awaits this promise, which normally costs nothing
   // (video is the faster of the two) but makes the ordering guaranteed instead
   // of lucky.
@@ -251,7 +252,7 @@ export default function App() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const nudge = useLandingNudge();
-  // Any entry into the practice flow retires the landing nudge — enterPractice,
+  // Any entry into the practice flow retires the landing nudge, enterPractice,
   // the 2-minute rep, a challenge deep link, the tour handoff. Keyed on `view`
   // rather than patched into each entry point, so a future one can't miss it.
   useEffect(() => {
@@ -260,7 +261,7 @@ export default function App() {
   }, [view]);
   const { user: authUser, ready: authReady, signOut, oauthError, dismissOAuthError } = useAuth();
   // Login dialog (optional; opened after a session, from the header, or the
-  // landing page — never before the user has experienced the product).
+  // landing page, never before the user has experienced the product).
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState<"signup" | "login">("signup");
   const [authReason, setAuthReason] = useState<string | undefined>(undefined);
@@ -338,6 +339,10 @@ export default function App() {
   const [flashcard, setFlashcard] = useState<FlashcardTarget | null>(null);
   // Mastery Blitz (Phase 5): the term set to drill, or null when closed.
   const [blitzCards, setBlitzCards] = useState<Term[] | null>(null);
+  // Knowledge Check: the term set to quiz, or null when closed. Unlike Blitz this
+  // is served from a pre-generated bank, so it spends nothing and stays open to
+  // signed-out visitors -- no gate, no allowance.
+  const [quizCards, setQuizCards] = useState<{ cards: Term[]; title?: string } | null>(null);
   // Bumped whenever a study surface closes. Flipping a card or finishing a Blitz
   // writes progress on the SERVER, but the course on screen was fetched when the
   // view mounted and has no idea -- so without this the counters sit unchanged
@@ -363,7 +368,7 @@ export default function App() {
   const videoGate: VideoGate = !CAN_CAPTURE_VIDEO
     ? { kind: "unsupported" }
     : !authUser
-      // Video requires an account — that's what makes its cap enforceable
+      // Video requires an account, that's what makes its cap enforceable
       // server-side, and video is the expensive path.
       ? { kind: "needs-account" }
       : usage && usage.video.limit !== UNLIMITED && usage.video.remaining <= 0
@@ -375,7 +380,7 @@ export default function App() {
   // tokens, so signed-out visitors get FREE_ROLEPLAYS reps before we ask them to
   // make a free account. Tracked per-browser; the per-IP limiter in the backend
   // is the abuse backstop. Only enforced when accounts are actually available
-  // (authReady) — with Supabase off there's nothing to upgrade to, so we fall
+  // (authReady), with Supabase off there's nothing to upgrade to, so we fall
   // back to the backend limiter instead of walling everyone.
   const [anonRoleplays, setAnonRoleplays] = useState<number>(() => {
     try {
@@ -396,7 +401,7 @@ export default function App() {
       try {
         localStorage.setItem("pic-anon-roleplays", String(next));
       } catch {
-        /* private mode — the in-memory count still gates this session */
+        /* private mode, the in-memory count still gates this session */
       }
       return next;
     });
@@ -409,7 +414,7 @@ export default function App() {
       track("roleplay_cap_hit", { used: anonRoleplays });
       openAuth(
         "signup",
-        `You've used your ${FREE_ROLEPLAYS} free role-plays. Create a free account to keep practicing — it's unlimited and saves your progress.`,
+        `You've used your ${FREE_ROLEPLAYS} free role-plays. Create a free account to keep practicing, it's unlimited and saves your progress.`,
       );
       return false;
     }
@@ -428,8 +433,16 @@ export default function App() {
       return;
     }
     track("blitz_started", { count: cards.length, ...extra });
-    visited.markVisited("blitz"); // an overlay, not a view — no route change to hook
+    visited.markVisited("blitz"); // an overlay, not a view, no route change to hook
     setBlitzCards(cards);
+  }
+
+  // No gate and no allowance check: the quiz is served from the pre-generated bank
+  // (backend/app/quiz.py), so a round costs nothing to run and a signed-out visitor
+  // can take as many as they like. It also gets no "unvisited" dot, because it is
+  // reached from the two surfaces that already have one.
+  function startQuiz(cards: Term[], title?: string) {
+    setQuizCards({ cards, title });
   }
 
   // Open a stored session's feedback (from the home "recent sessions" list).
@@ -509,9 +522,9 @@ export default function App() {
         const saved = await saveSession(body);
         setCurrentSessionId(saved.id);
       } catch {
-        /* saving is best-effort — never block the feedback screen on it */
+        /* saving is best-effort, never block the feedback screen on it */
       }
-      // Terms the grader confirmed were genuinely APPLIED in a graded role-play —
+      // Terms the grader confirmed were genuinely APPLIED in a graded role-play,
       // the strongest evidence of mastery there is, so it outranks a Blitz verdict
       // in study progress. Only credited terms arrive here: the bonus is zeroed
       // server-side unless a real quote backs it, so this can't be gamed.
@@ -524,7 +537,7 @@ export default function App() {
       try {
         localStorage.setItem("pic-pending-session", JSON.stringify(body));
       } catch {
-        /* storage disabled — the in-memory copy still attaches this session */
+        /* storage disabled, the in-memory copy still attaches this session */
       }
     }
   }
@@ -558,8 +571,8 @@ export default function App() {
   // scenario shown to brand-new accounts).
   const [onboarding, setOnboarding] = useState(false);
 
-  // Enter the practice flow at the normal setup form. Everyone uses this now —
-  // anonymous visitors included — so nobody is forced through the intro. Guarded
+  // Enter the practice flow at the normal setup form. Everyone uses this now,
+  // anonymous visitors included, so nobody is forced through the intro. Guarded
   // by the signed-out cap so a capped visitor hits the sign-up wall here, before
   // the setup screen speculatively prefetches (and pays for) a scenario.
   function enterPractice() {
@@ -572,7 +585,7 @@ export default function App() {
 
   // --- shared challenge deep link ------------------------------------------
   // Someone opened a friend's Gauntlet card link (/?s=<scenario_id>). Serve them
-  // that EXACT role-play — a "score to beat" only means something if both people
+  // that EXACT role-play, a "score to beat" only means something if both people
   // answered the same prompt. Runs once, before any event has been picked.
   const challengeRef = useRef<string | null>(readChallengeId());
   // The scenario carries its event's display NAME, not its id; we resolve the id
@@ -637,7 +650,7 @@ export default function App() {
 
   // --- 2-minute rep: where do they bail? -----------------------------------
   // The landing "Try a 2-minute rep" is the top of the funnel, so the useful
-  // question isn't how many finish — it's where the rest stop, and especially
+  // question isn't how many finish, it's where the rest stop, and especially
   // whether it's the speak-out-loud step, the only one that asks for a mic.
   //
   // These are refs rather than state because every exit path runs inside an
@@ -660,7 +673,7 @@ export default function App() {
   }
 
   // The one exit. Everything that ends the rep goes through here and the first
-  // call wins, so the event fires at most once per run — including under
+  // call wins, so the event fires at most once per run, including under
   // StrictMode, where the second pass finds the flag already cleared.
   function endTwoMinRep(reachedScore: boolean, unloading = false) {
     if (!repLiveRef.current) return;
@@ -676,7 +689,7 @@ export default function App() {
     const props = {
       last_step: STEP_LABEL[repStepRef.current],
       // Without `mode`, recording_started:false can't distinguish a typed run
-      // from someone who reached the mic and wouldn't press record — which is
+      // from someone who reached the mic and wouldn't press record, which is
       // the whole question this event exists to answer.
       mode: repModeRef.current,
       recording_started: repRecordedRef.current,
@@ -708,7 +721,7 @@ export default function App() {
     armTwoMinRep("ready", respMode);
     track("onboarding_started", { mode: respMode });
     track("two_min_rep_started", { source });
-    bumpAnonRoleplays(); // the 2-minute rep is a graded run — counts against the cap
+    bumpAnonRoleplays(); // the 2-minute rep is a graded run, counts against the cap
     setScenario(ONBOARDING_SCENARIO);
     setMode(respMode);
     setFollowupMode(respMode);
@@ -747,7 +760,7 @@ export default function App() {
 
   // The run stopped being the 2-minute rep: restart(), enterPractice(), skipping
   // the pre-session screen, or opening a stored session all clear `onboarding`.
-  // A no-op if it already scored — that disarmed it in an earlier commit.
+  // A no-op if it already scored, that disarmed it in an earlier commit.
   useEffect(() => {
     if (!onboarding) endTwoMinRep(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -763,7 +776,7 @@ export default function App() {
 
   // Tab close, reload, or navigating off the site. `pagehide` rather than
   // `beforeunload`: it also fires on iOS Safari and doesn't disqualify the page
-  // from the bfcache. Not `visibilitychange` — that fires on every tab switch,
+  // from the bfcache. Not `visibilitychange`, that fires on every tab switch,
   // so a student who alt-tabs to look something up mid-prep would be marked
   // abandoned with no way to undo it.
   useEffect(() => {
@@ -863,7 +876,7 @@ export default function App() {
       if (s.sampling) recordCombo(eventId, s.sampling.signature); // remember this combo to vary the next
       // Remember the cached-pool id so we're never served this role-play again.
       // Locally for anonymous visitors; confirmed server-side for signed-in ones
-      // so it survives a new device. Fire-and-forget — this must not delay the
+      // so it survives a new device. Fire-and-forget, this must not delay the
       // scenario appearing, and a failure only risks an eventual repeat.
       recordSeenScenario(s.scenario_id);
       if (s.scenario_id) void confirmScenarioSeen(s.scenario_id).catch(() => {});
@@ -890,7 +903,7 @@ export default function App() {
   }
 
   // Grade the content (indicators + solution + presentation). Runs in the
-  // BACKGROUND for spoken runs — the delivery-first screen is already visible —
+  // BACKGROUND for spoken runs, the delivery-first screen is already visible,
   // so this only sets the score/stage when its run is still the active one.
   async function runScoring(
     runId: number,
@@ -904,7 +917,7 @@ export default function App() {
     followupOverride?: string,
   ) {
     try {
-      // Spoken follow-up: transcribe it too (content only — its delivery isn't graded).
+      // Spoken follow-up: transcribe it too (content only, its delivery isn't graded).
       let followupForScoring = followupOverride ?? followupAnswer;
       if (followupOverride === undefined && followupMode === "speak" && followupAudio) {
         const fd = await postDelivery(followupAudio, sc.timing.target_seconds);
@@ -912,7 +925,7 @@ export default function App() {
         followupForScoring = fd.transcript;
         setFollowupAnswer(fd.transcript);
       }
-      // Everything the grade needs, minus the paid steps — so a failure below can
+      // Everything the grade needs, minus the paid steps, so a failure below can
       // be retried from exactly here rather than from the recording.
       lastGradeRef.current = {
         sc, response: responseForScoring, delivery: deliveryMetrics,
@@ -944,11 +957,11 @@ export default function App() {
       // Persist the completed run (logged in) or stash it to attach on sign-up.
       setCurrentSessionId(null);
       // Wait for video before saving, so a rep reopened from history keeps its
-      // Video tab. Normally instant — video analysis is the faster of the two
-      // background jobs — but awaiting makes it certain rather than probable.
+      // Video tab. Normally instant, video analysis is the faster of the two
+      // background jobs, but awaiting makes it certain rather than probable.
       const videoForSave = await (videoRunRef.current ?? Promise.resolve(null));
       // `deliveryMetrics` is the snapshot taken before video ran, so re-apply the
-      // adjustment here rather than reading it back off state — otherwise the
+      // adjustment here rather than reading it back off state, otherwise the
       // session would persist the audio-only score and a rep reopened from
       // history would disagree with the one the student just looked at.
       const deliveryForSave =
@@ -982,7 +995,7 @@ export default function App() {
       // Do NOT send a spoken run back to the follow-up screen. Their transcript
       // and delivery feedback are already on screen and still valid; retreating
       // to an earlier step hides work that succeeded, and the only way forward
-      // from there was to re-submit — re-uploading the audio, re-paying for
+      // from there was to re-submit, re-uploading the audio, re-paying for
       // transcription, and burning a second voice session to fix a failure in a
       // later step entirely. Stay put and offer to retry just the grade.
       if (deliveryMetrics) {
@@ -1000,7 +1013,7 @@ export default function App() {
    *
    * The expensive, already-succeeded half of a spoken submission (upload,
    * transcription, delivery metrics) is not repeated, so this is fast, free, and
-   * costs no allowance — which is what makes it safe to offer as a plain button.
+   * costs no allowance, which is what makes it safe to offer as a plain button.
    */
   async function retryGrade() {
     const g = lastGradeRef.current;
@@ -1017,7 +1030,7 @@ export default function App() {
     if (!scenario) return;
     setError(null);
     // Funnel: they hit submit. Pairs with `scored` to expose the gap between
-    // "tried to submit" and "got a score" — i.e. transcription/scoring failures.
+    // "tried to submit" and "got a score", i.e. transcription/scoring failures.
     track("response_submitted", { mode, event: eventId });
     const runId = ++scoreRunRef.current;
     const sc = scenario;
@@ -1032,7 +1045,7 @@ export default function App() {
       }
       setStage("scoring"); // transcription loader: delivery metrics aren't ready yet
 
-      // Stop the camera the moment they submit — the rep is over, so there is no
+      // Stop the camera the moment they submit, the rep is over, so there is no
       // reason for it to stay on for a second longer. This also hands us the
       // sampled frames; the analysis itself is kicked off below, deliberately
       // NOT awaited, so video can never delay or fail the audio path.
@@ -1042,7 +1055,7 @@ export default function App() {
       try {
         d = await postDelivery(audioBlob, sc.timing.target_seconds, sc.team);
       } catch (e) {
-        // Transcription failed — silent/empty/unclear clip, or the provider was
+        // Transcription failed, silent/empty/unclear clip, or the provider was
         // unreachable. Send them back to re-record (not on to the questions) with
         // the reason shown, instead of the old bare "HTTP 502".
         track("transcription_failed", { event: eventId, reason: errMsg(e).slice(0, 120) });
@@ -1052,13 +1065,13 @@ export default function App() {
       }
       if (scoreRunRef.current !== runId) return;
       if (!d.transcript.trim()) {
-        // Valid audio the provider heard as silence — comes back as empty text.
+        // Valid audio the provider heard as silence, comes back as empty text.
         track("recording_silent", { event: eventId });
         setError("We couldn't hear anything in that recording. It came through silent. Check your mic, then record again.");
         setStage("respond");
         return;
       }
-      // Delivery metrics are deterministic and ready now — render them at once,
+      // Delivery metrics are deterministic and ready now, render them at once,
       // leaving the content score to stream in behind them.
       setUtterances(d.utterances); // team: speaker-labeled turns for the transcript
       setResponseText(d.transcript); // so the Transcript tab can highlight it
@@ -1076,7 +1089,7 @@ export default function App() {
         track("video_submitted", { frames: frames.length, event: eventId });
         videoRunRef.current = scoreVideo(frames, d.metrics.delivery_score)
           .then((m) => {
-            if (scoreRunRef.current !== runId) return null; // stale run — they moved on
+            if (scoreRunRef.current !== runId) return null; // stale run, they moved on
             setVideoMetrics(m);
             // Fold the (small, server-capped) video adjustment into the delivery
             // metrics the Delivery tab renders and the session saves. Only the
@@ -1124,7 +1137,7 @@ export default function App() {
 
   function restart() {
     scoreRunRef.current++; // cancel any background grade in flight
-    lastGradeRef.current = null; // nothing left to retry — this rep is over
+    lastGradeRef.current = null; // nothing left to retry, this rep is over
     setScenario(null);
     setScore(null);
     setDelivery(null);
@@ -1167,7 +1180,7 @@ export default function App() {
         onLogin={() => openAuth("login")}
         onSignup={() => openAuth("signup")}
         onSignOut={() => { void signOut(); setView("home"); }}
-        // Dots only for signed-in accounts — a signed-out visitor has no account
+        // Dots only for signed-in accounts, a signed-out visitor has no account
         // to track, and marking up the nav for them is noise, not guidance.
         unvisited={authUser ? (s) => !visited.isVisited(s) : undefined}
         onReplayTour={authUser ? () => { track("tour_replayed"); setTourOpen(true); } : undefined}
@@ -1184,6 +1197,13 @@ export default function App() {
         />
       )}
       {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => { setBlitzCards(null); endStudy(); }} />}
+      {quizCards && (
+        <KnowledgeCheck
+          cards={quizCards.cards}
+          title={quizCards.title}
+          onClose={() => { setQuizCards(null); endStudy(); }}
+        />
+      )}
       {tourOpen && (
         <ProductTour
           onSkip={() => {
@@ -1216,7 +1236,7 @@ export default function App() {
 
         {/* A sign-in hand-off that came back broken. Amber rather than red, and
             with the retry right here: nothing they were doing was lost, they
-            just aren't logged in — practice itself never needed an account. */}
+            just aren't logged in, practice itself never needed an account. */}
         {oauthError && (
           <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
             <span className="mt-0.5">⚠</span>
@@ -1282,6 +1302,7 @@ export default function App() {
             initialDeck={handoffDeck}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards) => startBlitz(cards)}
+            onQuiz={(cards, title) => startQuiz(cards, title)}
           />
         ) : view === "course" ? (
           <StudyCourse
@@ -1289,6 +1310,7 @@ export default function App() {
             refreshKey={studyEpoch}
             onStudy={(cards, startId, title) => setFlashcard({ cards, startId, title })}
             onBlitz={(cards, title) => startBlitz(cards, { from: "course", unit: title })}
+            onQuiz={(cards, title) => startQuiz(cards, title)}
             onPractice={(name) => (name ? practiceCriterion(name) : enterPractice())}
             onSignup={() => openAuth("signup", "Create a free account to save your study plan and track it day by day.")}
           />
@@ -1356,7 +1378,7 @@ export default function App() {
 
             {/* The judge to present to, fixed near the webcam, for exactly as long
                 as the camera is on. Scoped to the two stages where the student is
-                actually delivering — showing it during prep or feedback would be
+                actually delivering, showing it during prep or feedback would be
                 asking them to make eye contact with nothing. */}
             {videoOn && sampler.state === "running" && (stage === "respond" || stage === "followup") && (
               <GazeAnchor frameCount={sampler.frameCount} />
@@ -1378,7 +1400,7 @@ export default function App() {
               <WalkinScreen
                 scenario={scenario}
                 onEnter={() => {
-                  // They left the waiting room to face the judge — the last
+                  // They left the waiting room to face the judge, the last
                   // step before they actually present.
                   track("presentation_started", { event: eventId });
                   setStage("respond");
@@ -1405,13 +1427,13 @@ export default function App() {
                 videoOn={videoOn}
                 videoRemaining={usage && usage.video.limit !== UNLIMITED ? usage.video.remaining : null}
                 onEnableVideo={async () => {
-                  // Only flip the opt-in once the camera actually starts — a
+                  // Only flip the opt-in once the camera actually starts, a
                   // failed permission prompt must not leave the UI claiming to
                   // be recording video it isn't.
                   if (await sampler.start()) setVideoOn(true);
                 }}
                 onDisableVideo={() => { sampler.cancel(); setVideoOn(false); }}
-                onSignIn={() => openAuth("signup", "Create a free account to add video feedback to your reps — it's free while video is in beta.")}
+                onSignIn={() => openAuth("signup", "Create a free account to add video feedback to your reps. It's free while video is in beta.")}
                 onContinue={() => {
                   setClockRunning(false); // pause the window while moving to the questions
                   setStage("followup");
@@ -1497,7 +1519,7 @@ export default function App() {
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
       {/* Landing only: a signed-in visitor gets HomePage here, and this is
           cold-visitor copy. Suppressed for a capped visitor, whose "Try it"
-          would open the sign-up wall instead of a rep — a broken promise.
+          would open the sign-up wall instead of a rep, a broken promise.
           Outside <main> because it's fixed-position, which is also why
           LandingPage itself needs no changes. */}
       {nudge.open && view === "home" && !authUser && !roleplayCapReached && (
@@ -1911,7 +1933,7 @@ function SiteFooter() {
         </p>
         {/* Real <a href> links, not view switches. These point at the
             server-rendered study pages (backend/app/seo.py), which are the only
-            pages on this site a crawler can read without executing the bundle —
+            pages on this site a crawler can read without executing the bundle,
             so this footer is also how Google finds them from the homepage. */}
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
           <a className="font-medium transition hover:text-slate-900 hover:underline dark:hover:text-slate-100" href="/flashcards">
@@ -2045,8 +2067,8 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
 /**
  * The guided walkthrough shown to new accounts.
  *
- * Every step renders a REAL screen driven by the demo fixtures — the same
- * fixtures behind the /demo route — rather than a mock-up, so the tour can't
+ * Every step renders a REAL screen driven by the demo fixtures, the same
+ * fixtures behind the /demo route, rather than a mock-up, so the tour can't
  * quietly drift out of sync with the product. The shell (caption bar, keyboard
  * handling, progress) lives in tour.tsx; the steps are assembled here because
  * this is where the screens are defined.
@@ -2068,14 +2090,14 @@ function ProductTour(props: {
       id: "scenario",
       act: "The rep",
       caption:
-        "Every role-play starts here: a real business situation, and the exact skills you'll be judged on. Read it twice — the actual ask is usually one sentence.",
+        "Every role-play starts here: a real business situation, and the exact skills you'll be judged on. Read it twice: the actual ask is usually one sentence.",
       render: demoStage(<ReadyScreen scenario={DEMO_SCENARIO} onStart={noop} />),
     },
     {
       id: "respond",
       act: "The rep",
       caption:
-        "After a prep window on a real clock, you present out loud — or type, if you'd rather. Speaking is what we recommend: it's the only way to get feedback on pace, filler words and pauses.",
+        "After a prep window on a real clock, you present out loud, or type if you'd rather. Speaking is what we recommend: it's the only way to get feedback on pace, filler words and pauses.",
       render: demoStage(
         <RespondScreen
           scenario={DEMO_SCENARIO}
@@ -2104,7 +2126,7 @@ function ProductTour(props: {
       id: "followup",
       act: "The rep",
       caption:
-        "Then the judge's follow-up questions. They're written before you speak, so they probe the situation itself — not whatever you happened to say.",
+        "Then the judge's follow-up questions. They're written before you speak, so they probe the situation itself, not whatever you happened to say.",
       render: demoStage(
         <FollowupScreen
           scenario={DEMO_SCENARIO}
@@ -2128,7 +2150,7 @@ function ProductTour(props: {
       id: `feedback-${t.tab}`,
       act: "Your feedback",
       caption: t.caption,
-      // The feedback view is a two-column grid above `lg` — it needs the same wide
+      // The feedback view is a two-column grid above `lg`, it needs the same wide
       // container the app shell gives it, or the tab strip clips.
       wide: true,
       render: () => <TourFeedback tab={t.tab} />,
@@ -2137,7 +2159,7 @@ function ProductTour(props: {
       id: "share",
       act: "Your feedback",
       caption:
-        "And when a run goes well, hit “Challenge a friend” on your score to turn it into a card. One button shares it — your friend opens the same scenario, with your score to beat.",
+        "And when a run goes well, hit “Challenge a friend” on your score to turn it into a card. One button shares it: your friend opens the same scenario, with your score to beat.",
       render: () => <TourShareStep />,
     },
     {
@@ -2147,21 +2169,21 @@ function ProductTour(props: {
       id: "features",
       act: "The rest of the app",
       caption:
-        "Practice tells you what's weak. These are where you go to fix it — each one explains itself the first time you open it.",
+        "Practice tells you what's weak. These are where you go to fix it. Each one explains itself the first time you open it.",
       render: () => <FeatureSummaryCard />,
     },
     {
       id: "start",
       act: "Your turn",
       caption:
-        "That's the whole app. Your first rep is a short one — about two minutes — and it's graded exactly like the real thing.",
+        "That's the whole app. Your first rep is a short one, about two minutes, and it's graded exactly like the real thing.",
       render: () => (
         <FeatureTourCard
           title="Ready for your first rep?"
           body="A friend's coffee cart needs advice. Two minutes, three skills, real feedback at the end."
           points={[
             "Speaking gets you delivery feedback; typing doesn't.",
-            "There's no penalty for a rough first attempt — that's the point of it.",
+            "There's no penalty for a rough first attempt: that's the point of it.",
           ]}
         />
       ),
@@ -2205,7 +2227,7 @@ const FEEDBACK_TOUR_TABS: { tab: FeedbackTab; caption: string }[] = [
   {
     tab: "transcript",
     caption:
-      "The transcript highlights the exact phrases that earned credit — so you can see which words scored, not just that they did.",
+      "The transcript highlights the exact phrases that earned credit, so you can see which words scored, not just that they did.",
   },
   {
     tab: "delivery",
@@ -2215,7 +2237,7 @@ const FEEDBACK_TOUR_TABS: { tab: FeedbackTab; caption: string }[] = [
   {
     tab: "criteria",
     caption:
-      "Indicators breaks down every skill you were assessed on, Novice to Exemplary, with a specific fix for each. Analysis and Scenario are up there too — your problem-solving score, and the original situation.",
+      "Indicators breaks down every skill you were assessed on, Novice to Exemplary, with a specific fix for each. Analysis and Scenario are up there too: your problem-solving score, and the original situation.",
   },
 ];
 
@@ -2240,7 +2262,7 @@ function TourFeedback(props: { tab: FeedbackTab }) {
 /**
  * The share card, shown inline rather than through GauntletCardModal.
  *
- * The modal is `fixed inset-0`, so inside the tour it covered the caption bar —
+ * The modal is `fixed inset-0`, so inside the tour it covered the caption bar,
  * hiding Next and trapping the student on the step. Inline also lets the share
  * button be visibly inert: this is a walkthrough, and a real tap here would render
  * a PNG of demo data and open the OS share sheet.
@@ -2248,7 +2270,7 @@ function TourFeedback(props: { tab: FeedbackTab }) {
 function TourShareStep() {
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Where the card comes from — the same button that sits on their score. */}
+      {/* Where the card comes from, the same button that sits on their score. */}
       <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-2.5 text-sm font-semibold text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
         <BrandMark size={16} />
         Challenge a friend
@@ -2290,7 +2312,7 @@ const FEATURE_SUMMARY: { label: string; line: string }[] = [
   },
   {
     label: "Mastery Blitz",
-    line: "Five terms, 45 seconds each — recall under the same pressure a judge applies.",
+    line: "Five terms, 45 seconds each: recall under the same pressure a judge applies.",
   },
   {
     label: "Tips & FAQ",
@@ -2311,7 +2333,7 @@ function FeatureSummaryCard() {
             <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" aria-hidden />
             <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               <strong className="font-semibold text-slate-900 dark:text-slate-100">{f.label}</strong>
-              {" — "}
+              {", "}
               {f.line}
             </p>
           </li>
@@ -2399,7 +2421,7 @@ function IntroPreview(props: { onReplay: () => void }) {
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
         Each of these appears once, at the top of its page, the first time a signed-in student
         opens it. Dismissing one clears that page's nav dot for good. Nothing here writes to
-        storage — dismissing below only affects this preview.
+        storage, dismissing below only affects this preview.
       </p>
 
       {/* The nav as a new account sees it: a dot on everything unopened. */}
@@ -2473,7 +2495,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
   const dot = (s: Surface) => (unvisited?.(s) ? <NavDot /> : null);
   // Below `md` the full nav can't fit a phone's width without overflowing (the
   // horizontal-scroll "bar"), so it collapses into a disclosure menu. The theme
-  // toggle stays inline — it's a one-tap affordance students use constantly.
+  // toggle stays inline, it's a one-tap affordance students use constantly.
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     if (!menuOpen) return;
@@ -2505,7 +2527,7 @@ function SiteHeader({ view, onView, onPractice, onHome, onFlashcards, theme, onT
           {/* Study is open to everyone: browsing your event's path is the whole
               pitch for making an account, so gating it behind one is backwards. */}
           <NavLink active={view === "course"} onClick={() => onView("course")}>Study{dot("course")}</NavLink>
-          {/* Flashcards is the PUBLIC decks page — a real URL anyone can open or
+          {/* Flashcards is the PUBLIC decks page, a real URL anyone can open or
               share, signed in or not. The in-app browser (search, flags, Blitz,
               progress) is a different thing and says so. */}
           <NavAnchor href="/flashcards">Flashcards</NavAnchor>
@@ -2678,7 +2700,7 @@ function NavLink({ active, onClick, children }: { active: boolean; onClick: () =
 }
 
 // Nav item that is a real link rather than a view switch. Same look as NavLink,
-// but it navigates — /flashcards is served by the backend (app/seo.py), so the
+// but it navigates, /flashcards is served by the backend (app/seo.py), so the
 // SPA cannot render it and a button would have nowhere to go.
 function NavAnchor({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -2703,7 +2725,7 @@ function MobileNavAnchor({ href, children }: { href: string; children: ReactNode
   );
 }
 
-// Full-width row for the mobile disclosure menu — a comfortable 44px tap target.
+// Full-width row for the mobile disclosure menu, a comfortable 44px tap target.
 function MobileNavItem({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
@@ -2763,7 +2785,7 @@ const BTN_SECONDARY =
  *
  * The messaging here is deliberately blunt about the future: video is beta and
  * free while it is, and paid tiers are coming. Saying that now, to someone who
- * hasn't paid us anything, is cheaper than a surprise paywall later — the whole
+ * hasn't paid us anything, is cheaper than a surprise paywall later, the whole
  * product trades on being honest about what it can and can't tell you, and that
  * has to extend to what it will and won't keep giving away.
  */
@@ -2804,7 +2826,7 @@ function AllowanceNotice({ usage, onSignIn }: { usage: Usage; onSignIn: () => vo
         ) : (
           <>
             Video is a <strong className="font-semibold text-slate-800 dark:text-slate-100">beta feature</strong>, free
-            while it's in beta. Paid tiers are coming — and if you're{" "}
+            while it's in beta. Paid tiers are coming, and if you're{" "}
             {usage.founder_eligible ? (
               <>using it now, you've already earned <strong className="font-semibold text-slate-800 dark:text-slate-100">{usage.founder_reward}</strong> when they launch.</>
             ) : (
@@ -3027,8 +3049,8 @@ function ProcessStrip() {
 }
 
 // --- landing page (/, view="home") -----------------------------------------
-// A scroll-based marketing page. A cold visitor lands here — hero, how it works,
-// what the feedback looks like, then an email capture — and is one click away from
+// A scroll-based marketing page. A cold visitor lands here, hero, how it works,
+// what the feedback looks like, then an email capture, and is one click away from
 // the setup form (onStart → view="practice").
 
 // --- landing nudge ---------------------------------------------------------
@@ -3041,7 +3063,7 @@ function nudgeSpent(): boolean {
   try {
     return sessionStorage.getItem(NUDGE_KEY) === "1";
   } catch {
-    return false; // private mode — the nudge just isn't sticky across reloads
+    return false; // private mode, the nudge just isn't sticky across reloads
   }
 }
 
@@ -3049,7 +3071,7 @@ function spendNudge(): void {
   try {
     sessionStorage.setItem(NUDGE_KEY, "1");
   } catch {
-    /* private mode — worst case it can offer itself again after a reload */
+    /* private mode, worst case it can offer itself again after a reload */
   }
 }
 
@@ -3057,7 +3079,7 @@ function spendNudge(): void {
 // away (home → tips → home), which would take its timer with it and re-arm the
 // nudge each time they came back. App never unmounts, so one timeout covers the
 // whole visit. sessionStorage carries the "already offered" flag across a
-// reload — and only a reload, which is the intent: a new tab is a new visit.
+// reload, and only a reload, which is the intent: a new tab is a new visit.
 function useLandingNudge() {
   const [open, setOpen] = useState(false);
   const shownRef = useRef(false);
@@ -3077,7 +3099,7 @@ function useLandingNudge() {
   return {
     open,
     // Fired from the toast's own mount rather than from the timer, so the event
-    // means "they saw it" and not "it became eligible" — the 30s can elapse
+    // means "they saw it" and not "it became eligible", the 30s can elapse
     // while they're off on /tips, where the toast doesn't render. One-shot:
     // navigating away and back remounts the toast, which is not a second view.
     markShown: () => {
@@ -3121,7 +3143,7 @@ function RepNudge({ onStart, onDismiss, onShown }: { onStart: () => void; onDism
         ✕
       </button>
       <p className="pr-6 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
-        See what it catches — get an honest score on one 2-minute rep.
+        See what it catches, get an honest score on one 2-minute rep.
       </p>
       <button onClick={onStart} className={`${BTN_PRIMARY} mt-3 w-full`}>
         Try it (2 min)
@@ -3161,11 +3183,11 @@ function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onSt
     <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-indigo-50/70 px-6 py-12 dark:border-indigo-900/50 dark:bg-indigo-950/30 sm:px-10 sm:py-14">
       <div className="max-w-xl">
         <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Keep every rep — and watch yourself get ready.
+          Keep every rep, and watch yourself get ready.
         </h2>
         <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
           A free account saves your sessions and shows how your delivery and your weakest skills improve over time.
-          You can keep practicing without one — signing up just remembers your reps.
+          You can keep practicing without one, signing up just remembers your reps.
         </p>
         <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           <button onClick={onSignup} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
@@ -3211,11 +3233,11 @@ const HERO_POSTER =
 // there's nothing to keep watching afterwards.
 //
 // `when: "scrolled-past"` is a LEAVE event, and `!isIntersecting` alone can't
-// express it — that's equally true of an element below the fold that was never
+// express it, that's equally true of an element below the fold that was never
 // reached. Two conditions disambiguate: the element must have exited off the TOP
 // (`boundingClientRect.bottom <= rootBounds.top`), and we must have seen it
 // intersect at least once. A visitor who never scrolls fires nothing at all,
-// which is the honest answer — so never use such an event as a denominator.
+// which is the honest answer, so never use such an event as a denominator.
 type InViewOpts = {
   threshold?: number;
   /** Shrinks the viewport, e.g. "-15% 0px" to require the element to come well in. */
@@ -3229,7 +3251,7 @@ function useInView(
   { threshold = 0, rootMargin, when = "enters" }: InViewOpts = {},
 ) {
   // Call sites pass inline arrows, so `onFire` is a new identity every render.
-  // Holding it in a ref keeps the observer's deps stable — otherwise it would be
+  // Holding it in a ref keeps the observer's deps stable, otherwise it would be
   // torn down and rebuilt on every render of the page.
   const cb = useRef(onFire);
   cb.current = onFire;
@@ -3302,7 +3324,7 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
   return (
     // Asymmetric, left-aligned composition: a narrower copy column (5/12) paired
     // with a wider media column (7/12), and the two are deliberately staggered on
-    // the vertical axis — copy nudged down, media held at the top — so the hero
+    // the vertical axis, copy nudged down, media held at the top, so the hero
     // reads as hand-placed rather than centered on a symmetric grid.
     <section ref={heroRef} className="grid items-start gap-12 pt-2 lg:grid-cols-12 lg:gap-10">
       <div className="lg:col-span-5 lg:pt-10">
@@ -3347,7 +3369,7 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
           </button>
         </div>
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          No account needed — your first {FREE_ROLEPLAYS} role-plays are free.{" "}
+          No account needed, your first {FREE_ROLEPLAYS} role-plays are free.{" "}
           <button
             onClick={onTips}
             className="font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
@@ -3471,23 +3493,23 @@ function FeedbackExplainerSection() {
   // rootMargin rather than a ratio threshold, deliberately. This section embeds a
   // full CriteriaTab and can be taller than a phone viewport, at which point
   // `intersectionRatio` can never reach a threshold like 0.25 and the event would
-  // silently never fire — a bug invisible on desktop and universal on mobile.
+  // silently never fire, a bug invisible on desktop and universal on mobile.
   const showcaseRef = useRef<HTMLElement>(null);
   useInView(showcaseRef, () => track("feedback_showcase_reached"), { rootMargin: "-15% 0px" });
   return (
     <section ref={showcaseRef}>
       <SectionHeading
         title="Graded on the same weighted rubric a judge uses"
-        blurb="Most tools hand you a vibe. PI Coach splits your score into the three things that actually decide a role-play — weighted exactly like the real sheet — and shows its work on each. Tap a band to see the feedback it produces."
+        blurb="Most tools hand you a vibe. PI Coach splits your score into the three things that actually decide a role-play, weighted exactly like the real sheet, and shows its work on each. Tap a band to see the feedback it produces."
       />
 
       {/* The weighting IS the story, so the control shows the proportion: one bar
-          split 60 / 25 / 15 that doubles as the selector. No repeated card grid —
+          split 60 / 25 / 15 that doubles as the selector. No repeated card grid,
           the segment widths carry the data. */}
       <div
         className="mt-8 flex h-16 w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800"
         role="group"
-        aria-label="Rubric weighting — pick a band to see its feedback"
+        aria-label="Rubric weighting, pick a band to see its feedback"
       >
         {blocks.map((b, i) => {
           const on = b.key === active;
@@ -3558,7 +3580,7 @@ function FeedbackExplainerSection() {
 
 // Email capture for an upcoming feature. Reuses the existing /api/feedback pipeline
 // (page:"waitlist") so the address is logged server-side and emailed to the operator
-// via Resend — no new backend. PostHog gets a `waitlist_signup` event and identifies
+// via Resend, no new backend. PostHog gets a `waitlist_signup` event and identifies
 // the person by email so the list is exportable from the Persons view.
 function WaitlistCTA({ onStart }: { onStart: () => void }) {
   const [email, setEmail] = useState("");
@@ -3586,7 +3608,7 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
           Walk in ready.
         </h2>
         <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Pick an event, get an original scenario, and find out exactly where you stand — no account needed.
+          Pick an event, get an original scenario, and find out exactly where you stand, no account needed.
         </p>
         <div className="mt-7">
           <button onClick={onStart} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
@@ -3602,7 +3624,7 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
             </p>
           ) : (
             <>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Want launch updates? Drop your email — no spam, just the launch.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Want launch updates? Drop your email. No spam, just the launch.</p>
               <form onSubmit={submit} className="mt-3 flex flex-col gap-2.5 sm:max-w-md sm:flex-row">
                 <input
                   type="email"
@@ -3994,8 +4016,8 @@ function FollowupScreen(props: {
   onChange: (v: string) => void;
   audioBlob: Blob | null;
   onRecorded: (b: Blob | null) => void;
-  // The camera keeps sampling through the judge's questions — they're part of
-  // the same presentation window — so the indicator has to follow it here. A
+  // The camera keeps sampling through the judge's questions, they're part of
+  // the same presentation window, so the indicator has to follow it here. A
   // camera that's on with nothing on screen saying so would break exactly the
   // transparency the consent screen promised. Null when video is off.
   videoSampler: ReturnType<typeof useFrameSampler> | null;
@@ -4050,7 +4072,7 @@ function FollowupScreen(props: {
         )}
 
         {/* The camera is still sampling through the judge's questions, whether
-            they answer by voice or by typing — so this shows in both modes. */}
+            they answer by voice or by typing, so this shows in both modes. */}
         {props.videoSampler && (
           <div className="mt-4">
             <VideoIndicator sampler={props.videoSampler} onDisable={props.onDisableVideo} />
@@ -4071,7 +4093,7 @@ function FollowupScreen(props: {
 
 // Delivery-first results (Phase 2a): shown the instant transcription lands, while
 // the content score is still grading. Delivery metrics are deterministic (no model
-// call), so the student reads real feedback — pace, fillers, pauses, timing — and
+// call), so the student reads real feedback, pace, fillers, pauses, timing, and
 // can play their recording back during the wait instead of watching a spinner.
 function DeliveryFirstScreen({ scenario, delivery, audioBlob }: { scenario: ScenarioResponse; delivery: DeliveryMetrics; audioBlob: Blob | null }) {
   return (
@@ -4132,7 +4154,7 @@ function signupPromptDismissed(): boolean {
   try {
     return sessionStorage.getItem(SIGNUP_PROMPT_KEY) === "1";
   } catch {
-    return false; // private mode — the prompt just isn't sticky across reloads
+    return false; // private mode, the prompt just isn't sticky across reloads
   }
 }
 
@@ -4140,17 +4162,17 @@ function rememberSignupPromptDismissed(): void {
   try {
     sessionStorage.setItem(SIGNUP_PROMPT_KEY, "1");
   } catch {
-    /* private mode — worst case it can ask again after a reload */
+    /* private mode, worst case it can ask again after a reload */
   }
 }
 
 // The one blocking moment in the product, and deliberately so: it appears only
-// after a real score AND after they've read the feedback, and it gates nothing —
+// after a real score AND after they've read the feedback, and it gates nothing,
 // everything behind it has already been seen and stays readable on dismiss.
 // Escape and a backdrop click both dismiss, so it can't become a trap.
 function SignupPromptModal({ onSignup, onDismiss }: { onSignup: () => void; onDismiss: () => void }) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  // Focus trap + restore, matching MasteryBlitz (blitz.tsx:195-214) — the most
+  // Focus trap + restore, matching MasteryBlitz (blitz.tsx:195-214), the most
   // complete dialog a11y in the codebase.
   const dismissRef = useRef(onDismiss);
   dismissRef.current = onDismiss;
@@ -4193,7 +4215,7 @@ function SignupPromptModal({ onSignup, onDismiss }: { onSignup: () => void; onDi
           id="signup-prompt-title"
           className="font-display text-lg font-semibold leading-snug text-slate-900 dark:text-slate-100"
         >
-          Save this and track your delivery over time — see if you're actually improving.
+          Save this and track your delivery over time, see if you're actually improving.
         </h2>
         <button className={`mt-5 w-full ${BTN_PRIMARY}`} onClick={onSignup}>
           Create free account
@@ -4228,7 +4250,7 @@ function FeedbackScreen(props: {
   onSignIn?: () => void;
   // Set only when a signup prompt is actually warranted: signed out AND accounts
   // are configured. Carrying eligibility on the same prop as the source keeps the
-  // screen from having to know about `authReady` at all — undefined means "don't
+  // screen from having to know about `authReady` at all, undefined means "don't
   // ask", which is also the right answer for the tour and the demo.
   promptSource?: "two_min_rep_score" | "roleplay_score";
   // Optional controlled tab, so the product tour can step through the tabs. Left
@@ -4291,13 +4313,13 @@ function FeedbackScreen(props: {
     { key: "overview", label: "Overview" },
     { key: "transcript", label: "Transcript" },
     ...(props.delivery ? [{ key: "delivery", label: "Delivery" }] : []),
-    // Only when they opted into video — an empty Video tab on every voice rep
+    // Only when they opted into video, an empty Video tab on every voice rep
     // would read as a feature they're missing rather than one they declined.
     ...(props.video ? [{ key: "video", label: "Video", badge: "Beta" }] : []),
     { key: "analysis", label: "Analysis" },
     { key: "criteria", label: "Indicators", badge: `${score.total_points}/${score.max_points}` },
     // The situation they just answered. Feedback is unreadable without the prompt
-    // in front of you, and the scenario is already in state here — no refetch.
+    // in front of you, and the scenario is already in state here, no refetch.
     { key: "scenario", label: "Scenario" },
   ];
 
@@ -4649,7 +4671,7 @@ function AnalysisRow(props: { label: string; blurb: string; sub: SubScore }) {
   );
 }
 
-// Section 2 — how well the participant APPLIED business thinking to the scenario.
+// Section 2, how well the participant APPLIED business thinking to the scenario.
 function AnalysisTab({ score }: { score: ScoreResponse }) {
   const a = score.analytical;
   if (!a) {
@@ -4838,7 +4860,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
                 <div className="flex items-center justify-between gap-3 text-xs">
                   <span className="flex shrink-0 items-center gap-1.5 font-medium text-slate-700 dark:text-slate-200">
                     {c.label}
-                    {/* Sampled, not measured across the whole rep — say so on the row
+                    {/* Sampled, not measured across the whole rep, say so on the row
                         itself rather than burying it, so the bar can't read as
                         carrying the same weight as the audio components. */}
                     {c.advisory && (
@@ -5101,7 +5123,7 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
   const showGaps = r.gaps.length > 0 && r.level !== "exemplary";
   const showSuggestion = !!r.suggestion && r.level !== "exemplary";
   // When opened (e.g. by tapping a transcript highlight), bring the note into view
-  // without yanking the page — matters most on mobile, where notes sit below.
+  // without yanking the page, matters most on mobile, where notes sit below.
   useEffect(() => {
     if (open) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [open]);
@@ -5651,7 +5673,7 @@ function FAQPage({ onStart }: { onStart: () => void }) {
         </FAQItem>
         <FAQItem q="Do you record my screen?">
           <p>
-            We record session replays — how people move through the app, so we can find where it gets confusing. A
+            We record session replays, how people move through the app, so we can find where it gets confusing. A
             replay captures clicks, scrolling, and timing.
           </p>
           <p>
@@ -5776,7 +5798,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
           BrightBean, a small coffee roaster: carried through all four beats.
         </SectionHead>
         {/* The four beats read as one connected sequence, not a wall of identical
-            cards — a spine runs down through the numbered nodes so it's clear each
+            cards, a spine runs down through the numbered nodes so it's clear each
             beat builds on the last, and Connect (where the points live) is lifted. */}
         <ol className="relative mt-7 space-y-5 before:absolute before:bottom-5 before:left-[19px] before:top-5 before:w-px before:bg-slate-200 dark:before:bg-slate-800">
           <MethodStep
@@ -5813,7 +5835,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
           toward the judge, and reference it out loud. Here's what to reach for and when.
         </SectionHead>
         <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <VisualCard chart={<ChartBars />} title="Bar chart" when="Comparing 2–3 options on cost, margin, or risk to justify your pick." />
+          <VisualCard chart={<ChartBars />} title="Bar chart" when="Comparing 2-3 options on cost, margin, or risk to justify your pick." />
           <VisualCard chart={<ChartLine />} title="Trend line" when="Anchoring the problem in data: a sales dip, a target, a before/after." />
           <VisualCard chart={<ChartMatrix />} title="2×2 matrix" when="Positioning choices on two axes (effort vs impact) to defend priorities." />
           <VisualCard chart={<ChartTimeline />} title="Timeline" when="Laying a rollout over weeks or quarters so the judge sees execution." />
@@ -5848,7 +5870,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
             "If unsure, reason out loud; judges reward sound thinking.",
           ]} />
           <TipCard n="04" phase="Delivery" title="Sound like a pro" items={[
-            "Steady pace (~130–160 wpm); trade “um” for a pause.",
+            "Steady pace (~130-160 wpm); trade “um” for a pause.",
             "Make eye contact and use the judge's name.",
             "Use the time, but leave room for the questions.",
           ]} />
@@ -5893,7 +5915,7 @@ function TipsPage({ onStart }: { onStart: () => void }) {
               <strong className="font-semibold"> P</strong>ilot before rollout.”
             </p>
             <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              Keep it to 3–5 letters and make each one real. A clear structure beats a clever-but-empty one.
+              Keep it to 3-5 letters and make each one real. A clear structure beats a clever-but-empty one.
             </p>
           </Card>
           <Card>
@@ -6021,7 +6043,7 @@ function NotebookMock() {
         <p className="mt-1 text-slate-500 dark:text-slate-400">Problem: afternoons are dead + first-timers don't return.</p>
         <div className="mt-3 space-y-2.5">
           {[
-            { pi: "Promotional strategy", def: "= the mix of ways we reach customers", tie: "→ app push + a 3–5pm power hour" },
+            { pi: "Promotional strategy", def: "= the mix of ways we reach customers", tie: "→ app push + a 3-5pm power hour" },
             { pi: "Customer relationships", def: "= turning buyers into regulars", tie: "→ tiered loyalty, birthday reward" },
             { pi: "Channel strategy", def: "= how the product reaches them", tie: "→ own the app, drop 3rd-party fees" },
             { pi: "Measuring success", def: "= how we'll know it worked", tie: "→ repeat-visit rate, +15% / 2 qtrs" },

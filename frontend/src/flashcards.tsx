@@ -1,4 +1,4 @@
-// Criterion flashcards — a study overlay (flip-through with flagging) and a full
+// Criterion flashcards, a study overlay (flip-through with flagging) and a full
 // library grouped by the 13 domains. Cards keep the same mechanic: FRONT is the
 // term/prompt, BACK is a plain definition, a term-specific worked example run
 // through the four DECA beats (Define -> Explain -> Connect -> Above & Beyond,
@@ -11,7 +11,7 @@ import { getCourse, getProgress, markStudy, type Course } from "./progress";
 import type { FlagsApi } from "./flags";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
 
-// The four beats — the same method the Tips page teaches, but the CONTENT is
+// The four beats, the same method the Tips page teaches, but the CONTENT is
 // specific to each term (from the card's worked example), not a fixed blurb.
 const BEATS: { key: keyof FlashcardExample; label: string; cls: string; note?: string }[] = [
   { key: "define", label: "Define", cls: "text-indigo-600 dark:text-indigo-400" },
@@ -82,7 +82,7 @@ export function Flashcards({
   const card = total ? cards[Math.min(i, total - 1)] : null;
 
   // Revealing a card's back records it as STARTED. This is the "flip" evidence the
-  // backend has always understood (study.py) and that nothing was ever sending —
+  // backend has always understood (study.py) and that nothing was ever sending,
   // so before this, working through a deck moved no counter anywhere and the app
   // looked broken to anyone who studied the honest way.
   //
@@ -90,7 +90,7 @@ export function Flashcards({
   // Blitz or a real role-play, because a path you can finish by tapping Next is not
   // the promise the course makes. Marked on reveal rather than on advance, once per
   // card per session (flipping back and forth is not new evidence), and
-  // fire-and-forget — markStudy no-ops when signed out and never throws.
+  // fire-and-forget, markStudy no-ops when signed out and never throws.
   const marked = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!flipped || !card || marked.current.has(card.id)) return;
@@ -235,6 +235,7 @@ export function FlashcardLibrary({
   initialDeck,
   onStudy,
   onBlitz,
+  onQuiz,
 }: {
   flags: FlagsApi;
   // An event handed over from its public deck page (/flashcards/<event>). Wins over
@@ -243,6 +244,7 @@ export function FlashcardLibrary({
   initialDeck?: string | null;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
+  onQuiz: (cards: Term[], title?: string) => void;
 }) {
   const [all, setAll] = useState<Term[] | null>(null);
   const [weakIds, setWeakIds] = useState<Set<string>>(new Set());
@@ -259,7 +261,7 @@ export function FlashcardLibrary({
     });
 
   // The deck filter: which event's terms the library is scoped to. "" is the whole
-  // 830-term corpus. This is the one thing the library was missing — a competitor
+  // 830-term corpus. This is the one thing the library was missing, a competitor
   // studies for ONE event, and 830 cards grouped by all 13 domains buries the ~250
   // that are actually theirs. Remembered locally so it survives a reload and does
   // not need an account; the event catalog is public either way.
@@ -306,7 +308,7 @@ export function FlashcardLibrary({
     try {
       localStorage.setItem(DECK_KEY, deckId);
     } catch {
-      /* private mode — the filter still works, it just won't be remembered */
+      /* private mode, the filter still works, it just won't be remembered */
     }
     if (!deckId) {
       setDeck(null);
@@ -333,7 +335,7 @@ export function FlashcardLibrary({
   );
 
   // Weakness comes from graded sessions, so only terms with a criterion can be weak
-  // — study-only terms have nothing to be weak against.
+  // study-only terms have nothing to be weak against.
   const isWeak = (t: Term) => !!t.criterion_id && weakIds.has(t.criterion_id);
 
   const flaggedCards = useMemo(() => scoped.filter((c) => flags.flags.has(c.id)), [scoped, flags.flags]);
@@ -387,21 +389,41 @@ export function FlashcardLibrary({
         onPick={setDeckId}
         onStudy={() => scoped.length && onStudy(scoped, undefined, deck ? deck.event : "All terms")}
         onBlitz={() => scoped.length && onBlitz(scoped, deck ? deck.event : "All terms")}
+        onQuiz={() => scoped.length && onQuiz(scoped, deck ? deck.event : "All terms")}
       />
 
-      {/* Mastery Blitz launcher: rapid, timed drill over a set of terms. */}
-      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30 sm:flex-row sm:items-center">
-        <div>
-          <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Mastery Blitz</h3>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Rapid drill: one scenario, {5} terms, {45}s each: apply each term in DECA format, graded instantly at the end.
-          </p>
+      {/* The two drills, side by side: produce a term under pressure, or check
+          whether you know it at all. Blitz costs a grading call and needs an
+          account; the quiz is served from a pre-generated bank and needs neither. */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30">
+          <div>
+            <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Mastery Blitz</h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              Rapid drill: one scenario, {5} terms, {45}s each: apply each term in DECA format, graded instantly at the end.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recommended.length > 0 && (
+              <button className={BTN_PRIMARY} onClick={() => onBlitz(recommended, "Your weak terms")}>Blitz weak terms →</button>
+            )}
+            <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onBlitz(all, "All terms")}>Blitz random terms →</button>
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {recommended.length > 0 && (
-            <button className={BTN_PRIMARY} onClick={() => onBlitz(recommended, "Your weak terms")}>Blitz weak terms →</button>
-          )}
-          <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onBlitz(all, "All terms")}>Blitz random terms →</button>
+
+        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-5 dark:border-sky-900/60 dark:bg-sky-950/30">
+          <div>
+            <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">◎ Knowledge Check</h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              Multiple choice at district, state or ICDC difficulty. No clock, no account: every answer explains itself the moment you pick it.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recommended.length > 0 && (
+              <button className={BTN_SECONDARY} onClick={() => onQuiz(recommended, "Your weak terms")}>Quiz weak terms →</button>
+            )}
+            <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onQuiz(all, "All terms")}>Quiz random terms →</button>
+          </div>
         </div>
       </div>
 
@@ -414,6 +436,7 @@ export function FlashcardLibrary({
           count={recommended.length}
           onStudy={() => recommended.length && onStudy(recommended, undefined, "Recommended for you")}
           onBlitz={() => recommended.length && onBlitz(recommended, "Recommended for you")}
+          onQuiz={() => recommended.length && onQuiz(recommended, "Recommended for you")}
         />
         <SetCard
           tone="amber"
@@ -422,10 +445,11 @@ export function FlashcardLibrary({
           count={flaggedCards.length}
           onStudy={() => flaggedCards.length && onStudy(flaggedCards, undefined, "Flagged to study later")}
           onBlitz={() => flaggedCards.length && onBlitz(flaggedCards, "Flagged to study later")}
+          onQuiz={() => flaggedCards.length && onQuiz(flaggedCards, "Flagged to study later")}
         />
       </div>
 
-      {/* Domains — collapsed by default so the full library fits on a screen;
+      {/* Domains, collapsed by default so the full library fits on a screen;
           open the one you want. A live search auto-expands every match. */}
       <div className="flex items-center justify-between px-1 pt-1">
         <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
@@ -474,6 +498,7 @@ export function FlashcardLibrary({
               </h2>
               <div className="flex shrink-0 items-center gap-2">
                 <button className={BTN_SECONDARY} onClick={() => onBlitz(cards, domain)}>⚡ Blitz</button>
+                <button className={BTN_SECONDARY} onClick={() => onQuiz(cards, domain)}>◎ Quiz</button>
                 <button className={BTN_SECONDARY} onClick={() => onStudy(cards, undefined, domain)}>Study domain →</button>
               </div>
             </div>
@@ -518,7 +543,7 @@ export function FlashcardLibrary({
 //
 // The library holds all 830 terms across 13 domains, but a competitor is studying
 // for exactly ONE event, and roughly 250 of those cards are theirs. Without this,
-// finding them meant knowing which domains your event draws from — which is the
+// finding them meant knowing which domains your event draws from, which is the
 // app's internal model, not something a student should have to learn.
 //
 // The event->terms join is the same one the course path uses (backend courses.py),
@@ -531,6 +556,7 @@ function DeckBar({
   onPick,
   onStudy,
   onBlitz,
+  onQuiz,
 }: {
   events: EventSummary[];
   deckId: string;
@@ -539,9 +565,10 @@ function DeckBar({
   onPick: (id: string) => void;
   onStudy: () => void;
   onBlitz: () => void;
+  onQuiz: () => void;
 }) {
   // Grouped into DECA's clusters, matching how the events are presented everywhere
-  // else — a flat list of 28 is a wall.
+  // else, a flat list of 28 is a wall.
   const clusters = useMemo(() => {
     const order: string[] = [];
     const by: Record<string, EventSummary[]> = {};
@@ -603,6 +630,9 @@ function DeckBar({
           <button className={BTN_SECONDARY} disabled={!count} onClick={onBlitz}>
             ⚡ Blitz
           </button>
+          <button className={BTN_SECONDARY} disabled={!count} onClick={onQuiz}>
+            ◎ Quiz
+          </button>
         </div>
       </div>
       {deck && (
@@ -622,7 +652,7 @@ function DeckBar({
   );
 }
 
-function SetCard({ tone, title, subtitle, count, onStudy, onBlitz }: { tone: "indigo" | "amber"; title: string; subtitle: string; count: number; onStudy: () => void; onBlitz: () => void }) {
+function SetCard({ tone, title, subtitle, count, onStudy, onBlitz, onQuiz }: { tone: "indigo" | "amber"; title: string; subtitle: string; count: number; onStudy: () => void; onBlitz: () => void; onQuiz: () => void }) {
   const toneCls =
     tone === "indigo"
       ? "border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/40"
@@ -636,6 +666,7 @@ function SetCard({ tone, title, subtitle, count, onStudy, onBlitz }: { tone: "in
           Study {count > 0 ? `${count} card${count === 1 ? "" : "s"}` : ": "} →
         </button>
         <button className={`${BTN_SECONDARY} disabled:opacity-40`} disabled={count === 0} onClick={onBlitz}>⚡ Blitz</button>
+        <button className={`${BTN_SECONDARY} disabled:opacity-40`} disabled={count === 0} onClick={onQuiz}>◎ Quiz</button>
       </div>
     </div>
   );

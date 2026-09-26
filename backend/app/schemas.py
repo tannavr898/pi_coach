@@ -31,7 +31,7 @@ class Criterion(BaseModel):
 
     In Competition mode the teaching fields (definition / strong_looks_like /
     weak_looks_like) are blanked server-side so the participant sees only the
-    names — the criteria are still graded by id from the framework. In Learn mode
+    names, the criteria are still graded by id from the framework. In Learn mode
     they are populated so the UI can teach what "good" looks like.
     """
 
@@ -39,7 +39,7 @@ class Criterion(BaseModel):
     domain: str = ""
     topic: str = ""
     name: str
-    # A grading QUESTION ("does the response…"), not a student-facing definition —
+    # A grading QUESTION ("does the response…"), not a student-facing definition,
     # a deliberate structural choice; see data/framework-notes.md.
     definition: str = ""
     strong_looks_like: str = ""
@@ -48,13 +48,13 @@ class Criterion(BaseModel):
 
 
 class Term(BaseModel):
-    """One study term — the unit of flashcard and course content (terms.json).
+    """One study term, the unit of flashcard and course content (terms.json).
 
     A term is what a student STUDIES; a Criterion is what the app GRADES. They were
     the same object while the corpus matched the framework 1-to-1; splitting them is
     what lets the library grow past the 282 graded criteria without touching grading.
 
-    `criterion_id` is set when the term maps to a graded framework criterion — that
+    `criterion_id` is set when the term maps to a graded framework criterion, that
     join drives weak-term highlighting, the Section 2 depth award, and the core tier.
     Study-only terms have `criterion_id=None` and are never graded directly.
     """
@@ -82,7 +82,7 @@ class DomainSummary(BaseModel):
 
 
 class EventSummary(BaseModel):
-    """One role-play event in the picker (our own catalog — events.json)."""
+    """One role-play event in the picker (our own catalog, events.json)."""
 
     id: str
     name: str
@@ -173,7 +173,7 @@ class ScenarioResponse(BaseModel):
     # (Teaching fields are populated only in Learn mode.)
     criteria: list[Criterion]
     procedures: list[str]
-    # Participant-facing situation ONLY — never the judge instructions.
+    # Participant-facing situation ONLY, never the judge instructions.
     situation: str
     # A one-sentence challenge framing of the situation, used as the headline on the
     # shareable results card. Empty is normal and non-fatal: scenarios pooled before
@@ -239,10 +239,10 @@ class CriterionScore(BaseModel):
     # Verbatim quotes from the participant's response/follow-up, for highlighting.
     evidence: list[str] = []
     # Concrete things that were missing/too weak and would raise the level. These
-    # are ABSENT from the response, so they can't be highlighted — listed instead.
+    # are ABSENT from the response, so they can't be highlighted, listed instead.
     gaps: list[str] = []
     # An example of a stronger line the participant could have said for this
-    # criterion — surfaced inline in the transcript as "what you could have said".
+    # criterion, surfaced inline in the transcript as "what you could have said".
     suggestion: str = ""
 
 
@@ -260,7 +260,7 @@ class SubScore(BaseModel):
 
 class CreativityScore(BaseModel):
     """Bonus-only creativity award for Section 2 (0, +0.25, or +0.5). Never a
-    penalty — a plain, correct answer earns 0 here and loses nothing."""
+    penalty, a plain, correct answer earns 0 here and loses nothing."""
 
     bonus: float = 0.0
     justification: str = ""
@@ -268,7 +268,7 @@ class CreativityScore(BaseModel):
 
 
 class DepthScore(BaseModel):
-    """Bonus-only depth award for Section 2 (0, +0.25, +0.5) — the same rail as
+    """Bonus-only depth award for Section 2 (0, +0.25, +0.5), the same rail as
     CreativityScore, and never a penalty.
 
     Rewards a competitor who brings in a RELEVANT business term the scenario didn't
@@ -279,19 +279,19 @@ class DepthScore(BaseModel):
 
     The bonus is zeroed unless the model cites a verbatim quote that we can find in
     the participant's own text (main.py checks). So "we should segment the market",
-    said and dropped, earns nothing — mention is not application.
+    said and dropped, earns nothing, mention is not application.
     """
 
     bonus: float = 0.0
     # Study-term ids the model judged genuinely applied. Feeds study progress as
-    # roleplay-grade evidence — the strongest kind.
+    # roleplay-grade evidence, the strongest kind.
     terms: list[str] = []
     justification: str = ""
     evidence: str | None = None
 
 
 class AnalyticalSection(BaseModel):
-    """Section 2 — how well the competitor APPLIES business thinking to solve the
+    """Section 2, how well the competitor APPLIES business thinking to solve the
     scenario. Sub-scores come from the model; the roll-up arithmetic is computed
     deterministically by the backend (never trusted to the model)."""
 
@@ -311,7 +311,7 @@ class AnalyticalSection(BaseModel):
 
 
 class PresentationSection(BaseModel):
-    """Section 3 — delivery + follow-up handling, rolled to a single 0-4 score.
+    """Section 3, delivery + follow-up handling, rolled to a single 0-4 score.
     When the run was spoken, section_percent blends the deterministic delivery
     score with the model's read; typed runs use the model's read alone."""
 
@@ -450,7 +450,7 @@ class SessionSaveRequest(BaseModel):
     followup_answer: str = ""
     delivery: DeliveryMetrics | None = None
     # Observable video counts, when the student opted into video for this rep.
-    # Counts and notes only — no frames, ever.
+    # Counts and notes only, no frames, ever.
     video: VideoMetrics | None = None
     utterances: list[Utterance] = []
     event_id: str = ""  # stable event slug (for grouping / targeted practice)
@@ -487,7 +487,7 @@ class SessionDetail(BaseModel):
     followup_answer: str = ""
     delivery: DeliveryMetrics | None = None
     # Observable video counts, when the student opted into video for this rep.
-    # Counts and notes only — no frames, ever.
+    # Counts and notes only, no frames, ever.
     video: VideoMetrics | None = None
     utterances: list[Utterance] = []
     retry_of_session_id: str | None = None
@@ -545,7 +545,7 @@ class ProgressResponse(BaseModel):
 
 
 class CourseUnit(BaseModel):
-    """One topic's worth of terms — the chunk a student finishes in a sitting.
+    """One topic's worth of terms, the chunk a student finishes in a sitting.
 
     Progress fields are zero for anonymous visitors: the path renders for anyone,
     it just doesn't remember them.
@@ -598,10 +598,12 @@ class EnrollRequest(BaseModel):
 
 class StudyMark(BaseModel):
     """One study event to fold into a term's progress. `verdict` is required for
-    blitz/roleplay evidence and ignored for a flip (seeing a card proves nothing)."""
+    quiz/blitz/roleplay evidence and ignored for a flip (seeing a card proves
+    nothing). The ranking, and why a quiz can never finish a term, live in
+    app/study.py."""
 
     term_id: str = Field(min_length=1, max_length=40)
-    evidence: Literal["flip", "blitz", "roleplay"] = "flip"
+    evidence: Literal["flip", "quiz", "blitz", "roleplay"] = "flip"
     verdict: Literal["correct", "partial", "missed", ""] = ""
 
 
@@ -767,6 +769,51 @@ class BlitzScoreResponse(BaseModel):
     results: list[BlitzResult]
 
 
+# --- GET /api/quiz ---------------------------------------------------------
+# Pre-generated questions served straight off disk (app/quiz.py). The answer key
+# travels with the question on purpose: the client grades the pick and shows the
+# rationale instantly, with no model call and no token spend.
+
+
+class QuizOption(BaseModel):
+    """One answer choice. `rationale` is the teaching line shown after the pick:
+    for a distractor it names the misconception behind it, for the right answer it
+    says why it holds. Every option carries one, which is the rule that keeps
+    distractors principled instead of filler."""
+
+    id: str
+    text: str
+    correct: bool = False
+    rationale: str = ""
+
+
+class QuizQuestion(BaseModel):
+    """One multiple-choice item. `term_ids` is the join back to the study corpus:
+    it decides which deck a question belongs to and which terms a result marks.
+
+    The generator's audit fields (difficulty justification, the icdc break test,
+    review flags) stay in the bank file for review and are deliberately not served."""
+
+    id: str
+    level: Literal["district", "state", "icdc"] = "district"
+    domain_id: str = ""
+    domain: str = ""
+    topic: str = ""
+    term_ids: list[str] = []
+    concepts: list[str] = []
+    format: str = ""
+    question: str
+    options: list[QuizOption] = []
+
+
+class QuizResponse(BaseModel):
+    """A drawn set plus what the bank holds per level, so the UI can disable a tier
+    that has not been generated instead of opening an empty quiz."""
+
+    questions: list[QuizQuestion] = []
+    counts: dict[str, int] = {}
+
+
 class TranscribeResponse(BaseModel):
     transcript: str
 
@@ -777,7 +824,7 @@ class TranscribeResponse(BaseModel):
 class VideoFrame(BaseModel):
     """One sampled still frame, extracted and downscaled in the browser.
 
-    The full video is never recorded or uploaded — the client grabs stills from
+    The full video is never recorded or uploaded, the client grabs stills from
     the live camera preview, so there is no video file at any point. These frames
     are held in memory for the length of the request and discarded."""
 
@@ -802,7 +849,7 @@ class VideoRequest(BaseModel):
 
 class VideoMetrics(BaseModel):
     """Observable-only video results. Every field is a count of checks or a
-    percentage derived from one — there is deliberately no confidence, charisma,
+    percentage derived from one, there is deliberately no confidence, charisma,
     engagement, or emotion score anywhere in this shape, because those cannot be
     observed from sampled frames and telling a nervous student they "seemed
     unconfident" is harmful feedback, not coaching."""
@@ -815,12 +862,12 @@ class VideoMetrics(BaseModel):
     off_frame_count: int = 0
     off_frame_percent: float = 0.0
     # Plain coaching lines, computed deterministically from the counts above
-    # (never model-authored) — see app/video.py.
+    # (never model-authored), see app/video.py.
     notes: list[str] = []
     disclaimer: str = ""
 
     # How the sampled frames moved the delivery score. Signed, already capped and
-    # scaled by sample size (see delivery.video_adjustment) — 0.0 when there were
+    # scaled by sample size (see delivery.video_adjustment), 0.0 when there were
     # too few frames to say anything, which is the common case on a short rep.
     delivery_adjustment: float = 0.0
     adjusted_delivery_score: int | None = None
