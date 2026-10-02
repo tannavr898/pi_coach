@@ -103,16 +103,39 @@ def _groups() -> list[tuple[str, str, list[dict]]]:
     return [(d, tp, cards) for (d, tp), cards in out.items()]
 
 
-def _cards_for(domain_id: str, topic: str, cards: list[dict], level: str) -> list[dict]:
-    """The cards one batch may build from.
+def _windows(cards: list[dict]) -> list[list[dict]]:
+    """Split a topic's cards into batch-sized windows.
 
-    For icdc a thin topic borrows its nearest neighbours: the rest of the same
-    domain, in corpus order (which is topic order, so "nearest" is literal). A
-    one-card topic cannot produce synthesis on its own, and padding it beats
-    skipping the topic entirely or, worse, letting the model invent a second
-    concept it was never given.
+    A batch shows the model at most _MAX_CARDS cards, and for a long time it was
+    simply the FIRST six: a nineteen-card topic like Marketing/Promotion could
+    never be asked about its last thirteen, and 89 terms in the corpus had no
+    question that could reach them. Windowing covers the whole topic instead, and
+    a rich topic earns proportionally more questions, which is the right answer
+    anyway.
+
+    A trailing window of one is folded back into the previous one rather than left
+    alone, because a single card cannot carry a batch and _MAX_CARDS + 1 is a
+    harmless overshoot.
     """
-    picked = cards[:_MAX_CARDS]
+    out = [cards[i : i + _MAX_CARDS] for i in range(0, len(cards), _MAX_CARDS)]
+    if len(out) > 1 and len(out[-1]) == 1:
+        # Pop first: the index on the left would otherwise resolve against the
+        # already-shortened list.
+        tail = out.pop()
+        out[-1] = out[-1] + tail
+    return out or [[]]
+
+
+def _cards_for(domain_id: str, topic: str, cards: list[dict], level: str) -> list[dict]:
+    """The cards one batch may build from, for a single window.
+
+    For icdc a thin window borrows its nearest neighbours: the rest of the same
+    domain, in corpus order (which is topic order, so "nearest" is literal). One
+    card cannot produce synthesis on its own, and padding it beats skipping the
+    topic entirely or, worse, letting the model invent a concept it was never
+    given.
+    """
+    picked = list(cards[:_MAX_CARDS + 1])
     if level == "icdc" and len(picked) < _MIN_ICDC_CARDS:
         have = {c["id"] for c in picked}
         neighbours = [t for t in terms.terms_for_domains([domain_id]) if t["id"] not in have]
@@ -120,8 +143,11 @@ def _cards_for(domain_id: str, topic: str, cards: list[dict], level: str) -> lis
     return picked
 
 
-def _batch_key(domain_id: str, topic: str, level: str) -> str:
-    return f"{domain_id}|{topic}|{level}"
+def _batch_key(domain_id: str, topic: str, level: str, window: int = 0) -> str:
+    # Window 0 keeps the un-suffixed key so every batch already in the bank still
+    # counts as done and is not regenerated.
+    suffix = f"|w{window}" if window else ""
+    return f"{domain_id}|{topic}|{level}{suffix}"
 
 
 # --- validation -------------------------------------------------------------
@@ -324,15 +350,16 @@ def cmd_gen(args) -> int:
     for domain_id, topic, cards in _groups():
         if args.domain and domain_id != args.domain:
             continue
-        for level in levels:
-            key = _batch_key(domain_id, topic, level)
-            if key in done_batches and not args.force:
-                continue
-            batch_cards = _cards_for(domain_id, topic, cards, level)
-            if level == "icdc" and len(batch_cards) < 2:
-                print(f"  - skipped {domain_id}/{topic} [icdc]: only one card in the domain")
-                continue
-            todo.append((domain_id, topic, batch_cards, level))
+        for window, chunk in enumerate(_windows(cards)):
+            for level in levels:
+                key = _batch_key(domain_id, topic, level, window)
+                if key in done_batches and not args.force:
+                    continue
+                batch_cards = _cards_for(domain_id, topic, chunk, level)
+                if level == "icdc" and len(batch_cards) < 2:
+                    print(f"  - skipped {domain_id}/{topic} w{window} [icdc]: too few cards")
+                    continue
+                todo.append((domain_id, topic, batch_cards, level))
     if args.limit:
         todo = todo[: args.limit]
 
@@ -421,8 +448,13 @@ def cmd_import(args) -> int:
     File shape:
       {"batches": [
         {"domain_id": "marketing", "topic": "Target Market", "level": "state",
+         "window": 0,
          "questions": [ <same object shape the model returns> ]}
       ]}
+
+    `window` picks which slice of a long topic the batch draws on (see _windows);
+    it defaults to 0, which is the first six cards and the only window most topics
+    have.
 
     The cards a batch may draw on are resolved here from terms.json, exactly as
     generation resolves them, so a question naming a concept outside its own batch
@@ -446,7 +478,7 @@ def cmd_import(args) -> int:
 
     for b in batches:
         domain_id, topic, level = b.get("domain_id", ""), b.get("topic", ""), b.get("level", "")
-        where = f"{domain_id}/{topic} [{level}]"
+        where = f"{domain_id}/{topic} w{b.get('window', 0)} [{level}]"
         if level not in LEVELS:
             print(f"  ! {where}: unknown level")
             rejected += len(b.get("questions") or [])
@@ -455,11 +487,17 @@ def cmd_import(args) -> int:
             print(f"  ! {where}: no such topic in terms.json")
             rejected += len(b.get("questions") or [])
             continue
-        key = _batch_key(domain_id, topic, level)
+        window = int(b.get("window", 0) or 0)
+        windows = _windows(groups[(domain_id, topic)])
+        if not 0 <= window < len(windows):
+            print(f"  ! {where}: window {window} does not exist (topic has {len(windows)})")
+            rejected += len(b.get("questions") or [])
+            continue
+        key = _batch_key(domain_id, topic, level, window)
         if key in known and not args.force:
             skipped += 1
             continue
-        cards = _cards_for(domain_id, topic, groups[(domain_id, topic)], level)
+        cards = _cards_for(domain_id, topic, windows[window], level)
         for q in b.get("questions") or []:
             try:
                 row = _validate(q, level, cards)

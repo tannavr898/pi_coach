@@ -531,3 +531,39 @@ def test_a_narrow_deck_still_reports_honestly():
     ids = [t["id"] for t in terms.all_terms()[:4]]
     scoped = quiz.counts(term_ids=ids)
     assert 0 < scoped["total"] < quiz.counts()["total"]
+
+
+# --- windowing --------------------------------------------------------------
+# A batch shows the model at most _MAX_CARDS cards. For a long time that was the
+# FIRST six of a topic, so a nineteen-card topic could never be asked about its
+# last thirteen and 89 terms had no question that could reach them.
+
+
+def test_every_term_in_the_corpus_is_reachable_by_some_batch():
+    reach = {c["id"] for _, _, cards in gen_quiz._groups()
+             for w in gen_quiz._windows(cards) for c in w}
+    assert reach == {t["id"] for t in terms.all_terms()}
+
+
+def test_windows_partition_a_topic_exactly():
+    """No card dropped, none duplicated, order preserved."""
+    for domain_id, topic, cards in gen_quiz._groups():
+        flat = [c for w in gen_quiz._windows(cards) for c in w]
+        assert flat == cards, (domain_id, topic)
+
+
+def test_no_window_is_left_with_a_single_card():
+    """One card cannot carry a batch, so a trailing remainder folds backwards."""
+    for domain_id, topic, cards in gen_quiz._groups():
+        windows = gen_quiz._windows(cards)
+        if len(cards) <= 1:
+            continue
+        assert all(len(w) > 1 for w in windows), (domain_id, topic, [len(w) for w in windows])
+        assert all(len(w) <= gen_quiz._MAX_CARDS + 1 for w in windows), (domain_id, topic)
+
+
+def test_window_zero_keeps_the_original_batch_key():
+    """Everything already in the bank must still read as done, or a regeneration
+    would rewrite 495 batches that were fine."""
+    assert gen_quiz._batch_key("marketing", "Promotion", "icdc", 0) == "marketing|Promotion|icdc"
+    assert gen_quiz._batch_key("marketing", "Promotion", "icdc", 1) == "marketing|Promotion|icdc|w1"
