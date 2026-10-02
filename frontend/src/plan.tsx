@@ -27,7 +27,7 @@ import {
   type PlanTask,
   type StudyPlan,
 } from "./progress";
-import { BTN_PRIMARY, BTN_SECONDARY, Card } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, PageLoader } from "./ui";
 
 const STAGE_NAMES = ["District", "State", "ICDC"] as const;
 type StageName = (typeof STAGE_NAMES)[number];
@@ -268,15 +268,7 @@ export function StudyPlanSection({
 }
 
 function PlanSkeleton() {
-  return (
-    <Card>
-      <div className="animate-pulse space-y-4" aria-busy="true" aria-label="Loading your study plan">
-        <div className="h-5 w-40 rounded bg-slate-200 dark:bg-slate-800" />
-        <div className="h-3 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
-        <div className="h-4 w-3/4 rounded bg-slate-100 dark:bg-slate-800" />
-      </div>
-    </Card>
-  );
+  return <PageLoader label="Loading your study plan" />;
 }
 
 // --- builder ----------------------------------------------------------------------
@@ -723,6 +715,32 @@ function PlanPanel({
   );
 }
 
+// A student's plan as their chapter manager sees it: the season runway, whether
+// they're on pace, today's checklist with what's done, and the week ahead. No
+// editing and no launch buttons; the plan belongs to the student.
+export function PlanReadOnly({ plan, name }: { plan: StudyPlan; name: string }) {
+  const weekly = plan.day_minutes.reduce((a, b) => a + b, 0);
+  const activeDays = plan.day_minutes.filter((m) => m > 0).length;
+  const noop = () => {};
+  return (
+    <>
+      <Card>
+        <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{name}'s study plan</h2>
+        <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
+          {plan.event} · <span className="font-mono tabular-nums">{fmtMinutes(weekly)}</span> a week over {activeDays} day
+          {activeDays === 1 ? "" : "s"} · {plan.goal === "core" ? "Core path" : "Everything"}
+        </p>
+        <Runway plan={plan} />
+        <div className="mt-4">
+          <FeasibilityLine f={plan.feasibility} />
+        </div>
+      </Card>
+      <TodayCard plan={plan} busy={false} onLaunch={noop} onEdit={noop} readOnly />
+      <AheadCard plan={plan} />
+    </>
+  );
+}
+
 const STATUS_LABEL: Record<PlanFeasibility["status"], string> = {
   on_track: "On track",
   tight: "Tight",
@@ -862,11 +880,14 @@ function TodayCard({
   busy,
   onLaunch,
   onEdit,
+  readOnly = false,
 }: {
   plan: StudyPlan;
   busy: boolean;
   onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
   onEdit: () => void;
+  // A chapter manager's view: the same checklist, no buttons to act on it.
+  readOnly?: boolean;
 }) {
   const day = plan.today;
   const tasks = day.tasks;
@@ -913,9 +934,11 @@ function TodayCard({
       ) : day.phase === "done" ? (
         <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
           Every competition on this plan is behind you.{" "}
-          <button className={TEXT_ACTION} onClick={onEdit}>
-            Add your next one
-          </button>
+          {!readOnly && (
+            <button className={TEXT_ACTION} onClick={onEdit}>
+              Add your next one
+            </button>
+          )}
         </p>
       ) : tasks.length === 0 ? (
         <p className="mt-3 text-sm text-slate-700 dark:text-slate-200">
@@ -931,7 +954,7 @@ function TodayCard({
       {tasks.length > 0 && (
         <ol className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
           {tasks.map((t, i) => (
-            <TaskRow key={t.id} task={t} isNext={i === nextIdx} busy={busy} onLaunch={onLaunch} />
+            <TaskRow key={t.id} task={t} isNext={i === nextIdx} busy={busy} onLaunch={onLaunch} readOnly={readOnly} />
           ))}
         </ol>
       )}
@@ -968,11 +991,13 @@ function TaskRow({
   isNext,
   busy,
   onLaunch,
+  readOnly = false,
 }: {
   task: PlanTask;
   isNext: boolean;
   busy: boolean;
   onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
+  readOnly?: boolean;
 }) {
   const termTask = task.kind === "learn" || task.kind === "weak";
   // Once every card has been flipped, the useful next move is proving them.
@@ -1009,7 +1034,7 @@ function TaskRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap gap-2 pl-9 sm:pl-0">
+      {!readOnly && <div className="flex shrink-0 flex-wrap gap-2 pl-9 sm:pl-0">
         {termTask && (
           <>
             <button className={primary(!flipped)} disabled={busy} onClick={() => onLaunch(task, "study")}>
@@ -1046,7 +1071,7 @@ function TaskRow({
             {task.kind === "mock" ? "Start mock run →" : "Start role-play →"}
           </button>
         )}
-      </div>
+      </div>}
     </li>
   );
 }

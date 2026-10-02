@@ -14,8 +14,8 @@ import {
   type BlitzScenario,
   type Term,
 } from "./api";
-import { markStudy } from "./progress";
-import { BTN_PRIMARY, BTN_SECONDARY } from "./ui";
+import { markStudy, postActivity } from "./progress";
+import { BTN_PRIMARY, BTN_SECONDARY, LogoLoader } from "./ui";
 
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 const SECONDS_PER_TERM = 45; // the time-pressure window
@@ -172,6 +172,12 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
         // still called it weak. Fire-and-forget: markStudy no-ops when signed out
         // and never throws, so recording can't break the results screen.
         void markStudy(r.results.map((x) => ({ term_id: x.term_id, evidence: "blitz", verdict: x.verdict })));
+        void postActivity({
+          kind: "blitz",
+          term_ids: r.results.map((x) => x.term_id),
+          score: r.results.filter((x) => x.verdict === "correct").length,
+          total: r.results.length,
+        });
         setPhase("results");
       })
       .catch((e) => { setScoreErr(e instanceof Error ? e.message : String(e)); setPhase("results"); });
@@ -321,7 +327,11 @@ function IntroPanel({ scenario, scenarioErr, count, mode, onMode, onStart }: {
       ) : (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
           <div className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">Your scenario</div>
-          <p className="mt-1 text-sm leading-relaxed text-slate-800 dark:text-slate-100">{scenario ? scenario.text : "Loading…"}</p>
+          {scenario ? (
+            <p className="mt-1 text-sm leading-relaxed text-slate-800 dark:text-slate-100">{scenario.text}</p>
+          ) : (
+            <div className="mt-2"><LogoLoader size={28} label="Loading a scenario" gap="bg-indigo-50 dark:bg-slate-900" /></div>
+          )}
         </div>
       )}
       <div className="flex items-center justify-between">

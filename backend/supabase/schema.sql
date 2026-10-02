@@ -375,3 +375,129 @@ insert into public.app_stat (kind, count)
   on conflict (kind) do nothing;
 insert into public.app_stat (kind, count) values ('blitz', 0)
   on conflict (kind) do nothing;
+
+
+-- ---------------------------------------------------------------------------
+-- Chapters: a school club whose managers (advisor, officers) follow their
+-- members' practice, post updates, assign homework, and send reminders.
+--
+-- Every table here is RLS on with NO policy, the same posture as `app_stat`:
+-- only the backend's service key can read or write. Who may see what (a manager
+-- sees their own chapter's students, a student sees their own thread) is decided
+-- in app/chapters.py and app/main.py, because it depends on joins across several
+-- tables that are much easier to get right, and to test, in one place.
+--
+-- `profile` holds the student's name, which a manager needs to recognize them.
+-- Names are the only new personal data; emails are never shown to managers.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.profile (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  first_name  text not null,
+  last_name   text not null,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+alter table public.profile enable row level security;
+
+-- status: pending (waiting for an owner's review in /admin) | active | rejected.
+-- Two codes: `join_code` is handed to students, `manager_code` to co-managers.
+-- Either can be rotated, which invalidates the old one immediately.
+create table if not exists public.chapter (
+  id             uuid primary key default gen_random_uuid(),
+  name           text not null,
+  school_name    text not null,
+  contact_email  text not null,
+  join_code      text not null unique,
+  manager_code   text not null unique,
+  status         text not null default 'pending',
+  created_by     uuid references auth.users(id) on delete set null,
+  created_at     timestamptz not null default now()
+);
+alter table public.chapter enable row level security;
+
+-- One row per person per chapter. A student request starts `pending` and a
+-- manager approves it; leaving, removal, and rejection all delete the row, so a
+-- departed student's data is out of the chapter's reach the moment it happens.
+-- consented_at records the "your managers will see..." screen being accepted.
+create table if not exists public.chapter_member (
+  chapter_id    uuid not null references public.chapter(id) on delete cascade,
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  role          text not null,                    -- manager | student
+  status        text not null default 'pending',  -- pending | active
+  requested_at  timestamptz not null default now(),
+  approved_at   timestamptz,
+  consented_at  timestamptz,
+  primary key (chapter_id, user_id)
+);
+alter table public.chapter_member enable row level security;
+
+-- A student belongs to at most one chapter (pending counts, so a code can't be
+-- used to fan requests out across schools). Managing several is fine.
+create unique index if not exists chapter_member_one_student_chapter
+  on public.chapter_member (user_id) where role = 'student';
+create index if not exists chapter_member_by_user on public.chapter_member (user_id);
+
+-- The chapter feed: announcements and assignments in one stream. An assignment
+-- carries what counts as done (`target`), so completion is detected from real
+-- activity rather than self-reported; see app/chapters.py assignment_status.
+--   assignment_kind: roleplay | quiz | blitz | flashcards
+--   target: {count, min_score?, min_pct?, domain_id?}
+--   audience: null = the whole chapter, else the student ids it was assigned to
+create table if not exists public.chapter_post (
+  id               uuid primary key default gen_random_uuid(),
+  chapter_id       uuid not null references public.chapter(id) on delete cascade,
+  author_id        uuid references auth.users(id) on delete set null,
+  kind             text not null,                  -- announcement | assignment
+  title            text not null,
+  body             text not null default '',
+  assignment_kind  text,
+  target           jsonb,
+  due_at           timestamptz,
+  audience         uuid[],
+  created_at       timestamptz not null default now()
+);
+alter table public.chapter_post enable row level security;
+create index if not exists chapter_post_by_chapter on public.chapter_post (chapter_id, created_at desc);
+
+-- Reminders and replies. One thread per student (`student_id`), shared by all of
+-- the chapter's managers; a student can only ever see their own thread, and
+-- there are no student-to-student messages.
+create table if not exists public.chapter_message (
+  id          uuid primary key default gen_random_uuid(),
+  chapter_id  uuid not null references public.chapter(id) on delete cascade,
+  student_id  uuid not null references auth.users(id) on delete cascade,
+  sender_id   uuid references auth.users(id) on delete set null,
+  body        text not null,
+  created_at  timestamptz not null default now()
+);
+alter table public.chapter_message enable row level security;
+create index if not exists chapter_message_by_thread on public.chapter_message (chapter_id, student_id, created_at);
+
+-- When each person last looked at something, for unread badges.
+-- scope: 'feed' | 'thread:<student uuid>'
+create table if not exists public.chapter_read (
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  chapter_id  uuid not null references public.chapter(id) on delete cascade,
+  scope       text not null,
+  seen_at     timestamptz not null default now(),
+  primary key (user_id, chapter_id, scope)
+);
+alter table public.chapter_read enable row level security;
+
+-- A finished quiz, Blitz run, or flashcard set. Role-plays already leave a row in
+-- `sessions`; these three only ever updated per-term mastery, which can't answer
+-- "did they do the quiz I assigned on Tuesday". Counts and term ids only.
+--   score/total: questions right of asked (quiz), terms passed of drilled
+--   (blitz), cards flipped of the deck (flashcards)
+create table if not exists public.activity_event (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  kind        text not null,                       -- quiz | blitz | flashcards
+  domain_ids  text[] not null default '{}',
+  score       int not null default 0,
+  total       int not null default 0,
+  created_at  timestamptz not null default now()
+);
+alter table public.activity_event enable row level security;
+create index if not exists activity_event_by_user on public.activity_event (user_id, created_at desc);

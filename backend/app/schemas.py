@@ -883,3 +883,205 @@ class VideoMetrics(BaseModel):
     adjustment_reason: str = ""
     # The advisory "Eye contact" row the Delivery tab appends to its components.
     delivery_component: DeliveryComponent | None = None
+
+
+# --- chapters -----------------------------------------------------------------
+# A school club: managers follow their students' practice, post to a feed,
+# assign homework that completes itself from real activity, and message students.
+
+
+class ProfileIn(BaseModel):
+    first_name: str = Field(min_length=1, max_length=40)
+    last_name: str = Field(min_length=1, max_length=40)
+
+
+class ProfileOut(BaseModel):
+    first_name: str
+    last_name: str
+
+
+class ChapterInfo(BaseModel):
+    id: str
+    name: str
+    school_name: str
+    status: Literal["pending", "active", "rejected"]
+    # Codes are only ever sent to the chapter's managers.
+    join_code: str | None = None
+    manager_code: str | None = None
+
+
+class Membership(BaseModel):
+    chapter: ChapterInfo
+    role: Literal["manager", "student"]
+    status: Literal["pending", "active"]
+    unread_feed: int = 0
+    unread_messages: int = 0
+
+
+class MeResponse(BaseModel):
+    profile: ProfileOut | None = None
+    memberships: list[Membership] = []
+
+
+class ChapterCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    school_name: str = Field(min_length=2, max_length=120)
+    contact_email: str = Field(min_length=3, max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class ChapterJoin(BaseModel):
+    code: str = Field(min_length=4, max_length=20)
+    # The student saw, and accepted, what their managers will be able to see.
+    consent: bool = False
+
+
+class CodeRotate(BaseModel):
+    which: Literal["join", "manager"]
+
+
+class RosterStudent(BaseModel):
+    user_id: str
+    first_name: str = ""
+    last_name: str = ""
+    event_id: str = ""
+    event: str = ""
+    status: Literal["pending", "active"]
+    requested_at: str = ""
+    last_active: str | None = None
+    roleplays_7d: int = 0
+    study_runs_7d: int = 0
+    avg_score_recent: int | None = None
+    weakest: str = ""
+    has_plan: bool = False
+    # Share of planned tasks done over the last 7 scored days, when there is a plan.
+    plan_follow_through: int | None = None
+
+
+class RosterManager(BaseModel):
+    user_id: str
+    first_name: str = ""
+    last_name: str = ""
+    is_you: bool = False
+
+
+class RosterResponse(BaseModel):
+    chapter: ChapterInfo
+    students: list[RosterStudent] = []
+    managers: list[RosterManager] = []
+
+
+class StudentProfile(BaseModel):
+    """What a manager sees when they open a student: the same panels the student
+    sees on their own Home, plus their study plan (read-only)."""
+
+    user_id: str
+    first_name: str = ""
+    last_name: str = ""
+    event_id: str = ""
+    event: str = ""
+    progress: ProgressResponse
+    sessions: list[SessionSummary] = []
+    course: CourseResponse | None = None
+    plan: PlanResponse | None = None
+
+
+AssignmentKind = Literal["roleplay", "quiz", "blitz", "flashcards"]
+
+
+class AssignmentTarget(BaseModel):
+    count: int = 1
+    min_score: int | None = None   # roleplay
+    min_pct: int | None = None     # quiz, blitz
+    domain_id: str | None = None   # quiz, blitz, flashcards
+
+
+class PostCreate(BaseModel):
+    kind: Literal["announcement", "assignment"]
+    title: str = Field(min_length=1, max_length=120)
+    body: str = Field(default="", max_length=4000)
+    assignment_kind: AssignmentKind | None = None
+    target: AssignmentTarget | None = None
+    due_at: _dt.datetime | None = None
+    # Empty = the whole chapter.
+    audience: list[str] = Field(default=[], max_length=500)
+
+
+class AssignmentStatus(BaseModel):
+    done: int = 0
+    count: int = 1
+    status: Literal["done", "in_progress", "not_started", "overdue"]
+
+
+class PostOut(BaseModel):
+    id: str
+    kind: Literal["announcement", "assignment"]
+    title: str
+    body: str = ""
+    author_name: str = ""
+    created_at: str
+    assignment_kind: AssignmentKind | None = None
+    target: AssignmentTarget | None = None
+    domain: str = ""
+    due_at: str | None = None
+    audience_size: int | None = None
+    # A student's own progress on it.
+    mine: AssignmentStatus | None = None
+    # Managers: how many assigned students have finished.
+    done_count: int | None = None
+    assigned_count: int | None = None
+
+
+class AssignmentRow(BaseModel):
+    user_id: str
+    name: str
+    status: AssignmentStatus
+
+
+class MessageIn(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+    # Managers: who gets it. One id is a reminder; several sends each student
+    # the same message in their own thread. Ignored for students.
+    student_ids: list[str] = Field(default=[], max_length=500)
+
+
+class MessageOut(BaseModel):
+    id: str
+    student_id: str
+    sender_name: str = ""
+    from_manager: bool
+    mine: bool
+    body: str
+    created_at: str
+
+
+class ThreadSummary(BaseModel):
+    student_id: str
+    name: str
+    last_body: str = ""
+    last_at: str | None = None
+    unread: int = 0
+
+
+class ReadMark(BaseModel):
+    scope: str = Field(min_length=1, max_length=60)
+
+
+class ActivityIn(BaseModel):
+    kind: Literal["quiz", "blitz", "flashcards"]
+    term_ids: list[str] = Field(default=[], max_length=1000)
+    score: int = Field(default=0, ge=0, le=1000)
+    total: int = Field(default=0, ge=0, le=1000)
+
+
+class AdminChapter(BaseModel):
+    id: str
+    name: str
+    school_name: str
+    contact_email: str
+    status: str
+    created_at: str
+    creator_name: str = ""
+
+
+class AdminChapterStatus(BaseModel):
+    status: Literal["active", "rejected", "pending"]

@@ -20,6 +20,10 @@ Endpoints:
 - POST /api/study/mark     fold a flip/quiz/blitz/role-play result into progress
 - POST /api/plan/preview   a study plan from inputs, unsaved (anonymous-friendly)
 - GET/PUT/DELETE /api/plan the signed-in user's saved study plan
+- GET  /api/me             name + chapter memberships (+ unread counts)
+- /api/chapters/...        chapters: create, join, roster, student profiles,
+                           feed and assignments, messages (see that section)
+- POST /api/activity       record a finished quiz / Blitz / flashcard set
 
 Plus the server-rendered study pages (app/seo.py): /flashcards, /flashcards/{event},
 /robots.txt and /sitemap.xml. Those are plain HTML rather than JSON, they are the
@@ -46,16 +50,40 @@ from typing import Literal
 
 import anyio.to_thread
 import httpx
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_samples, blitz, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
+from . import admin_samples, blitz, chapters, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
 from .schemas import (
+    ActivityIn,
+    AdminChapter,
+    AdminChapterStatus,
     AnalyticalSection,
+    AssignmentRow,
+    AssignmentStatus,
+    AssignmentTarget,
+    ChapterCreate,
+    ChapterInfo,
+    ChapterJoin,
+    CodeRotate,
+    MeResponse,
+    Membership,
+    MessageIn,
+    MessageOut,
+    PostCreate,
+    PostOut,
+    ProfileIn,
+    ProfileOut,
+    ReadMark,
+    RosterManager,
+    RosterResponse,
+    RosterStudent,
+    StudentProfile,
+    ThreadSummary,
     CreativityScore,
     Criterion,
     CriterionScore,
@@ -1328,6 +1356,704 @@ async def delete_plan(user: dict = Depends(current_user)) -> dict:
     return {"deleted": True}
 
 
+# --- chapters --------------------------------------------------------------
+# A school club. Managers (advisor, officers) see their students' practice, post
+# to a feed, assign homework that completes itself from real activity, and send
+# reminders. Every access decision runs through app/chapters.py first; the tables
+# themselves are service-key-only, so nothing here is reachable any other way.
+
+def _name(p: dict | None) -> str:
+    return f"{p.get('first_name', '')} {p.get('last_name', '')}".strip() if p else ""
+
+
+def _event_name(event_id: str) -> str:
+    ev = events.get_event(event_id) if event_id else None
+    return ev["name"] if ev else ""
+
+
+def _domain_name(domain_id: str | None) -> str:
+    if not domain_id:
+        return ""
+    return next((d["name"] for d in framework.domains() if d["id"] == domain_id), "")
+
+
+def _chapter_info(ch: dict, role: str) -> ChapterInfo:
+    manager = role == "manager"
+    return ChapterInfo(
+        id=str(ch["id"]),
+        name=ch["name"],
+        school_name=ch["school_name"],
+        status=ch["status"],
+        join_code=ch["join_code"] if manager else None,
+        manager_code=ch["manager_code"] if manager else None,
+    )
+
+
+def _db_error(what: str):
+    def wrap(exc: Exception) -> HTTPException:
+        log.warning("chapter %s failed: %s", what, exc)
+        return HTTPException(status_code=502, detail=f"Couldn't {what}. Try again.")
+    return wrap
+
+
+async def _my_rows(user: dict) -> list[dict]:
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    try:
+        return await db.list_memberships(user["id"])
+    except httpx.HTTPError as exc:
+        raise _db_error("load your chapters")(exc) from exc
+
+
+async def _active_chapter(chapter_id: str) -> dict:
+    ch = await db.get_chapter(chapter_id)
+    if not ch:
+        raise HTTPException(status_code=404, detail="Chapter not found.")
+    return ch
+
+
+async def _gated(user: dict, chapter_id: str, check, *reads):
+    """Run the access check and the page's reads in ONE round of parallel queries.
+
+    Checking first and then reading costs two network round trips; this fetches
+    the caller's memberships alongside the data, then applies `check` before
+    anything is looked at, so a refused caller still gets the 403 and never the
+    data (and a read that failed for them is never surfaced either)."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    rows, *results = await asyncio.gather(db.list_memberships(user["id"]), *reads, return_exceptions=True)
+    if isinstance(rows, BaseException):
+        raise _db_error("load your chapters")(rows)
+    me = check(rows, chapter_id)
+    for r in results:
+        if isinstance(r, BaseException):
+            raise r
+    return me, results
+
+
+async def _unread(user_id: str, chapter_id: str, role: str) -> tuple[int, int]:
+    """(unread feed posts, unread messages) for one person in one chapter."""
+    reads, posts, msgs = await asyncio.gather(
+        db.list_reads(user_id, chapter_id),
+        db.list_posts(chapter_id, limit=50),
+        db.list_messages(chapter_id, None if role == "manager" else user_id),
+    )
+    visible = [p for p in posts if chapters.visible_to(p, user_id, role)]
+    feed = chapters.unread_count(visible, reads.get("feed"), exclude_author=user_id)
+    if role == "manager":
+        # A thread is unread when its student wrote after this manager last opened it.
+        by_thread: dict[str, list[dict]] = {}
+        for m in msgs:
+            if str(m.get("sender_id")) == str(m.get("student_id")):
+                by_thread.setdefault(str(m["student_id"]), []).append(m)
+        unread = sum(chapters.unread_count(ms, reads.get(f"thread:{sid}")) for sid, ms in by_thread.items())
+    else:
+        unread = chapters.unread_count(msgs, reads.get(f"thread:{user_id}"), exclude_author=user_id, author_key="sender_id")
+    return feed, unread
+
+
+@app.get("/api/me", response_model=MeResponse)
+async def get_me(user: dict = Depends(current_user)) -> MeResponse:
+    """The signed-in person's name and chapters, with unread counts for the badge.
+
+    Also finishes sign-up, once: a name entered on the sign-up form, and a chapter
+    registered there, arrive as user_metadata (an email-confirm sign-up has no
+    session to call us with until later), and are written as rows the first time
+    they're seen here. Both writes are idempotent, so a retry can't duplicate."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    meta = user.get("meta") or {}
+    try:
+        # Independent reads in parallel: each is a network round trip, and in
+        # sequence they were most of this endpoint's latency.
+        rows, prof = await asyncio.gather(db.list_memberships(user["id"]), db.get_profile(user["id"]))
+        first, last = str(meta.get("first_name") or "").strip()[:40], str(meta.get("last_name") or "").strip()[:40]
+        if not prof and first and last:
+            await db.upsert_profile(user["id"], first, last)
+            prof = {"first_name": first, "last_name": last}
+
+        pending = meta.get("pending_chapter")
+        if isinstance(pending, dict) and not await db.list_chapters_created_by(user["id"]):
+            try:
+                req = ChapterCreate(**pending)
+            except ValueError:
+                req = None
+            if req:
+                await _create_chapter(req, user["id"])
+                rows = await db.list_memberships(user["id"])
+
+        chs = {str(c["id"]): c for c in await db.list_chapters([str(r["chapter_id"]) for r in rows])}
+        live = [r for r in rows if str(r["chapter_id"]) in chs]
+
+        async def counts(r: dict) -> tuple[int, int]:
+            ch = chs[str(r["chapter_id"])]
+            if r["status"] == "active" and ch["status"] == "active":
+                return await _unread(user["id"], str(ch["id"]), r["role"])
+            return 0, 0
+
+        unread = await asyncio.gather(*(counts(r) for r in live))
+        out: list[Membership] = []
+        for r, (feed, msgs) in zip(live, unread):
+            ch = chs[str(r["chapter_id"])]
+            out.append(Membership(chapter=_chapter_info(ch, r["role"]), role=r["role"], status=r["status"],
+                                  unread_feed=feed, unread_messages=msgs))
+    except httpx.HTTPError as exc:
+        raise _db_error("load your account")(exc) from exc
+    return MeResponse(profile=ProfileOut(**prof) if prof else None, memberships=out)
+
+
+@app.put("/api/profile", response_model=ProfileOut)
+async def put_profile(req: ProfileIn, user: dict = Depends(current_user)) -> ProfileOut:
+    first, last = req.first_name.strip(), req.last_name.strip()
+    if not first or not last:
+        raise HTTPException(status_code=422, detail="Enter your first and last name.")
+    try:
+        await db.upsert_profile(user["id"], first, last)
+    except httpx.HTTPError as exc:
+        raise _db_error("save your name")(exc) from exc
+    return ProfileOut(first_name=first, last_name=last)
+
+
+# A person can register a handful of chapters (an advisor with two schools), but
+# not an unbounded number of pending rows for the owner to wade through.
+MAX_CHAPTERS_PER_CREATOR = 3
+
+
+async def _create_chapter(req: ChapterCreate, user_id: str) -> dict:
+    for _ in range(5):  # a code collision is astronomically rare; retry anyway
+        try:
+            ch = await db.insert_chapter({
+                "name": req.name.strip(),
+                "school_name": req.school_name.strip(),
+                "contact_email": req.contact_email.strip(),
+                "join_code": chapters.new_code(chapters.JOIN_CODE_LEN),
+                "manager_code": chapters.new_code(chapters.MANAGER_CODE_LEN),
+                "status": "pending",
+                "created_by": user_id,
+            })
+            break
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code != 409:
+                raise
+    else:
+        raise HTTPException(status_code=502, detail="Couldn't create the chapter. Try again.")
+    await db.insert_member({"chapter_id": ch["id"], "user_id": user_id, "role": "manager",
+                            "status": "active", "approved_at": "now()", "consented_at": "now()"})
+    return ch
+
+
+@app.post("/api/chapters", response_model=ChapterInfo, dependencies=[Depends(rate_limit)])
+async def create_chapter(req: ChapterCreate, user: dict = Depends(current_user)) -> ChapterInfo:
+    """Register a chapter. It starts pending until the owner approves it in /admin,
+    so a made-up school can't start collecting students."""
+    await _my_rows(user)
+    try:
+        if len(await db.list_chapters_created_by(user["id"])) >= MAX_CHAPTERS_PER_CREATOR:
+            raise HTTPException(status_code=409, detail="You've already registered the maximum number of chapters.")
+        ch = await _create_chapter(req, user["id"])
+    except httpx.HTTPError as exc:
+        raise _db_error("create the chapter")(exc) from exc
+    return _chapter_info(ch, "manager")
+
+
+@app.post("/api/chapters/join", response_model=Membership, dependencies=[Depends(rate_limit)])
+async def join_chapter(req: ChapterJoin, user: dict = Depends(current_user)) -> Membership:
+    """Use a code. A student code files a request that a manager approves; a
+    manager code (only ever handed out by an existing manager) joins as a manager
+    straight away. Rate-limited, so codes can't be guessed by brute force."""
+    rows = await _my_rows(user)
+    code = chapters.normalize_code(req.code)
+    try:
+        ch, kind = await db.find_chapter_by_code(code)
+        if not ch or ch["status"] == "rejected":
+            raise HTTPException(status_code=404, detail="That code doesn't match a chapter. Check it with your advisor.")
+        if ch["status"] != "active":
+            raise HTTPException(status_code=409, detail="That chapter is still being reviewed. Try again soon.")
+        existing = next((r for r in rows if str(r["chapter_id"]) == str(ch["id"])), None)
+        if existing:
+            return Membership(chapter=_chapter_info(ch, existing["role"]), role=existing["role"], status=existing["status"])
+        if not await db.get_profile(user["id"]):
+            raise HTTPException(status_code=422, detail="Add your name first, so your chapter knows who you are.")
+        if kind == "student":
+            if not req.consent:
+                raise HTTPException(status_code=422, detail="Please confirm what your chapter will be able to see.")
+            if any(r["role"] == "student" for r in rows):
+                raise HTTPException(status_code=409, detail="You're already in a chapter. Leave it first to join another.")
+            await db.insert_member({"chapter_id": ch["id"], "user_id": user["id"], "role": "student",
+                                    "status": "pending", "consented_at": "now()"})
+            return Membership(chapter=_chapter_info(ch, "student"), role="student", status="pending")
+        await db.insert_member({"chapter_id": ch["id"], "user_id": user["id"], "role": "manager",
+                                "status": "active", "approved_at": "now()", "consented_at": "now()"})
+        return Membership(chapter=_chapter_info(ch, "manager"), role="manager", status="active")
+    except httpx.HTTPError as exc:
+        raise _db_error("join that chapter")(exc) from exc
+
+
+@app.post("/api/chapters/{chapter_id}/leave")
+async def leave_chapter(chapter_id: str, user: dict = Depends(current_user)) -> dict:
+    """Leave (or withdraw a pending request). Managers lose access to the
+    student's data the moment the row is gone."""
+    rows = await _my_rows(user)
+    mine = next((r for r in rows if str(r["chapter_id"]) == chapter_id), None)
+    if not mine:
+        raise HTTPException(status_code=404, detail="You're not in that chapter.")
+    try:
+        if mine["role"] == "manager":
+            members = await db.list_chapter_members(chapter_id)
+            if sum(1 for m in members if m["role"] == "manager" and m["status"] == "active") <= 1:
+                raise HTTPException(status_code=409, detail="You're the only manager. Add another manager before leaving.")
+        await db.delete_member(chapter_id, user["id"])
+    except httpx.HTTPError as exc:
+        raise _db_error("leave the chapter")(exc) from exc
+    return {"left": True}
+
+
+@app.post("/api/chapters/{chapter_id}/members/{member_id}/approve")
+async def approve_member(chapter_id: str, member_id: str, user: dict = Depends(current_user)) -> dict:
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    try:
+        updated = await db.update_member(chapter_id, member_id, {"status": "active", "approved_at": "now()"})
+    except httpx.HTTPError as exc:
+        raise _db_error("approve that student")(exc) from exc
+    if not updated:
+        raise HTTPException(status_code=404, detail="That request is gone.")
+    return {"approved": True}
+
+
+@app.delete("/api/chapters/{chapter_id}/members/{member_id}")
+async def remove_member(chapter_id: str, member_id: str, user: dict = Depends(current_user)) -> dict:
+    """Remove a student or co-manager, or decline a pending request."""
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    if member_id == user["id"]:
+        raise HTTPException(status_code=422, detail="Use Leave chapter to remove yourself.")
+    try:
+        n = await db.delete_member(chapter_id, member_id)
+    except httpx.HTTPError as exc:
+        raise _db_error("remove that member")(exc) from exc
+    return {"removed": n > 0}
+
+
+@app.post("/api/chapters/{chapter_id}/codes/rotate", response_model=ChapterInfo)
+async def rotate_code(chapter_id: str, req: CodeRotate, user: dict = Depends(current_user)) -> ChapterInfo:
+    """Issue a new code; the old one stops working immediately (a leaked code)."""
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    field, n = ("join_code", chapters.JOIN_CODE_LEN) if req.which == "join" else ("manager_code", chapters.MANAGER_CODE_LEN)
+    try:
+        ch = await db.update_chapter(chapter_id, {field: chapters.new_code(n)})
+    except httpx.HTTPError as exc:
+        raise _db_error("rotate the code")(exc) from exc
+    if not ch:
+        raise HTTPException(status_code=404, detail="Chapter not found.")
+    return _chapter_info(ch, "manager")
+
+
+def _recent_avg(sessions: list[dict], n: int = 5) -> int | None:
+    scores = [int(s.get("content_score") or 0) for s in sessions[:n]]
+    return round(sum(scores) / len(scores)) if scores else None
+
+
+def _follow_through(history: list[dict], days: int = 7) -> int | None:
+    recent = sorted(history, key=lambda h: h.get("date", ""))[-days:]
+    planned = sum(int(h.get("planned") or 0) for h in recent)
+    return round(100 * sum(int(h.get("done") or 0) for h in recent) / planned) if planned else None
+
+
+@app.get("/api/chapters/{chapter_id}/roster", response_model=RosterResponse)
+async def chapter_roster(chapter_id: str, user: dict = Depends(current_user)) -> RosterResponse:
+    """Every student with the numbers an advisor scans for: their event, when they
+    last practiced, how much this week, recent average, weakest skill, and how
+    closely they're following their plan. Pending requests are listed too."""
+    now = datetime.now(timezone.utc)
+    try:
+        _, (ch, members) = await _gated(user, chapter_id, chapters.require_manager,
+                                        db.get_chapter(chapter_id), db.list_chapter_members(chapter_id))
+        if not ch:
+            raise HTTPException(status_code=404, detail="Chapter not found.")
+        ids = [str(m["user_id"]) for m in members]
+        student_ids = [str(m["user_id"]) for m in members if m["role"] == "student" and m["status"] == "active"]
+        since = (now - timedelta(days=90)).isoformat()
+        names, evs, plans, sess, acts = await asyncio.gather(
+            db.list_profiles(ids),
+            db.list_study_profiles(student_ids),
+            db.list_plan_history(student_ids),
+            db.list_sessions_for(student_ids, since=since),
+            db.list_activity(student_ids, since=since),
+        )
+    except httpx.HTTPError as exc:
+        raise _db_error("load the roster")(exc) from exc
+
+    by_user_s: dict[str, list[dict]] = {}
+    for s in sess:
+        by_user_s.setdefault(str(s["user_id"]), []).append(s)
+    by_user_a: dict[str, list[dict]] = {}
+    for a in acts:
+        by_user_a.setdefault(str(a["user_id"]), []).append(a)
+
+    students: list[RosterStudent] = []
+    managers: list[RosterManager] = []
+    for m in members:
+        uid = str(m["user_id"])
+        p = names.get(uid) or {}
+        if m["role"] == "manager":
+            if m["status"] == "active":
+                managers.append(RosterManager(user_id=uid, first_name=p.get("first_name", ""),
+                                              last_name=p.get("last_name", ""), is_you=uid == user["id"]))
+            continue
+        if m["status"] != "active":
+            students.append(RosterStudent(user_id=uid, first_name=p.get("first_name", ""), last_name=p.get("last_name", ""),
+                                          status="pending", requested_at=m.get("requested_at") or ""))
+            continue
+        ss, aa = by_user_s.get(uid, []), by_user_a.get(uid, [])
+        weak = progress.compute_progress(list(reversed(ss))).get("weakest_criterion") if ss else None
+        ev = evs.get(uid, "")
+        students.append(RosterStudent(
+            user_id=uid,
+            first_name=p.get("first_name", ""),
+            last_name=p.get("last_name", ""),
+            event_id=ev,
+            event=_event_name(ev),
+            status="active",
+            requested_at=m.get("requested_at") or "",
+            last_active=chapters.last_active(ss, aa),
+            roleplays_7d=chapters.recent_count(ss, now),
+            study_runs_7d=chapters.recent_count(aa, now),
+            avg_score_recent=_recent_avg(ss),
+            weakest=(weak or {}).get("name", ""),
+            has_plan=uid in plans,
+            plan_follow_through=_follow_through(plans[uid]) if uid in plans else None,
+        ))
+    return RosterResponse(chapter=_chapter_info(ch, "manager"), students=students, managers=managers)
+
+
+async def _plan_readonly(student_id: str, day: date, tz: int) -> PlanResponse | None:
+    """A student's plan as of today, for their manager. Same math as GET /api/plan
+    but it never writes: a manager looking must not freeze or roll over the
+    student's day, that only happens when the student opens it themselves."""
+    row = await db.get_study_plan(student_id)
+    if not row:
+        return None
+    prog, weak, sessions = await _plan_context({"id": student_id}, tz)
+    inputs = {k: row[k] for k in ("event_id", "stages", "day_minutes", "goal")}
+    frozen = row.get("today_tasks") if row.get("today_date") == day.isoformat() else None
+    prior = [s for s in sessions if s < day] if frozen is None else sessions
+    built = plan.build_plan(inputs, prog, weak, day, frozen_today=frozen,
+                            last_roleplay=prior[-1] if prior else None)
+    if not built:
+        return None
+    return _plan_out(built, prog, sessions, day, saved=True, history=row.get("history") or [])
+
+
+def _summary(r: dict) -> SessionSummary:
+    return SessionSummary(
+        id=str(r["id"]),
+        created_at=r.get("created_at", ""),
+        topic=r.get("topic") or "",
+        event=r.get("event") or "",
+        content_score=int(r.get("content_score") or 0),
+        level=r.get("level") or "novice",
+        mode=r.get("mode") or "",
+        filler_per_min=r.get("filler_per_min"),
+        pace_wpm=r.get("pace_wpm"),
+        retry_of_session_id=r.get("retry_of_session_id"),
+    )
+
+
+@app.get("/api/chapters/{chapter_id}/students/{student_id}", response_model=StudentProfile)
+async def student_profile(
+    chapter_id: str,
+    student_id: str,
+    local_date: str = Query(default="", max_length=10),
+    tz_offset: int = Query(default=0),
+    user: dict = Depends(current_user),
+) -> StudentProfile:
+    """One student's full profile for their manager: the Home panels (skills,
+    recent role-plays, trends) plus their course and study plan."""
+    day, tz = _plan_day(local_date, tz_offset)
+    try:
+        _, (members,) = await _gated(user, chapter_id, chapters.require_manager, db.list_chapter_members(chapter_id))
+        chapters.require_student_in(members, student_id)
+        prof, sp, summaries, prog_rows, plan_out = await asyncio.gather(
+            db.get_profile(student_id),
+            db.get_study_profile(student_id),
+            db.list_sessions(student_id, limit=50),
+            db.list_sessions(student_id, limit=200, select=db.PROGRESS_SELECT),
+            _plan_readonly(student_id, day, tz),
+        )
+        ev = (sp or {}).get("event_id", "")
+        course = await get_course(ev, {"id": student_id}) if ev and courses.course_for(ev) else None
+    except httpx.HTTPError as exc:
+        raise _db_error("load that student")(exc) from exc
+    return StudentProfile(
+        user_id=student_id,
+        first_name=(prof or {}).get("first_name", ""),
+        last_name=(prof or {}).get("last_name", ""),
+        event_id=ev,
+        event=_event_name(ev),
+        progress=ProgressResponse(**progress.compute_progress(prog_rows)),
+        sessions=[_summary(r) for r in summaries],
+        course=course,
+        plan=plan_out,
+    )
+
+
+@app.get("/api/chapters/{chapter_id}/students/{student_id}/sessions/{session_id}", response_model=SessionDetail)
+async def student_session(chapter_id: str, student_id: str, session_id: str, user: dict = Depends(current_user)) -> SessionDetail:
+    """One of a student's role-plays, for their manager to read the feedback."""
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    try:
+        chapters.require_student_in(await db.list_chapter_members(chapter_id), student_id)
+    except httpx.HTTPError as exc:
+        raise _db_error("load that session")(exc) from exc
+    return await get_session_endpoint(session_id, {"id": student_id})
+
+
+# feed: announcements + assignments
+
+def _post_out(p: dict, names: dict[str, dict]) -> PostOut:
+    return PostOut(
+        id=str(p["id"]),
+        kind=p["kind"],
+        title=p["title"],
+        body=p.get("body") or "",
+        author_name=_name(names.get(str(p.get("author_id")))),
+        created_at=p["created_at"],
+        assignment_kind=p.get("assignment_kind"),
+        target=AssignmentTarget(**p["target"]) if p.get("target") else None,
+        domain=_domain_name((p.get("target") or {}).get("domain_id")),
+        due_at=p.get("due_at"),
+        audience_size=len(p["audience"]) if p.get("audience") else None,
+    )
+
+
+async def _work_since(user_ids: list[str], posts: list[dict]) -> tuple[dict[str, list[dict]], dict[str, list[dict]]]:
+    """Sessions and study runs per student since the oldest assignment shown, all
+    an assignment's status is computed from."""
+    assigned = [p for p in posts if p["kind"] == "assignment"]
+    if not assigned or not user_ids:
+        return {}, {}
+    since = min(p["created_at"] for p in assigned)
+    sess, acts = await asyncio.gather(db.list_sessions_for(user_ids, since=since), db.list_activity(user_ids, since=since))
+    s_by: dict[str, list[dict]] = {}
+    for s in sess:
+        s_by.setdefault(str(s["user_id"]), []).append(s)
+    a_by: dict[str, list[dict]] = {}
+    for a in acts:
+        a_by.setdefault(str(a["user_id"]), []).append(a)
+    return s_by, a_by
+
+
+@app.get("/api/chapters/{chapter_id}/posts", response_model=list[PostOut])
+async def list_chapter_posts(chapter_id: str, user: dict = Depends(current_user)) -> list[PostOut]:
+    """The chapter feed, newest first. A student sees their own progress on each
+    assignment; a manager sees how many assigned students have finished."""
+    now = datetime.now(timezone.utc)
+    try:
+        me, (all_posts, members) = await _gated(user, chapter_id, chapters.require_member,
+                                                db.list_posts(chapter_id), db.list_chapter_members(chapter_id))
+        role = me["role"]
+        posts = [p for p in all_posts if chapters.visible_to(p, user["id"], role)]
+        student_ids = [str(m["user_id"]) for m in members if m["role"] == "student" and m["status"] == "active"]
+        names, (s_by, a_by) = await asyncio.gather(
+            db.list_profiles(list({str(p.get("author_id")) for p in posts if p.get("author_id")})),
+            _work_since(student_ids if role == "manager" else [user["id"]], posts),
+        )
+    except httpx.HTTPError as exc:
+        raise _db_error("load the feed")(exc) from exc
+
+    out: list[PostOut] = []
+    for p in posts:
+        o = _post_out(p, names)
+        if p["kind"] == "assignment":
+            if role == "manager":
+                who = chapters.assignees(p, student_ids)
+                o.assigned_count = len(who)
+                o.done_count = sum(
+                    1 for uid in who
+                    if chapters.assignment_status(p, s_by.get(uid, []), a_by.get(uid, []), now)["status"] == "done"
+                )
+            else:
+                o.mine = AssignmentStatus(**chapters.assignment_status(p, s_by.get(user["id"], []), a_by.get(user["id"], []), now))
+        out.append(o)
+    return out
+
+
+@app.post("/api/chapters/{chapter_id}/posts", response_model=PostOut)
+async def create_chapter_post(chapter_id: str, req: PostCreate, user: dict = Depends(current_user)) -> PostOut:
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    row: dict = {"chapter_id": chapter_id, "author_id": user["id"], "kind": req.kind,
+                 "title": req.title.strip(), "body": req.body.strip()}
+    if req.kind == "assignment":
+        target = (req.target or AssignmentTarget()).model_dump(exclude_none=True)
+        if not req.assignment_kind:
+            raise HTTPException(status_code=422, detail="Pick what kind of assignment this is.")
+        if err := chapters.validate_assignment(req.assignment_kind, target):
+            raise HTTPException(status_code=422, detail=err)
+        if target.get("domain_id") and not _domain_name(target["domain_id"]):
+            raise HTTPException(status_code=422, detail="Unknown skill area.")
+        row.update(assignment_kind=req.assignment_kind, target=target,
+                   due_at=req.due_at.isoformat() if req.due_at else None)
+    try:
+        if req.audience:
+            members = await db.list_chapter_members(chapter_id)
+            for sid in req.audience:
+                chapters.require_student_in(members, sid)
+            row["audience"] = list(dict.fromkeys(req.audience))
+        created = await db.insert_post(row)
+        names = await db.list_profiles([user["id"]])
+    except httpx.HTTPError as exc:
+        raise _db_error("post that")(exc) from exc
+    return _post_out(created, names)
+
+
+@app.delete("/api/chapters/{chapter_id}/posts/{post_id}")
+async def delete_chapter_post(chapter_id: str, post_id: str, user: dict = Depends(current_user)) -> dict:
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    try:
+        n = await db.delete_post(chapter_id, post_id)
+    except httpx.HTTPError as exc:
+        raise _db_error("delete that post")(exc) from exc
+    return {"deleted": n > 0}
+
+
+@app.get("/api/chapters/{chapter_id}/posts/{post_id}/status", response_model=list[AssignmentRow])
+async def assignment_breakdown(chapter_id: str, post_id: str, user: dict = Depends(current_user)) -> list[AssignmentRow]:
+    """Who has and hasn't finished one assignment, unfinished first."""
+    chapters.require_manager(await _my_rows(user), chapter_id)
+    now = datetime.now(timezone.utc)
+    try:
+        post = next((p for p in await db.list_posts(chapter_id, limit=500) if str(p["id"]) == post_id), None)
+        if not post or post["kind"] != "assignment":
+            raise HTTPException(status_code=404, detail="Assignment not found.")
+        members = await db.list_chapter_members(chapter_id)
+        who = chapters.assignees(post, [str(m["user_id"]) for m in members if m["role"] == "student" and m["status"] == "active"])
+        names = await db.list_profiles(who)
+        s_by, a_by = await _work_since(who, [post])
+    except httpx.HTTPError as exc:
+        raise _db_error("load that assignment")(exc) from exc
+    rows = [
+        AssignmentRow(user_id=uid, name=_name(names.get(uid)) or "Unnamed student",
+                      status=AssignmentStatus(**chapters.assignment_status(post, s_by.get(uid, []), a_by.get(uid, []), now)))
+        for uid in who
+    ]
+    order = {"overdue": 0, "not_started": 1, "in_progress": 2, "done": 3}
+    return sorted(rows, key=lambda r: (order[r.status.status], r.name.lower()))
+
+
+# messages: one thread per student, shared by the chapter's managers
+
+@app.get("/api/chapters/{chapter_id}/threads", response_model=list[ThreadSummary])
+async def list_threads(chapter_id: str, user: dict = Depends(current_user)) -> list[ThreadSummary]:
+    """The managers' inbox: every student with a conversation, newest first."""
+    try:
+        _, (members, msgs, reads) = await _gated(
+            user, chapter_id, chapters.require_manager,
+            db.list_chapter_members(chapter_id), db.list_messages(chapter_id), db.list_reads(user["id"], chapter_id),
+        )
+        student_ids = {str(m["user_id"]) for m in members if m["role"] == "student" and m["status"] == "active"}
+        names = await db.list_profiles(list(student_ids))
+    except httpx.HTTPError as exc:
+        raise _db_error("load messages")(exc) from exc
+    by: dict[str, list[dict]] = {}
+    for m in msgs:
+        if str(m["student_id"]) in student_ids:
+            by.setdefault(str(m["student_id"]), []).append(m)
+    out = [
+        ThreadSummary(
+            student_id=sid,
+            name=_name(names.get(sid)) or "Unnamed student",
+            last_body=ms[-1]["body"][:140],
+            last_at=ms[-1]["created_at"],
+            unread=chapters.unread_count([m for m in ms if str(m.get("sender_id")) == sid], reads.get(f"thread:{sid}")),
+        )
+        for sid, ms in by.items()
+    ]
+    return sorted(out, key=lambda t: t.last_at or "", reverse=True)
+
+
+@app.get("/api/chapters/{chapter_id}/messages", response_model=list[MessageOut])
+async def get_messages(chapter_id: str, student: str = Query(default=""), user: dict = Depends(current_user)) -> list[MessageOut]:
+    """One thread. Opening it marks it read for the caller."""
+    rows = await _my_rows(user)
+    sid = chapters.thread_access(rows, chapter_id, user["id"], student or None)
+    try:
+        members, msgs = await asyncio.gather(db.list_chapter_members(chapter_id), db.list_messages(chapter_id, sid))
+        if sid != user["id"]:
+            chapters.require_student_in(members, sid)
+        names, _ = await asyncio.gather(
+            db.list_profiles(list({str(m.get("sender_id")) for m in msgs if m.get("sender_id")})),
+            db.mark_read(user["id"], chapter_id, f"thread:{sid}"),
+        )
+    except httpx.HTTPError as exc:
+        raise _db_error("load messages")(exc) from exc
+    return [
+        MessageOut(
+            id=str(m["id"]),
+            student_id=sid,
+            sender_name=_name(names.get(str(m.get("sender_id")))),
+            from_manager=str(m.get("sender_id")) != sid,
+            mine=str(m.get("sender_id")) == user["id"],
+            body=m["body"],
+            created_at=m["created_at"],
+        )
+        for m in msgs
+    ]
+
+
+@app.post("/api/chapters/{chapter_id}/messages", dependencies=[Depends(rate_limit)])
+async def send_message(chapter_id: str, req: MessageIn, user: dict = Depends(current_user)) -> dict:
+    """A manager writes to one or more students (each in their own thread); a
+    student can only reply in their own thread, to the managers."""
+    rows = await _my_rows(user)
+    me = chapters.require_member(rows, chapter_id)
+    body = req.body.strip()
+    if not body:
+        raise HTTPException(status_code=422, detail="Write something first.")
+    try:
+        if me["role"] == "manager":
+            if not req.student_ids:
+                raise HTTPException(status_code=422, detail="Pick at least one student.")
+            members = await db.list_chapter_members(chapter_id)
+            targets = list(dict.fromkeys(req.student_ids))
+            for sid in targets:
+                chapters.require_student_in(members, sid)
+        else:
+            targets = [user["id"]]
+        for sid in targets:
+            await db.insert_message({"chapter_id": chapter_id, "student_id": sid, "sender_id": user["id"], "body": body})
+            await db.mark_read(user["id"], chapter_id, f"thread:{sid}")
+    except httpx.HTTPError as exc:
+        raise _db_error("send that")(exc) from exc
+    return {"sent": len(targets)}
+
+
+@app.post("/api/chapters/{chapter_id}/read")
+async def mark_chapter_read(chapter_id: str, req: ReadMark, user: dict = Depends(current_user)) -> dict:
+    chapters.require_member(await _my_rows(user), chapter_id)
+    if req.scope != "feed":
+        raise HTTPException(status_code=422, detail="Unknown scope.")
+    try:
+        await db.mark_read(user["id"], chapter_id, "feed")
+    except httpx.HTTPError as exc:
+        raise _db_error("update that")(exc) from exc
+    return {"ok": True}
+
+
+@app.post("/api/activity")
+async def record_activity(req: ActivityIn, user: dict = Depends(current_user)) -> dict:
+    """A finished quiz, Blitz run, or flashcard set: the completion record that
+    assignments are checked against. Domains are derived here from the term ids,
+    never taken from the client."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    domains = sorted({t["domain_id"] for t in terms.get_terms(req.term_ids) if t.get("domain_id")})
+    try:
+        await db.insert_activity({"user_id": user["id"], "kind": req.kind, "domain_ids": domains,
+                                  "score": min(req.score, req.total) if req.total else req.score, "total": req.total})
+    except httpx.HTTPError as exc:
+        raise _db_error("record that")(exc) from exc
+    return {"ok": True}
+
+
 # --- admin QA page (owner-only, secret passphrase) -------------------------
 
 class AdminVerify(BaseModel):
@@ -1344,6 +2070,42 @@ def admin_verify(req: AdminVerify) -> dict:
         raise HTTPException(status_code=404, detail="Not found.")
     ok = hmac.compare_digest(req.passphrase or "", config.ADMIN_PASSPHRASE)
     return {"ok": ok}
+
+
+def require_admin(x_admin_passphrase: str = Header(default="")) -> None:
+    """The owner, by passphrase. Chapter review needs more than "signed in": any
+    account can sign in, and approving a chapter is what lets it collect students."""
+    import hmac
+
+    if not config.ADMIN_PASSPHRASE:
+        raise HTTPException(status_code=404, detail="Not found.")
+    if not hmac.compare_digest(x_admin_passphrase or "", config.ADMIN_PASSPHRASE):
+        raise HTTPException(status_code=403, detail="Wrong passphrase.")
+
+
+@app.get("/api/admin/chapters", response_model=list[AdminChapter], dependencies=[Depends(require_admin)])
+async def admin_list_chapters(status: Literal["pending", "active", "rejected"] = Query(default="pending")) -> list[AdminChapter]:
+    try:
+        rows = await db.list_chapters_by_status(status)
+        names = await db.list_profiles([str(c["created_by"]) for c in rows if c.get("created_by")])
+    except httpx.HTTPError as exc:
+        raise _db_error("load chapters")(exc) from exc
+    return [
+        AdminChapter(id=str(c["id"]), name=c["name"], school_name=c["school_name"], contact_email=c["contact_email"],
+                     status=c["status"], created_at=c["created_at"], creator_name=_name(names.get(str(c.get("created_by")))))
+        for c in rows
+    ]
+
+
+@app.post("/api/admin/chapters/{chapter_id}/status", dependencies=[Depends(require_admin)])
+async def admin_set_chapter_status(chapter_id: str, req: AdminChapterStatus) -> dict:
+    try:
+        ch = await db.update_chapter(chapter_id, {"status": req.status})
+    except httpx.HTTPError as exc:
+        raise _db_error("update that chapter")(exc) from exc
+    if not ch:
+        raise HTTPException(status_code=404, detail="Chapter not found.")
+    return {"status": ch["status"]}
 
 
 @app.get("/api/admin/cache-stats")
@@ -1426,5 +2188,13 @@ if Path(_DIST).is_dir():
     @app.get("/terms", include_in_schema=False)
     def _terms() -> FileResponse:
         return FileResponse(_INDEX)
+
+    # The app's own tabs each have an address (App.tsx VIEW_PATHS), so a refresh
+    # or a shared link lands on the right page instead of a 404.
+    def _spa() -> FileResponse:
+        return FileResponse(_INDEX)
+
+    for _path in ("/practice", "/study", "/chapter", "/tips", "/faq"):
+        app.add_api_route(_path, _spa, methods=["GET"], include_in_schema=False)
 
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")

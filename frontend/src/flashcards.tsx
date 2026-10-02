@@ -7,9 +7,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getAllTerms, getEvents, getTerms, type EventSummary, type FlashcardExample, type Term } from "./api";
-import { getCourse, getProgress, markStudy, type Course } from "./progress";
+import { getCourse, getProgress, markStudy, postActivity, type Course } from "./progress";
 import type { FlagsApi } from "./flags";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, LogoLoader, PageLoader } from "./ui";
 
 // The four beats, the same method the Tips page teaches, but the CONTENT is
 // specific to each term (from the card's worked example), not a fixed blurb.
@@ -98,6 +98,16 @@ export function Flashcards({
     void markStudy([{ term_id: card.id, evidence: "flip" }]);
   }, [flipped, card]);
 
+  // Closing the deck is the end of a set: report how many cards were actually
+  // turned over, which is what a chapter's flashcard assignment counts. Read
+  // through refs because the cleanup runs once, on unmount.
+  const totalRef = useRef(0);
+  totalRef.current = total;
+  useEffect(() => () => {
+    const seen = [...marked.current];
+    if (seen.length) void postActivity({ kind: "flashcards", term_ids: seen, score: seen.length, total: totalRef.current });
+  }, []);
+
   function go(delta: number) {
     setFlipped(false);
     setI((v) => Math.max(0, Math.min(total - 1, v + delta)));
@@ -114,7 +124,9 @@ export function Flashcards({
         {error ? (
           <div className="rounded-2xl bg-white p-6 text-sm text-red-600 dark:bg-slate-900 dark:text-red-400">Couldn't load cards: {error}</div>
         ) : !fetched ? (
-          <div className="rounded-2xl bg-white p-6 text-sm text-slate-400 dark:bg-slate-900">Loading…</div>
+          <div className="flex justify-center rounded-2xl bg-white p-10 dark:bg-slate-900">
+            <LogoLoader size={64} label="Loading cards" />
+          </div>
         ) : !card ? (
           <div className="rounded-2xl bg-white p-6 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400">No cards here yet.</div>
         ) : (
@@ -361,7 +373,13 @@ export function FlashcardLibrary({
   const allOpen = groups.length > 0 && groups.every((g) => openDomains.has(g.domain));
 
   if (error) return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-red-600 dark:text-red-400">Couldn't load the library: {error}</p>;
-  if (!all) return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-slate-500 dark:text-slate-400">Loading the library…</p>;
+  if (!all) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <PageLoader label="Loading the library" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">

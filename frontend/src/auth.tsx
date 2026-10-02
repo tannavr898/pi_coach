@@ -14,6 +14,21 @@ import { BTN_PRIMARY } from "./ui";
 
 type AuthResult = { error?: string; needsConfirmation?: boolean };
 
+// What the sign-up form collects beyond email and password. Sent as Supabase
+// user_metadata so it survives an email-confirm round trip (no session exists
+// until the link is clicked, maybe on another device); the backend's /api/me
+// writes it into real rows the first time the account signs in.
+export type SignupMeta = {
+  first_name: string;
+  last_name: string;
+  pending_chapter?: { name: string; school_name: string; contact_email: string };
+};
+
+// The Google path can't carry metadata through the provider hand-off, so the same
+// details wait in localStorage and are applied after the redirect (chapter.tsx
+// applyStashedSignup).
+export const SIGNUP_STASH_KEY = "pic-signup-meta";
+
 // The providers enabled in the Supabase dashboard. Adding another (Apple,
 // Microsoft) is a dashboard change plus one entry here and in PROVIDER_BUTTONS
 // below, nothing else in the flow is provider-specific.
@@ -23,7 +38,7 @@ type AuthState = {
   ready: boolean; // is Supabase login configured at all?
   loading: boolean; // initial session check in flight
   user: User | null;
-  signUp: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string, meta?: SignupMeta) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   // Hands the browser off to the provider; resolves only on failure, since
   // success navigates away from this page entirely.
@@ -163,10 +178,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signUp = async (email: string, password: string): Promise<AuthResult> => {
+  const signUp = async (email: string, password: string, meta?: SignupMeta): Promise<AuthResult> => {
     const sb = await getSupabase();
     if (!sb) return { error: "Accounts aren't available right now." };
-    const { data, error } = await sb.auth.signUp({ email, password });
+    const { data, error } = await sb.auth.signUp({ email, password, options: meta ? { data: meta } : undefined });
     if (error) return { error: error.message };
     track("auth_signed_up", {});
     // With "confirm email" enabled, signUp returns a user but no active session
@@ -274,12 +289,19 @@ export function AuthModal({
   initialTab?: "signup" | "login";
   reason?: string;
   onClose: () => void;
-  onAuthed?: (mode: "signup" | "login") => void;
+  // `kind` tells the caller where to land: an advisor goes to their chapter.
+  onAuthed?: (mode: "signup" | "login", kind?: "student" | "advisor") => void;
 }) {
   const { signIn, signUp, signInWithProvider } = useAuth();
   const [tab, setTab] = useState<"signup" | "login">(initialTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [kind, setKind] = useState<"student" | "advisor">("student");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [chapterName, setChapterName] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
@@ -300,6 +322,16 @@ export function AuthModal({
   // flickering back to interactive while the page is already navigating.
   async function startProvider(provider: OAuthProvider) {
     setError(null);
+    if (tab === "signup") {
+      // Names (and a chapter) still have to come from somewhere; Google can't
+      // carry them, so they wait in localStorage for the return trip. Without a
+      // name we still let them through, the name prompt catches them after.
+      if (kind === "advisor" && !signupMeta(true)) return;
+      const meta = signupMeta(false);
+      try {
+        if (meta) localStorage.setItem(SIGNUP_STASH_KEY, JSON.stringify(meta));
+      } catch { /* private mode: the name prompt covers it */ }
+    }
     setBusy(true);
     const res = await signInWithProvider(provider);
     if (res.error) {
@@ -308,12 +340,38 @@ export function AuthModal({
     }
   }
 
+  // The sign-up extras, or null (with the error shown) when something required
+  // is missing. `strict` also demands the names, which the email path always does.
+  function signupMeta(strict: boolean): SignupMeta | null {
+    const first = firstName.trim();
+    const last = lastName.trim();
+    if (strict && (!first || !last)) {
+      setError("Enter your first and last name.");
+      return null;
+    }
+    const meta: SignupMeta = { first_name: first, last_name: last };
+    if (kind === "advisor") {
+      const ch = { name: chapterName.trim(), school_name: schoolName.trim(), contact_email: (contactEmail || email).trim() };
+      if (ch.name.length < 2 || ch.school_name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ch.contact_email)) {
+        setError("Fill in the chapter name, school, and a contact email.");
+        return null;
+      }
+      meta.pending_chapter = ch;
+    }
+    return first || last || meta.pending_chapter ? meta : null;
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    let meta: SignupMeta | undefined;
+    if (tab === "signup") {
+      const m = signupMeta(true);
+      if (!m) return;
+      meta = m;
+    }
     setBusy(true);
-    const fn = tab === "signup" ? signUp : signIn;
-    const res = await fn(email.trim(), password);
+    const res = tab === "signup" ? await signUp(email.trim(), password, meta) : await signIn(email.trim(), password);
     setBusy(false);
     if (res.error) {
       setError(res.error);
@@ -324,7 +382,7 @@ export function AuthModal({
       return;
     }
     // Signed in, a session is active.
-    onAuthed?.(tab);
+    onAuthed?.(tab, tab === "signup" ? kind : undefined);
     onClose();
   }
 
@@ -363,6 +421,58 @@ export function AuthModal({
               </button>
             </div>
             {reason && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{reason}</p>}
+
+            {tab === "signup" && (
+              <div className="mt-4 space-y-3">
+                <div role="radiogroup" aria-label="I'm signing up as" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                  {([["student", "Student"], ["advisor", "Chapter advisor"]] as const).map(([k, label]) => (
+                    <button
+                      key={k}
+                      type="button"
+                      role="radio"
+                      aria-checked={kind === k}
+                      onClick={() => { setKind(k); setError(null); }}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                        kind === k
+                          ? "bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-slate-100"
+                          : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">First name</span>
+                    <input value={firstName} onChange={(e) => setFirstName(e.target.value)} maxLength={40} autoComplete="given-name" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Last name</span>
+                    <input value={lastName} onChange={(e) => setLastName(e.target.value)} maxLength={40} autoComplete="family-name" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+                  </label>
+                </div>
+                {kind === "advisor" && (
+                  <div className="space-y-3 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                    <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                      Register your chapter. We review new chapters before students can join, usually within a day.
+                    </p>
+                    <label className="block">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Chapter name</span>
+                      <input value={chapterName} onChange={(e) => setChapterName(e.target.value)} maxLength={80} placeholder="Northview DECA" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">School name</span>
+                      <input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} maxLength={120} placeholder="Northview High School" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Chapter contact email</span>
+                      <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} maxLength={200} placeholder="Defaults to your account email" className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100" />
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="mt-4 space-y-2">
               {PROVIDER_BUTTONS.map(({ id, label, icon }) => (
@@ -437,7 +547,7 @@ export function AuthModal({
               )}
             </p>
             <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-              We only store your email and your practice sessions: nothing else. Signing in is optional; you can keep practicing without an account.
+              We store your email, your name, and your practice sessions: nothing else. If you join a chapter, its managers can see your progress. Signing in is optional; you can keep practicing without an account.
             </p>
           </>
         )}

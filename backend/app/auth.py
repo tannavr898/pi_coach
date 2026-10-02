@@ -12,16 +12,28 @@ Anonymous practice never calls anything that depends on this, login is additive.
 
 from __future__ import annotations
 
+import hashlib
+import time
+
 import httpx
 from fastapi import Header, HTTPException
 
-from . import config
+from . import config, db
+
+# Verified tokens, remembered briefly. Every account request used to start with a
+# round trip to Supabase Auth before doing any work; a page that fires four
+# requests paid it four times. A minute is short enough that a signed-out or
+# revoked session stops working almost immediately, and the token's own expiry is
+# still enforced by Supabase on the first check. Keyed by a hash, never the token.
+_TOKEN_TTL = 60.0
+_TOKEN_MAX = 5000
+_verified: dict[str, tuple[float, dict]] = {}
 
 
 async def current_user(authorization: str = Header(default="")) -> dict[str, str]:
     """FastAPI dependency: resolve the signed-in user, or 401.
 
-    Returns ``{"id": <uuid>, "email": <str>}``.
+    Returns ``{"id", "email", "created_at", "meta"}``.
     """
     if not config.has_supabase():
         # Accounts aren't configured on this deployment.
@@ -32,8 +44,14 @@ async def current_user(authorization: str = Header(default="")) -> dict[str, str
     if not token:
         raise HTTPException(status_code=401, detail="Sign in to continue.")
 
+    key = hashlib.sha256(token.encode()).hexdigest()
+    hit = _verified.get(key)
+    now = time.monotonic()
+    if hit and hit[0] > now:
+        return hit[1]
+
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with db.conn() as client:
             resp = await client.get(
                 f"{config.SUPABASE_URL}/auth/v1/user",
                 headers={"Authorization": f"Bearer {token}", "apikey": config.SUPABASE_ANON_KEY},
@@ -51,7 +69,19 @@ async def current_user(authorization: str = Header(default="")) -> dict[str, str
     # `created_at` is carried through for the founding-user reward: "signed up
     # before the cutoff" is one of its two gates, and Supabase already hands it to
     # us here, so there is no extra round-trip to pay for it.
-    return {"id": uid, "email": data.get("email") or "", "created_at": data.get("created_at") or ""}
+    # `meta` is the user_metadata set at sign-up (first and last name, and a
+    # chapter to register when they signed up as one); /api/me turns it into rows
+    # once, see main.get_me.
+    user = {
+        "id": uid,
+        "email": data.get("email") or "",
+        "created_at": data.get("created_at") or "",
+        "meta": data.get("user_metadata") or {},
+    }
+    if len(_verified) >= _TOKEN_MAX:
+        _verified.clear()  # crude, but bounded; a miss only costs one round trip
+    _verified[key] = (now + _TOKEN_TTL, user)
+    return user
 
 
 async def optional_user(authorization: str = Header(default="")) -> dict[str, str] | None:

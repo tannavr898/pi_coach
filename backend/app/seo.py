@@ -739,7 +739,7 @@ def robots() -> PlainTextResponse:
 def sitemap() -> Response:
     """Generated from the live event catalog, so adding an event to events.json puts
     its page in the sitemap with no second file to remember."""
-    urls = [("/", "1.0"), ("/flashcards", "0.9")]
+    urls = [("/", "1.0"), ("/flashcards", "0.9"), ("/practice", "0.8"), ("/tips", "0.7"), ("/faq", "0.6")]
     urls += [(f"/flashcards/{e['id']}", "0.8") for e in events.all_events()]
     urls += [("/privacy", "0.2"), ("/terms", "0.2")]
     entries = "".join(

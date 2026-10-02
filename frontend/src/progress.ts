@@ -15,6 +15,12 @@ import type {
   VideoMetrics,
 } from "./api";
 import { getAccessToken } from "./supabase";
+import { cached, invalidate } from "./cache";
+
+// Every GET below goes through the cache (cache.ts): a return visit renders at
+// once and refreshes in the background. Every write invalidates the reads it
+// changes, by path prefix, so nothing a student just did shows as undone.
+const PROGRESS_READS = ["/api/sessions", "/api/progress", "/api/course", "/api/plan"];
 
 async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getAccessToken();
@@ -170,20 +176,23 @@ export function confirmScenarioSeen(scenarioId: string): Promise<{ status: strin
   });
 }
 
-export function saveSession(body: SaveSessionBody): Promise<SessionSaved> {
-  return authFetch<SessionSaved>("/api/sessions", { method: "POST", body: JSON.stringify(body) });
+export async function saveSession(body: SaveSessionBody): Promise<SessionSaved> {
+  const saved = await authFetch<SessionSaved>("/api/sessions", { method: "POST", body: JSON.stringify(body) });
+  invalidate(...PROGRESS_READS, "/api/chapters", "/api/me");
+  return saved;
 }
 
 export function getSessions(): Promise<SessionSummary[]> {
-  return authFetch<SessionSummary[]>("/api/sessions");
+  return cached("/api/sessions", () => authFetch<SessionSummary[]>("/api/sessions"));
 }
 
 export function getSession(id: string): Promise<SessionDetail> {
-  return authFetch<SessionDetail>(`/api/sessions/${id}`);
+  const path = `/api/sessions/${id}`;
+  return cached(path, () => authFetch<SessionDetail>(path));
 }
 
 export function getProgress(): Promise<ProgressResponse> {
-  return authFetch<ProgressResponse>("/api/progress");
+  return cached("/api/progress", () => authFetch<ProgressResponse>("/api/progress"));
 }
 
 // --- study courses --------------------------------------------------------
@@ -232,19 +241,37 @@ export type StudyMark = { term_id: string; evidence: StudyEvidence; verdict?: Bl
 
 // Browsable without an account: progress comes back all-zero when signed out.
 export function getCourse(eventId: string): Promise<Course> {
-  return maybeAuthFetch<Course>(`/api/course/${encodeURIComponent(eventId)}`);
+  const path = `/api/course/${encodeURIComponent(eventId)}`;
+  return cached(path, () => maybeAuthFetch<Course>(path));
 }
 
 // The course the user enrolled in. Rejects with a 404 detail until they pick one.
-export function getMyCourse(): Promise<Course> {
-  return authFetch<Course>("/api/course");
+// "No course yet" is cached too (as null), or every Home visit would pay a round
+// trip just to be told the same thing.
+export function myCourseOrNull(): Promise<Course | null> {
+  return cached<Course | null>("/api/course", async () => {
+    try {
+      return await authFetch<Course>("/api/course");
+    } catch (e) {
+      if ((e as { status?: number }).status === 404) return null;
+      throw e;
+    }
+  });
 }
 
-export function enrollCourse(eventId: string): Promise<Course> {
-  return authFetch<Course>("/api/course/enroll", {
+export async function getMyCourse(): Promise<Course> {
+  const c = await myCourseOrNull();
+  if (!c) throw Object.assign(new Error("No course yet: pick an event to start one."), { status: 404 });
+  return c;
+}
+
+export async function enrollCourse(eventId: string): Promise<Course> {
+  const c = await authFetch<Course>("/api/course/enroll", {
     method: "POST",
     body: JSON.stringify({ event_id: eventId }),
   });
+  invalidate("/api/course", "/api/plan", "/api/chapters");
+  return c;
 }
 
 // Fire-and-forget, and deliberately never throws. Anonymous users study too, and a
@@ -255,10 +282,12 @@ export async function markStudy(marks: StudyMark[]): Promise<{ updated: number }
   const token = await getAccessToken().catch(() => null);
   if (!token) return { updated: 0 };
   try {
-    return await authFetch<{ updated: number }>("/api/study/mark", {
+    const r = await authFetch<{ updated: number }>("/api/study/mark", {
       method: "POST",
       body: JSON.stringify({ marks }),
     });
+    invalidate("/api/course", "/api/plan");
+    return r;
   } catch {
     return { updated: 0 };
   }
@@ -364,21 +393,33 @@ export function previewPlan(inputs: PlanInputs): Promise<StudyPlan> {
 }
 
 // The saved plan, or null when the student hasn't made one yet.
-export async function getMyPlan(): Promise<StudyPlan | null> {
-  try {
-    return await authFetch<StudyPlan>(`/api/plan?${localDayQuery()}`);
-  } catch (e) {
-    if ((e as { status?: number }).status === 404) return null;
-    throw e;
-  }
+// Keyed by the student's local date, so a new day is a new entry, never a stale one.
+export function planKey(): string {
+  return `/api/plan?${localDayQuery()}`;
 }
 
-export function savePlan(inputs: PlanInputs): Promise<StudyPlan> {
-  return authFetch<StudyPlan>(`/api/plan?${localDayQuery()}`, { method: "PUT", body: JSON.stringify(inputs) });
+export function getMyPlan(): Promise<StudyPlan | null> {
+  const path = planKey();
+  return cached(path, async () => {
+    try {
+      return await authFetch<StudyPlan>(path);
+    } catch (e) {
+      if ((e as { status?: number }).status === 404) return null;
+      throw e;
+    }
+  });
 }
 
-export function deletePlan(): Promise<{ deleted: boolean }> {
-  return authFetch<{ deleted: boolean }>("/api/plan", { method: "DELETE" });
+export async function savePlan(inputs: PlanInputs): Promise<StudyPlan> {
+  const p = await authFetch<StudyPlan>(`/api/plan?${localDayQuery()}`, { method: "PUT", body: JSON.stringify(inputs) });
+  invalidate("/api/plan", "/api/course", "/api/chapters");
+  return p;
+}
+
+export async function deletePlan(): Promise<{ deleted: boolean }> {
+  const r = await authFetch<{ deleted: boolean }>("/api/plan", { method: "DELETE" });
+  invalidate("/api/plan", "/api/chapters");
+  return r;
 }
 
 // Admin QA: seed / clear canned sample sessions in the logged-in account.
@@ -424,4 +465,266 @@ export function scoreVideo(frames: VideoFrame[], deliveryScore?: number | null):
     method: "POST",
     body: JSON.stringify({ frames, delivery_score: deliveryScore ?? null }),
   });
+}
+
+// --- chapters ---------------------------------------------------------------
+// A school club: managers follow their students, post to a feed, assign work that
+// completes itself from real activity, and message students one thread at a time.
+// Every access rule is enforced server-side (backend chapters.py); the client only
+// decides what to show.
+
+export type Profile = { first_name: string; last_name: string };
+
+export type ChapterInfo = {
+  id: string;
+  name: string;
+  school_name: string;
+  status: "pending" | "active" | "rejected";
+  join_code: string | null;
+  manager_code: string | null;
+};
+
+export type Membership = {
+  chapter: ChapterInfo;
+  role: "manager" | "student";
+  status: "pending" | "active";
+  unread_feed: number;
+  unread_messages: number;
+};
+
+export type Me = { profile: Profile | null; memberships: Membership[] };
+
+export type RosterStudent = {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  event_id: string;
+  event: string;
+  status: "pending" | "active";
+  requested_at: string;
+  last_active: string | null;
+  roleplays_7d: number;
+  study_runs_7d: number;
+  avg_score_recent: number | null;
+  weakest: string;
+  has_plan: boolean;
+  plan_follow_through: number | null;
+};
+
+export type RosterManager = { user_id: string; first_name: string; last_name: string; is_you: boolean };
+export type Roster = { chapter: ChapterInfo; students: RosterStudent[]; managers: RosterManager[] };
+
+export type StudentProfileData = {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  event_id: string;
+  event: string;
+  progress: ProgressResponse;
+  sessions: SessionSummary[];
+  course: Course | null;
+  plan: StudyPlan | null;
+};
+
+export type AssignmentKind = "roleplay" | "quiz" | "blitz" | "flashcards";
+export type AssignmentTarget = { count: number; min_score?: number | null; min_pct?: number | null; domain_id?: string | null };
+export type AssignmentState = { done: number; count: number; status: "done" | "in_progress" | "not_started" | "overdue" };
+
+export type ChapterPost = {
+  id: string;
+  kind: "announcement" | "assignment";
+  title: string;
+  body: string;
+  author_name: string;
+  created_at: string;
+  assignment_kind: AssignmentKind | null;
+  target: AssignmentTarget | null;
+  domain: string;
+  due_at: string | null;
+  audience_size: number | null;
+  mine: AssignmentState | null;
+  done_count: number | null;
+  assigned_count: number | null;
+};
+
+export type PostDraft = {
+  kind: "announcement" | "assignment";
+  title: string;
+  body: string;
+  assignment_kind?: AssignmentKind;
+  target?: AssignmentTarget;
+  due_at?: string | null;
+  audience?: string[];
+};
+
+export type AssignmentRow = { user_id: string; name: string; status: AssignmentState };
+
+export type ChapterMessage = {
+  id: string;
+  student_id: string;
+  sender_name: string;
+  from_manager: boolean;
+  mine: boolean;
+  body: string;
+  created_at: string;
+};
+
+export type ThreadSummary = { student_id: string; name: string; last_body: string; last_at: string | null; unread: number };
+
+// Read helper for the chapter endpoints: cached by path.
+function cachedGet<T>(path: string): Promise<T> {
+  return cached(path, () => authFetch<T>(path));
+}
+
+// A write inside one chapter: everything shown for that chapter, plus the
+// memberships and unread counts in /api/me, may have changed.
+async function chapterWrite<T>(id: string, p: Promise<T>): Promise<T> {
+  const r = await p;
+  invalidate(`/api/chapters/${id}`, "/api/me");
+  return r;
+}
+
+export function getMe(): Promise<Me> {
+  return cachedGet<Me>("/api/me");
+}
+
+export async function saveProfile(p: Profile): Promise<Profile> {
+  const r = await authFetch<Profile>("/api/profile", { method: "PUT", body: JSON.stringify(p) });
+  invalidate("/api/me", "/api/chapters");
+  return r;
+}
+
+export async function createChapter(body: { name: string; school_name: string; contact_email: string }): Promise<ChapterInfo> {
+  const r = await authFetch<ChapterInfo>("/api/chapters", { method: "POST", body: JSON.stringify(body) });
+  invalidate("/api/me");
+  return r;
+}
+
+export async function joinChapter(code: string, consent: boolean): Promise<Membership> {
+  const r = await authFetch<Membership>("/api/chapters/join", { method: "POST", body: JSON.stringify({ code, consent }) });
+  invalidate("/api/me");
+  return r;
+}
+
+export function leaveChapter(id: string): Promise<{ left: boolean }> {
+  return chapterWrite(id, authFetch(`/api/chapters/${id}/leave`, { method: "POST" }));
+}
+
+export function getRoster(id: string): Promise<Roster> {
+  return cachedGet<Roster>(`/api/chapters/${id}/roster`);
+}
+
+export function approveMember(id: string, uid: string): Promise<{ approved: boolean }> {
+  return chapterWrite(id, authFetch(`/api/chapters/${id}/members/${uid}/approve`, { method: "POST" }));
+}
+
+export function removeMember(id: string, uid: string): Promise<{ removed: boolean }> {
+  return chapterWrite(id, authFetch(`/api/chapters/${id}/members/${uid}`, { method: "DELETE" }));
+}
+
+export function rotateCode(id: string, which: "join" | "manager"): Promise<ChapterInfo> {
+  return chapterWrite(id, authFetch<ChapterInfo>(`/api/chapters/${id}/codes/rotate`, { method: "POST", body: JSON.stringify({ which }) }));
+}
+
+export function studentProfileKey(id: string, uid: string): string {
+  return `/api/chapters/${id}/students/${uid}?${localDayQuery()}`;
+}
+
+export function getStudentProfile(id: string, uid: string): Promise<StudentProfileData> {
+  return cachedGet<StudentProfileData>(studentProfileKey(id, uid));
+}
+
+export function getStudentSession(id: string, uid: string, sid: string): Promise<SessionDetail> {
+  return cachedGet<SessionDetail>(`/api/chapters/${id}/students/${uid}/sessions/${sid}`);
+}
+
+export function getPosts(id: string): Promise<ChapterPost[]> {
+  return cachedGet<ChapterPost[]>(`/api/chapters/${id}/posts`);
+}
+
+export function createPost(id: string, draft: PostDraft): Promise<ChapterPost> {
+  return chapterWrite(id, authFetch<ChapterPost>(`/api/chapters/${id}/posts`, { method: "POST", body: JSON.stringify(draft) }));
+}
+
+export function deletePost(id: string, pid: string): Promise<{ deleted: boolean }> {
+  return chapterWrite(id, authFetch(`/api/chapters/${id}/posts/${pid}`, { method: "DELETE" }));
+}
+
+export function getAssignmentStatus(id: string, pid: string): Promise<AssignmentRow[]> {
+  return cachedGet<AssignmentRow[]>(`/api/chapters/${id}/posts/${pid}/status`);
+}
+
+export function getThreads(id: string): Promise<ThreadSummary[]> {
+  return cachedGet<ThreadSummary[]>(`/api/chapters/${id}/threads`);
+}
+
+export function messagesKey(id: string, studentId?: string | null): string {
+  return `/api/chapters/${id}/messages${studentId ? `?student=${encodeURIComponent(studentId)}` : ""}`;
+}
+
+export function getMessages(id: string, studentId?: string | null): Promise<ChapterMessage[]> {
+  return cachedGet<ChapterMessage[]>(messagesKey(id, studentId));
+}
+
+export function sendMessage(id: string, body: string, studentIds: string[] = []): Promise<{ sent: number }> {
+  return chapterWrite(id, authFetch(`/api/chapters/${id}/messages`, { method: "POST", body: JSON.stringify({ body, student_ids: studentIds }) }));
+}
+
+// Only /api/me changes (the unread badge); the feed itself is the same.
+export async function markFeedRead(id: string): Promise<{ ok: boolean }> {
+  const r = await authFetch<{ ok: boolean }>(`/api/chapters/${id}/read`, { method: "POST", body: JSON.stringify({ scope: "feed" }) });
+  invalidate("/api/me");
+  return r;
+}
+
+// A finished quiz, Blitz run, or flashcard set: what chapter assignments are
+// checked against. Same posture as markStudy: fire-and-forget, never throws, and
+// a no-op when signed out.
+export async function postActivity(a: { kind: "quiz" | "blitz" | "flashcards"; term_ids: string[]; score: number; total: number }): Promise<void> {
+  if (!a.term_ids.length) return;
+  const token = await getAccessToken().catch(() => null);
+  if (!token) return;
+  try {
+    await authFetch("/api/activity", { method: "POST", body: JSON.stringify(a) });
+    invalidate("/api/chapters");
+  } catch {
+    /* recording must never break a drill */
+  }
+}
+
+// Owner-only chapter review, gated by the admin passphrase rather than a login.
+export type AdminChapter = {
+  id: string;
+  name: string;
+  school_name: string;
+  contact_email: string;
+  status: string;
+  created_at: string;
+  creator_name: string;
+};
+
+async function adminFetch<T>(path: string, passphrase: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { "Content-Type": "application/json", "X-Admin-Passphrase": passphrase, ...(init?.headers || {}) },
+  });
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.detail) detail = String(body.detail);
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(detail);
+  }
+  return res.json() as Promise<T>;
+}
+
+export function adminListChapters(passphrase: string, status: "pending" | "active" | "rejected"): Promise<AdminChapter[]> {
+  return adminFetch<AdminChapter[]>(`/api/admin/chapters?status=${status}`, passphrase);
+}
+
+export function adminSetChapterStatus(passphrase: string, id: string, status: "active" | "rejected" | "pending"): Promise<{ status: string }> {
+  return adminFetch(`/api/admin/chapters/${id}/status`, passphrase, { method: "POST", body: JSON.stringify({ status }) });
 }

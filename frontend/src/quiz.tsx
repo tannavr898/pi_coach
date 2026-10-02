@@ -16,7 +16,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getQuiz, type Level, type QuizQuestion, type Term } from "./api";
 import { track } from "./analytics";
-import { markStudy } from "./progress";
+import { markStudy, postActivity } from "./progress";
 import { BTN_PRIMARY } from "./ui";
 
 // Enough to find a pattern in what you're missing, short enough to finish.
@@ -185,6 +185,13 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
       })
       .slice(0, 60); // the server's per-request ceiling
     void markStudy(marks);
+    // The finished round as a whole, which is what a chapter assignment asks for.
+    void postActivity({
+      kind: "quiz",
+      term_ids: [...new Set(questions.flatMap((q) => q.term_ids))],
+      score: right,
+      total: questions.length,
+    });
   }
 
   // Closing mid-round throws the round away, so guard it. Held in a ref so the Esc

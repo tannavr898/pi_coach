@@ -31,7 +31,7 @@ const GOVERNING_LAW = "the State of Pennsylvania, USA";
 
 // Shown on both pages. Bump it whenever the substance changes, not for typo
 // fixes, a date that moves for nothing trains people to ignore it.
-const LAST_UPDATED = "August 18, 2026";
+const LAST_UPDATED = "October 1, 2026";
 
 // --- shell ------------------------------------------------------------------
 
@@ -172,6 +172,10 @@ export function PrivacyApp() {
               password, and no access to anything else in your Google account.
             </>,
             <>
+              <strong className="font-semibold text-slate-900 dark:text-slate-100">Your name</strong>, first and last, so a chapter advisor can
+              recognize you if you join their chapter.
+            </>,
+            <>
               <strong className="font-semibold text-slate-900 dark:text-slate-100">Your password</strong>, if you use
               email sign-up, is handled entirely by our authentication provider. We never see or store it.
             </>,
@@ -182,10 +186,34 @@ export function PrivacyApp() {
             </>,
             <>
               <strong className="font-semibold text-slate-900 dark:text-slate-100">Your study progress:</strong> which
-              event you are studying for and which terms you have practiced.
+              event you are studying for, which terms you have practiced, and a record of each quiz, Blitz, or
+              flashcard set you finish (its score and topic area, not your answers).
             </>,
           ]}
         />
+      </Section>
+
+      <Section heading="Chapters">
+        <p>
+          A chapter advisor can register their school's chapter, which we review before it can accept members. If you
+          join a chapter with its code, you are shown exactly what its managers will see before you agree, and a
+          manager has to approve you.
+        </p>
+        <p>
+          Once you are in, the chapter's managers can see your name, your event, your scores, skills graph and trends,
+          your role-plays and their feedback (including ones from before you joined), your study plan, and whether you
+          have finished the assignments they post. They cannot see your email address. Managers can post updates to the
+          chapter and message you privately; you can reply to them. Other students in the chapter cannot see your
+          progress or your messages.
+        </p>
+        <p>
+          You can leave a chapter at any time, and its managers lose access to your data the moment you do. Messages and
+          posts are stored so the conversation is there when you come back; deleting your account deletes them along
+          with everything else.
+        </p>
+        <p>
+          If you register a chapter, we also store the chapter and school name and the contact email you give us.
+        </p>
       </Section>
 
       <Section heading="What we never keep">
@@ -280,8 +308,9 @@ export function PrivacyApp() {
 
       <Section heading="Security">
         <p>
-          Traffic is encrypted in transit. Database rows are protected by row-level security so a session can only ever
-          be read by the account that created it, and our server keys never ship to the browser. No system is perfect,
+          Traffic is encrypted in transit. Database rows are protected by row-level security, and every request is checked
+          on our server so your sessions can only be read by you and, if you join one, your chapter's managers. Our
+          server keys never ship to the browser. No system is perfect,
           and we do not claim otherwise, but we hold much less about you than we could, which is the most reliable
           protection there is.
         </p>
@@ -345,6 +374,15 @@ export function TermsApp() {
           Accounts are optional. If you make one, use an email address you control, keep your password to yourself, and
           do not share the account. Tell us promptly if you think someone else has access to it. You are responsible for
           what happens under your account.
+        </p>
+      </Section>
+
+      <Section heading="Chapters">
+        <p>
+          If you register a chapter, you confirm that you are an advisor or officer of that chapter and are allowed to
+          organize it on PI Coach. Only approve students you recognize, keep the manager code to people you trust with
+          every member's progress, and use what you see to coach your members, not for grading, discipline, or anything
+          outside the club. We may decline or remove a chapter we cannot verify or that misuses student data.
         </p>
       </Section>
 

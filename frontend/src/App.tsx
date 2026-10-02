@@ -19,6 +19,7 @@ import {
   type VideoMetrics,
   UNLIMITED,
   adminVerify,
+  getAllTerms,
   getEvents,
   getPublicStats,
   getScenarioById,
@@ -28,7 +29,7 @@ import {
   postScore,
 } from "./api";
 import { identifyEmail, PH_MASK, track, trackBeacon } from "./analytics";
-import { BrandMark } from "./ui";
+import { BrandMark, LogoLoader, PageLoader } from "./ui";
 import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
 import { useVisited, type Surface } from "./visited";
@@ -36,7 +37,9 @@ import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE 
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
-import { clearSamples, confirmScenarioSeen, fetchUsage, getSession, markStudy, saveSession, scoreVideo, seedSamples, type SaveSessionBody } from "./progress";
+import { adminListChapters, adminSetChapterStatus, clearSamples, confirmScenarioSeen, fetchUsage, getMessages, getMyPlan, getPosts, getProgress, getRoster, getSession, getSessions, getThreads, markStudy, messagesKey, myCourseOrNull, planKey, saveSession, scoreVideo, seedSamples, type AdminChapter, type ChapterPost, type SaveSessionBody, type SessionDetail } from "./progress";
+import { prefetch, setCacheScope } from "./cache";
+import { ChapterTab, NameModal, unreadTotal, useMe } from "./chapter";
 import { CAN_CAPTURE_VIDEO, GazeAnchor, VideoIndicator, VideoOptIn, VideoPanel, useFrameSampler, type VideoGate } from "./video";
 import { HomePage } from "./home";
 import { Flashcards } from "./flashcards";
@@ -74,7 +77,9 @@ function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
 // "course" is the Study tab. It carries both halves (the event path and the
 // all-domains browser); which one is showing is StudyTab's own business, not a
 // route. The old separate "flashcards" view is gone with the Library nav item.
-type View = "home" | "practice" | "tips" | "faq" | "course";
+// "chapter" is the club tab (chapter.tsx): a student's feed and messages, or a
+// manager's roster and dashboard. Signed-in only.
+type View = "home" | "practice" | "tips" | "faq" | "course" | "chapter";
 // What the flashcard study overlay is showing: either ids to fetch, or preloaded
 // cards (from the library), optionally opened at a specific card.
 type FlashcardTarget = { ids?: string[]; cards?: Term[]; startId?: string; title?: string };
@@ -198,6 +203,39 @@ function readDeckParam(): string | null {
   }
 }
 
+// Every top-level tab has its own address, so a refresh stays put, Back and
+// Forward move between tabs, and a link (or a bookmark) opens the right page.
+// "home" is the bare domain: the landing page signed out, the dashboard signed in.
+const VIEW_PATHS: Record<View, string> = {
+  home: "/",
+  practice: "/practice",
+  course: "/study",
+  chapter: "/chapter",
+  tips: "/tips",
+  faq: "/faq",
+};
+
+// Whether supabase-js left a saved session in this browser. Read synchronously so
+// a returning student sees a loader (then their dashboard) instead of a flash of
+// the marketing page, while a first-time visitor still gets the landing page with
+// no wait at all. Only a hint: the real answer comes from the auth check.
+const LIKELY_SIGNED_IN = (() => {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      if (/^sb-.+-auth-token$/.test(localStorage.key(i) ?? "")) return true;
+    }
+  } catch {
+    /* storage blocked */
+  }
+  return false;
+})();
+
+function viewFromPath(): View | null {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const hit = (Object.entries(VIEW_PATHS) as [View, string][]).find(([, p]) => p === path);
+  return hit ? hit[0] : null;
+}
+
 export default function App() {
   const [stage, setStage] = useState<Stage>("pick");
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -251,7 +289,32 @@ export default function App() {
   const [errorAction, setErrorAction] = useState<{ label: string; run: () => void; forError: string } | null>(null);
   // Arriving from a public deck page opens the library on that deck.
   const [handoffDeck] = useState<string | null>(() => readDeckParam());
-  const [view, setView] = useState<View>(() => (readDeckParam() ? "course" : "home"));
+  const [view, setView] = useState<View>(() => (readDeckParam() ? "course" : viewFromPath() ?? "home"));
+
+  // Keep the address bar in step with the tab. Every way of changing tabs goes
+  // through setView, so syncing here covers them all. The first sync replaces
+  // rather than pushes (it's the same visit), and query params belonging to the
+  // page being left (?deck=, ?s=) don't follow us to the next tab.
+  const firstSync = useRef(true);
+  useEffect(() => {
+    const want = VIEW_PATHS[view];
+    const here = window.location.pathname.replace(/\/+$/, "") || "/";
+    if (here !== want) {
+      const url = firstSync.current ? `${want}${window.location.search}${window.location.hash}` : want;
+      if (firstSync.current) window.history.replaceState({}, "", url);
+      else window.history.pushState({}, "", url);
+    }
+    firstSync.current = false;
+  }, [view]);
+  // Back / Forward between tabs.
+  useEffect(() => {
+    const onPop = () => {
+      const v = viewFromPath();
+      if (v) setView(v);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const nudge = useLandingNudge();
@@ -262,7 +325,11 @@ export default function App() {
     if (view === "practice") nudge.consume();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
-  const { user: authUser, ready: authReady, signOut, oauthError, dismissOAuthError } = useAuth();
+  const { user: authUser, ready: authReady, loading: authLoading, signOut, oauthError, dismissOAuthError } = useAuth();
+  // Point the read cache at this account before anything below reads from it.
+  // Skipped while the session is still being restored: "no user yet" isn't
+  // "signed out", and treating it so would wipe the cache a reload depends on.
+  if (!authLoading) setCacheScope(authUser?.id ?? null);
   // Login dialog (optional; opened after a session, from the header, or the
   // landing page, never before the user has experienced the product).
   const [authOpen, setAuthOpen] = useState(false);
@@ -277,15 +344,51 @@ export default function App() {
   // the tour. Keyed by user id so two accounts on one browser don't share it.
   const visited = useVisited(authUser?.id ?? null);
   const [tourOpen, setTourOpen] = useState(false);
+  // Name + chapters for the signed-in account. Drives the Chapter tab, its unread
+  // badge, and the one-time name prompt for accounts that don't have one yet.
+  const { me, error: meError, refresh: refreshMe } = useMe(authUser?.id ?? null);
+
+  // Warm the signed-in pages in the background, so the first click on Home,
+  // Study, or Chapter renders from cache instead of waiting on the network.
+  // Idle-scheduled, so it never competes with whatever is on screen.
+  useEffect(() => {
+    if (!authUser || !me) return;
+    const run = () => {
+      prefetch("/api/progress", getProgress);
+      prefetch("/api/sessions", getSessions);
+      prefetch("/api/course", myCourseOrNull);
+      prefetch(planKey(), getMyPlan);
+      for (const m of me.memberships) {
+        if (m.status !== "active" || m.chapter.status !== "active") continue;
+        const id = m.chapter.id;
+        prefetch(`/api/chapters/${id}/posts`, () => getPosts(id));
+        if (m.role === "manager") {
+          prefetch(`/api/chapters/${id}/roster`, () => getRoster(id));
+          prefetch(`/api/chapters/${id}/threads`, () => getThreads(id));
+        } else {
+          prefetch(messagesKey(id, null), () => getMessages(id, null));
+        }
+      }
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(run);
+    else window.setTimeout(run, 300);
+  }, [authUser, me]);
 
   // Where to go after a successful auth:
   //  - if they just finished a rep (on the feedback screen), stay put so it
   //    attaches to the new account;
   //  - a brand-new sign-up gets the guided tour, which hands off to the first rep;
   //  - a returning login goes to their Home dashboard.
-  function handleAuthed(mode: "signup" | "login") {
+  function handleAuthed(mode: "signup" | "login", kind?: "student" | "advisor") {
     const onFeedback = view === "practice" && stage === "feedback";
     if (onFeedback) return;
+    if (kind === "advisor") {
+      // They came to run a chapter, not to take the student tour.
+      refreshMe();
+      setView("chapter");
+      return;
+    }
     if (mode === "signup") {
       track("tour_started", { trigger: "signup" });
       setTourOpen(true);
@@ -303,6 +406,7 @@ export default function App() {
   // Opening a surface for the first time clears its nav dot.
   function goToView(v: View) {
     setView(v);
+    if (v === "chapter") refreshMe(); // fresh unread counts and approvals
     if (v === "course" || v === "tips" || v === "faq" || v === "home") {
       visited.markVisited(v);
     }
@@ -446,6 +550,50 @@ export default function App() {
   // reached from the two surfaces that already have one.
   function startQuiz(cards: Term[], title?: string, opts?: { cluster?: string; scope?: QuizScope; level?: Level }) {
     setQuizCards({ cards, title, cluster: opts?.cluster, scope: opts?.scope, level: opts?.level });
+  }
+
+  // Start a chapter assignment: open the drill it asks for, on its skill area when
+  // it names one. Completion is detected server-side from the finished run, so
+  // nothing here has to report back.
+  async function startAssignment(p: ChapterPost) {
+    if (p.assignment_kind === "roleplay") {
+      enterPractice();
+      return;
+    }
+    let cards: Term[];
+    try {
+      cards = await getAllTerms();
+    } catch (e) {
+      setError(errMsg(e));
+      return;
+    }
+    const domain = p.target?.domain_id;
+    if (domain) cards = cards.filter((t) => t.domain_id === domain);
+    if (p.assignment_kind === "quiz") startQuiz(cards, p.title, { scope: domain ? "deck" : "all" });
+    else if (p.assignment_kind === "blitz") startBlitz(cards, { from: "chapter" });
+    else setFlashcard({ cards, title: p.title });
+  }
+
+  // A student's stored role-play, opened by their chapter manager: the same
+  // feedback screen, read-only, with a way back to the profile.
+  function renderStudentSession(d: SessionDetail, onBack: () => void) {
+    return (
+      <div className="space-y-4">
+        <button onClick={onBack} className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">← Back to profile</button>
+        <FeedbackScreen
+          scenario={d.scenario}
+          score={d.score}
+          response={d.response}
+          followupAnswer={d.followup_answer}
+          delivery={d.delivery}
+          video={d.video}
+          utterances={d.utterances}
+          audioBlob={null}
+          onRestart={onBack}
+          readOnly
+        />
+      </div>
+    );
   }
 
   // Open a stored session's feedback (from the home "recent sessions" list).
@@ -1165,7 +1313,7 @@ export default function App() {
     setStage("pick");
   }
 
-  const wide = view === "home" || (view === "practice" && stage === "feedback") || view === "tips";
+  const wide = view === "home" || (view === "practice" && stage === "feedback") || view === "tips" || view === "chapter";
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -1186,7 +1334,9 @@ export default function App() {
         // to track, and marking up the nav for them is noise, not guidance.
         unvisited={authUser ? (s) => !visited.isVisited(s) : undefined}
         onReplayTour={authUser ? () => { track("tour_replayed"); setTourOpen(true); } : undefined}
+        chapterBadge={authUser ? unreadTotal(me) : null}
       />
+      {authUser && me && !me.profile && <NameModal onSaved={refreshMe} />}
       <AuthModal open={authOpen} initialTab={authTab} reason={authReason} onClose={() => setAuthOpen(false)} onAuthed={handleAuthed} />
       {flashcard && (
         <Flashcards
@@ -1272,7 +1422,9 @@ export default function App() {
           />
         )}
 
-        {view === "home" && authUser ? (
+        {view === "home" && authLoading && LIKELY_SIGNED_IN ? (
+          <PageLoader label="Loading" card={false} />
+        ) : view === "home" && authUser ? (
           <HomePage
             onStart={() => { track("practice_cta_clicked", { from: "home" }); enterPractice(); }}
             onPracticeCriterion={practiceCriterion}
@@ -1315,6 +1467,29 @@ export default function App() {
             onQuiz={(cards, title, opts) => startQuiz(cards, title, opts)}
             onPractice={(name) => (name ? practiceCriterion(name) : enterPractice())}
             onSignup={() => openAuth("signup", "Create a free account to save your study plan and track it day by day.")}
+          />
+        ) : view === "chapter" && !authUser ? (
+          authLoading ? (
+            <PageLoader label="Loading your chapter" />
+          ) : (
+            <Card>
+              <h1 className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Your chapter lives here</h1>
+              <p className="mt-2 max-w-prose text-sm text-slate-600 dark:text-slate-300">
+                Log in to see your chapter's updates, assignments, and messages, or to join one with a code from your advisor.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className={BTN_PRIMARY} onClick={() => openAuth("login", "Log in to open your chapter.")}>Log in</button>
+                <button className={BTN_SECONDARY} onClick={() => openAuth("signup", "Create a free account to join your chapter.")}>Sign up</button>
+              </div>
+            </Card>
+          )
+        ) : view === "chapter" ? (
+          <ChapterTab
+            me={me}
+            error={meError}
+            onRefresh={refreshMe}
+            onStartAssignment={(p) => void startAssignment(p)}
+            renderSession={renderStudentSession}
           />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />
@@ -1625,7 +1800,7 @@ export function AdminApp() {
   const [pass, setPass] = useState("");
   const [gateErr, setGateErr] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  const [tab, setTab] = useState<"live" | "feedback" | "beforeafter" | "onboarding">("live");
+  const [tab, setTab] = useState<"live" | "feedback" | "beforeafter" | "onboarding" | "chapters">("live");
   const [flashOpen, setFlashOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [busy, setBusy] = useState<"" | "seed" | "clear">("");
@@ -1639,7 +1814,9 @@ export function AdminApp() {
       const r = await adminVerify(pass);
       if (r.ok) {
         setUnlocked(true);
-        try { sessionStorage.setItem("pic-admin-ok", "1"); } catch { /* ignore */ }
+        // The passphrase itself is kept for this tab only: chapter review sends it
+        // on every call, because "signed in" is not enough to approve a school.
+        try { sessionStorage.setItem("pic-admin-ok", "1"); sessionStorage.setItem("pic-admin-pass", pass); } catch { /* ignore */ }
       } else {
         setGateErr("Wrong passphrase.");
       }
@@ -1694,6 +1871,7 @@ export function AdminApp() {
     { key: "feedback", label: "Feedback screen" },
     { key: "beforeafter", label: "Before / after" },
     { key: "onboarding", label: "Onboarding" },
+    { key: "chapters", label: "Chapter review" },
   ];
 
   return (
@@ -1798,10 +1976,72 @@ export function AdminApp() {
         {tab === "onboarding" && (
           <PreSessionScreen canRecord={CAN_RECORD} onStart={noop} onSkip={noop} />
         )}
+
+        {tab === "chapters" && <AdminChapters />}
       </main>
 
       {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} flags={flags} title="Flashcards preview" onClose={() => setFlashOpen(false)} />}
       <AuthModal open={authOpen} initialTab="login" reason="Log in to seed sample data into your account." onClose={() => setAuthOpen(false)} />
+    </div>
+  );
+}
+
+// Owner review of registered chapters. A chapter can't take students until it's
+// approved here, which is what stops a made-up school from collecting minors' data.
+function AdminChapters() {
+  const [status, setStatus] = useState<"pending" | "active" | "rejected">("pending");
+  const [rows, setRows] = useState<AdminChapter[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [epoch, setEpoch] = useState(0);
+  const pass = (() => { try { return sessionStorage.getItem("pic-admin-pass") ?? ""; } catch { return ""; } })();
+
+  useEffect(() => {
+    setRows(null);
+    setError(null);
+    adminListChapters(pass, status).then(setRows).catch((e) => setError(errMsg(e)));
+  }, [status, epoch, pass]);
+
+  async function set(id: string, next: "active" | "rejected" | "pending") {
+    try {
+      await adminSetChapterStatus(pass, id, next);
+      setEpoch((e) => e + 1);
+    } catch (e) {
+      setError(errMsg(e));
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-4">
+      <div className="flex gap-2">
+        {(["pending", "active", "rejected"] as const).map((st) => (
+          <button
+            key={st}
+            onClick={() => setStatus(st)}
+            className={`rounded-lg px-3 py-1 text-sm font-medium capitalize ${status === st ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900" : "border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300"}`}
+          >
+            {st}
+          </button>
+        ))}
+      </div>
+      {!pass && <p className="text-sm text-amber-700 dark:text-amber-300">Re-enter the passphrase (lock and unlock) to review chapters.</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {rows && rows.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">Nothing {status}.</p>}
+      {rows?.map((c) => (
+        <div key={c.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <div className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{c.name}</div>
+          <div className={`mt-0.5 text-sm text-slate-600 dark:text-slate-300 ${PH_MASK}`}>
+            {c.school_name} · {c.contact_email} · {c.creator_name || "No name"} · {new Date(c.created_at).toLocaleDateString()}
+          </div>
+          <div className="mt-3 flex gap-2">
+            {c.status !== "active" && <button className={BTN_PRIMARY} onClick={() => set(c.id, "active")}>Approve</button>}
+            {c.status !== "rejected" && (
+              <button className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200" onClick={() => set(c.id, "rejected")}>
+                Reject
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -2470,7 +2710,7 @@ function IntroPreview(props: { onReplay: () => void }) {
 
 // --- brand / shell ---------------------------------------------------------
 
-function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, unvisited, onReplayTour }: {
+function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, unvisited, onReplayTour, chapterBadge = null }: {
   view: View;
   onView: (v: View) => void;
   onPractice: () => void;
@@ -2486,7 +2726,15 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
   // Marks nav items this account hasn't opened yet. Absent (signed out) = no dots.
   unvisited?: (s: Surface) => boolean;
   onReplayTour?: () => void;
+  // Unread chapter posts + messages. null hides the Chapter item (signed out).
+  chapterBadge?: number | null;
 }) {
+  const chapterCount = chapterBadge ? (
+    <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white">
+      {chapterBadge}
+      <span className="sr-only"> unread</span>
+    </span>
+  ) : null;
   // A dot only when we have a visited-tracker AND the surface is still unseen.
   const dot = (s: Surface) => (unvisited?.(s) ? <NavDot /> : null);
   // Below `md` the full nav can't fit a phone's width without overflowing (the
@@ -2526,6 +2774,9 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
               tab, and the public pages are still at /flashcards, still in the
               sitemap and still linked from the footer, they just aren't nav. */}
           <NavLink active={view === "course"} onClick={() => onView("course")}>Study{dot("course")}</NavLink>
+          {chapterBadge !== null && (
+            <NavLink active={view === "chapter"} onClick={() => onView("chapter")}>Chapter{chapterCount}</NavLink>
+          )}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips{dot("tips")}</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ{dot("faq")}</NavLink>
           <button
@@ -2584,6 +2835,9 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
               <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
             )}
             <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study{dot("course")}</MobileNavItem>
+            {chapterBadge !== null && (
+              <MobileNavItem active={view === "chapter"} onClick={pick(() => onView("chapter"))}>Chapter{chapterCount}</MobileNavItem>
+            )}
             <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips{dot("tips")}</MobileNavItem>
             <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ{dot("faq")}</MobileNavItem>
             <MobileNavItem active={false} onClick={pick(onFeedback)}>💬 Feedback</MobileNavItem>
@@ -4222,6 +4476,9 @@ function FeedbackScreen(props: {
   // Optional controlled tab, so the product tour can step through the tabs. Left
   // undefined everywhere else, in which case the screen owns its own tab as before.
   tab?: FeedbackTab;
+  // Someone else's rep (a chapter manager reading a student's): no practice
+  // buttons, since starting a scenario from here would run it on the manager.
+  readOnly?: boolean;
 }) {
   const { score } = props;
   const marks = buildMarks(score.scores);
@@ -4387,7 +4644,7 @@ function FeedbackScreen(props: {
           </div>
         )}
 
-        <div className="flex flex-col gap-2.5 sm:flex-row">
+        {!props.readOnly && <div className="flex flex-col gap-2.5 sm:flex-row">
           {props.onTryAgain && (
             <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={props.onTryAgain}>
               🔁 Try this scenario again
@@ -4399,7 +4656,7 @@ function FeedbackScreen(props: {
           >
             Practice a new scenario →
           </button>
-        </div>
+        </div>}
         {props.onTryAgain && (
           <p className="text-center text-xs text-slate-500 dark:text-slate-400">
             Re-running the same scenario is the fastest way to see your feedback pay off.
@@ -5511,13 +5768,7 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
             illusion. Colors track BrandMark (#c7d2fe / #818cf8 / #4f46e5). Layers
             are centered with `inset-0 m-auto` (not transforms) so the scale
             animation is free to drive `transform`. */}
-        <div className="relative grid place-items-center" style={{ width: 140, height: 140 }}>
-          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 140, height: 140, background: "#c7d2fe", animationDelay: "0.6s" }} />
-          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 116, height: 116, animationDelay: "0.4s" }} />
-          <span className="pic-wave absolute inset-0 m-auto rounded-full" style={{ width: 92, height: 92, background: "#818cf8", animationDelay: "0.2s" }} />
-          <span className="pic-wave absolute inset-0 m-auto rounded-full bg-white dark:bg-slate-900" style={{ width: 72, height: 72, animationDelay: "0.07s" }} />
-          <span className="pic-wave-dot absolute inset-0 m-auto rounded-full" style={{ width: 34, height: 34, background: "#4f46e5" }} />
-        </div>
+        <LogoLoader size={140} label={title} />
 
         <div className="text-center">
           <p className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</p>

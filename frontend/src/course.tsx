@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getEvents, getTerms, type EventSummary, type Term } from "./api";
 import { StudyPlanSection } from "./plan";
 import { enrollCourse, getCourse, getMyCourse, type Course, type CourseUnit } from "./progress";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, PageLoader } from "./ui";
 
 export function StudyCourse({
   authed,
@@ -448,7 +448,11 @@ function EventPicker({
   }, [events]);
 
   if (!events) {
-    return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-slate-500 dark:text-slate-400">Loading events…</p>;
+    return (
+      <div className="mx-auto max-w-3xl">
+        <PageLoader label="Loading events" />
+      </div>
+    );
   }
 
   return (

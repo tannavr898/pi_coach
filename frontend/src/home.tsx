@@ -8,20 +8,21 @@
 //   - recent sessions, and a flashcards deck with a recommendation
 // Every number still maps to a next action; no badges/leaderboards/streak games.
 
-import { useEffect, useState } from "react";
+import { useState, type ReactNode } from "react";
 import { getDomains, type DomainSummary } from "./api";
 import {
-  getMyCourse,
   getMyPlan,
   getProgress,
   getSessions,
+  myCourseOrNull,
+  planKey,
   type Course,
   type ProgressResponse,
   type SessionSummary,
-  type StudyPlan,
 } from "./progress";
 import { PlanNudge, PlanTodayCard } from "./plan";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, PageLoader } from "./ui";
+import { useCached } from "./cache";
 import { ChartFrame, SkillRadar, TrendLine, VolumeBars } from "./charts";
 import { track } from "./analytics";
 
@@ -64,76 +65,36 @@ export function HomePage(props: {
   onOpenSession: (id: string) => void;
   onOpenStudy: () => void;
 }) {
-  const [progress, setProgress] = useState<ProgressResponse | null>(null);
-  const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
-  const [domains, setDomains] = useState<DomainSummary[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  // Each read comes from the cache (cache.ts): after the first visit the
+  // dashboard paints immediately from the last answer and refreshes underneath.
+  const progressQ = useCached("/api/progress", getProgress);
+  const sessionsQ = useCached("/api/sessions", getSessions);
+  const domainsQ = useCached("static:domains", getDomains);
   // The event they're studying for, if they've enrolled in a course. Drives the
-  // radar filter, 404 just means "hasn't picked one", which is not an error.
-  const [course, setCourse] = useState<Course | null>(null);
-  const [radarScope, setRadarScope] = useState<"event" | "all">("event");
+  // radar filter; null just means "hasn't picked one", which is not an error.
+  const courseQ = useCached("/api/course", myCourseOrNull);
   // Today's slice of their study plan, if they've made one. A failure here just
   // hides the card, the dashboard's other numbers don't depend on it.
-  const [plan, setPlan] = useState<StudyPlan | null>(null);
+  const planQ = useCached(planKey(), getMyPlan);
 
-  useEffect(() => {
-    let active = true;
-    Promise.all([
-      getProgress(),
-      getSessions(),
-      getDomains(),
-      getMyCourse().catch(() => null),
-      getMyPlan().catch(() => null),
-    ])
-      .then(([p, s, d, c, pl]) => {
-        if (!active) return;
-        setProgress(p);
-        setSessions(s);
-        setDomains(d);
-        setCourse(c);
-        setPlan(pl);
-      })
-      .catch((e) => {
-        if (active) setError(e instanceof Error ? e.message : String(e));
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const progress = progressQ.data ?? null;
+  const sessions = sessionsQ.data ?? null;
+  const domains = domainsQ.data ?? [];
+  const course = courseQ.data ?? null;
+  const plan = planQ.data ?? null;
+  const error = progressQ.error ?? sessionsQ.error;
+
+  if (progressQ.loading || sessionsQ.loading) {
+    return (
+      <div className="mx-auto max-w-[84rem]">
+        <PageLoader label="Loading your dashboard" />
+      </div>
+    );
+  }
 
   const weak = progress?.weakest_criterion ?? null;
-  const trend = progress?.delivery_trend ?? null;
-  const scoreTrend = progress?.score_trend ?? null;
   const count = progress?.sessions_count ?? 0;
-  const mastery = progress?.criterion_mastery ?? [];
-
-  // The domains this student's event is actually graded on. A course's units are
-  // grouped by domain, so the distinct domain_ids across them ARE the event's set,
-  // already in priority order. Empty when they haven't enrolled in a course.
-  const eventDomainIds = course ? [...new Set(course.units.map((u) => u.domain_id))] : [];
-  const canFilter = eventDomainIds.length >= 3; // fewer spokes than that isn't a radar
-  const filtered = canFilter && radarScope === "event";
-  const shownDomains = filtered ? domains.filter((d) => eventDomainIds.includes(d.id)) : domains;
-
-  // Skill radar. Each domain's value is the average mastery rank (0 Novice →
-  // 3 Exemplary) of the criteria you've been graded on in it; domains you haven't
-  // touched sit at 0, the "fill in your skills" view. Note the join is on domain
-  // NAME: CriterionMastery carries the display name, not the id.
-  const radarData = shownDomains.map((d) => {
-    const crits = mastery.filter((m) => m.domain === d.name);
-    const value = crits.length ? crits.reduce((s, m) => s + m.avg_rank, 0) / crits.length : 0;
-    return { label: d.name, value };
-  });
-  const practicedDomains = radarData.filter((d) => d.value > 0).length;
-
-  const scorePoints = (scoreTrend?.points ?? []).map((p) => ({ label: fmtDate(p.created_at), value: p.score }));
-  const deliveryPoints = (sessions ?? [])
-    .filter((s) => s.filler_per_min != null)
-    .slice()
-    .reverse() // getSessions is newest-first; charts want oldest-first
-    .map((s) => ({ label: fmtDate(s.created_at), value: Number(s.filler_per_min) }));
-  const volume = weeklyVolume((sessions ?? []).map((s) => s.created_at));
-  const allCriterionIds = mastery.map((m) => m.criterion_id);
+  const allCriterionIds = (progress?.criterion_mastery ?? []).map((m) => m.criterion_id);
 
   return (
     <div className="mx-auto max-w-[84rem] space-y-5">
@@ -169,143 +130,15 @@ export function HomePage(props: {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        {/* 2: Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
-        <Card className="lg:col-span-2">
-          {canFilter && (
-            <div className="mb-3 flex flex-wrap items-center justify-end gap-1.5">
-              <span className="mr-auto font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                Showing
-              </span>
-              {(["event", "all"] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => { setRadarScope(s); track("radar_filter_changed", { scope: s }); }}
-                  aria-pressed={radarScope === s}
-                  className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
-                    radarScope === s
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {s === "event" ? course?.event ?? "My event" : "All domains"}
-                </button>
-              ))}
-            </div>
-          )}
-          <ChartFrame
-            title={filtered ? `Your skills for ${course?.event}` : `Your skills across the ${domains.length || 13} domains`}
-            hint={
-              filtered
-                ? `Only the ${radarData.length} domains this event is graded on. Higher is stronger: 0 Novice → 3 Exemplary.`
-                : "Higher is stronger: 0 Novice → 3 Exemplary, averaged over the criteria you've been graded on in each domain."
-            }
-          >
-            {radarData.length >= 3 && count > 0 ? (
-              <div className="grid items-center gap-6 sm:grid-cols-[1.4fr_1fr]">
-                <SkillRadar data={radarData} max={3} />
-                <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
-                  {[...radarData]
-                    .sort((a, b) => b.value - a.value)
-                    .map((d) => (
-                      <li key={d.label} className="flex items-center justify-between gap-2">
-                        <span className="truncate text-slate-600 dark:text-slate-300">{d.label}</span>
-                        <span className={`font-mono tabular-nums ${d.value === 0 ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"}`}>{d.value.toFixed(1)}</span>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                Finish a session and your skill map fills in here: one spoke per domain, {domains.length || 13} in all.
-              </p>
-            )}
-          </ChartFrame>
-          {practicedDomains > 0 && (
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              You've touched {practicedDomains} of {radarData.length || domains.length || 13}{" "}
-              {filtered ? "domains this event grades" : "domains"}. Spokes at 0 are ones you haven't practiced yet.
-            </p>
-          )}
-
-          {weak && (
-            <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
-              <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">Your next focus</div>
-              <h2 className="mt-1 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{weak.name}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{weak.note}</p>
-              <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
-                <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={() => props.onPracticeCriterion(weak.name)}>Practice it →</button>
-                <button className={`${BTN_SECONDARY} sm:flex-1`} onClick={() => props.onOpenFlashcards([weak.criterion_id])}>Study this criterion</button>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Recent sessions */}
-        <Card className="lg:col-span-1">
-          <Eyebrow>Recent sessions</Eyebrow>
-          {sessions === null ? (
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Loading…</p>
-          ) : sessions.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your completed role-plays show up here.</p>
-          ) : (
-            <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
-              {sessions.slice(0, 7).map((s) => (
-                <li key={s.id}>
-                  <button onClick={() => props.onOpenSession(s.id)} className="flex w-full items-center justify-between gap-3 py-2.5 text-left transition hover:opacity-80">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
-                        {s.topic || s.event || "Role-play"}
-                        {s.retry_of_session_id && (
-                          <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">retry</span>
-                        )}
-                      </div>
-                      <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        {fmtDate(s.created_at)}
-                        {s.filler_per_min != null ? ` · ${s.filler_per_min.toFixed(1)} fillers/min` : " · typed"}
-                      </div>
-                    </div>
-                    <span className="shrink-0 font-mono tabular-nums text-sm font-semibold text-slate-700 dark:text-slate-200">{s.content_score}%</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        {/* Score trend */}
-        <Card className="lg:col-span-1">
-          <ChartFrame title="Score trend" hint={scoreTrend?.note}>
-            {scorePoints.length >= 2 ? (
-              <TrendLine points={scorePoints} color="indigo" yMin={0} yMax={100} valueSuffix="%" />
-            ) : (
-              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">A few more sessions and your score trend plots here.</p>
-            )}
-          </ChartFrame>
-        </Card>
-
-        {/* Delivery trend (fillers/min) */}
-        <Card className="lg:col-span-1">
-          <ChartFrame title="Delivery: fillers per minute" hint={trend?.note}>
-            {deliveryPoints.length >= 2 ? (
-              <TrendLine points={deliveryPoints} color="emerald" yMin={0} valueSuffix="/min" />
-            ) : (
-              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Do a couple of spoken reps to track your filler rate.</p>
-            )}
-          </ChartFrame>
-        </Card>
-
-        {/* Consistency / volume */}
-        <Card className="lg:col-span-1">
-          <ChartFrame title="Your consistency" hint={count > 0 ? `${count} session${count === 1 ? "" : "s"} total: sessions per week.` : "Sessions per week."}>
-            {sessions && sessions.length > 0 ? (
-              <VolumeBars bars={volume} />
-            ) : (
-              <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Your weekly activity shows up here.</p>
-            )}
-          </ChartFrame>
-        </Card>
-
+      <ProfilePanels
+        progress={progress}
+        sessions={sessions}
+        domains={domains}
+        course={course}
+        onOpenSession={props.onOpenSession}
+        onPracticeCriterion={props.onPracticeCriterion}
+        onOpenFlashcards={props.onOpenFlashcards}
+      >
         {/* Flashcards deck */}
         <Card className="lg:col-span-3">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -328,7 +161,210 @@ export function HomePage(props: {
             </div>
           </div>
         </Card>
-      </div>
+      </ProfilePanels>
+    </div>
+  );
+}
+
+// The graphs that make up a student's profile: skill radar with their next focus,
+// recent role-plays, score and delivery trends, and weekly consistency. Shared by
+// the student's own Home and by a chapter manager opening that student, so the two
+// can never disagree about what the numbers say. With no action handlers (the
+// manager's view) it renders read-only: a manager can't start practice for them.
+export function ProfilePanels(props: {
+  progress: ProgressResponse | null;
+  sessions: SessionSummary[] | null;
+  domains: DomainSummary[];
+  course: Course | null;
+  // Set when someone other than the student is looking; it changes "Your" to
+  // their name and hides the practice buttons.
+  subjectName?: string;
+  onOpenSession: (id: string) => void;
+  onPracticeCriterion?: (name: string) => void;
+  onOpenFlashcards?: (ids: string[]) => void;
+  children?: ReactNode;
+}) {
+  const { progress, sessions, domains, course } = props;
+  const [radarScope, setRadarScope] = useState<"event" | "all">("event");
+  const own = !props.subjectName;
+  const whose = own ? "Your" : `${props.subjectName}'s`;
+
+  const weak = progress?.weakest_criterion ?? null;
+  const trend = progress?.delivery_trend ?? null;
+  const scoreTrend = progress?.score_trend ?? null;
+  const count = progress?.sessions_count ?? 0;
+  const mastery = progress?.criterion_mastery ?? [];
+
+  // The domains this student's event is actually graded on. A course's units are
+  // grouped by domain, so the distinct domain_ids across them ARE the event's set,
+  // already in priority order. Empty when they haven't enrolled in a course.
+  const eventDomainIds = course ? [...new Set(course.units.map((u) => u.domain_id))] : [];
+  const canFilter = eventDomainIds.length >= 3; // fewer spokes than that isn't a radar
+  const filtered = canFilter && radarScope === "event";
+  const shownDomains = filtered ? domains.filter((d) => eventDomainIds.includes(d.id)) : domains;
+
+  // Skill radar. Each domain's value is the average mastery rank (0 Novice to
+  // 3 Exemplary) of the criteria they've been graded on in it; untouched domains
+  // sit at 0, the "fill in your skills" view. Note the join is on domain NAME:
+  // CriterionMastery carries the display name, not the id.
+  const radarData = shownDomains.map((d) => {
+    const crits = mastery.filter((m) => m.domain === d.name);
+    const value = crits.length ? crits.reduce((sum, m) => sum + m.avg_rank, 0) / crits.length : 0;
+    return { label: d.name, value };
+  });
+  const practicedDomains = radarData.filter((d) => d.value > 0).length;
+
+  const scorePoints = (scoreTrend?.points ?? []).map((p) => ({ label: fmtDate(p.created_at), value: p.score }));
+  const deliveryPoints = (sessions ?? [])
+    .filter((x) => x.filler_per_min != null)
+    .slice()
+    .reverse() // sessions arrive newest-first; charts want oldest-first
+    .map((x) => ({ label: fmtDate(x.created_at), value: Number(x.filler_per_min) }));
+  const volume = weeklyVolume((sessions ?? []).map((x) => x.created_at));
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-3">
+      {/* Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
+      <Card className="lg:col-span-2">
+        {canFilter && (
+          <div className="mb-3 flex flex-wrap items-center justify-end gap-1.5">
+            <span className="mr-auto font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+              Showing
+            </span>
+            {(["event", "all"] as const).map((sc) => (
+              <button
+                key={sc}
+                onClick={() => { setRadarScope(sc); track("radar_filter_changed", { scope: sc, own }); }}
+                aria-pressed={radarScope === sc}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                  radarScope === sc
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                {sc === "event" ? course?.event ?? "Event" : "All domains"}
+              </button>
+            ))}
+          </div>
+        )}
+        <ChartFrame
+          title={filtered ? `${whose} skills for ${course?.event}` : `${whose} skills across the ${domains.length || 13} domains`}
+          hint={
+            filtered
+              ? `Only the ${radarData.length} domains this event is graded on. Higher is stronger: 0 Novice → 3 Exemplary.`
+              : "Higher is stronger: 0 Novice → 3 Exemplary, averaged over the criteria graded in each domain."
+          }
+        >
+          {radarData.length >= 3 && count > 0 ? (
+            <div className="grid items-center gap-6 sm:grid-cols-[1.4fr_1fr]">
+              <SkillRadar data={radarData} max={3} />
+              <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                {[...radarData]
+                  .sort((a, b) => b.value - a.value)
+                  .map((d) => (
+                    <li key={d.label} className="flex items-center justify-between gap-2">
+                      <span className="truncate text-slate-600 dark:text-slate-300">{d.label}</span>
+                      <span className={`font-mono tabular-nums ${d.value === 0 ? "text-slate-300 dark:text-slate-600" : "text-slate-500 dark:text-slate-400"}`}>{d.value.toFixed(1)}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+              {own
+                ? `Finish a session and your skill map fills in here: one spoke per domain, ${domains.length || 13} in all.`
+                : "No graded role-plays yet, so there's no skill map to show."}
+            </p>
+          )}
+        </ChartFrame>
+        {practicedDomains > 0 && (
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            {own ? "You've" : `${props.subjectName} has`} touched {practicedDomains} of {radarData.length || domains.length || 13}{" "}
+            {filtered ? "domains this event grades" : "domains"}. Spokes at 0 haven't been practiced yet.
+          </p>
+        )}
+
+        {weak && (
+          <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+            <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">{own ? "Your next focus" : "Biggest gap"}</div>
+            <h2 className="mt-1 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{weak.name}</h2>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{weak.note}</p>
+            {props.onPracticeCriterion && props.onOpenFlashcards && (
+              <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
+                <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={() => props.onPracticeCriterion?.(weak.name)}>Practice it →</button>
+                <button className={`${BTN_SECONDARY} sm:flex-1`} onClick={() => props.onOpenFlashcards?.([weak.criterion_id])}>Study this criterion</button>
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* Recent sessions */}
+      <Card className="lg:col-span-1">
+        <Eyebrow>Recent role-plays</Eyebrow>
+        {sessions === null ? (
+          <InlineLoader label="Loading role-plays" />
+        ) : sessions.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{own ? "Your completed role-plays show up here." : "No role-plays yet."}</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
+            {sessions.slice(0, 7).map((x) => (
+              <li key={x.id}>
+                <button onClick={() => props.onOpenSession(x.id)} className="flex w-full items-center justify-between gap-3 py-2.5 text-left transition hover:opacity-80">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {x.topic || x.event || "Role-play"}
+                      {x.retry_of_session_id && (
+                        <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">retry</span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      {fmtDate(x.created_at)}
+                      {x.filler_per_min != null ? ` · ${x.filler_per_min.toFixed(1)} fillers/min` : " · typed"}
+                    </div>
+                  </div>
+                  <span className="shrink-0 font-mono tabular-nums text-sm font-semibold text-slate-700 dark:text-slate-200">{x.content_score}%</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {/* Score trend */}
+      <Card className="lg:col-span-1">
+        <ChartFrame title="Score trend" hint={scoreTrend?.note}>
+          {scorePoints.length >= 2 ? (
+            <TrendLine points={scorePoints} color="indigo" yMin={0} yMax={100} valueSuffix="%" />
+          ) : (
+            <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">A few more sessions and the score trend plots here.</p>
+          )}
+        </ChartFrame>
+      </Card>
+
+      {/* Delivery trend (fillers/min) */}
+      <Card className="lg:col-span-1">
+        <ChartFrame title="Delivery: fillers per minute" hint={trend?.note}>
+          {deliveryPoints.length >= 2 ? (
+            <TrendLine points={deliveryPoints} color="emerald" yMin={0} valueSuffix="/min" />
+          ) : (
+            <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">A couple of spoken reps and the filler rate plots here.</p>
+          )}
+        </ChartFrame>
+      </Card>
+
+      {/* Consistency / volume */}
+      <Card className="lg:col-span-1">
+        <ChartFrame title="Consistency" hint={count > 0 ? `${count} session${count === 1 ? "" : "s"} total: sessions per week.` : "Sessions per week."}>
+          {sessions && sessions.length > 0 ? (
+            <VolumeBars bars={volume} />
+          ) : (
+            <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Weekly activity shows up here.</p>
+          )}
+        </ChartFrame>
+      </Card>
+
+      {props.children}
     </div>
   );
 }
