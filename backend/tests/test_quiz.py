@@ -415,43 +415,71 @@ def test_ordinary_prose_is_not_mistaken_for_an_all_of_the_above_option():
 # Finance cluster, not on the four domains its own role-play happens to draw on.
 
 
-def test_cluster_expands_to_every_domain_its_events_touch():
-    finance = events.domains_for_cluster("Finance")
+def test_an_exam_expands_to_every_domain_its_events_touch():
+    finance = events.domains_for_exam("Finance")
     one_event = events.get_event("business-finance")["domain_ids"]
-    assert set(one_event) < set(finance), "the cluster must be strictly wider than one event"
+    assert set(one_event) < set(finance), "the exam must be strictly wider than one event"
     assert "information_management" in finance, "contributed by accounting-applications"
     # Name matching is forgiving about case, because it arrives from a query string.
-    assert events.domains_for_cluster("finance") == finance
+    assert events.domains_for_exam("finance") == finance
 
 
-def test_every_catalog_cluster_resolves_and_draws_questions():
+def test_principles_events_sit_business_administration_core_not_their_cluster():
+    """Taken from each exam's own cover page. Principles of Finance is a Finance
+    CLUSTER role-play that sits the Business Administration Core paper, so scoping
+    its quiz to the Finance exam rehearsed a test that student never takes."""
+    for eid in ("principles-finance", "principles-marketing", "principles-entrepreneurship",
+                "principles-hospitality-tourism", "principles-business-management"):
+        e = events.get_event(eid)
+        assert e["exam"] == "Business Administration Core", eid
+        assert e["exam"] != e["cluster"] or e["cluster"] == "Business Administration Core"
+    # The events that do sit their cluster's paper still do.
+    assert events.get_event("business-finance")["exam"] == "Finance"
+    assert events.get_event("human-resources-management")["exam"] == "Business Management & Administration"
+
+
+def test_every_event_declares_an_exam_that_resolves():
+    for e in events.all_events():
+        assert e.get("exam"), e["id"]
+        assert events.domains_for_exam(e["exam"]), (e["id"], e["exam"])
+
+
+def test_every_exam_resolves_and_draws_questions():
     client = TestClient(app)
-    for cluster in events.clusters():
-        assert events.domains_for_cluster(cluster), f"{cluster} resolved to no domains"
-        r = client.get("/api/quiz", params={"cluster": cluster, "count": 40})
+    for exam in events.exams():
+        assert events.domains_for_exam(exam), f"{exam} resolved to no domains"
+        r = client.get("/api/quiz", params={"exam": exam, "count": 40})
         assert r.status_code == 200
-        assert len(r.json()["questions"]) == 40, f"{cluster} could not fill a round"
+        assert len(r.json()["questions"]) == 40, f"{exam} could not fill a round"
 
 
-def test_unknown_cluster_is_rejected_rather_than_drawing_everything():
+def test_the_cluster_parameter_still_works_for_an_older_client():
+    """A browser holding a cached bundle keeps sending `cluster=`; it must resolve
+    rather than 404 the quiz for everyone mid-deploy."""
+    r = TestClient(app).get("/api/quiz", params={"cluster": "Finance", "count": 8})
+    assert r.status_code == 200 and len(r.json()["questions"]) == 8
+
+
+def test_unknown_exam_is_rejected_rather_than_drawing_everything():
     """An empty domain filter means "the whole bank", which is the wrong answer to
-    a typo: it would quietly serve a student questions from every other cluster."""
-    r = TestClient(app).get("/api/quiz", params={"cluster": "Finanace"})
-    assert r.status_code == 404
+    a typo: it would quietly serve a student questions from every other exam."""
+    assert TestClient(app).get("/api/quiz", params={"exam": "Finanace"}).status_code == 404
+    assert TestClient(app).get("/api/quiz", params={"cluster": "Finanace"}).status_code == 404
 
 
-def test_cluster_draw_stays_inside_the_cluster():
-    allowed = set(events.domains_for_cluster("Entrepreneurship"))
-    r = TestClient(app).get("/api/quiz", params={"cluster": "Entrepreneurship", "count": 40})
+def test_an_exam_draw_stays_inside_that_exam():
+    allowed = set(events.domains_for_exam("Entrepreneurship"))
+    r = TestClient(app).get("/api/quiz", params={"exam": "Entrepreneurship", "count": 40})
     assert {q["domain_id"] for q in r.json()["questions"]} <= allowed
 
 
 def test_event_summaries_carry_both_scopes_for_the_client():
     """The picker ships both so the Knowledge Check can offer "my event" against
-    "my cluster" without a second round trip."""
+    "my exam" without a second round trip."""
     summary = next(e for e in events.event_summaries() if e["id"] == "business-finance")
     assert summary["domain_ids"] == events.get_event("business-finance")["domain_ids"]
-    assert set(summary["domain_ids"]) <= set(summary["cluster_domain_ids"])
+    assert set(summary["domain_ids"]) <= set(summary["exam_domain_ids"])
+    assert summary["exam"] == "Finance"
 
 
 # --- caching ----------------------------------------------------------------
@@ -472,7 +500,7 @@ def test_reference_endpoints_are_cacheable_and_the_quiz_is_not():
 
 
 def test_counts_describe_the_filtered_pool_not_the_draw():
-    finance = events.domains_for_cluster("Finance")
+    finance = events.domains_for_exam("Finance")
     whole = quiz.counts()
     scoped = quiz.counts(domain_ids=finance)
     assert 0 < scoped["total"] < whole["total"]
@@ -483,16 +511,16 @@ def test_counts_describe_the_filtered_pool_not_the_draw():
 
 def test_the_endpoint_reports_the_pool_a_cluster_round_draws_from():
     client = TestClient(app)
-    body = client.get("/api/quiz", params={"cluster": "Finance", "level": "icdc", "count": 8}).json()
+    body = client.get("/api/quiz", params={"exam": "Finance", "level": "icdc", "count": 8}).json()
     assert len(body["questions"]) == 8
-    assert body["counts"]["icdc"] == quiz.counts(domain_ids=events.domains_for_cluster("Finance"))["icdc"]
+    assert body["counts"]["icdc"] == quiz.counts(domain_ids=events.domains_for_exam("Finance"))["icdc"]
 
 
 def test_two_rounds_of_the_same_scope_are_not_the_same_questions():
     """A second attempt has to pull new questions. With a 312-deep pool, two draws
     of 8 sharing every id would mean the draw is not random."""
     client = TestClient(app)
-    p = {"cluster": "Finance", "level": "icdc", "count": 8}
+    p = {"exam": "Finance", "level": "icdc", "count": 8}
     a = {q["id"] for q in client.get("/api/quiz", params=p).json()["questions"]}
     b = {q["id"] for q in client.get("/api/quiz", params=p).json()["questions"]}
     assert a != b, "two draws returned an identical set"

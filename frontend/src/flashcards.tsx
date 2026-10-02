@@ -256,7 +256,7 @@ export function FlashcardLibrary({
   initialDeck?: string | null;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
-  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { exam?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
 }) {
   const [all, setAll] = useState<Term[] | null>(null);
   const [weakIds, setWeakIds] = useState<Set<string>>(new Set());
@@ -409,7 +409,7 @@ export function FlashcardLibrary({
         onBlitz={() => scoped.length && onBlitz(scoped, deck ? deck.event : "All terms")}
         onQuiz={() =>
           scoped.length &&
-          onQuiz(scoped, deck ? deck.event : "All terms", deck ? { cluster: deck.cluster, scope: "cluster" } : { scope: "all" })
+          onQuiz(scoped, deck ? deck.event : "All terms", deck ? { exam: deck.exam, scope: "cluster" } : { scope: "all" })
         }
       />
 
@@ -442,9 +442,9 @@ export function FlashcardLibrary({
           </div>
           <div className="flex flex-wrap gap-2">
             {recommended.length > 0 && (
-              <button className={BTN_SECONDARY} onClick={() => onQuiz(recommended, "Your weak terms", { cluster: deck?.cluster })}>Quiz weak terms →</button>
+              <button className={BTN_SECONDARY} onClick={() => onQuiz(recommended, "Your weak terms", { exam: deck?.exam })}>Quiz weak terms →</button>
             )}
-            <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onQuiz(all, "All terms", { cluster: deck?.cluster, scope: "all" })}>Quiz random terms →</button>
+            <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onQuiz(all, "All terms", { exam: deck?.exam, scope: "all" })}>Quiz random terms →</button>
           </div>
         </div>
       </div>
@@ -458,7 +458,7 @@ export function FlashcardLibrary({
           count={recommended.length}
           onStudy={() => recommended.length && onStudy(recommended, undefined, "Recommended for you")}
           onBlitz={() => recommended.length && onBlitz(recommended, "Recommended for you")}
-          onQuiz={() => recommended.length && onQuiz(recommended, "Recommended for you", { cluster: deck?.cluster })}
+          onQuiz={() => recommended.length && onQuiz(recommended, "Recommended for you", { exam: deck?.exam })}
         />
         <SetCard
           tone="amber"
@@ -467,7 +467,7 @@ export function FlashcardLibrary({
           count={flaggedCards.length}
           onStudy={() => flaggedCards.length && onStudy(flaggedCards, undefined, "Flagged to study later")}
           onBlitz={() => flaggedCards.length && onBlitz(flaggedCards, "Flagged to study later")}
-          onQuiz={() => flaggedCards.length && onQuiz(flaggedCards, "Flagged to study later", { cluster: deck?.cluster })}
+          onQuiz={() => flaggedCards.length && onQuiz(flaggedCards, "Flagged to study later", { exam: deck?.exam })}
         />
       </div>
 
@@ -520,7 +520,7 @@ export function FlashcardLibrary({
               </h2>
               <div className="flex shrink-0 items-center gap-2">
                 <button className={BTN_SECONDARY} onClick={() => onBlitz(cards, domain)}>⚡ Blitz</button>
-                <button className={BTN_SECONDARY} onClick={() => onQuiz(cards, domain, { cluster: deck?.cluster })}>◎ Quiz</button>
+                <button className={BTN_SECONDARY} onClick={() => onQuiz(cards, domain, { exam: deck?.exam })}>◎ Quiz</button>
                 <button className={BTN_SECONDARY} onClick={() => onStudy(cards, undefined, domain)}>Study domain →</button>
               </div>
             </div>

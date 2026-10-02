@@ -31,7 +31,7 @@ export function StudyCourse({
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
-  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { exam?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
   // A plan's role-play task. With a name, practice is focused on that skill.
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
@@ -119,8 +119,8 @@ export function StudyCourse({
     async (
       ids: string[],
       title: string,
-      fn: (c: Term[], t?: string, o?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void,
-      opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" },
+      fn: (c: Term[], t?: string, o?: { exam?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void,
+      opts?: { exam?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" },
     ) => {
       if (!ids.length) return;
       setBusy(true);
@@ -299,7 +299,7 @@ export function StudyCourse({
           <button
             className={BTN_SECONDARY}
             disabled={busy || !allIds.length}
-            onClick={() => launch(allIds, course.event, onQuiz, { cluster: course.cluster, scope: "cluster" })}
+            onClick={() => launch(allIds, course.event, onQuiz, { exam: course.exam, scope: "cluster" })}
           >
             ◎ Quiz
           </button>
@@ -340,7 +340,7 @@ export function StudyCourse({
                 <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
                   ⚡ Blitz
                 </button>
-                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz, { cluster: course.cluster, scope: "deck" })}>
+                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz, { exam: course.exam, scope: "deck" })}>
                   ◎ Quiz
                 </button>
                 <button

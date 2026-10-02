@@ -26,7 +26,8 @@
         "a promotion that isn't converting",
         "choosing the right price for a new item",
         "building a brand that stands out"
-      ]
+      ],
+      "exam": "Business Administration Core"
     },
     {
       "id": "apparel-accessories-marketing",
@@ -45,7 +46,8 @@
         "a store display that isn't pulling people in",
         "launching a new clothing line",
         "responding to a fast-fashion competitor"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "automotive-services-marketing",
@@ -64,7 +66,8 @@
         "promoting a new service package",
         "handling a wave of negative reviews",
         "building repeat business at a service center"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "business-services-marketing",
@@ -83,7 +86,8 @@
         "explaining the value of an intangible service",
         "renewing a contract that's up for review",
         "differentiating from a cheaper competitor"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "food-marketing",
@@ -102,7 +106,8 @@
         "a seasonal promotion for a grocery aisle",
         "reducing waste on perishable goods",
         "responding to a private-label competitor"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "marketing-communications",
@@ -121,7 +126,8 @@
         "measuring whether an ad actually worked",
         "refreshing a brand that feels dated",
         "coordinating a product launch announcement"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "retail-merchandising",
@@ -140,7 +146,8 @@
         "reducing shrinkage and stockouts",
         "a slow-selling department that needs a lift",
         "training staff to upsell at the register"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "sports-entertainment-marketing",
@@ -159,7 +166,8 @@
         "landing a sponsorship deal",
         "growing a team's fan engagement",
         "promoting a new season or tour"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "buying-merchandising-team",
@@ -179,7 +187,8 @@
         "negotiating better terms with a supplier",
         "planning a markdown strategy",
         "balancing bestsellers against fresh variety"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "marketing-management-team",
@@ -198,7 +207,8 @@
         "setting the marketing budget for the year",
         "repositioning against a rising competitor",
         "deciding which product line to grow"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "sports-entertainment-marketing-team",
@@ -217,7 +227,8 @@
         "growing attendance across a whole season",
         "launching a fan loyalty program",
         "handling a public-image setback"
-      ]
+      ],
+      "exam": "Marketing"
     },
     {
       "id": "principles-finance",
@@ -237,7 +248,8 @@
         "explaining a budget to someone new to it",
         "weighing a loan against saving up",
         "reading what the numbers say about a business"
-      ]
+      ],
+      "exam": "Business Administration Core"
     },
     {
       "id": "accounting-applications",
@@ -257,7 +269,8 @@
         "spotting an error in the books",
         "tightening up expense tracking",
         "handling a client who wants to cut a corner"
-      ]
+      ],
+      "exam": "Finance"
     },
     {
       "id": "business-finance",
@@ -277,7 +290,8 @@
         "improving cash flow in a tight quarter",
         "pricing to hit a profit target",
         "making the case for a capital investment"
-      ]
+      ],
+      "exam": "Finance"
     },
     {
       "id": "financial-services-team",
@@ -297,7 +311,8 @@
         "rebuilding trust after a service mistake",
         "explaining fees and risk clearly",
         "growing accounts among younger customers"
-      ]
+      ],
+      "exam": "Finance"
     },
     {
       "id": "personal-financial-literacy",
@@ -317,7 +332,8 @@
         "weighing paying down debt vs. saving",
         "explaining credit and interest simply",
         "planning for a big upcoming expense"
-      ]
+      ],
+      "exam": "Personal Financial Literacy"
     },
     {
       "id": "principles-hospitality-tourism",
@@ -336,7 +352,8 @@
         "promoting a slow travel season",
         "improving the check-in experience",
         "handling a booking mix-up"
-      ]
+      ],
+      "exam": "Business Administration Core"
     },
     {
       "id": "hotel-lodging-management",
@@ -355,7 +372,8 @@
         "filling rooms in the off-season",
         "handling an overbooked night",
         "motivating front-desk staff"
-      ]
+      ],
+      "exam": "Hospitality & Tourism"
     },
     {
       "id": "quick-serve-restaurant-management",
@@ -374,7 +392,8 @@
         "cutting food waste without cutting quality",
         "handling a staffing shortage",
         "launching a limited-time menu item"
-      ]
+      ],
+      "exam": "Hospitality & Tourism"
     },
     {
       "id": "restaurant-food-service-management",
@@ -393,7 +412,8 @@
         "responding to a health-code concern",
         "training servers on the new menu",
         "handling a table that had a bad night"
-      ]
+      ],
+      "exam": "Hospitality & Tourism"
     },
     {
       "id": "hospitality-services-team",
@@ -412,7 +432,8 @@
         "expanding into events and catering",
         "raising the whole guest experience",
         "competing with a new resort nearby"
-      ]
+      ],
+      "exam": "Hospitality & Tourism"
     },
     {
       "id": "travel-tourism-team",
@@ -431,7 +452,8 @@
         "building a travel package that sells",
         "recovering bookings after a slow year",
         "partnering with local businesses"
-      ]
+      ],
+      "exam": "Hospitality & Tourism"
     },
     {
       "id": "principles-business-management",
@@ -450,7 +472,8 @@
         "improving a process that keeps breaking",
         "handling conflict between coworkers",
         "rolling out a new company policy"
-      ]
+      ],
+      "exam": "Business Administration Core"
     },
     {
       "id": "human-resources-management",
@@ -469,7 +492,8 @@
         "reducing turnover on a team",
         "handling a workplace complaint fairly",
         "redesigning how new hires are onboarded"
-      ]
+      ],
+      "exam": "Business Management & Administration"
     },
     {
       "id": "business-law-ethics-team",
@@ -488,7 +512,8 @@
         "responding to an ethical gray area",
         "protecting the company's intellectual property",
         "advising on a compliance risk"
-      ]
+      ],
+      "exam": "Business Management & Administration"
     },
     {
       "id": "principles-entrepreneurship",
@@ -507,7 +532,8 @@
         "finding the first paying customers",
         "figuring out if the numbers work",
         "standing out from an established rival"
-      ]
+      ],
+      "exam": "Business Administration Core"
     },
     {
       "id": "entrepreneurship-individual",
@@ -526,7 +552,8 @@
         "deciding how to grow without overreaching",
         "fixing a business model that isn't profitable",
         "handling a supplier or cash-flow crunch"
-      ]
+      ],
+      "exam": "Entrepreneurship"
     },
     {
       "id": "entrepreneurship-team",
@@ -545,7 +572,17 @@
         "deciding whether to add a new product",
         "splitting focus between two opportunities",
         "making the case to a potential partner"
-      ]
+      ],
+      "exam": "Entrepreneurship"
     }
+  ],
+  "exams": [
+    "Business Administration Core",
+    "Marketing",
+    "Finance",
+    "Hospitality & Tourism",
+    "Business Management & Administration",
+    "Entrepreneurship",
+    "Personal Financial Literacy"
   ]
 }

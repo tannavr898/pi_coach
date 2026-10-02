@@ -111,7 +111,7 @@ export function StudyPlanSection({
   refreshKey?: number;
   onStudy: (cards: Term[], startId?: string, title?: string) => void;
   onBlitz: (cards: Term[], title?: string) => void;
-  onQuiz: (cards: Term[], title?: string, opts?: { cluster?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
+  onQuiz: (cards: Term[], title?: string, opts?: { exam?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
   onSaved?: () => void;
@@ -160,7 +160,7 @@ export function StudyPlanSection({
       // the difficulty the plan intends for this point in the season.
       if (task.kind === "quiz") {
         const level = task.tier === "icdc" || task.tier === "state" ? task.tier : undefined;
-        onQuiz([], task.title, { cluster: course.cluster, scope: "cluster", level });
+        onQuiz([], task.title, { exam: course.exam, scope: "cluster", level });
         return;
       }
       setBusy(true);
@@ -168,7 +168,7 @@ export function StudyPlanSection({
       try {
         const cards = await getTerms(task.term_ids);
         if (how === "study") onStudy(cards, undefined, task.title);
-        else if (how === "quiz") onQuiz(cards, task.title, { cluster: course.cluster, scope: "deck" });
+        else if (how === "quiz") onQuiz(cards, task.title, { exam: course.exam, scope: "deck" });
         else onBlitz(cards, task.title);
       } catch (e) {
         setError(errText(e));

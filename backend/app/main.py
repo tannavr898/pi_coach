@@ -916,17 +916,22 @@ def get_quiz(
     level: Literal["", "district", "state", "icdc"] = "",
     ids: str = "",
     domains: str = "",
-    cluster: str = "",
+    exam: str = "",
+    cluster: str = "",  # deprecated alias for `exam`, kept so older clients work
     count: int = Query(10, ge=1, le=40)) -> QuizResponse:
     """A drawn set of multiple-choice questions from the pre-generated bank.
 
     Filters: `level` (district | state | icdc), `ids` (comma list of term ids, a
     deck, a course unit, the student's weak terms), `domains` (comma list of domain
-    ids), `cluster` (a catalog cluster name, expanded server-side to every domain
-    its events touch). Everything is optional; with none of them the draw is the
-    whole bank. `cluster` is resolved here rather than on the client because the
-    widest cluster covers nine domains, which is more than fits comfortably in the
-    query string the client would otherwise have to build.
+    ids), `exam` (a written exam name, expanded server-side to every domain its
+    events touch). Everything is optional; with none of them the draw is the whole
+    bank. `exam` is resolved here rather than on the client because the widest one
+    covers nine domains, more than fits comfortably in a query string.
+
+    The exam grouping is NOT the role-play cluster: every Principles event sits the
+    Business Administration Core paper, whatever cluster its role-play belongs to.
+    `cluster` stays as a deprecated alias so a client cached from before the rename
+    still resolves.
 
     No model call happens here, the bank is written offline by scripts/gen_quiz.py
     and this is a file read (app/quiz.py). That is why the quiz is open to anonymous
@@ -939,12 +944,13 @@ def get_quiz(
     response.headers["Cache-Control"] = "no-store"  # a fresh draw every round
     term_ids = [x.strip() for x in ids.split(",") if x.strip()]
     domain_ids = [x.strip() for x in domains.split(",") if x.strip()]
-    if cluster.strip():
-        # An unknown cluster name resolves to nothing, and an empty domain filter
-        # means "the whole bank", which is the wrong answer to a typo. Fail loudly.
-        expanded = events.domains_for_cluster(cluster.strip())
+    wanted_exam = (exam or cluster).strip()
+    if wanted_exam:
+        # An unknown name resolves to nothing, and an empty domain filter means
+        # "the whole bank", which is the wrong answer to a typo. Fail loudly.
+        expanded = events.domains_for_cluster(wanted_exam)
         if not expanded:
-            raise HTTPException(status_code=404, detail=f"Unknown cluster: {cluster}")
+            raise HTTPException(status_code=404, detail=f"Unknown exam: {wanted_exam}")
         domain_ids = sorted(set(domain_ids) | set(expanded)) if domain_ids else expanded
     drawn = quiz.select(level=level, domain_ids=domain_ids, term_ids=term_ids, count=count)
     # Counts describe the POOL this filter reaches, not the draw. The client shows

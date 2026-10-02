@@ -79,6 +79,9 @@ def course_for(event_id: str) -> dict | None:
         "event_id": event["id"],
         "event": event["name"],
         "cluster": event.get("cluster", ""),
+        # Which written exam this event sits. Not the cluster: every Principles
+        # event sits Business Administration Core. Drives the quiz scope.
+        "exam": event.get("exam", event.get("cluster", "")),
         "units": units,
         "core_count": core,
         "extended_count": extended,

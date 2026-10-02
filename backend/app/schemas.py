@@ -92,10 +92,12 @@ class EventSummary(BaseModel):
     blurb: str = ""
     # Original example prompts that pre-fill the "what to focus on" box.
     suggestions: list[str] = []
-    # Scope hints for the Knowledge Check: the domains this event draws on, and the
-    # union across its whole cluster, which is what the cluster exam actually asks.
+    # Scope hints for the Knowledge Check: the domains this event draws on, the
+    # written exam it sits, and the union that exam covers. The exam is not the
+    # cluster: every Principles event sits Business Administration Core.
     domain_ids: list[str] = []
-    cluster_domain_ids: list[str] = []
+    exam: str = ""
+    exam_domain_ids: list[str] = []
 
 
 class Timing(BaseModel):
@@ -578,6 +580,7 @@ class CourseResponse(BaseModel):
     event_id: str
     event: str
     cluster: str = ""
+    exam: str = ""   # the written exam this event sits (see courses.py)
     units: list[CourseUnit] = []
     core_count: int = 0
     extended_count: int = 0

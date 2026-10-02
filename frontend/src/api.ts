@@ -62,9 +62,12 @@ export type EventSummary = {
   quantitative: boolean;
   blurb: string;
   suggestions: string[];
-  // The domains this event exercises, and the wider union its cluster exam covers.
+  // The domains this event exercises, the written exam it sits, and the wider
+  // union that exam covers. The exam is NOT the cluster: every Principles event
+  // sits Business Administration Core whatever cluster its role-play is in.
   domain_ids: string[];
-  cluster_domain_ids: string[];
+  exam: string;
+  exam_domain_ids: string[];
 };
 
 export type Timing = {
@@ -531,15 +534,15 @@ export type QuizQuestion = {
 export type QuizResponse = { questions: QuizQuestion[]; counts: Record<string, number> };
 
 export function getQuiz(
-  opts: { level?: Level; termIds?: string[]; domainIds?: string[]; cluster?: string; count?: number } = {},
+  opts: { level?: Level; termIds?: string[]; domainIds?: string[]; exam?: string; count?: number } = {},
 ): Promise<QuizResponse> {
   const params = new URLSearchParams();
   if (opts.level) params.set("level", opts.level);
   if (opts.termIds?.length) params.set("ids", opts.termIds.join(","));
   if (opts.domainIds?.length) params.set("domains", opts.domainIds.join(","));
-  // Expanded to its domains server-side: the widest cluster is nine of them, more
+  // Expanded to its domains server-side: the widest exam is nine of them, more
   // than the client should be stuffing into a query string.
-  if (opts.cluster) params.set("cluster", opts.cluster);
+  if (opts.exam) params.set("exam", opts.exam);
   if (opts.count) params.set("count", String(opts.count));
   const qs = params.toString();
   return request<QuizResponse>(`/api/quiz${qs ? `?${qs}` : ""}`);

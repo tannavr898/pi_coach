@@ -63,15 +63,44 @@ def clusters() -> list[str]:
     return load_events().get("clusters", [])
 
 
-def domains_for_cluster(cluster: str) -> list[str]:
-    """Every domain any event in this cluster exercises, in catalog order.
+def exams() -> list[str]:
+    """The written exams, as groups of events that sit the same paper."""
+    return load_events().get("exams", [])
 
-    This is the honest scope of a cluster exam. A Business Finance competitor sits
-    the Finance cluster paper, not a paper about the four domains their particular
+
+def domains_for_exam(exam: str) -> list[str]:
+    """Every domain any event sitting this exam exercises, in catalog order.
+
+    This is the honest scope of a written exam. A Business Finance competitor sits
+    the Finance paper, not a paper about the four domains their particular
     role-play happens to draw on, so a quiz scoped to the single event quietly
-    under-prepares them for the test they will actually take. The union across the
-    cluster's events is the closest thing the catalog has to that scope.
+    under-prepares them for the test they will actually take.
+
+    The exam grouping is NOT the role-play cluster, which is the thing this used to
+    get wrong. Every Principles event sits the Business Administration Core paper
+    whatever cluster its role-play belongs to, so scoping Principles of Finance to
+    the Finance cluster was preparing that student for a paper they never sit.
+    Both groupings are in events.json, taken from each exam's own cover page.
     """
+    out: list[str] = []
+    for e in all_events():
+        if e.get("exam", e.get("cluster", "")).casefold() != exam.casefold():
+            continue
+        for d in e.get("domain_ids", []):
+            if d not in out:
+                out.append(d)
+    return out
+
+
+def domains_for_cluster(cluster: str) -> list[str]:
+    """Deprecated alias kept so an older client's `cluster=` query still resolves.
+
+    Falls back to the role-play cluster only when the name is not an exam, which
+    keeps the five cluster names that happen to be both working either way.
+    """
+    hit = domains_for_exam(cluster)
+    if hit:
+        return hit
     out: list[str] = []
     for e in all_events():
         if e.get("cluster", "").casefold() != cluster.casefold():
@@ -104,11 +133,13 @@ def event_summaries() -> list[dict]:
             "quantitative": bool(e.get("quantitative")),
             "blurb": e.get("blurb", ""),
             "suggestions": e.get("suggestions", []),
-            # The domains this event exercises, and the wider set its cluster exam
-            # covers. Both ship with the picker so the Knowledge Check can offer
-            # "my event" against "my cluster" without a second round trip.
+            # The domains this event exercises, the written exam it sits, and the
+            # wider set that exam covers. All three ship with the picker so the
+            # Knowledge Check can offer "my event" against "my exam" without a
+            # second round trip.
             "domain_ids": list(e.get("domain_ids", [])),
-            "cluster_domain_ids": domains_for_cluster(e.get("cluster", "")),
+            "exam": e.get("exam", e.get("cluster", "")),
+            "exam_domain_ids": domains_for_exam(e.get("exam", e.get("cluster", ""))),
         }
         for e in all_events()
     ]

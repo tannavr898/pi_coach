@@ -219,6 +219,9 @@ export type Course = {
   event_id: string;
   event: string;
   cluster: string;
+  // The written exam this event sits. Not the cluster: every Principles event
+  // sits Business Administration Core.
+  exam: string;
   units: CourseUnit[];
   core_count: number;
   extended_count: number;

@@ -35,16 +35,17 @@ type Phase = "intro" | "quiz" | "results";
  * How wide the draw is.
  *
  * `deck` is the cards on screen, which is what you want straight after studying a
- * unit. `cluster` is every domain any event in your cluster touches, which is the
- * scope of the exam you actually sit: Business Finance is tested on the Finance
- * cluster, not on the four domains its role-play happens to use. `all` is the
- * whole bank, for anyone revising across clusters.
+ * unit. `cluster` is every domain touched by any event sitting the same written
+ * EXAM, which is the paper you actually take: Business Finance sits the Finance
+ * exam, and Principles of Finance sits Business Administration Core despite both
+ * being Finance cluster role-plays. `all` is the whole bank. The key is still
+ * called `cluster` because that is the word on the button for most students.
  */
 export type Scope = "deck" | "cluster" | "all";
 
 const SCOPE_BLURB: Record<Scope, string> = {
   deck: "Only the cards in front of you.",
-  cluster: "The whole cluster exam, the realistic one.",
+  cluster: "The whole written exam, the realistic one.",
   all: "Every domain in the corpus.",
 };
 
@@ -65,12 +66,14 @@ function shuffle<T>(arr: T[]): T[] {
 const MAX_IDS_IN_URL = 120;
 const MAX_DOMAINS_IN_URL = 8;
 
-export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", defaultLevel, onClose }: {
+export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defaultLevel, onClose }: {
   cards: Term[];
   title?: string;
-  // The student's cluster, when the launcher knows it. Its presence is what makes
-  // the cluster scope offerable at all, and its name is what labels the button.
-  cluster?: string;
+  // The written exam this student sits, when the launcher knows it. Its presence
+  // is what makes the exam scope offerable at all, and its name labels the button.
+  // Not the role-play cluster: Principles of Finance sits Business Administration
+  // Core, so scoping it to Finance would rehearse a paper they never take.
+  exam?: string;
   // Which scope this particular launcher should open on. A course unit means
   // "quiz me on what I just studied"; the course-wide button means "test me",
   // and a test that only covers one event's four domains is not the test they sit.
@@ -85,18 +88,18 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
   // cluster scope needs a cluster, a deck scope needs cards. Falling through to
   // "all" is always possible, since the bank is never empty.
   const [scope, setScope] = useState<Scope>(() => {
-    if (defaultScope === "cluster" && !cluster) return cards.length ? "deck" : "all";
-    if (defaultScope === "deck" && !cards.length) return cluster ? "cluster" : "all";
+    if (defaultScope === "cluster" && !exam) return cards.length ? "deck" : "all";
+    if (defaultScope === "deck" && !cards.length) return exam ? "cluster" : "all";
     return defaultScope;
   });
   const filter = useMemo(() => {
     if (scope === "all") return {};
-    if (scope === "cluster") return cluster ? { cluster } : {};
+    if (scope === "cluster") return exam ? { exam } : {};
     const ids = cards.map((c) => c.id);
     if (ids.length <= MAX_IDS_IN_URL) return { termIds: ids };
     const domainIds = [...new Set(cards.map((c) => c.domain_id).filter(Boolean))];
     return domainIds.length && domainIds.length <= MAX_DOMAINS_IN_URL ? { domainIds } : {};
-  }, [cards, scope, cluster]);
+  }, [cards, scope, exam]);
   const [drawn, setDrawn] = useState<QuizQuestion[] | null>(null);
   // How many questions this filter can reach, per tier. Reported by the server
   // over the whole matching pool, not over the draw.
@@ -259,7 +262,7 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
               onLevel={setLevel}
               scope={scope}
               onScope={setScope}
-              cluster={cluster}
+              exam={exam}
               deckSize={cards.length}
               onStart={start}
             />
@@ -299,7 +302,7 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
   );
 }
 
-function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onScope, cluster, deckSize, onStart }: {
+function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onScope, exam, deckSize, onStart }: {
   title?: string;
   loading: boolean;
   loadErr: string | null;
@@ -308,9 +311,9 @@ function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onS
   onLevel: (l: Level) => void;
   scope: Scope;
   onScope: (s: Scope) => void;
-  // Absent when the launcher has no event in hand, which is what hides the
-  // cluster option rather than showing one that cannot be labelled.
-  cluster?: string;
+  // Absent when the launcher has no event in hand, which is what hides the exam
+  // option rather than showing one that cannot be labelled.
+  exam?: string;
   deckSize: number;
   onStart: () => void;
 }) {
@@ -320,12 +323,12 @@ function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onS
   const hasDeck = deckSize > 0;
   const scopes: Scope[] = [
     ...(hasDeck ? (["deck"] as Scope[]) : []),
-    ...(cluster ? (["cluster"] as Scope[]) : []),
+    ...(exam ? (["cluster"] as Scope[]) : []),
     "all",
   ];
   const scopeLabel: Record<Scope, string> = {
     deck: `This deck (${deckSize})`,
-    cluster: cluster ? `${cluster} exam` : "Cluster exam",
+    cluster: exam ? `${exam} exam` : "Exam",
     all: "Everything",
   };
   const available = avail?.[level] ?? 0;
@@ -338,7 +341,7 @@ function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onS
         </h2>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           {scope === "cluster"
-            ? `Multiple choice across everything the ${cluster} exam covers, not just your event's terms. `
+            ? `Multiple choice across everything the ${exam} exam covers, not just your event's terms. `
             : "Multiple choice over the terms you're studying. "}
           No clock. Every answer, right or wrong, explains itself the moment you pick it.
         </p>
