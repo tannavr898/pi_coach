@@ -947,7 +947,11 @@ def get_quiz(
             raise HTTPException(status_code=404, detail=f"Unknown cluster: {cluster}")
         domain_ids = sorted(set(domain_ids) | set(expanded)) if domain_ids else expanded
     drawn = quiz.select(level=level, domain_ids=domain_ids, term_ids=term_ids, count=count)
-    return QuizResponse(questions=[QuizQuestion(**q) for q in drawn], counts=quiz.counts())
+    # Counts describe the POOL this filter reaches, not the draw. The client shows
+    # them on the tier pills, and reporting the draw size made a Finance round look
+    # like 14 questions when 312 sit behind it.
+    available = quiz.counts(domain_ids=domain_ids, term_ids=term_ids)
+    return QuizResponse(questions=[QuizQuestion(**q) for q in drawn], counts=available)
 
 
 @app.post("/api/transcribe", response_model=TranscribeResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])

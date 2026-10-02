@@ -464,3 +464,42 @@ def test_reference_endpoints_are_cacheable_and_the_quiz_is_not():
     for path in ("/api/framework", "/api/events", "/api/terms"):
         assert "max-age" in client.get(path).headers.get("cache-control", "")
     assert client.get("/api/quiz").headers.get("cache-control") == "no-store"
+
+
+# --- pool size vs draw size -------------------------------------------------
+# The tier pills report what the scope can reach. They used to report the draw,
+# which made a 936-question Finance pool read as about a dozen.
+
+
+def test_counts_describe_the_filtered_pool_not_the_draw():
+    finance = events.domains_for_cluster("Finance")
+    whole = quiz.counts()
+    scoped = quiz.counts(domain_ids=finance)
+    assert 0 < scoped["total"] < whole["total"]
+    assert all(scoped[lvl] > 100 for lvl in ("district", "state", "icdc")), scoped
+    # A round is 8; the pool behind it must be far larger or there is no variety.
+    assert scoped["icdc"] > 8 * 10
+
+
+def test_the_endpoint_reports_the_pool_a_cluster_round_draws_from():
+    client = TestClient(app)
+    body = client.get("/api/quiz", params={"cluster": "Finance", "level": "icdc", "count": 8}).json()
+    assert len(body["questions"]) == 8
+    assert body["counts"]["icdc"] == quiz.counts(domain_ids=events.domains_for_cluster("Finance"))["icdc"]
+
+
+def test_two_rounds_of_the_same_scope_are_not_the_same_questions():
+    """A second attempt has to pull new questions. With a 312-deep pool, two draws
+    of 8 sharing every id would mean the draw is not random."""
+    client = TestClient(app)
+    p = {"cluster": "Finance", "level": "icdc", "count": 8}
+    a = {q["id"] for q in client.get("/api/quiz", params=p).json()["questions"]}
+    b = {q["id"] for q in client.get("/api/quiz", params=p).json()["questions"]}
+    assert a != b, "two draws returned an identical set"
+
+
+def test_a_narrow_deck_still_reports_honestly():
+    """Counts must shrink with the filter, not report the whole bank."""
+    ids = [t["id"] for t in terms.all_terms()[:4]]
+    scoped = quiz.counts(term_ids=ids)
+    assert 0 < scoped["total"] < quiz.counts()["total"]

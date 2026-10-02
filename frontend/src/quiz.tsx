@@ -17,14 +17,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getQuiz, type Level, type QuizQuestion, type Term } from "./api";
 import { track } from "./analytics";
 import { markStudy, postActivity } from "./progress";
-import { BTN_PRIMARY } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY } from "./ui";
 
 // Enough to find a pattern in what you're missing, short enough to finish.
 const QUESTIONS_PER_ROUND = 8;
-// Drawn per deck before we split by tier, so the tier pills can show what this
-// particular deck actually holds rather than what the whole bank holds.
-const DRAW = 40;
-
 const LEVELS: Level[] = ["district", "state", "icdc"];
 const LEVEL_LABEL: Record<Level, string> = { district: "District", state: "State", icdc: "ICDC" };
 const LEVEL_BLURB: Record<Level, string> = {
@@ -102,42 +98,51 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
     return domainIds.length && domainIds.length <= MAX_DOMAINS_IN_URL ? { domainIds } : {};
   }, [cards, scope, cluster]);
   const [drawn, setDrawn] = useState<QuizQuestion[] | null>(null);
+  // How many questions this filter can reach, per tier. Reported by the server
+  // over the whole matching pool, not over the draw.
+  const [avail, setAvail] = useState<Record<Level, number> | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [level, setLevel] = useState<Level>(defaultLevel ?? "district");
+  // Bumped to force a fresh draw. A Finance cluster round has 312 icdc questions
+  // behind it, so a second attempt should be new questions, not a reshuffle of the
+  // same handful.
+  const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<Phase>("intro");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [i, setI] = useState(0);
   // The option id picked per question, in question order. Absent = not answered.
   const [picks, setPicks] = useState<Record<string, string>>({});
 
-  // One request for the whole deck; the tiers are split out of it below. A tier
-  // with nothing in it for THIS deck is disabled rather than opening empty.
+  // One request per tier, sized to the round. This used to ask for 40 across all
+  // three tiers and split them client-side, which capped a round at whatever
+  // thirteen-ish questions happened to land in the chosen tier and made a 936
+  // question cluster pool feel like a dozen. The server draws at random from the
+  // whole matching pool, so each round is genuinely new.
   useEffect(() => {
     let active = true;
-    getQuiz({ ...filter, count: DRAW })
-      .then((r) => active && setDrawn(r.questions))
+    setDrawn(null);
+    getQuiz({ ...filter, level, count: QUESTIONS_PER_ROUND })
+      .then((r) => {
+        if (!active) return;
+        setDrawn(r.questions);
+        setAvail({ district: r.counts.district, state: r.counts.state, icdc: r.counts.icdc });
+      })
       .catch((e) => active && setLoadErr(e instanceof Error ? e.message : String(e)));
     return () => {
       active = false;
     };
-  }, [filter]);
+  }, [filter, level, round]);
 
-  const byLevel = useMemo(() => {
-    const out: Record<Level, QuizQuestion[]> = { district: [], state: [], icdc: [] };
-    for (const q of drawn ?? []) out[q.level]?.push(q);
-    return out;
-  }, [drawn]);
-
-  // Default to a tier this deck can actually fill, so the Start button is live on
-  // open instead of making the student hunt for the one that works.
+  // Default to a tier this filter can actually fill, so Start is live on open
+  // instead of making the student hunt for the one that works.
   useEffect(() => {
-    if (!drawn || byLevel[level].length) return;
-    const fallback = LEVELS.find((l) => byLevel[l].length);
+    if (!avail || avail[level]) return;
+    const fallback = LEVELS.find((l) => avail[l]);
     if (fallback) setLevel(fallback);
-  }, [drawn, byLevel, level]);
+  }, [avail, level]);
 
   function start() {
-    const picked = shuffle(byLevel[level]).slice(0, QUESTIONS_PER_ROUND);
+    const picked = shuffle(drawn ?? []).slice(0, QUESTIONS_PER_ROUND);
     if (!picked.length) return;
     setQuestions(picked);
     setPicks({});
@@ -249,7 +254,7 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
               title={title}
               loading={!drawn && !loadErr}
               loadErr={loadErr}
-              byLevel={byLevel}
+              avail={avail}
               level={level}
               onLevel={setLevel}
               scope={scope}
@@ -273,7 +278,20 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
           )}
 
           {phase === "results" && (
-            <ResultsPanel questions={questions} picks={picks} level={level} onClose={onClose} />
+            <ResultsPanel
+              questions={questions}
+              picks={picks}
+              level={level}
+              remaining={Math.max(0, (avail?.[level] ?? 0) - questions.length)}
+              onAgain={() => {
+                setRound((r) => r + 1);
+                setPicks({});
+                setI(0);
+                markedRef.current = false;
+                setPhase("intro");
+              }}
+              onClose={onClose}
+            />
           )}
         </div>
       </div>
@@ -281,11 +299,11 @@ export function KnowledgeCheck({ cards, title, cluster, defaultScope = "deck", d
   );
 }
 
-function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, scope, onScope, cluster, deckSize, onStart }: {
+function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onScope, cluster, deckSize, onStart }: {
   title?: string;
   loading: boolean;
   loadErr: string | null;
-  byLevel: Record<Level, QuizQuestion[]>;
+  avail: Record<Level, number> | null;
   level: Level;
   onLevel: (l: Level) => void;
   scope: Scope;
@@ -310,8 +328,8 @@ function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, scope, o
     cluster: cluster ? `${cluster} exam` : "Cluster exam",
     all: "Everything",
   };
-  const available = byLevel[level].length;
-  const anywhere = LEVELS.some((l) => byLevel[l].length);
+  const available = avail?.[level] ?? 0;
+  const anywhere = LEVELS.some((l) => (avail?.[l] ?? 0) > 0);
   return (
     <div className="space-y-4">
       <div>
@@ -355,7 +373,7 @@ function IntroPanel({ title, loading, loadErr, byLevel, level, onLevel, scope, o
         <div className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">Difficulty</div>
         <div className="grid gap-2 sm:grid-cols-3">
           {LEVELS.map((l) => {
-            const n = byLevel[l].length;
+            const n = avail?.[l] ?? 0;
             const active = l === level;
             return (
               <button
@@ -471,10 +489,13 @@ function QuestionPanel({ question, index, total, picked, onChoose, onNext, isLas
   );
 }
 
-function ResultsPanel({ questions, picks, level, onClose }: {
+function ResultsPanel({ questions, picks, level, remaining, onAgain, onClose }: {
   questions: QuizQuestion[];
   picks: Record<string, string>;
   level: Level;
+  // How many questions this scope still has that this round did not use.
+  remaining: number;
+  onAgain: () => void;
   onClose: () => void;
 }) {
   const right = questions.filter((q) => q.options.find((o) => o.id === picks[q.id])?.correct);
@@ -514,7 +535,14 @@ function ResultsPanel({ questions, picks, level, onClose }: {
         </div>
       )}
 
-      <button className={`${BTN_PRIMARY} w-full`} onClick={onClose}>Done →</button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {remaining > 0 && (
+          <button className={`${BTN_SECONDARY} w-full sm:flex-1`} onClick={onAgain}>
+            Another {QUESTIONS_PER_ROUND} ({remaining} left)
+          </button>
+        )}
+        <button className={`${BTN_PRIMARY} w-full sm:flex-1`} onClick={onClose}>Done →</button>
+      </div>
       <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">
         A quiz round counts toward a term's progress, but only a Blitz or a role-play can mark it known.
       </p>

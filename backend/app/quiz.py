@@ -51,16 +51,49 @@ def get_question(question_id: str) -> dict | None:
     return _index().get(question_id)
 
 
-@lru_cache(maxsize=1)
-def counts() -> dict[str, int]:
-    """How many questions exist per level, plus the total. Used by the UI to hide a
-    level that has not been generated yet rather than offering an empty quiz."""
+# Not cached: the arguments are lists (unhashable), and a scan over the bank is
+# microseconds against an already-cached load.
+def counts(
+    *,
+    domain_ids: list[str] | None = None,
+    term_ids: list[str] | None = None) -> dict[str, int]:
+    """How many questions per level the given filters can actually reach.
+
+    Unfiltered this is the whole bank. Filtered it is the number the student could
+    be asked under this scope, which is what the tier pills need to show: a Finance
+    cluster round has 312 icdc questions behind it, and reporting the draw size
+    instead made the bank look about twenty times smaller than it is.
+    """
     out = {lvl: 0 for lvl in LEVELS}
-    for q in all_questions():
+    total = 0
+    for q in _matching(all_questions(), domain_ids=domain_ids, term_ids=term_ids):
+        total += 1
         if q["level"] in out:
             out[q["level"]] += 1
-    out["total"] = len(all_questions())
+    out["total"] = total
     return out
+
+
+def _matching(
+    questions: list[dict],
+    *,
+    level: str = "",
+    domain_ids: list[str] | None = None,
+    term_ids: list[str] | None = None):
+    """The questions a filter reaches, as (covered, question) pairs are built from.
+
+    Yields the raw rows; `select` wraps them with the coverage flag it sorts on.
+    """
+    wanted_terms = set(term_ids or [])
+    wanted_domains = set(domain_ids or [])
+    for q in questions:
+        if level and q["level"] != level:
+            continue
+        if wanted_domains and q.get("domain_id") not in wanted_domains:
+            continue
+        if wanted_terms and not (set(q.get("term_ids") or []) & wanted_terms):
+            continue
+        yield q
 
 
 def select(
@@ -84,22 +117,11 @@ def select(
     """
     rng = rng or random.Random()
     wanted_terms = set(term_ids or [])
-    wanted_domains = set(domain_ids or [])
 
     pool = []
-    for q in all_questions():
-        if level and q["level"] != level:
-            continue
-        if wanted_domains and q.get("domain_id") not in wanted_domains:
-            continue
+    for q in _matching(all_questions(), level=level, domain_ids=domain_ids, term_ids=term_ids):
         qt = set(q.get("term_ids") or [])
-        if wanted_terms:
-            hits = len(qt & wanted_terms)
-            if not hits:
-                continue
-            covered = hits == len(qt)
-        else:
-            covered = True
+        covered = (qt <= wanted_terms) if wanted_terms else True
         pool.append((0 if covered else 1, q))
 
     rng.shuffle(pool)
