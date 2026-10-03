@@ -531,15 +531,29 @@ Output ONLY the JSON object."""
 
 BLITZ_SYSTEM = (
     "You are a fast, fair DECA coach grading a rapid drill. The student was given a "
-    "short scenario and, one at a time under time pressure, had to use a specific "
-    "business skill correctly IN THAT SCENARIO. You grade a batch of these at once.\n\n"
-    "For EACH item, judge ONLY one thing: did they use THAT skill correctly and in "
-    "context? Ignore delivery, grammar, length, and every other skill.\n"
-    "- correct  = clearly applied the right idea to THIS scenario.\n"
-    "- partial  = touched the skill but stayed vague, generic, or not tied to the scenario.\n"
-    "- missed   = wrong, absent, off-topic, or empty.\n\n"
-    "Give ONE short, specific coaching note per item (max ~20 words): say what would "
-    "have made it correct. Be quick and decisive.\n\n"
+    "short scenario and, one at a time with 45 seconds each, had to use a specific "
+    "business skill in that scenario. You grade a batch of these at once.\n\n"
+    "For EACH item, judge ONLY one thing: does the answer show they understand THAT "
+    "skill and can put it to work in the scenario? Ignore delivery, grammar, spelling, "
+    "length, and every other skill. Answers are typed or transcribed speech produced "
+    "in under a minute, so expect one or two rough sentences and read past typos and "
+    "mis-heard words.\n"
+    "- correct  = the idea is right AND it is tied to the scenario in any concrete way "
+    "(the business, its problem, or a specific action). Their own words count: they do "
+    "not need the textbook definition, the skill's name, or any numbers.\n"
+    "- partial  = the idea is right but nothing connects it to the scenario, or it is "
+    "tied to the scenario but the idea is only half right.\n"
+    "- missed   = the idea is wrong, or the answer is off-topic or empty.\n\n"
+    "Grade generously: this is practice against a clock, not a final. If an answer "
+    "sits between two verdicts, give the higher one. Some skills fit the scenario only "
+    "loosely (a personal or career skill in a store scenario, for example); accept any "
+    "sensible way the student makes it fit.\n\n"
+    "An item may include a sample of correct use. That sample was written for a "
+    "DIFFERENT scenario and is more polished than 45 seconds allows. Use it only to "
+    "understand the skill. Never mark an answer down for not matching the sample's "
+    "details, length, or scenario.\n\n"
+    "Give ONE short, specific coaching note per item (max ~20 words). For a correct "
+    "answer, say what worked. Otherwise say what would have made it correct.\n\n"
     f"{_STYLE_RULE}"
     "Return ONLY a JSON object, no markdown."
 )
@@ -551,7 +565,9 @@ def build_blitz_prompt(scenario: str, items: list[dict]) -> tuple[str, str]:
     blocks = []
     for i, it in enumerate(items):
         good = (it.get("good_example") or "").strip()
-        good_line = f"\n   Correct use sounds like: {good}" if good else ""
+        # The card's Connect beat is written against its own scenario, never this
+        # drill's. Labelled as such, or the grader holds answers to the wrong story.
+        good_line = f"\n   Sample of correct use (from a different scenario): {good}" if good else ""
         name = it.get("name", "")
         definition = it.get("definition", "")
         answer = (it.get("response") or "").strip() or "(no answer)"
@@ -565,7 +581,7 @@ def build_blitz_prompt(scenario: str, items: list[dict]) -> tuple[str, str]:
     user = f"""SCENARIO (shared by every item):
 {scenario}
 
-Grade each item below on whether the student used THAT skill correctly, in the context of the scenario.
+Grade each item below on whether the student understood THAT skill and tied it to the scenario above.
 
 {items_block}
 

@@ -42,6 +42,25 @@ function saveStats(s: Stats) {
   }
 }
 
+// The last instructional area drilled, so a student prepping one area doesn't
+// have to re-pick it every round. A per-browser convenience, nothing depends on it.
+function loadArea(): string {
+  try {
+    return localStorage.getItem("pic-blitz-area") ?? "";
+  } catch {
+    return "";
+  }
+}
+function saveArea(id: string) {
+  try {
+    localStorage.setItem("pic-blitz-area", id);
+  } catch {
+    /* private mode, the pick just won't be remembered */
+  }
+}
+
+type Area = { id: string; name: string; count: number };
+
 // Pick n distinct random items.
 function sample<T>(arr: T[], n: number): T[] {
   const a = [...arr];
@@ -53,13 +72,36 @@ function sample<T>(arr: T[], n: number): T[] {
 }
 
 export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () => void }) {
-  const terms = useMemo(() => sample(cards, TERMS_PER_BLITZ), [cards]);
+  // The instructional areas this card set spans. A whole-course Blitz covers
+  // several, and five random draws lean toward whichever area has the most cards,
+  // so the intro lets the student narrow the round to the one they're prepping.
+  const areas = useMemo<Area[]>(() => {
+    const m = new Map<string, Area>();
+    for (const c of cards) {
+      const a = m.get(c.domain_id);
+      if (a) a.count += 1;
+      else m.set(c.domain_id, { id: c.domain_id, name: c.domain, count: 1 });
+    }
+    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [cards]);
+  const [area, setArea] = useState(() => {
+    const saved = loadArea();
+    return cards.some((c) => c.domain_id === saved) ? saved : "";
+  });
+  // Only changeable on the intro, so the draw is fixed once the drill starts.
+  const terms = useMemo(
+    () => sample(area ? cards.filter((c) => c.domain_id === area) : cards, TERMS_PER_BLITZ),
+    [cards, area],
+  );
   const [scenario, setScenario] = useState<BlitzScenario | null>(null);
   const [scenarioErr, setScenarioErr] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [mode, setMode] = useState<"type" | "speak">("type");
   const [i, setI] = useState(0);
-  const [answers, setAnswers] = useState<string[]>(() => terms.map(() => ""));
+  const [answers, setAnswers] = useState<string[]>([]);
+  // Spoken answers whose transcription failed. They are left out of grading: an
+  // answer we never heard is not a wrong answer, and must not be scored as one.
+  const [failed, setFailed] = useState<Set<number>>(() => new Set());
   const [secondsLeft, setSecondsLeft] = useState(SECONDS_PER_TERM);
   const [pending, setPending] = useState(0); // in-flight transcriptions
   const [results, setResults] = useState<BlitzResult[] | null>(null);
@@ -106,8 +148,14 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
         // Transcribe in the BACKGROUND so the drill keeps moving.
         setPending((p) => p + 1);
         postTranscribe(blob)
-          .then((text) => setAnswers((a) => { const n = [...a]; n[idx] = text; return n; }))
-          .catch(() => setAnswers((a) => { const n = [...a]; if (!n[idx]) n[idx] = ""; return n; }))
+          .then((text) => {
+            setAnswers((a) => { const n = [...a]; n[idx] = text; return n; });
+            setFailed((f) => { const n = new Set(f); n.delete(idx); return n; });
+          })
+          .catch(() => {
+            setAnswers((a) => { const n = [...a]; n[idx] = ""; return n; });
+            setFailed((f) => new Set(f).add(idx));
+          })
           .finally(() => setPending((p) => p - 1));
       };
       mr.start();
@@ -152,15 +200,21 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
   useEffect(() => {
     if (phase !== "scoring" || pending > 0 || scoredRef.current || !scenario) return;
     scoredRef.current = true;
+    const heard = terms.map((t, k) => ({ t, k })).filter(({ k }) => !failed.has(k));
+    if (heard.length === 0) {
+      setScoreErr("none of your spoken answers could be transcribed. Check your mic, or run the round again in Type mode");
+      setPhase("results");
+      return;
+    }
     postBlitzScore({
       scenario: scenario.text,
-      answers: terms.map((t, k) => ({ term_id: t.id, response: answers[k] })),
+      answers: heard.map(({ t, k }) => ({ term_id: t.id, response: answers[k] ?? "" })),
     })
       .then((r) => {
         setResults(r.results);
         // Update the session streak/score in scenario order.
         const s = loadStats();
-        for (const t of terms) {
+        for (const { t } of heard) {
           const res = r.results.find((x) => x.term_id === t.id);
           s.answered += 1;
           if (res?.verdict === "correct") { s.correct += 1; s.streak += 1; s.best = Math.max(s.best, s.streak); }
@@ -181,7 +235,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
         setPhase("results");
       })
       .catch((e) => { setScoreErr(e instanceof Error ? e.message : String(e)); setPhase("results"); });
-  }, [phase, pending, scenario, terms, answers]);
+  }, [phase, pending, scenario, terms, answers, failed]);
 
   const stats = phase === "results" ? loadStats() : null;
 
@@ -243,7 +297,10 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
               count={terms.length}
               mode={mode}
               onMode={setMode}
-              onStart={() => setPhase("drill")}
+              areas={areas}
+              area={area}
+              onArea={(id) => { setArea(id); saveArea(id); }}
+              onStart={() => { setAnswers(terms.map(() => "")); setPhase("drill"); }}
             />
           )}
 
@@ -255,7 +312,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
               total={terms.length}
               secondsLeft={secondsLeft}
               mode={mode}
-              value={answers[i]}
+              value={answers[i] ?? ""}
               onChange={(v) => setAnswers((a) => { const n = [...a]; n[i] = v; return n; })}
               recording={recording}
               micErr={micErr}
@@ -278,6 +335,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
             <ResultsPanel
               terms={terms}
               results={results}
+              unheard={new Set(terms.filter((_, k) => failed.has(k)).map((t) => t.id))}
               scoreErr={scoreErr}
               stats={stats}
               onAgain={onClose}
@@ -306,12 +364,15 @@ function ModePills({ mode, onMode }: { mode: "type" | "speak"; onMode: (m: "type
   );
 }
 
-function IntroPanel({ scenario, scenarioErr, count, mode, onMode, onStart }: {
+function IntroPanel({ scenario, scenarioErr, count, mode, onMode, areas, area, onArea, onStart }: {
   scenario: BlitzScenario | null;
   scenarioErr: string | null;
   count: number;
   mode: "type" | "speak";
   onMode: (m: "type" | "speak") => void;
+  areas: Area[];
+  area: string;
+  onArea: (id: string) => void;
   onStart: () => void;
 }) {
   return (
@@ -322,6 +383,26 @@ function IntroPanel({ scenario, scenarioErr, count, mode, onMode, onStart }: {
           You'll get one scenario, then each term with {SECONDS_PER_TERM}s to apply it: Define it, then Connect it to the scenario. Fast rounds; we grade the whole set at the end.
         </p>
       </div>
+      {areas.length > 1 && (
+        <div>
+          <label htmlFor="blitz-area" className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Instructional area
+          </label>
+          <select
+            id="blitz-area"
+            value={area}
+            onChange={(e) => onArea(e.target.value)}
+            className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          >
+            <option value="">All areas, mixed</option>
+            {areas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} ({a.count})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {scenarioErr ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">Couldn't load a scenario: {scenarioErr}</p>
       ) : (
@@ -420,9 +501,10 @@ function DrillPanel(props: {
   );
 }
 
-function ResultsPanel({ terms, results, scoreErr, stats, onAgain }: {
+function ResultsPanel({ terms, results, unheard, scoreErr, stats, onAgain }: {
   terms: Term[];
   results: BlitzResult[] | null;
+  unheard: Set<string>;
   scoreErr: string | null;
   stats: Stats | null;
   onAgain: () => void;
@@ -436,18 +518,21 @@ function ResultsPanel({ terms, results, scoreErr, stats, onAgain }: {
     );
   }
   const correct = results.filter((r) => r.verdict === "correct").length;
+  const partial = results.filter((r) => r.verdict === "partial").length;
   const tone: Record<string, string> = {
     correct: "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/50 dark:bg-emerald-950/30",
     partial: "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/30",
     missed: "border-red-200 bg-red-50/70 dark:border-red-900/50 dark:bg-red-950/30",
+    unheard: "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50",
   };
-  const badge: Record<string, string> = { correct: "✓ Correct", partial: "~ Partial", missed: "✗ Missed" };
+  const badge: Record<string, string> = { correct: "✓ Correct", partial: "~ Partial", missed: "✗ Missed", unheard: "Not graded" };
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between">
         <div>
           <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">Round score</div>
           <div className="font-mono text-4xl font-bold leading-none text-slate-900 dark:text-slate-100">{correct}<span className="text-xl text-slate-300 dark:text-slate-600">/{results.length}</span></div>
+          {partial > 0 && <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">plus {partial} partly right</div>}
         </div>
         {stats && (
           <div className="text-right text-xs text-slate-500 dark:text-slate-400">
@@ -460,14 +545,16 @@ function ResultsPanel({ terms, results, scoreErr, stats, onAgain }: {
       <div className="max-h-72 space-y-2 overflow-y-auto">
         {terms.map((t) => {
           const r = results.find((x) => x.term_id === t.id);
-          const v = r?.verdict ?? "missed";
+          // A spoken answer that never transcribed was not sent for grading.
+          const v = unheard.has(t.id) ? "unheard" : r?.verdict ?? "missed";
+          const note = v === "unheard" ? "We couldn't transcribe this answer, so it wasn't counted. Check your mic, or switch to Type." : r?.note;
           return (
             <div key={t.id} className={`rounded-xl border p-3 ${tone[v]}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t.name}</span>
                 <span className="shrink-0 font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300">{badge[v]}</span>
               </div>
-              {r?.note && <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{r.note}</p>}
+              {note && <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{note}</p>}
             </div>
           );
         })}

@@ -110,3 +110,15 @@ def test_failed_grade_does_not_count(monkeypatch):
     r = client.post("/api/blitz-score", json={"scenario": "A shop.", "answers": [{"term_id": tid, "response": "x"}]})
     assert r.status_code == 502
     assert bumped == []
+
+
+def test_blitz_verdicts_survive_one_based_indexes(monkeypatch):
+    async def noop(kind):
+        pass
+
+    monkeypatch.setattr(stats, "bump", noop)
+    monkeypatch.setattr(llm, "complete_json", lambda *a, **k: {"results": [
+        {"index": 1, "verdict": "correct"}, {"index": 2, "verdict": "partial"}]})
+    ids = [t["id"] for t in terms.all_terms()[:2]]
+    r = client.post("/api/blitz-score", json={"scenario": "A shop.", "answers": [{"term_id": i, "response": "x"} for i in ids]})
+    assert [x["verdict"] for x in r.json()["results"]] == ["correct", "partial"]

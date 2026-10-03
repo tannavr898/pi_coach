@@ -1009,11 +1009,17 @@ def blitz_score(req: BlitzScoreRequest, background: BackgroundTasks) -> BlitzSco
     # Map the model's per-index verdicts back onto criterion ids; default to
     # "missed" for anything the model skipped, so the client always gets N results.
     by_index: dict[int, dict] = {}
-    for r in data.get("results", []):
+    raw = [r for r in data.get("results", []) if isinstance(r, dict)]
+    for r in raw:
         try:
             by_index[int(r.get("index"))] = r
         except (TypeError, ValueError):
             continue
+    # A model that numbers from 1, or drops the index, would otherwise shift or
+    # lose every verdict and the whole round would read "missed". When the indexes
+    # don't cover the items but the count does, trust the order instead.
+    if set(by_index) != set(range(len(order))) and len(raw) == len(order):
+        by_index = dict(enumerate(raw))
     valid = {"correct", "partial", "missed"}
     results: list[BlitzResult] = []
     for i, tid in enumerate(order):
