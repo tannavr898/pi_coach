@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from typing import Any
 
 import anthropic
@@ -145,6 +146,14 @@ def parse_json_object(text: str) -> dict[str, Any]:
         # Measured on claude-sonnet-5: 6 of 8 scenario generations failed this way.
         return json.loads(t[start : end + 1], strict=False)
     except json.JSONDecodeError as e:
+        # A comma left before a closing brace or bracket is the one slip worth
+        # repairing in place: the object is otherwise complete, and re-asking for
+        # it doubles a student's wait on a grade. Only tried once strict parsing
+        # has already failed, so a well-formed reply is never touched.
+        try:
+            return json.loads(re.sub(r",(\s*[}\]])", r"\1", t[start : end + 1]), strict=False)
+        except json.JSONDecodeError:
+            pass
         raise LLMError(f"Could not parse model JSON: {e}") from e
 
 

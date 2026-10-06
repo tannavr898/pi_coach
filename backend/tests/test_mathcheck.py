@@ -85,3 +85,14 @@ def test_compute_speakers_detects_domination():
 def test_compute_speakers_none_when_single_speaker():
     words = [_W("word", i * 1000, i * 1000 + 900, "A") for i in range(5)]
     assert delivery.compute_speakers(words)["speakers"] == []
+
+
+def test_small_values_are_not_waved_through():
+    # A payback of 2.18 years claimed as "just under two" is wrong, not rounding.
+    payback = {"label": "payback", "expression": "180000/82500"}
+    assert mathcheck.verify_check({**payback, "claimed": 1.95})["ok"] is False
+    assert mathcheck.verify_check({**payback, "claimed": 2.2})["ok"] is True
+    # A ratio that is off by a quarter is not "close" either.
+    assert mathcheck.verify_check({"label": "ratio", "expression": "2/5", "claimed": 0.65})["ok"] is False
+    # Whole-number rounding of a percentage still passes.
+    assert mathcheck.verify_check({"label": "margin", "expression": "5/13*100", "claimed": 38})["ok"] is True

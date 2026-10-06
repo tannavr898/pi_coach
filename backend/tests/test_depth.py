@@ -183,3 +183,20 @@ def test_depth_vocab_offers_the_nearest_terms_first_then_widens():
     assert on_topic, "the nearest ring must be offered"
     assert off_topic, "the pool must widen past the criteria's own topics"
     assert max(on_topic) < min(off_topic), "nearest terms must come first"
+
+
+def test_quoted_accepts_two_real_passages_joined_by_an_ellipsis():
+    said = "First, the competition. We compete on meaning. Second, the trust problem."
+    assert _quoted("First, the competition... Second, the trust problem.", said)
+    assert not _quoted("First, the competition... Third, the budget.", said)
+
+
+def test_analytical_quote_they_never_said_is_dropped_but_the_score_stands():
+    raw = {
+        "framing": {"score": 3, "justification": "ok", "evidence": "we compete on meaning"},
+        "solution_quality": {"score": 3, "justification": "ok", "evidence": "a line the model made up"},
+        "pi_application": {"score": 3, "justification": "ok", "evidence": None},
+    }
+    a = _build_analytical(raw, "First, the competition. We compete on meaning.")
+    assert a.framing.evidence == "we compete on meaning"
+    assert a.solution_quality.evidence is None and a.solution_quality.score == 3

@@ -51,6 +51,34 @@ _SECTORS = (
 )
 
 
+# The counterpart the participant presents to. Drawn here rather than left to the
+# model: told only to "invent a fresh name", it settles on one favorite and hands
+# it to scenario after scenario (two unrelated events in a row both came back
+# starring "Renata Oduya"). Banning names just moves it to the next favorite, so
+# the name is picked in code, where it is actually random.
+_FIRST_NAMES = (
+    "Priya", "Marcus", "Elena", "Tobias", "Naomi", "Andre", "Ingrid", "Rafael", "Keiko", "Desmond",
+    "Amara", "Julian", "Leila", "Connor", "Mei", "Victor", "Sofia", "Kwame", "Hannah", "Mateo",
+    "Yasmin", "Gregory", "Anika", "Luis", "Camille", "Darius", "Fiona", "Hiroshi", "Olivia", "Emeka",
+    "Bianca", "Nathan", "Zara", "Patrick", "Imani", "Stefan", "Carmen", "Wesley", "Aisha", "Theo",
+)
+_LAST_NAMES = (
+    "Okafor", "Lindqvist", "Ramirez", "Whitfield", "Nakamura", "Castellanos", "Abernathy", "Petrov", "Mbeki", "Sullivan",
+    "Haddad", "Thornton", "Delgado", "Kowalski", "Banerjee", "Fitzgerald", "Yamamoto", "Osei", "Marchetti", "Halloran",
+    "Vasquez", "Bergstrom", "Chaudhry", "Montgomery", "Tanaka", "Adeyemi", "Rosenthal", "Gallagher", "Moreau", "Ibarra",
+    "Novak", "Pemberton", "Salazar", "Lund", "Farouk", "Calloway", "Ishikawa", "Brennan", "Dlamini", "Ashworth",
+)
+
+
+def _counterpart_line() -> str:
+    name = f"{random.choice(_FIRST_NAMES)} {random.choice(_LAST_NAMES)}"
+    return (
+        f"The counterpart the participant meets (the person the judge plays) is named "
+        f"{name}. Use exactly that name for them, and give them a role that fits the "
+        f"scenario.\n"
+    )
+
+
 def _variety_block() -> str:
     """A per-call randomized nudge that breaks the model's default name/setting
     attractor, so companies, people, places, AND industries vary between sessions."""
@@ -64,7 +92,7 @@ def _variety_block() -> str:
         f"setting (region, company size, and the character's name/background) from a "
         f"generic default. If no specific industry is required by the topic, pick an "
         f"UNEXPECTED one rather than the obvious default, e.g. {sectors}, so sessions "
-        f"don't all feel the same.\n"
+        f"don't all feel the same.\n" + _counterpart_line()
     )
 
 
@@ -186,7 +214,8 @@ def _params_block(params: dict[str, str]) -> str:
         "generalize, or ignore any of them; they are the point of this scenario:\n"
         + "\n".join(lines)
         + "\n" + name_line + " Make the setting, stakeholder, problem, and constraint "
-        "all visibly matter in the situation, not just decoration.\n\n"
+        "all visibly matter in the situation, not just decoration.\n"
+        + _counterpart_line() + "\n"
     )
 
 
@@ -416,7 +445,9 @@ def build_scoring_prompt(
     fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
     depth_block = _depth_block(depth_vocab or [])
     math_instructions = _MATH_BLOCK if quantitative else ""
-    math_key = '\n  "math_checks": [{"label": "...", "expression": "...", "claimed": <number or omit>, "unit": "..."}],' if quantitative else ""
+    # Leading comma, not trailing: the shape below is copied closely by the model,
+    # and a dangling comma before the closing brace came back as unparseable JSON.
+    math_key = ',\n  "math_checks": [{"label": "...", "expression": "...", "claimed": <number or omit>, "unit": "..."}]' if quantitative else ""
     user = f"""{_levels_brief()}
 {math_instructions}
 
@@ -518,7 +549,7 @@ Return a JSON object with EXACTLY this shape:
   "summary": "<2-3 sentence overall read of the response>",
   "strengths": ["<short>", "..."],
   "improvements": ["<short, actionable>", "..."],
-  "followup_feedback": "<how well they handled the judge's follow-up questions>",{math_key}
+  "followup_feedback": "<how well they handled the judge's follow-up questions>"{math_key}
 }}
 
 Output ONLY the JSON object."""
@@ -542,7 +573,9 @@ BLITZ_SYSTEM = (
     "(the business, its problem, or a specific action). Their own words count: they do "
     "not need the textbook definition, the skill's name, or any numbers.\n"
     "- partial  = the idea is right but nothing connects it to the scenario, or it is "
-    "tied to the scenario but the idea is only half right.\n"
+    "tied to the scenario but the idea is only half right. A correct definition or "
+    "description of the skill with no link to the scenario is ALWAYS partial, never "
+    "missed.\n"
     "- missed   = the idea is wrong, or the answer is off-topic or empty.\n\n"
     "Grade generously: this is practice against a clock, not a final. If an answer "
     "sits between two verdicts, give the higher one. Some skills fit the scenario only "

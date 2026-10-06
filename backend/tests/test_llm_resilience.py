@@ -233,3 +233,26 @@ def test_startup_sizes_the_threadpool_for_io_bound_work():
 
     assert anyio.run(run) == _THREADPOOL_SIZE
     assert _THREADPOOL_SIZE > 40
+
+
+def test_trailing_comma_is_repaired_without_a_second_call(monkeypatch):
+    """The scoring reply's most common slip, fixed in place rather than re-asked."""
+    calls = []
+
+    def once(system, user, **kw):
+        calls.append(1)
+        return '{"summary": "Solid, clear plan.", "strengths": ["a", "b",],\n}'
+
+    monkeypatch.setattr(llm, "complete", once)
+    assert llm.complete_json("s", "u") == {"summary": "Solid, clear plan.", "strengths": ["a", "b"]}
+    assert len(calls) == 1
+
+
+def test_scoring_prompt_shape_has_no_trailing_comma(crit_ids):
+    """The model copies the example shape, so the example has to be valid JSON."""
+    from app import prompts
+
+    for quantitative in (False, True):
+        _, user = prompts.build_scoring_prompt("s", framework.get_criteria(crit_ids), "r", [], "", quantitative)
+        shape = user[user.index("EXACTLY this shape"):]
+        assert ",\n}" not in shape

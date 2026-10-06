@@ -104,9 +104,11 @@ def _close(a: float, b: float) -> bool:
     """Whether the claimed and computed values agree, allowing for rounding.
 
     Absolute tolerance covers cents/rounded percentages; relative tolerance covers
-    large dollar figures rounded to the nearest unit.
+    large dollar figures rounded to the nearest unit. The half-point allowance only
+    applies from 10 up: on a payback of 2.2 years or a ratio of 0.4 it would pass
+    answers that are a quarter off, so small values get one decimal of rounding.
     """
-    return math.isclose(a, b, rel_tol=0.01, abs_tol=0.5)
+    return math.isclose(a, b, rel_tol=0.01, abs_tol=0.5 if abs(b) >= 10 else 0.06)
 
 
 def verify_check(raw: dict) -> dict:

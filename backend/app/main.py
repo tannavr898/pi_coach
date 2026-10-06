@@ -43,6 +43,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta, timezone
@@ -492,8 +493,19 @@ def _quoted(evidence: str | None, haystack: str) -> bool:
     """
     if not evidence:
         return False
-    norm = lambda s: " ".join(s.lower().split())  # noqa: E731
-    return norm(evidence) in norm(haystack)
+    norm = lambda s: " ".join(s.lower().replace("’", "'").split())  # noqa: E731
+    hay = norm(haystack)
+    # An ellipsis joins two real passages; each side has to be theirs.
+    parts = [p for p in (norm(p).strip(" .") for p in re.split(r"\.{3,}|…", evidence)) if p]
+    return bool(parts) and all(p in hay for p in parts)
+
+
+def _own_words(sub: SubScore, said: str) -> SubScore:
+    """Drop a sub-score's quote when it isn't something the participant said. The
+    feedback screen prints it inside quotation marks as their words."""
+    if sub.evidence and said and not _quoted(sub.evidence, said):
+        return sub.model_copy(update={"evidence": None})
+    return sub
 
 
 def _build_depth(raw: dict, response_text: str, offered: dict[str, dict]) -> DepthScore:
@@ -533,9 +545,9 @@ def _build_analytical(raw: dict, response_text: str = "", depth_offered: dict[st
     """Section 2: take the model's 1-4 sub-scores + creativity/depth bonuses, then
     compute the roll-up arithmetic DETERMINISTICALLY (the model is never trusted to
     do the weighting or the min())."""
-    framing = _sub_score(raw.get("framing", {}))
-    solution = _sub_score(raw.get("solution_quality", {}))
-    pi_app = _sub_score(raw.get("pi_application", {}))
+    framing = _own_words(_sub_score(raw.get("framing", {})), response_text)
+    solution = _own_words(_sub_score(raw.get("solution_quality", {})), response_text)
+    pi_app = _own_words(_sub_score(raw.get("pi_application", {})), response_text)
 
     craw = raw.get("creativity", {}) or {}
     try:
@@ -548,6 +560,8 @@ def _build_analytical(raw: dict, response_text: str = "", depth_offered: dict[st
         bonus = 0.0
     cev = craw.get("evidence")
     cev = str(cev).strip() if cev not in (None, "", "null") else None
+    if cev and response_text and not _quoted(cev, response_text):
+        cev = None
     creativity = CreativityScore(bonus=bonus, justification=str(craw.get("justification", "")).strip(), evidence=cev)
     depth = _build_depth(raw.get("depth", {}) or {}, response_text, depth_offered or {})
 
@@ -2210,7 +2224,7 @@ if Path(_DIST).is_dir():
     def _spa() -> FileResponse:
         return FileResponse(_INDEX)
 
-    for _path in ("/practice", "/study", "/chapter", "/tips", "/faq"):
+    for _path in ("/practice", "/study", "/chapter", "/account", "/tips", "/faq"):
         app.add_api_route(_path, _spa, methods=["GET"], include_in_schema=False)
 
     app.mount("/", StaticFiles(directory=_DIST, html=True), name="spa")
