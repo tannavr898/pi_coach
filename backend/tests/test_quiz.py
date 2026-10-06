@@ -567,3 +567,64 @@ def test_window_zero_keeps_the_original_batch_key():
     would rewrite 495 batches that were fine."""
     assert gen_quiz._batch_key("marketing", "Promotion", "icdc", 0) == "marketing|Promotion|icdc"
     assert gen_quiz._batch_key("marketing", "Promotion", "icdc", 1) == "marketing|Promotion|icdc|w1"
+
+
+def test_stray_non_latin_characters_are_rejected():
+    """A CJK character reached a rationale in a hand written batch and nothing
+    would have stopped it shipping to a student."""
+    cards = terms.all_terms()[:3]
+    q = _question(cards)
+    q["options"][1]["rationale"] = "A promise the 店 cannot keep."
+    with pytest.raises(gen_quiz.Rejected, match="non-Latin"):
+        gen_quiz._validate(q, "district", cards)
+
+
+def test_distractors_may_not_over_claim_while_the_key_hedges():
+    """Three absolutes against a measured key lets a student who knows nothing
+    strike the over-claimers and take what is left. A quarter of the first
+    generation run leaked this way."""
+    cards = terms.all_terms()[:3]
+    q = _question(cards)
+    wrong = [o for o in q["options"] if not o["correct"]]
+    wrong[0]["text"] = "This never works in any market"
+    wrong[1]["text"] = "Costs automatically fall every time"
+    with pytest.raises(gen_quiz.Rejected, match="over-claim"):
+        gen_quiz._validate(q, "district", cards)
+    # One absolute is ordinary English, not a tell.
+    wrong[1]["text"] = "Costs fall once the supplier is changed"
+    gen_quiz._validate(q, "district", cards)
+
+
+def test_the_shipped_bank_has_no_over_claiming_sets_left():
+    from scripts import _quality
+    bank = json.loads(gen_quiz._BANK.read_text(encoding="utf-8"))["questions"]
+    leaking = [q["id"] for q in bank if _quality.signals(q)["absolutes"]]
+    assert not leaking, f"{len(leaking)} questions still leak: {leaking[:10]}"
+
+
+def test_no_key_in_the_bank_is_visibly_the_longest_option():
+    """Length is the other shape-based shortcut. The ratio alone is a bad test
+    (24 characters against 21 is 1.15 and looks identical), so this measures the
+    gap a skimming student could actually see."""
+    bank = json.loads(gen_quiz._BANK.read_text(encoding="utf-8"))["questions"]
+    loud = []
+    for q in bank:
+        key = next(o for o in q["options"] if o["correct"])
+        longest_other = max(len(o["text"]) for o in q["options"] if not o["correct"])
+        if len(key["text"]) - longest_other >= gen_quiz._LENGTH_GIVEAWAY_CHARS:
+            loud.append(q["id"])
+    assert not loud, f"{len(loud)} keys stand out by length: {loud[:10]}"
+
+
+def test_a_short_key_is_not_rejected_for_a_meaningless_ratio():
+    """The guard that stopped this rule flagging 421 questions it should not."""
+    cards = terms.all_terms()[:3]
+    q = _question(cards)
+    key = next(o for o in q["options"] if o["correct"])
+    others = [o for o in q["options"] if not o["correct"]]
+    key["text"] = "A trademark registration"   # 24 characters
+    # 20 each: a ratio of 1.2, and a gap no reader could see.
+    others[0]["text"] = "A patent application"
+    others[1]["text"] = "A copyright filing."
+    others[2]["text"] = "A design right form."
+    gen_quiz._validate(q, "district", cards)

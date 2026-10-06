@@ -59,6 +59,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from app import config, framework, llm, prompts, terms
+from scripts import _quality
 from scripts._textsim import ratio, tokens
 
 _BANK = Path(__file__).resolve().parents[1] / "app" / "data" / "quiz_bank.json"
@@ -73,10 +74,16 @@ _MIN_ICDC_CARDS = 3
 _DUPE_STEM_RATIO = 0.82
 # The correct answer may not be BOTH the longest option and this much longer than
 # the next longest: that combination is what lets a student pick by shape alone.
-# Measured, not guessed: across generated batches the model lands inside 1.15
-# routinely and only overshoots when it has piled the qualifying conditions onto
-# the key, which is exactly the item we want to send back.
+#
+# A ratio ALONE is the wrong test and briefly had this at 1.05. On short options a
+# ratio exaggerates: a 24 character key against a 21 character distractor is 1.15
+# and visually identical, so the ratio flagged 421 questions of which almost none
+# were actually readable as longer. The pair of thresholds below is the honest
+# test, and by it the bank has one offender rather than 421.
 _LENGTH_GIVEAWAY = 1.15
+# ...and at least this many characters longer. Roughly half a line on a phone,
+# which is the point a skimming student can see the difference without counting.
+_LENGTH_GIVEAWAY_CHARS = 12
 # Being a few characters longer than the next option is noise. Past this the length
 # is visible to a student skimming four lines, which is what the audit counts.
 _VISIBLY_LONGER = 1.15
@@ -205,12 +212,37 @@ def _validate(q: dict, level: str, cards: list[dict]) -> dict:
     # Anti-gaming: the right answer must not be identifiable by shape alone.
     right = texts[correct[0]]
     others = sorted((len(t) for i, t in enumerate(texts) if i != correct[0]), reverse=True)
-    if len(right) > others[0] and len(right) > others[0] * _LENGTH_GIVEAWAY:
-        raise Rejected("correct option is the giveaway longest")
+    if (len(right) > others[0] * _LENGTH_GIVEAWAY
+            and len(right) - others[0] >= _LENGTH_GIVEAWAY_CHARS):
+        raise Rejected(
+            f"correct option is the giveaway longest "
+            f"({len(right)} chars vs {others[0]})")
+
+    # ...nor by tone. Distractors that over-claim ("always", "never", "only ever")
+    # against a hedging key are the oldest giveaway in multiple choice: strike the
+    # over-claimers and the key is the last one standing, which measures test
+    # craft rather than business. A quarter of the questions from the first
+    # generation run failed this way, so it is enforced rather than reported.
+    wrong_texts = [t for i, t in enumerate(texts) if i != correct[0]]
+    over_claiming = sum(1 for t in wrong_texts if _quality.ABSOLUTE.search(t))
+    if over_claiming >= 2 and not _quality.ABSOLUTE.search(right):
+        raise Rejected(
+            f"{over_claiming} distractors over-claim while the key hedges "
+            "(eliminate-the-absolutes gives the answer away)")
 
     blob = " ".join([stem, *texts, *(str(o.get("rationale", "")) for o in opts)])
+
+    # The dash rule goes first: a dash is a style violation with its own fix, and
+    # the catch-all below would otherwise swallow it behind a vaguer message.
     if any(d in blob for d in _DASHES):
         raise Rejected("em/en dash in the copy")
+
+    # Student-facing copy is plain English. Anything well outside Latin script is a
+    # typo that survived review: a stray CJK character once reached a rationale in a
+    # hand written batch, and nothing before this would have stopped it shipping.
+    stray = sorted({c for c in blob if ord(c) > 0x24F and c not in "‘’“”…"})
+    if stray:
+        raise Rejected(f"non-Latin characters in the copy: {''.join(stray)!r}")
 
     names = [str(n) for n in (q.get("concepts") or []) if str(n).strip()]
     if level == "icdc":
@@ -642,6 +674,95 @@ def cmd_prune(args) -> int:
     return 0
 
 
+def cmd_revise(args) -> int:
+    """Replace the options of questions already in the bank, by id.
+
+    Rewriting beats pruning: the stem, the concepts and the tier were fine on the
+    questions this is aimed at, and only the options gave the answer away. Keeping
+    the id also keeps any progress a student has already recorded against it.
+
+    File shape, four options each, exactly as a batch file states them:
+      {"revisions": [{"id": "Q-0235", "question": "<optional new stem>",
+                      "options": [{"text": ..., "correct": ..., "rationale": ...}]}]}
+
+    Every revision goes through the same validator as a new question, against that
+    question's own batch cards, and is reshuffled so the rewrite does not park the
+    answer in a predictable slot.
+    """
+    path = Path(args.file)
+    if not path.exists():
+        print(f"! no such file: {path}")
+        return 1
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    revisions = {r["id"]: r for r in payload.get("revisions") or []}
+    if not revisions:
+        print("! nothing to revise (expected a 'revisions' array)")
+        return 1
+
+    doc = _load_bank()
+    groups = {(d, tp): cards for d, tp, cards in _groups()}
+    rng = random.Random(args.seed)
+    done = rejected = 0
+
+    for i, q in enumerate(doc["questions"]):
+        r = revisions.pop(q["id"], None)
+        if r is None:
+            continue
+        # Resolve the same card window this question was written against, so a
+        # rewrite cannot quietly wander outside its own batch.
+        key = (q["domain_id"], q["topic"])
+        window = 0
+        batch = str(q.get("batch", ""))
+        if batch.endswith(tuple(f"|w{n}" for n in range(1, 9))):
+            window = int(batch.rsplit("|w", 1)[1])
+        cards = _cards_for(q["domain_id"], q["topic"], _windows(groups[key])[window], q["level"])
+
+        candidate = {
+            "question": r.get("question", q["question"]),
+            "options": r["options"],
+            "concepts": q.get("concepts", []),
+            "source_cards": q.get("concepts", []),
+            "format": q.get("format", ""),
+            "difficulty_justification": q.get("notes", {}).get("difficulty_justification", ""),
+            "synthesis_check": q.get("notes", {}).get("synthesis_check", ""),
+            "review_flags": [],
+        }
+        try:
+            row = _validate(candidate, q["level"], cards)
+        except Rejected as e:
+            rejected += 1
+            print(f"  ! {q['id']}: {e}")
+            continue
+        row["id"] = q["id"]
+        row["batch"] = q.get("batch", "")
+        row["notes"] = q.get("notes", {})
+        doc["questions"][i] = _shuffle_options(row, rng)
+        done += 1
+
+    for missing in revisions:
+        print(f"  ! {missing}: not in the bank")
+        rejected += 1
+
+    if done:
+        _save_bank(doc)
+    print(f"\nrevised {done} question(s) from {path.name} ({rejected} rejected)")
+    return 1 if rejected else 0
+
+
+def cmd_quality(args) -> int:
+    """Rank the bank by how easily a test-wise student could beat it.
+
+    Separate from `audit`, which asks whether a question is well formed. This asks
+    whether it measures anything at all. The signals live in scripts/_quality.py.
+    """
+    questions = _load_bank()["questions"]
+    if not questions:
+        print(f"{_BANK.name} is empty.")
+        return 1
+    _quality.report(questions, show=args.list, ids=args.ids)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -666,6 +787,16 @@ def main() -> int:
     a.add_argument("--flags", action="store_true", help="list the generator's review flags")
     a.add_argument("--flags-limit", type=int, default=30)
     a.set_defaults(fn=cmd_audit)
+
+    rv = sub.add_parser("revise", help="replace the options of questions already in the bank")
+    rv.add_argument("file", help="path to the revisions file")
+    rv.add_argument("--seed", type=int, default=0, help="option-shuffle seed")
+    rv.set_defaults(fn=cmd_revise)
+
+    qa = sub.add_parser("quality", help="rank questions a test-wise student could beat")
+    qa.add_argument("--list", type=int, default=0, help="print the N worst in full")
+    qa.add_argument("--ids", action="store_true", help="print ids over the rewrite line")
+    qa.set_defaults(fn=cmd_quality)
 
     p = sub.add_parser("prune", help="retire questions by id")
     p.add_argument("ids", nargs="+", help="question ids, e.g. Q-0042")
