@@ -37,6 +37,7 @@ import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE 
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
+import { AccountSettings } from "./account";
 import { adminListChapters, adminSetChapterStatus, clearSamples, confirmScenarioSeen, fetchUsage, getMessages, getMyPlan, getPosts, getProgress, getRoster, getSession, getSessions, getThreads, markStudy, messagesKey, myCourseOrNull, planKey, saveSession, scoreVideo, seedSamples, type AdminChapter, type ChapterPost, type SaveSessionBody, type SessionDetail } from "./progress";
 import { prefetch, setCacheScope } from "./cache";
 import { ChapterTab, NameModal, unreadTotal, useMe } from "./chapter";
@@ -79,7 +80,7 @@ function snapshotOf(s: ScoreResponse, d: DeliveryMetrics | null): RunSnapshot {
 // route. The old separate "flashcards" view is gone with the Library nav item.
 // "chapter" is the club tab (chapter.tsx): a student's feed and messages, or a
 // manager's roster and dashboard. Signed-in only.
-type View = "home" | "practice" | "tips" | "faq" | "course" | "chapter";
+type View = "home" | "practice" | "tips" | "faq" | "course" | "chapter" | "account";
 // What the flashcard study overlay is showing: either ids to fetch, or preloaded
 // cards (from the library), optionally opened at a specific card.
 type FlashcardTarget = { ids?: string[]; cards?: Term[]; startId?: string; title?: string };
@@ -211,6 +212,7 @@ const VIEW_PATHS: Record<View, string> = {
   practice: "/practice",
   course: "/study",
   chapter: "/chapter",
+  account: "/account",
   tips: "/tips",
   faq: "/faq",
 };
@@ -325,7 +327,21 @@ export default function App() {
     if (view === "practice") nudge.consume();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
-  const { user: authUser, ready: authReady, loading: authLoading, signOut, oauthError, dismissOAuthError } = useAuth();
+  const { user: authUser, ready: authReady, loading: authLoading, signOut, oauthError, dismissOAuthError, recovery, clearRecovery } = useAuth();
+  // A password-reset link signs them in; take them straight to where the new
+  // password is set, wherever the link happened to land. Leaving that page
+  // (finished or not) ends the reset, so settings go back to asking for the
+  // current password.
+  useEffect(() => {
+    if (recovery && authUser && view !== "account") setView("account");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recovery, authUser?.id]);
+  const prevView = useRef(view);
+  useEffect(() => {
+    if (prevView.current === "account" && view !== "account" && recovery) clearRecovery();
+    prevView.current = view;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
   // Point the read cache at this account before anything below reads from it.
   // Skipped while the session is still being restored: "no user yet" isn't
   // "signed out", and treating it so would wipe the cache a reload depends on.
@@ -1330,6 +1346,7 @@ export default function App() {
         onLogin={() => openAuth("login")}
         onSignup={() => openAuth("signup")}
         onSignOut={() => { void signOut(); setView("home"); }}
+        onAccount={() => goToView("account")}
         // Dots only for signed-in accounts, a signed-out visitor has no account
         // to track, and marking up the nav for them is noise, not guidance.
         unvisited={authUser ? (s) => !visited.isVisited(s) : undefined}
@@ -1491,6 +1508,22 @@ export default function App() {
             onStartAssignment={(p) => void startAssignment(p)}
             renderSession={renderStudentSession}
           />
+        ) : view === "account" && !authUser ? (
+          authLoading ? (
+            <PageLoader label="Loading your account" />
+          ) : (
+            <Card>
+              <h1 className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Account settings</h1>
+              <p className="mt-2 max-w-prose text-sm text-slate-600 dark:text-slate-300">
+                Log in to change your name, email, or password.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className={BTN_PRIMARY} onClick={() => openAuth("login", "Log in to open your account settings.")}>Log in</button>
+              </div>
+            </Card>
+          )
+        ) : view === "account" ? (
+          <AccountSettings me={me} onRefresh={refreshMe} />
         ) : view === "tips" ? (
           <TipsPage onStart={() => enterPractice()} />
         ) : view === "faq" ? (
@@ -2710,7 +2743,7 @@ function IntroPreview(props: { onReplay: () => void }) {
 
 // --- brand / shell ---------------------------------------------------------
 
-function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, unvisited, onReplayTour, chapterBadge = null }: {
+function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, onFeedback, authReady, userEmail, onLogin, onSignup, onSignOut, onAccount, unvisited, onReplayTour, chapterBadge = null }: {
   view: View;
   onView: (v: View) => void;
   onPractice: () => void;
@@ -2723,6 +2756,7 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
   onLogin?: () => void;
   onSignup?: () => void;
   onSignOut?: () => void;
+  onAccount?: () => void;
   // Marks nav items this account hasn't opened yet. Absent (signed out) = no dots.
   unvisited?: (s: Surface) => boolean;
   onReplayTour?: () => void;
@@ -2788,7 +2822,7 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
             <span>Feedback</span>
           </button>
           {authReady && (userEmail ? (
-            <AccountMenu email={userEmail} onSignOut={onSignOut} onReplayTour={onReplayTour} />
+            <AccountMenu email={userEmail} onSignOut={onSignOut} onAccount={onAccount} onReplayTour={onReplayTour} />
           ) : (
             <div className="flex items-center gap-3">
               <button
@@ -2847,6 +2881,9 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
                   <MobileNavItem active={false} onClick={pick(onReplayTour)}>Replay the tour</MobileNavItem>
                 )}
                 <div className={`mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{userEmail}</div>
+                {onAccount && (
+                  <MobileNavItem active={view === "account"} onClick={pick(onAccount)}>Account settings</MobileNavItem>
+                )}
                 <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
               </>
             ) : (
@@ -2875,7 +2912,7 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
 // Small account control shown when signed in: the email initial, opening a menu
 // with the address and a sign-out. (A "Home" entry is added once the logged-in
 // home page exists.)
-function AccountMenu({ email, onSignOut, onHome, onReplayTour }: { email: string; onSignOut?: () => void; onHome?: () => void; onReplayTour?: () => void }) {
+function AccountMenu({ email, onSignOut, onHome, onAccount, onReplayTour }: { email: string; onSignOut?: () => void; onHome?: () => void; onAccount?: () => void; onReplayTour?: () => void }) {
   const [open, setOpen] = useState(false);
   const initial = (email[0] || "?").toUpperCase();
   useEffect(() => {
@@ -2902,6 +2939,14 @@ function AccountMenu({ email, onSignOut, onHome, onReplayTour }: { email: string
               className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Home
+            </button>
+          )}
+          {onAccount && (
+            <button
+              onClick={() => { setOpen(false); onAccount(); }}
+              className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Account settings
             </button>
           )}
           {onReplayTour && (
@@ -3911,7 +3956,7 @@ function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void })
             <strong className="font-semibold">{presentMin} to present</strong>, that window includes the judge's questions.
           </Tip>
           <Tip icon="🎯">
-            Aim to wrap your pitch in about <strong className="font-semibold">{targetMin} minutes</strong>, leaving the rest for the follow-up.
+            Aim to wrap your pitch in about <strong className="font-semibold">{targetMin} {targetMin === 1 ? "minute" : "minutes"}</strong>, leaving the rest for the follow-up.
           </Tip>
           <Tip icon="🗣️">Find a quiet spot and present out loud: type or use 🎙️ Speak.</Tip>
           <Tip icon="❓">

@@ -44,6 +44,19 @@ type AuthState = {
   // success navigates away from this page entirely.
   signInWithProvider: (provider: OAuthProvider) => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  // Emails a link that signs them in and lands on Account settings to pick a new
+  // password. Resolves the same way whether or not the address has an account.
+  sendPasswordReset: (email: string) => Promise<AuthResult>;
+  // `current` is checked first when given; it is omitted on a reset link and for
+  // an account that has only ever signed in with Google.
+  changePassword: (next: string, current?: string) => Promise<AuthResult>;
+  // `needsConfirmation` means the address changes once the emailed link is clicked.
+  changeEmail: (email: string) => Promise<AuthResult>;
+  // Whether this account has a password at all (false for Google-only accounts).
+  hasPassword: boolean;
+  // True from a password-reset link until they set a new password or move on.
+  recovery: boolean;
+  clearRecovery: () => void;
   // A failed provider hand-off we were redirected back with, surfaced only when
   // it left them actually signed out, see the AuthProvider effect.
   oauthError: string | null;
@@ -69,6 +82,10 @@ function explainOAuthError(code: string): string {
     // are ALREADY signed in, which is why the caller checks for a session
     // before showing any of this.
     return "That sign-in link had already been used or had expired. Try signing in once more.";
+  }
+  if (code === "otp_expired") {
+    // An emailed link (password reset, email change) opened late or a second time.
+    return "That email link has expired or was already used. Request a new one and open it right away.";
   }
   if (code === "access_denied") return "Sign-in was cancelled. You can try again whenever you're ready.";
   if (code === "server_error") return "The sign-in provider had a problem. Please try again in a moment.";
@@ -115,6 +132,18 @@ function consumeOAuthError(): { code: string; message: string } | null {
 // Captured once, at import, for the reason given above. Read by AuthProvider.
 const OAUTH_RETURN_ERROR = typeof window !== "undefined" ? consumeOAuthError() : null;
 
+// Whether this page load is the return trip from a password-reset email. Read at
+// import for the same reason as above: supabase-js scrubs the hash once it has
+// taken the session out of it, and its PASSWORD_RECOVERY event can fire before
+// anything here is listening.
+const RECOVERY_RETURN =
+  typeof window !== "undefined" && /(^|[#&])type=recovery(&|$)/.test(window.location.hash);
+
+// Where emailed account links (password reset, email change) bring people back to.
+function accountUrl(): string {
+  return `${window.location.origin}/account`;
+}
+
 /** The current URL, minus any OAuth error params, for use as a `redirectTo`. */
 function cleanReturnUrl(): string {
   try {
@@ -131,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [recovery, setRecovery] = useState(RECOVERY_RETURN);
 
   useEffect(() => {
     let unsub: (() => void) | undefined;
@@ -149,6 +179,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(u);
         if (u) identifyUser(u.id);
         setLoading(false);
+        // A reset link that didn't produce a session (expired, already used) has
+        // nothing to reset; the error banner below explains what happened.
+        if (!u) setRecovery(false);
         // Resolve a failed provider hand-off only once we know whether it
         // actually cost them anything. The most common `bad_oauth_state` is a
         // replayed callback, Back button, or a second tab, on a flow that
@@ -160,9 +193,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!u) setOauthError(OAUTH_RETURN_ERROR.message);
         }
       });
-      const { data } = sb.auth.onAuthStateChange((_event, session) => {
+      const { data } = sb.auth.onAuthStateChange((event, session) => {
         const u = session?.user ?? null;
         setUser(u);
+        if (event === "PASSWORD_RECOVERY") setRecovery(true);
         // Covers sign-in, a sign-up that returns a session, token refresh, and a
         // session restored on reload. identify is idempotent, so re-calling with
         // the same id costs nothing. Sign-out is handled in signOut() below,
@@ -230,7 +264,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     track("auth_signed_out", {});
     // After the event, so it's still attributed to the person who signed out.
     resetIdentity();
+    setRecovery(false);
   };
+
+  const sendPasswordReset = async (email: string): Promise<AuthResult> => {
+    const sb = await getSupabase();
+    if (!sb) return { error: "Accounts aren't available right now." };
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: accountUrl() });
+    if (error) return { error: error.message };
+    track("auth_reset_requested", {});
+    return {};
+  };
+
+  const changePassword = async (next: string, current?: string): Promise<AuthResult> => {
+    const sb = await getSupabase();
+    if (!sb || !user) return { error: "Accounts aren't available right now." };
+    if (current !== undefined) {
+      // supabase-js has no "check this password" call, so signing in again with
+      // it is the check. It refreshes the session for the same account.
+      const { error } = await sb.auth.signInWithPassword({ email: user.email ?? "", password: current });
+      if (error) {
+        return { error: error.status === 400 ? "That isn't your current password." : error.message };
+      }
+    }
+    const { error } = await sb.auth.updateUser({ password: next });
+    if (error) return { error: error.message };
+    track("auth_password_changed", { via: current === undefined ? "link" : "settings" });
+    // `recovery` is left alone: the settings page is still showing its reset
+    // layout and clears the flag itself once they move on.
+    return {};
+  };
+
+  const changeEmail = async (email: string): Promise<AuthResult> => {
+    const sb = await getSupabase();
+    if (!sb) return { error: "Accounts aren't available right now." };
+    const { data, error } = await sb.auth.updateUser({ email }, { emailRedirectTo: accountUrl() });
+    if (error) return { error: error.message };
+    track("auth_email_change_requested", {});
+    // With email confirmation on, the address only switches once the link is
+    // clicked; until then Supabase holds it as `new_email`.
+    return data.user?.new_email ? { needsConfirmation: true } : {};
+  };
+
+  // Google-only accounts have no email identity, so nothing to check a "current
+  // password" against. `identities` can be absent on older sessions; the provider
+  // list in app_metadata covers that.
+  const providers = (user?.app_metadata?.providers as string[] | undefined) ?? [];
+  const hasPassword = !!user && (
+    (user.identities ?? []).some((i) => i.provider === "email") || providers.includes("email")
+  );
 
   return (
     <Ctx.Provider
@@ -242,6 +324,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signInWithProvider,
         signOut,
+        sendPasswordReset,
+        changePassword,
+        changeEmail,
+        hasPassword,
+        recovery,
+        clearRecovery: () => setRecovery(false),
         oauthError,
         dismissOAuthError: () => setOauthError(null),
       }}
@@ -292,8 +380,11 @@ export function AuthModal({
   // `kind` tells the caller where to land: an advisor goes to their chapter.
   onAuthed?: (mode: "signup" | "login", kind?: "student" | "advisor") => void;
 }) {
-  const { signIn, signUp, signInWithProvider } = useAuth();
+  const { signIn, signUp, signInWithProvider, sendPasswordReset } = useAuth();
   const [tab, setTab] = useState<"signup" | "login">(initialTab);
+  // The forgot-password detour off the login tab: the email form, then a
+  // "check your email" confirmation.
+  const [reset, setReset] = useState<"off" | "form" | "sent">("off");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [kind, setKind] = useState<"student" | "advisor">("student");
@@ -312,10 +403,24 @@ export function AuthModal({
       setError(null);
       setConfirmSent(false);
       setBusy(false);
+      setReset("off");
     }
   }, [open, initialTab]);
 
   if (!open) return null;
+
+  async function submitReset(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    const res = await sendPasswordReset(email.trim());
+    setBusy(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setReset("sent");
+  }
 
   // On success the browser leaves for the provider, so `busy` is deliberately
   // never cleared: it keeps the form disabled through the hand-off instead of
@@ -406,6 +511,57 @@ export function AuthModal({
               Got it
             </button>
           </div>
+        ) : reset === "sent" ? (
+          <div className="text-center">
+            <div className="text-3xl">📬</div>
+            <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Check your email</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              If <strong className={`font-semibold ${PH_MASK}`}>{email.trim()}</strong> has an account, a link to reset your password is on its way. It can take a minute, and it may land in spam.
+            </p>
+            <button className={`mt-5 w-full ${BTN_PRIMARY}`} onClick={onClose}>
+              Got it
+            </button>
+          </div>
+        ) : reset === "form" ? (
+          <>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Reset your password</h2>
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="rounded-lg px-2 py-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Enter the email you signed up with and we'll send you a link to choose a new password.
+            </p>
+            <form onSubmit={submitReset} className="mt-4 space-y-3">
+              <label className="block">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Email</span>
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  placeholder="you@school.edu"
+                />
+              </label>
+              {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              <button type="submit" disabled={busy} className={`w-full ${BTN_PRIMARY}`}>
+                {busy ? "Sending…" : "Send reset link"}
+              </button>
+            </form>
+            <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
+              <button className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400" onClick={() => { setReset("off"); setError(null); }}>
+                Back to log in
+              </button>
+            </p>
+          </>
         ) : (
           <>
             <div className="flex items-center justify-between">
@@ -521,8 +677,19 @@ export function AuthModal({
                   placeholder={tab === "signup" ? "At least 6 characters" : "Your password"}
                 />
               </label>
+              {tab === "login" && (
+                <div className="-mt-1 text-right">
+                  <button
+                    type="button"
+                    onClick={() => { setReset("form"); setError(null); }}
+                    className="text-xs font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+                  >
+                    Forgot your password?
+                  </button>
+                </div>
+              )}
 
-              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
               <button type="submit" disabled={busy} className={`w-full ${BTN_PRIMARY}`}>
                 {busy ? "…" : tab === "signup" ? "Create account" : "Log in"}
