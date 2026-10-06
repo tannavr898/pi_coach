@@ -1431,6 +1431,100 @@
       "id": "Q-0003"
     },
     {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "term_ids": [
+        "T-0011"
+      ],
+      "concepts": [
+        "Civil Versus Criminal Liability"
+      ],
+      "format": "recognition",
+      "question": "A warehouse manager falsifies the weight on shipping documents to dodge freight charges. The carrier wants its money and the state opens its own file. What is the manager facing?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A case from the state, with the carrier's loss folded in",
+          "correct": false,
+          "rationale": "A fine goes to the state; the carrier still has to recover its own loss."
+        },
+        {
+          "id": "b",
+          "text": "A claim from the carrier and a case from the state",
+          "correct": true,
+          "rationale": "One act can be both a private wrong the carrier sues over and an offence the state prosecutes, and neither waits for the other."
+        },
+        {
+          "id": "c",
+          "text": "A claim from the carrier, which the state then takes over",
+          "correct": false,
+          "rationale": "A prosecutor does not inherit a private claim."
+        },
+        {
+          "id": "d",
+          "text": "A choice for the carrier between suing and reporting it",
+          "correct": false,
+          "rationale": "Reporting does not bar the carrier from suing."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: sort a single act into the two tracks it can run on.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Legal Foundations|district",
+      "id": "Q-1683"
+    },
+    {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "term_ids": [
+        "FW-001"
+      ],
+      "concepts": [
+        "Legal Environment Awareness"
+      ],
+      "format": "recognition",
+      "question": "A team's marketing plan is costed, tested with customers and ready to run, and nobody has checked whether the prize draw it is built around needs a permit. What does the plan still lack?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Proof that it is allowed to run at all",
+          "correct": true,
+          "rationale": "Customer appetite and a budget make a plan workable commercially; what makes it workable at all is fitting inside the rules."
+        },
+        {
+          "id": "b",
+          "text": "Proof that customers will enter the draw",
+          "correct": false,
+          "rationale": "That is the part already tested."
+        },
+        {
+          "id": "c",
+          "text": "A second prize to raise the response rate",
+          "correct": false,
+          "rationale": "A tactic, not the gap."
+        },
+        {
+          "id": "d",
+          "text": "A larger budget to cover the prize cost",
+          "correct": false,
+          "rationale": "Costing is done."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: name the check that sits outside the commercial case.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Legal Foundations|district",
+      "id": "Q-1684"
+    },
+    {
       "level": "state",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -1570,6 +1664,100 @@
       },
       "batch": "business_law|Legal Foundations|state",
       "id": "Q-1345"
+    },
+    {
+      "level": "state",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "term_ids": [
+        "T-0012"
+      ],
+      "concepts": [
+        "Jurisdiction and Venue Basics"
+      ],
+      "format": "scenario",
+      "question": "An online seller in Oregon ships to all fifty states. A buyer in Maine sues over a faulty item, in Maine, and the seller insists the case belongs in Oregon because that is where the business sits.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Selling into a state can pull you into its courts",
+          "correct": true,
+          "rationale": "A court's reach follows the business's contact with the place, and deliberately shipping into Maine is contact the seller chose."
+        },
+        {
+          "id": "b",
+          "text": "An online sale can be heard in either state at will",
+          "correct": false,
+          "rationale": "Reach is a legal test, not a free choice."
+        },
+        {
+          "id": "c",
+          "text": "A case is heard where the defendant has its office",
+          "correct": false,
+          "rationale": "Convenient for the seller and not how reach is decided."
+        },
+        {
+          "id": "d",
+          "text": "A faulty goods claim goes to a federal court first",
+          "correct": false,
+          "rationale": "Invents an automatic route."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: work out which court can hear a cross-state dispute.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Legal Foundations|state",
+      "id": "Q-1685"
+    },
+    {
+      "level": "state",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "term_ids": [
+        "T-0013"
+      ],
+      "concepts": [
+        "Sources of Business Law"
+      ],
+      "format": "scenario",
+      "question": "A franchisee reads the statute, the state regulations and her franchise agreement, and finds the agreement sets a stricter advertising standard than the law requires. Which governs her?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The statute, since a law outranks a private agreement",
+          "correct": false,
+          "rationale": "A statute sets the minimum, and she agreed to more."
+        },
+        {
+          "id": "b",
+          "text": "The agreement, since she can promise more than the law",
+          "correct": true,
+          "rationale": "A contract can bind you above the legal floor; what it cannot do is take you below it."
+        },
+        {
+          "id": "c",
+          "text": "Whichever of the three is least costly to follow",
+          "correct": false,
+          "rationale": "Cost does not pick between binding sources."
+        },
+        {
+          "id": "d",
+          "text": "The regulations, which sit between the two in force",
+          "correct": false,
+          "rationale": "Regulations are also a floor here."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: rank sources when they do not conflict but differ.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Legal Foundations|state",
+      "id": "Q-1686"
     },
     {
       "level": "icdc",
@@ -1719,6 +1907,104 @@
       },
       "id": "Q-1346",
       "batch": "business_law|Legal Foundations|icdc"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "term_ids": [
+        "T-0011",
+        "FW-001"
+      ],
+      "concepts": [
+        "Civil Versus Criminal Liability",
+        "Legal Environment Awareness"
+      ],
+      "format": "scenario",
+      "question": "A food startup knows its plant lacks a required licence and ships anyway, reasoning that its insurance covers any customer who gets ill. A batch does make people ill. What has the insurance not addressed?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The cost of the licence it should have held",
+          "correct": false,
+          "rationale": "Trivial next to the exposure."
+        },
+        {
+          "id": "b",
+          "text": "The regulator's case, which is not a claim to settle",
+          "correct": true,
+          "rationale": "Cover pays civil claims, and operating without the licence is an offence against the state that no policy settles."
+        },
+        {
+          "id": "c",
+          "text": "The recall, which the policy covers separately",
+          "correct": false,
+          "rationale": "A cost question, not the gap in the reasoning."
+        },
+        {
+          "id": "d",
+          "text": "The customers' claims, which insurers decline for illness",
+          "correct": false,
+          "rationale": "Those are what the policy is for."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the civil exposure is insured and the regulatory exposure is a different track that insurance does not reach.",
+        "synthesis_check": "Concepts: Civil versus criminal liability, Legal environment awareness. Without the missing licence there is no state case. Without the insurance the founder has no reason to think he is covered. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "business_law|Legal Foundations|icdc",
+      "id": "Q-1687"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Legal Foundations",
+      "term_ids": [
+        "T-0013",
+        "T-0012"
+      ],
+      "concepts": [
+        "Sources of Business Law",
+        "Jurisdiction and Venue Basics"
+      ],
+      "format": "scenario",
+      "question": "A supply contract names Delaware courts and says Delaware law applies. The goods are made in a state whose safety regulations are stricter and apply to anything manufactured there. A dispute arises about a defect.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Either court may hear it, whichever is filed in first",
+          "correct": false,
+          "rationale": "The clause exists to remove that race."
+        },
+        {
+          "id": "b",
+          "text": "Delaware hears it, applying Delaware's safety standard",
+          "correct": false,
+          "rationale": "Reads the clause as reaching rules the parties never set."
+        },
+        {
+          "id": "c",
+          "text": "The manufacturing state hears it, overriding the clause",
+          "correct": false,
+          "rationale": "A venue clause is generally honoured."
+        },
+        {
+          "id": "d",
+          "text": "Delaware hears it, and the stricter standard still bites",
+          "correct": true,
+          "rationale": "The clause picks the forum and the governing law for the contract; it does not switch off regulation the factory is subject to where it operates."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the contract is one source and regulation is another, and the venue clause only governs the first.",
+        "synthesis_check": "Concepts: Jurisdiction and venue basics, Sources of business law. Without the clause there is no forum question. Without the separate regulatory source the clause would settle everything. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "business_law|Legal Foundations|icdc",
+      "id": "Q-1688"
     },
     {
       "level": "district",
@@ -3196,6 +3482,100 @@
       "id": "Q-1360"
     },
     {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "term_ids": [
+        "T-0027"
+      ],
+      "concepts": [
+        "Product Liability Exposure"
+      ],
+      "format": "recognition",
+      "question": "A kettle is manufactured exactly to its design and the design itself makes the handle heat up dangerously. Where does the exposure sit?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In the factory, which built a dangerous kettle",
+          "correct": false,
+          "rationale": "The factory followed the drawing."
+        },
+        {
+          "id": "b",
+          "text": "In the customer, who could feel the handle heat",
+          "correct": false,
+          "rationale": "Harm by the product is not cured by the user noticing."
+        },
+        {
+          "id": "c",
+          "text": "In the retailer, who chose to stock the kettle",
+          "correct": false,
+          "rationale": "Stocking is not where the fault arose."
+        },
+        {
+          "id": "d",
+          "text": "In the design, which every unit reproduces",
+          "correct": true,
+          "rationale": "A fault built into the design ships in every kettle, which is why it is the larger exposure than a one-off defect."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: locate where product liability attaches.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Risk and Liability|district",
+      "id": "Q-1695"
+    },
+    {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "term_ids": [
+        "FW-013"
+      ],
+      "concepts": [
+        "Resolving Disputes"
+      ],
+      "format": "recognition",
+      "question": "A $400 billing disagreement with a regular customer has gone back and forth for a month. What does choosing well look like?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Write it off and stop serving the customer",
+          "correct": false,
+          "rationale": "Loses a regular over a month of emails."
+        },
+        {
+          "id": "b",
+          "text": "File a claim to establish who is right",
+          "correct": false,
+          "rationale": "Costs more than the amount in dispute."
+        },
+        {
+          "id": "c",
+          "text": "Bring in a mediator to run the discussion",
+          "correct": false,
+          "rationale": "Formality out of proportion to $400."
+        },
+        {
+          "id": "d",
+          "text": "Settle it directly, since the sum is small",
+          "correct": true,
+          "rationale": "Picking the method means matching it to the stake, and $400 does not justify anything more formal than a conversation."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: match the method to the stake.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Risk and Liability|district",
+      "id": "Q-1696"
+    },
+    {
       "level": "state",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -3384,6 +3764,100 @@
       "id": "Q-1670"
     },
     {
+      "level": "state",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "term_ids": [
+        "T-0025"
+      ],
+      "concepts": [
+        "Insurance as Risk Transfer"
+      ],
+      "format": "scenario",
+      "question": "A courier firm can insure against vehicle damage for $9,000 a year. Its own records show it averages $3,000 of damage annually, with one $60,000 year a decade ago. What is the case for the policy?",
+      "options": [
+        {
+          "id": "a",
+          "text": "It will reduce the number of accidents the firm has",
+          "correct": false,
+          "rationale": "A policy does not change driving."
+        },
+        {
+          "id": "b",
+          "text": "It costs less than the damage the firm expects",
+          "correct": false,
+          "rationale": "It costs three times the average, which is the point."
+        },
+        {
+          "id": "c",
+          "text": "It removes the firm's responsibility for the damage",
+          "correct": false,
+          "rationale": "Insurance moves the cost, not the responsibility."
+        },
+        {
+          "id": "d",
+          "text": "It buys protection from the year it could not absorb",
+          "correct": true,
+          "rationale": "Transfer is worth a premium above the average when the tail is big enough to end the business, which is what the $60,000 year shows."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: justify a premium above the expected loss.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Risk and Liability|state",
+      "id": "Q-1697"
+    },
+    {
+      "level": "state",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "term_ids": [
+        "T-0024"
+      ],
+      "concepts": [
+        "Alternative Dispute Resolution Methods"
+      ],
+      "format": "scenario",
+      "question": "Two firms need a binding answer on a contract term this quarter, want it private, and expect to keep trading afterwards. Which route fits?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Negotiation, which costs the two sides nothing",
+          "correct": false,
+          "rationale": "They have already failed to agree."
+        },
+        {
+          "id": "b",
+          "text": "Mediation, which keeps the relationship intact",
+          "correct": false,
+          "rationale": "Good on relationship and it produces no binding answer."
+        },
+        {
+          "id": "c",
+          "text": "Arbitration, which binds and stays out of court",
+          "correct": true,
+          "rationale": "It delivers the enforceable decision they need, in private and faster than litigation, which mediation cannot because it binds nobody."
+        },
+        {
+          "id": "d",
+          "text": "Litigation, which produces an enforceable ruling",
+          "correct": false,
+          "rationale": "Binding, public and slower than the quarter allows."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: pick the method against three stated constraints.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Risk and Liability|state",
+      "id": "Q-1698"
+    },
+    {
       "level": "icdc",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -3531,6 +4005,104 @@
       "id": "Q-1362"
     },
     {
+      "level": "icdc",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "term_ids": [
+        "T-0026",
+        "FW-012"
+      ],
+      "concepts": [
+        "Negligence and Duty of Care",
+        "Business Liability Awareness"
+      ],
+      "format": "scenario",
+      "question": "A trampoline park runs a thorough risk assessment, writes rules for every attraction and posts them clearly. It rosters one marshal for forty jumpers because the assessment assumed people read the rules. A child is hurt.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Hazards the assessment failed to identify at all",
+          "correct": false,
+          "rationale": "The assessment was thorough."
+        },
+        {
+          "id": "b",
+          "text": "Rules too complicated for jumpers to follow",
+          "correct": false,
+          "rationale": "They are described as clear."
+        },
+        {
+          "id": "c",
+          "text": "A child who ignored rules that were properly posted",
+          "correct": false,
+          "rationale": "Foreseeing exactly that is what the duty covers."
+        },
+        {
+          "id": "d",
+          "text": "Hazards identified, and the control chosen does not work",
+          "correct": true,
+          "rationale": "Spotting the risk is the first duty and discharging it needs a control that holds in a real room, which signage alone does not at forty to one."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the risk was identified and the duty turns on whether the control actually protects anyone.",
+        "synthesis_check": "Concepts: Business liability awareness, Negligence and duty of care. Without the assessment this is simple carelessness. Without the weak control the assessment discharges the duty. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "business_law|Risk and Liability|icdc",
+      "id": "Q-1699"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Risk and Liability",
+      "term_ids": [
+        "T-0025",
+        "FW-012"
+      ],
+      "concepts": [
+        "Insurance as Risk Transfer",
+        "Business Liability Awareness"
+      ],
+      "format": "scenario",
+      "question": "A brewery's insurer offers a lower premium if it fits guards to the bottling line. The owner takes the discount and books the work for next year. An operator is injured in the meantime. What has the brewery got wrong?",
+      "options": [
+        {
+          "id": "a",
+          "text": "It accepted a premium that was far too low",
+          "correct": false,
+          "rationale": "A low premium is not a fault in itself."
+        },
+        {
+          "id": "b",
+          "text": "It fitted guards the bottling line did not need",
+          "correct": false,
+          "rationale": "They were never fitted."
+        },
+        {
+          "id": "c",
+          "text": "It took the price of a control it had not put in",
+          "correct": true,
+          "rationale": "The discount prices a reduced risk, and the risk is only reduced once the guards exist, so the premium fell while the exposure did not."
+        },
+        {
+          "id": "d",
+          "text": "It insured a risk it should have carried itself",
+          "correct": false,
+          "rationale": "This is exactly the risk worth transferring."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the transfer was arranged on the strength of a control the business had not yet implemented, so the two moved out of step.",
+        "synthesis_check": "Concepts: Insurance as risk transfer, Business liability awareness. Without the discount there is nothing taken early. Without the unfitted guards the premium matches the risk. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "business_law|Risk and Liability|icdc",
+      "id": "Q-1700"
+    },
+    {
       "level": "district",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -3672,6 +4244,100 @@
       "id": "Q-0021"
     },
     {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "term_ids": [
+        "T-0030"
+      ],
+      "concepts": [
+        "Workplace Safety Regulations"
+      ],
+      "format": "recognition",
+      "question": "A warehouse buys good safety equipment, stores it in a locked cupboard and never trains anyone on it. Has it met its duty?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Yes, as long as staff know where the key is",
+          "correct": false,
+          "rationale": "Access without training is still unusable."
+        },
+        {
+          "id": "b",
+          "text": "No, equipment nobody can use changes nothing",
+          "correct": true,
+          "rationale": "The duty is a safe workplace, which means the protection has to reach the people doing the work."
+        },
+        {
+          "id": "c",
+          "text": "No, the equipment should have been cheaper",
+          "correct": false,
+          "rationale": "Cost is not the measure."
+        },
+        {
+          "id": "d",
+          "text": "Yes, the duty is to provide the equipment",
+          "correct": false,
+          "rationale": "Provision is the start of the duty, not the whole of it."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: test whether the duty is discharged.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Workplace Law|district",
+      "id": "Q-1689"
+    },
+    {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "term_ids": [
+        "T-0028"
+      ],
+      "concepts": [
+        "Anti-Discrimination Law Basics"
+      ],
+      "format": "recognition",
+      "question": "A delivery firm requires drivers to lift 30kg because the parcels genuinely weigh that much. An applicant who cannot lift it is turned down. Is that a problem?",
+      "options": [
+        {
+          "id": "a",
+          "text": "No, because drivers are not a protected group",
+          "correct": false,
+          "rationale": "Protection attaches to traits, not to job titles."
+        },
+        {
+          "id": "b",
+          "text": "Yes, any physical requirement screens people out",
+          "correct": false,
+          "rationale": "Screening is lawful when the job genuinely requires it."
+        },
+        {
+          "id": "c",
+          "text": "Yes, unless the firm lowers the weight for some",
+          "correct": false,
+          "rationale": "The parcels weigh what they weigh."
+        },
+        {
+          "id": "d",
+          "text": "No, the requirement is part of the job itself",
+          "correct": true,
+          "rationale": "A standard tied to what the work actually demands is job-related, which is the line the rule draws."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: apply the job-related test to a real requirement.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Workplace Law|district",
+      "id": "Q-1690"
+    },
+    {
       "level": "state",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -3811,6 +4477,100 @@
       },
       "batch": "business_law|Workplace Law|state",
       "id": "Q-1355"
+    },
+    {
+      "level": "state",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "term_ids": [
+        "T-0029"
+      ],
+      "concepts": [
+        "Independent Contractor Classification"
+      ],
+      "format": "scenario",
+      "question": "A graphic designer invoices one agency, works from her own studio on her own hours, uses her own software and turns down work she dislikes. The agency calls her an employee for payroll simplicity.",
+      "options": [
+        {
+          "id": "a",
+          "text": "She is an employee, since she works for one agency",
+          "correct": false,
+          "rationale": "A single client is common for contractors and not decisive."
+        },
+        {
+          "id": "b",
+          "text": "She looks like a contractor, whatever the label says",
+          "correct": true,
+          "rationale": "Classification follows how much control the business has and how independent the worker's own operation is, and almost every marker here points away from employment."
+        },
+        {
+          "id": "c",
+          "text": "She is an employee, since the agency chose that label",
+          "correct": false,
+          "rationale": "The label is what the test looks past."
+        },
+        {
+          "id": "d",
+          "text": "She is a contractor, since she invoices rather than clocks in",
+          "correct": false,
+          "rationale": "Right answer reached from the paperwork rather than the control."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: read the markers rather than the label.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Workplace Law|state",
+      "id": "Q-1691"
+    },
+    {
+      "level": "state",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "term_ids": [
+        "FW-009"
+      ],
+      "concepts": [
+        "Employment and Workplace Law Basics"
+      ],
+      "format": "scenario",
+      "question": "A manager wants to let a new hire go six weeks into a probation period for being slow. What does workplace law require him to attend to?",
+      "options": [
+        {
+          "id": "a",
+          "text": "That the reason is about the work and is documented",
+          "correct": true,
+          "rationale": "Probation lowers the procedural burden; it does not remove the need for a job-related reason the employer can show."
+        },
+        {
+          "id": "b",
+          "text": "The agreement of the rest of the team to the decision",
+          "correct": false,
+          "rationale": "Colleagues have no part in it."
+        },
+        {
+          "id": "c",
+          "text": "Nothing, since probation sits outside employment law",
+          "correct": false,
+          "rationale": "Probationers are employees."
+        },
+        {
+          "id": "d",
+          "text": "A full performance improvement plan before any exit",
+          "correct": false,
+          "rationale": "Good practice, beyond the legal floor in probation."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: find the legal floor in a lower-protection situation.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Workplace Law|state",
+      "id": "Q-1692"
     },
     {
       "level": "icdc",
@@ -3960,6 +4720,104 @@
       },
       "batch": "business_law|Workplace Law|icdc",
       "id": "Q-1356"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "term_ids": [
+        "T-0030",
+        "FW-009"
+      ],
+      "concepts": [
+        "Workplace Safety Regulations",
+        "Employment and Workplace Law Basics"
+      ],
+      "format": "scenario",
+      "question": "An employee refuses to operate a machine whose guard is broken and reports it. The manager, irritated by the delay, moves her to night shifts at lower pay. The guard is then repaired. What is the remaining exposure?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The reprisal, which the repair does nothing to undo",
+          "correct": true,
+          "rationale": "Fixing the guard closes the safety breach and the response to a worker raising it is a separate wrong the repair cannot settle."
+        },
+        {
+          "id": "b",
+          "text": "The shift change, which managers may make at will",
+          "correct": false,
+          "rationale": "Discretion does not cover a move made in response to a report."
+        },
+        {
+          "id": "c",
+          "text": "The refusal, which the employee was not entitled to",
+          "correct": false,
+          "rationale": "Refusing unsafe work is protected, not a fault."
+        },
+        {
+          "id": "d",
+          "text": "The safety breach, which the repair has now closed",
+          "correct": false,
+          "rationale": "That one is genuinely resolved."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the safety duty is discharged and a separate employment duty is breached by how the report was received.",
+        "synthesis_check": "Concepts: Workplace safety regulations, Employment and workplace law basics. Without the hazard she has nothing to report. Without the demotion the repair ends the matter. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "business_law|Workplace Law|icdc",
+      "id": "Q-1693"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Workplace Law",
+      "term_ids": [
+        "T-0029",
+        "FW-009"
+      ],
+      "concepts": [
+        "Independent Contractor Classification",
+        "Employment and Workplace Law Basics"
+      ],
+      "format": "scenario",
+      "question": "A delivery firm treats its riders as contractors. It also sets their routes, requires branded uniforms, penalises refused jobs and bars them from other platforms. It pays no overtime. What is the firm's biggest risk?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Control that makes them employees, with back pay owed",
+          "correct": true,
+          "rationale": "Those four conditions describe employment, and the consequence is not just a relabelling but every entitlement the firm has not been paying."
+        },
+        {
+          "id": "b",
+          "text": "Uniform costs it has pushed onto the riders",
+          "correct": false,
+          "rationale": "A real grievance, and small beside the classification."
+        },
+        {
+          "id": "c",
+          "text": "Riders leaving for platforms that pay more",
+          "correct": false,
+          "rationale": "A commercial risk, not a legal one."
+        },
+        {
+          "id": "d",
+          "text": "Penalties for refused jobs, which contracts may not set",
+          "correct": false,
+          "rationale": "Penalties are a marker of the problem rather than the problem."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the classification test decides the status and the employment rules decide what that status costs.",
+        "synthesis_check": "Concepts: Independent contractor classification, Employment and workplace law basics. Without the control markers the label stands. Without the entitlements the misclassification costs nothing. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "business_law|Workplace Law|icdc",
+      "id": "Q-1694"
     },
     {
       "level": "district",
@@ -11112,6 +11970,100 @@
       "id": "Q-1400"
     },
     {
+      "level": "district",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "term_ids": [
+        "T-0083"
+      ],
+      "concepts": [
+        "Designing Loyalty Programs"
+      ],
+      "format": "recognition",
+      "question": "A sandwich shop's card gives a free lunch after eight stamps, and the typical customer buys three lunches a week. Is the threshold well set?",
+      "options": [
+        {
+          "id": "a",
+          "text": "No, the reward should be cash rather than food",
+          "correct": false,
+          "rationale": "A free lunch costs the shop less and is worth more."
+        },
+        {
+          "id": "b",
+          "text": "Yes, the reward is under three weeks away",
+          "correct": true,
+          "rationale": "A reward close enough to picture is what changes where someone buys lunch tomorrow."
+        },
+        {
+          "id": "c",
+          "text": "Yes, because customers enjoy collecting stamps",
+          "correct": false,
+          "rationale": "Right answer, wrong reason."
+        },
+        {
+          "id": "d",
+          "text": "No, eight stamps is too few to be worth it",
+          "correct": false,
+          "rationale": "A reachable reward is the design goal."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: test a threshold against real purchase frequency.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Loyalty|district",
+      "id": "Q-1707"
+    },
+    {
+      "level": "district",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "term_ids": [
+        "FW-045"
+      ],
+      "concepts": [
+        "Turning Customers into Advocates"
+      ],
+      "format": "recognition",
+      "question": "A decorator finishes a job and the delighted customer says it was the best work she has had. What should he do next?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ask her what could have gone better",
+          "correct": false,
+          "rationale": "Useful generally, and it spends the moment."
+        },
+        {
+          "id": "b",
+          "text": "Thank her and leave it there",
+          "correct": false,
+          "rationale": "The praise reaches nobody else."
+        },
+        {
+          "id": "c",
+          "text": "Offer a discount on her next job",
+          "correct": false,
+          "rationale": "Rewards her, and brings in no one new."
+        },
+        {
+          "id": "d",
+          "text": "Ask her to put that in a review",
+          "correct": true,
+          "rationale": "The moment someone says it out loud is the moment the ask costs nothing, and it is the only step between satisfaction and new work."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: convert satisfaction into advocacy.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Loyalty|district",
+      "id": "Q-1708"
+    },
+    {
       "level": "state",
       "domain_id": "customer_relations",
       "domain": "Customer Relations",
@@ -11251,6 +12203,100 @@
       },
       "batch": "customer_relations|Loyalty|state",
       "id": "Q-1402"
+    },
+    {
+      "level": "state",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "term_ids": [
+        "T-0084"
+      ],
+      "concepts": [
+        "Rewarding Customer Referrals"
+      ],
+      "format": "scenario",
+      "question": "A dentist offers existing patients $20 off for each friend who books. Almost nobody refers anyone, though patients say they are happy. What is the likely flaw?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The patients are less satisfied than they say",
+          "correct": false,
+          "rationale": "Possible, and the scheme is the variable here."
+        },
+        {
+          "id": "b",
+          "text": "The reward is too small to raise a social cost",
+          "correct": true,
+          "rationale": "Recommending a dentist puts the referrer's judgement on the line with a friend, and $20 does not cover that risk."
+        },
+        {
+          "id": "c",
+          "text": "Dentistry is a service nobody discusses socially",
+          "correct": false,
+          "rationale": "Recommendations for dentists are common."
+        },
+        {
+          "id": "d",
+          "text": "The friend should get the discount, not the patient",
+          "correct": false,
+          "rationale": "Worth testing, and it does not explain the silence."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: diagnose why an incentive is not moving behaviour.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Loyalty|state",
+      "id": "Q-1709"
+    },
+    {
+      "level": "state",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "term_ids": [
+        "FW-044"
+      ],
+      "concepts": [
+        "Building Loyalty and Repeat Business"
+      ],
+      "format": "scenario",
+      "question": "A garden centre's customers buy heavily each spring and are never heard from in between. The owner wants more of the year. What fits the idea?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A reason to come back in the quieter months",
+          "correct": true,
+          "rationale": "Repeat business is built by giving someone a specific prompt to return, which is exactly what the empty months lack."
+        },
+        {
+          "id": "b",
+          "text": "A survey asking why they do not visit in winter",
+          "correct": false,
+          "rationale": "Useful first step, not the practice itself."
+        },
+        {
+          "id": "c",
+          "text": "A bigger spring range to sell more in season",
+          "correct": false,
+          "rationale": "Concentrates the year further."
+        },
+        {
+          "id": "d",
+          "text": "A price rise in spring to fund the quiet months",
+          "correct": false,
+          "rationale": "Funds the gap without closing it."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: name what fills a seasonal gap.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Loyalty|state",
+      "id": "Q-1710"
     },
     {
       "level": "icdc",
@@ -11400,6 +12446,104 @@
       "id": "Q-1403"
     },
     {
+      "level": "icdc",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "term_ids": [
+        "T-0083",
+        "FW-044"
+      ],
+      "concepts": [
+        "Designing Loyalty Programs",
+        "Building Loyalty and Repeat Business"
+      ],
+      "format": "scenario",
+      "question": "A cinema's points scheme is generous and well used, and its heaviest members would have come anyway. Occasional visitors, who are most of the list, never reach the first reward and the cinema never contacts them.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A scheme paying regulars and reaching nobody else",
+          "correct": true,
+          "rationale": "The design rewards behaviour that already existed, and the group whose behaviour could change gets neither a reachable reward nor a prompt."
+        },
+        {
+          "id": "b",
+          "text": "Heavy members who will leave without the points",
+          "correct": false,
+          "rationale": "They would have come anyway."
+        },
+        {
+          "id": "c",
+          "text": "Occasional visitors who were never worth pursuing",
+          "correct": false,
+          "rationale": "They are most of the list."
+        },
+        {
+          "id": "d",
+          "text": "A scheme too generous for the cinema to afford",
+          "correct": false,
+          "rationale": "Cost is not the stated problem."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the programme design and the habit of reminding people to return both fail for the group that matters, and the scheme's success with regulars hides it.",
+        "synthesis_check": "Concepts: Designing loyalty programs, Building loyalty and repeat business. Without the scheme there is nothing subsidising the regulars. Without the missing prompt the occasional visitors might still return. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Loyalty|icdc",
+      "id": "Q-1711"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Loyalty",
+      "term_ids": [
+        "T-0082",
+        "T-0083"
+      ],
+      "concepts": [
+        "Creating Emotional Brand Connection",
+        "Designing Loyalty Programs"
+      ],
+      "format": "scenario",
+      "question": "A bookshop whose customers describe it as part of their neighbourhood replaces its hand-written recommendation cards with a points app, to modernise. Points redemption is strong and footfall falls.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A reward scheme put in where a relationship was",
+          "correct": true,
+          "rationale": "The cards were the bond, and a transaction-shaped scheme measures visits well while removing the reason people felt the shop was theirs."
+        },
+        {
+          "id": "b",
+          "text": "An app too complicated for the shop's customers",
+          "correct": false,
+          "rationale": "Redemption is strong, so they can use it."
+        },
+        {
+          "id": "c",
+          "text": "Points priced too low to bring anyone back",
+          "correct": false,
+          "rationale": "The scheme works on its own terms."
+        },
+        {
+          "id": "d",
+          "text": "A neighbourhood that was changing anyway",
+          "correct": false,
+          "rationale": "Nothing in the case suggests that."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the loyalty mechanics succeed and the emotional connection they replaced was doing the heavier work.",
+        "synthesis_check": "Concepts: Creating emotional brand connection, Designing loyalty programs. Without the bond the app is a plain improvement. Without the app the bond is undisturbed. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Loyalty|icdc",
+      "id": "Q-1712"
+    },
+    {
       "level": "district",
       "domain_id": "customer_relations",
       "domain": "Customer Relations",
@@ -11541,6 +12685,100 @@
       "id": "Q-1404"
     },
     {
+      "level": "district",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "term_ids": [
+        "T-0085"
+      ],
+      "concepts": [
+        "Apologizing Effectively"
+      ],
+      "format": "recognition",
+      "question": "A salon ran forty minutes late and the client missed an appointment. Which apology does the job?",
+      "options": [
+        {
+          "id": "a",
+          "text": "We are sorry for any inconvenience this may have caused",
+          "correct": false,
+          "rationale": "Names nothing and offers nothing."
+        },
+        {
+          "id": "b",
+          "text": "We are sorry you feel the wait was longer than expected",
+          "correct": false,
+          "rationale": "Puts the problem in her perception."
+        },
+        {
+          "id": "c",
+          "text": "We were short-staffed today, which put every slot behind",
+          "correct": false,
+          "rationale": "Explains the cause instead of owning the effect."
+        },
+        {
+          "id": "d",
+          "text": "We ran late and cost you your afternoon, so tonight is on us",
+          "correct": true,
+          "rationale": "It names what went wrong, shows the impact is understood, and moves to a fix, which is all three parts."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: pick the apology that carries all three parts.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Recovery|district",
+      "id": "Q-1713"
+    },
+    {
+      "level": "district",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "term_ids": [
+        "FW-047"
+      ],
+      "concepts": [
+        "Winning Back At-Risk Customers"
+      ],
+      "format": "recognition",
+      "question": "A salon's data shows a six-year regular has not booked in five months, with no complaint on file. What does the idea call for?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Send her the same offer the whole list gets",
+          "correct": false,
+          "rationale": "Treats a valued regular as a cold name."
+        },
+        {
+          "id": "b",
+          "text": "Wait for her to book when she is ready",
+          "correct": false,
+          "rationale": "Five months of waiting is how a regular becomes a former one."
+        },
+        {
+          "id": "c",
+          "text": "Remove her from the mailing list as lapsed",
+          "correct": false,
+          "rationale": "Writes off a six-year relationship."
+        },
+        {
+          "id": "d",
+          "text": "Reach out and find out what changed",
+          "correct": true,
+          "rationale": "Noticing someone drifting and acting before they are gone is the whole practice, and silence is the signal."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: act on a drift signal.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Recovery|district",
+      "id": "Q-1714"
+    },
+    {
       "level": "state",
       "domain_id": "customer_relations",
       "domain": "Customer Relations",
@@ -11680,6 +12918,100 @@
       },
       "batch": "customer_relations|Recovery|state",
       "id": "Q-1405"
+    },
+    {
+      "level": "state",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "term_ids": [
+        "T-0086"
+      ],
+      "concepts": [
+        "Diagnosing Root Causes of Dissatisfaction"
+      ],
+      "format": "scenario",
+      "question": "A customer complains the delivery driver was rude. Asked more, it emerges the slot was missed twice and the driver was the first person she could speak to. What should the manager treat as the problem?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Her expectations, which the slot system cannot meet",
+          "correct": false,
+          "rationale": "The system promised the slots."
+        },
+        {
+          "id": "b",
+          "text": "The driver's manner, which she raised directly",
+          "correct": false,
+          "rationale": "Fixing that leaves her slots still missed."
+        },
+        {
+          "id": "c",
+          "text": "The complaint process, which took too long to reach",
+          "correct": false,
+          "rationale": "A real issue and not what she is upset about."
+        },
+        {
+          "id": "d",
+          "text": "The missed slots, with the driver as the last straw",
+          "correct": true,
+          "rationale": "The surface complaint names the person she reached; the thing that made her angry is two failures nobody addressed."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: separate the stated complaint from its cause.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Recovery|state",
+      "id": "Q-1715"
+    },
+    {
+      "level": "state",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "term_ids": [
+        "T-0087"
+      ],
+      "concepts": [
+        "Preventing Recurring Service Failures"
+      ],
+      "format": "scenario",
+      "question": "A restaurant logs eleven complaints this month about orders arriving without the side dish. Each was comped on the night. What does prevention require?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Remove the sides from the menu for now",
+          "correct": false,
+          "rationale": "Deletes the product to avoid the fault."
+        },
+        {
+          "id": "b",
+          "text": "Comp the whole meal rather than the side",
+          "correct": false,
+          "rationale": "Raises the cost of the same loop."
+        },
+        {
+          "id": "c",
+          "text": "Find where sides drop out of the ticket flow",
+          "correct": true,
+          "rationale": "Eleven of the same failure is a process telling you something, and comping each one pays for the fault without finding it."
+        },
+        {
+          "id": "d",
+          "text": "Ask servers to apologise more warmly",
+          "correct": false,
+          "rationale": "Better recovery, same recurrence."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: move from recovery to prevention.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Recovery|state",
+      "id": "Q-1716"
     },
     {
       "level": "icdc",
@@ -11827,6 +13159,104 @@
       },
       "batch": "customer_relations|Recovery|icdc",
       "id": "Q-1406"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "term_ids": [
+        "T-0085",
+        "T-0087"
+      ],
+      "concepts": [
+        "Apologizing Effectively",
+        "Preventing Recurring Service Failures"
+      ],
+      "format": "scenario",
+      "question": "A broadband provider's apologies are excellent: they name the fault, acknowledge the disruption and credit the account the same day. The same street loses service monthly for a year. Complaints keep rising.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Apologies that fail to name what went wrong",
+          "correct": false,
+          "rationale": "They name it precisely."
+        },
+        {
+          "id": "b",
+          "text": "Credits too small to make up for the outages",
+          "correct": false,
+          "rationale": "Size is not what is failing."
+        },
+        {
+          "id": "c",
+          "text": "Customers who expect more than the service offers",
+          "correct": false,
+          "rationale": "Monthly outages are below any offer."
+        },
+        {
+          "id": "d",
+          "text": "An apology doing work the engineering should do",
+          "correct": true,
+          "rationale": "Each apology is well made and a twelfth one tells the customer the company is comfortable with the fault, which is worse than a clumsy apology after a one-off."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the recovery is exemplary and its repetition is the evidence that prevention never happened.",
+        "synthesis_check": "Concepts: Apologizing effectively, Preventing recurring service failures. Without the good apologies this is ordinary bad service. Without the repetition the apology closes it. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Recovery|icdc",
+      "id": "Q-1717"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Recovery",
+      "term_ids": [
+        "FW-047",
+        "FW-046"
+      ],
+      "concepts": [
+        "Winning Back At-Risk Customers",
+        "Handling Complaints and Service Recovery"
+      ],
+      "format": "scenario",
+      "question": "A software firm resolves every logged ticket quickly and well. Its churn is concentrated among accounts that never raised a ticket at all and quietly stopped logging in. The team cites its ticket scores as proof of health.",
+      "options": [
+        {
+          "id": "a",
+          "text": "Customers who should have raised a ticket first",
+          "correct": false,
+          "rationale": "Most unhappy customers never do."
+        },
+        {
+          "id": "b",
+          "text": "A churn figure that must be measured wrongly",
+          "correct": false,
+          "rationale": "The logins are the evidence."
+        },
+        {
+          "id": "c",
+          "text": "Strong recovery measured only on those who complained",
+          "correct": true,
+          "rationale": "Handling complaints well tells you about the people who speak up, and the accounts leaving are the ones the ticket queue never sees."
+        },
+        {
+          "id": "d",
+          "text": "Ticket resolution that is slower than it appears",
+          "correct": false,
+          "rationale": "It is quick and well done."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the complaint handling is genuinely good and the at-risk customers are invisible to the measure that proves it.",
+        "synthesis_check": "Concepts: Handling complaints and service recovery, Winning back at-risk customers. Without the strong recovery there is no false reassurance. Without the silent leavers the scores mean what the team thinks. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Recovery|icdc",
+      "id": "Q-1718"
     },
     {
       "level": "district",
@@ -12828,6 +14258,100 @@
       "id": "Q-1393"
     },
     {
+      "level": "district",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "term_ids": [
+        "T-0095"
+      ],
+      "concepts": [
+        "Empowering Employees to Solve Problems"
+      ],
+      "format": "recognition",
+      "question": "A cafe tells staff they may remake any drink a customer is unhappy with, up to two a shift, without asking anyone. What has it given them?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A target for how many drinks to remake",
+          "correct": false,
+          "rationale": "Two is a ceiling, not a goal."
+        },
+        {
+          "id": "b",
+          "text": "Authority with a limit drawn around it",
+          "correct": true,
+          "rationale": "Empowerment is trust plus a boundary, which is what lets someone act at the counter without the business losing control of the cost."
+        },
+        {
+          "id": "c",
+          "text": "A script to follow for unhappy customers",
+          "correct": false,
+          "rationale": "No wording is prescribed."
+        },
+        {
+          "id": "d",
+          "text": "Responsibility for the cost of the remakes",
+          "correct": false,
+          "rationale": "The business absorbs it."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: name what the rule actually grants.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Service|district",
+      "id": "Q-1701"
+    },
+    {
+      "level": "district",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "term_ids": [
+        "T-0093"
+      ],
+      "concepts": [
+        "Anticipating Customer Needs"
+      ],
+      "format": "recognition",
+      "question": "A hotel sees a guest has booked a 6am airport transfer and offers to set breakfast aside the night before. What is the staff member doing?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Reading what comes next from the booking",
+          "correct": true,
+          "rationale": "The context says the guest will leave before service starts, and acting on it before being asked is the whole of anticipation."
+        },
+        {
+          "id": "b",
+          "text": "Upselling a service the guest had not bought",
+          "correct": false,
+          "rationale": "Nothing is being sold."
+        },
+        {
+          "id": "c",
+          "text": "Following the standard check-in procedure",
+          "correct": false,
+          "rationale": "A standard script would miss the 6am detail."
+        },
+        {
+          "id": "d",
+          "text": "Recovering from a mistake the hotel made",
+          "correct": false,
+          "rationale": "No failure has occurred."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept, one step: name the practice.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Service|district",
+      "id": "Q-1702"
+    },
+    {
       "level": "state",
       "domain_id": "customer_relations",
       "domain": "Customer Relations",
@@ -13016,6 +14540,100 @@
       "id": "Q-1675"
     },
     {
+      "level": "state",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "term_ids": [
+        "FW-039"
+      ],
+      "concepts": [
+        "Managing Difficult Interactions"
+      ],
+      "format": "scenario",
+      "question": "A customer is shouting at a counter about a delay, in front of a queue. The policy allows a partial refund. What should the assistant do first?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Lower his own voice and name the delay back",
+          "correct": true,
+          "rationale": "Nothing useful happens while the customer is still shouting, so the first move is to bring the temperature down enough to be heard."
+        },
+        {
+          "id": "b",
+          "text": "Ask the customer to step away from the queue",
+          "correct": false,
+          "rationale": "Reads as being moved out of sight."
+        },
+        {
+          "id": "c",
+          "text": "Offer the partial refund straight away",
+          "correct": false,
+          "rationale": "A fair remedy offered into a shouting match rarely registers."
+        },
+        {
+          "id": "d",
+          "text": "Explain why the delay happened in detail",
+          "correct": false,
+          "rationale": "Explanation sounds like excuse at this volume."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: sequence the response under pressure.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Service|state",
+      "id": "Q-1703"
+    },
+    {
+      "level": "state",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "term_ids": [
+        "T-0094"
+      ],
+      "concepts": [
+        "Consistency Across Service Channels"
+      ],
+      "format": "scenario",
+      "question": "A retailer's chat bot gives a warm, chatty answer and its phone team gives a clipped, formal one. Both answers are factually correct. Is there a problem?",
+      "options": [
+        {
+          "id": "a",
+          "text": "No, since both answers were factually correct",
+          "correct": false,
+          "rationale": "Accuracy is one of the three things that has to match."
+        },
+        {
+          "id": "b",
+          "text": "Yes, the experience should not depend on the door",
+          "correct": true,
+          "rationale": "Consistency covers tone and quality as well as facts, and two very different receptions teach the customer that the channel decides what they get."
+        },
+        {
+          "id": "c",
+          "text": "No, since each channel suits a different customer",
+          "correct": false,
+          "rationale": "The same customer may use both in a week."
+        },
+        {
+          "id": "d",
+          "text": "Yes, because a bot should not answer at all",
+          "correct": false,
+          "rationale": "The channel is fine; the mismatch is not."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "One concept applied: judge consistency on more than the facts.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Service|state",
+      "id": "Q-1704"
+    },
+    {
       "level": "icdc",
       "domain_id": "customer_relations",
       "domain": "Customer Relations",
@@ -13161,6 +14779,104 @@
       },
       "batch": "customer_relations|Service|icdc",
       "id": "Q-1396"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "term_ids": [
+        "T-0095",
+        "FW-039"
+      ],
+      "concepts": [
+        "Empowering Employees to Solve Problems",
+        "Managing Difficult Interactions"
+      ],
+      "format": "scenario",
+      "question": "A call centre gives agents a $100 discretion and scores them on average handling time. Agents facing an angry caller now reach for the full $100 in the first minute to end the call quickly. What has the pairing produced?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Callers who have learned to shout for a refund",
+          "correct": false,
+          "rationale": "A consequence, and not what the centre built."
+        },
+        {
+          "id": "b",
+          "text": "Authority spent to end calls rather than fix them",
+          "correct": true,
+          "rationale": "The discretion is real and the clock decides how it gets used, so the tool meant to resolve a problem is buying silence instead."
+        },
+        {
+          "id": "c",
+          "text": "A discretion limit set far too low to be useful",
+          "correct": false,
+          "rationale": "It is being spent in full."
+        },
+        {
+          "id": "d",
+          "text": "Agents with more authority than they can handle",
+          "correct": false,
+          "rationale": "The limit is reasonable; the measure is what bends it."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the empowerment is genuine and the handling of a difficult call is shaped by a metric that pulls against it.",
+        "synthesis_check": "Concepts: Empowering employees to solve problems, Managing difficult interactions. Without the discretion there is nothing to misuse. Without the time pressure the discretion resolves calls. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Service|icdc",
+      "id": "Q-1705"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "customer_relations",
+      "domain": "Customer Relations",
+      "topic": "Service",
+      "term_ids": [
+        "FW-040",
+        "FW-038"
+      ],
+      "concepts": [
+        "Serving Diverse Customers",
+        "Delivering Service Quality"
+      ],
+      "format": "scenario",
+      "question": "A pharmacy guarantees every prescription is handed over within four minutes and hits it reliably. A customer who needs the dosage explained slowly, twice, is rushed through in four minutes and takes the medicine wrongly.",
+      "options": [
+        {
+          "id": "a",
+          "text": "A four minute target that is far too generous",
+          "correct": false,
+          "rationale": "Length is not what failed her."
+        },
+        {
+          "id": "b",
+          "text": "A standard that was never achievable in practice",
+          "correct": false,
+          "rationale": "It is hit reliably."
+        },
+        {
+          "id": "c",
+          "text": "A customer who should have asked for more time",
+          "correct": false,
+          "rationale": "She did ask, twice."
+        },
+        {
+          "id": "d",
+          "text": "A standard met, and the person it was met on ignored",
+          "correct": true,
+          "rationale": "A uniform promise is a real commitment and it has to flex for the individual in front of you, or the clock becomes the service."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Two concepts at once: the quality standard is honoured and the adjustment for this customer is what honouring it should have meant.",
+        "synthesis_check": "Concepts: Delivering service quality, Serving diverse customers. Without the standard there is no clock to hide behind. Without this customer's need the standard serves everyone well. Both are needed.",
+        "review_flags": []
+      },
+      "batch": "customer_relations|Service|icdc",
+      "id": "Q-1706"
     },
     {
       "level": "district",
