@@ -69,6 +69,9 @@ export function Flashcards({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // The focused card handles its own space/Enter; without this check the
+      // same keypress flipped the card twice and looked like it did nothing.
+      if (e.defaultPrevented) return;
       if (e.key === "Escape") onClose();
       else if (e.key === "ArrowRight") go(1);
       else if (e.key === "ArrowLeft") go(-1);
@@ -77,6 +80,22 @@ export function Flashcards({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }); // re-bind each render so go() closes over current i
+
+  // Freeze the page behind the deck. Unlocked, a wheel or swipe that ran past the
+  // end of a card's back chained into the library underneath and dragged all of it
+  // along behind the scrim. The padding stands in for the scrollbar so nothing
+  // shifts sideways when it disappears.
+  useEffect(() => {
+    const { style } = document.body;
+    const prev = { overflow: style.overflow, paddingRight: style.paddingRight };
+    const gap = window.innerWidth - document.documentElement.clientWidth;
+    style.overflow = "hidden";
+    if (gap > 0) style.paddingRight = `${gap}px`;
+    return () => {
+      style.overflow = prev.overflow;
+      style.paddingRight = prev.paddingRight;
+    };
+  }, []);
 
   const total = cards.length;
   const card = total ? cards[Math.min(i, total - 1)] : null;
@@ -114,7 +133,9 @@ export function Flashcards({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm" onClick={onClose}>
+    // A plain scrim, deliberately not a backdrop blur: blurring the whole library
+    // behind a card that is animating on top of it was the main source of jank.
+    <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain bg-slate-950/80 p-4" onClick={onClose}>
       <div className="w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/85">{title ?? "Study"}</span>
@@ -131,7 +152,7 @@ export function Flashcards({
           <div className="rounded-2xl bg-white p-6 text-sm text-slate-500 dark:bg-slate-900 dark:text-slate-400">No cards here yet.</div>
         ) : (
           <>
-            <FlipCard card={card} flipped={flipped} onFlip={() => setFlipped((f) => !f)} flagged={flags.isFlagged(card.id)} onFlag={() => flags.toggle(card.id)} />
+            <FlipCard key={card.id} card={card} flipped={flipped} onFlip={() => setFlipped((f) => !f)} flagged={flags.isFlagged(card.id)} onFlag={() => flags.toggle(card.id)} />
             <div className="mt-3 flex items-center justify-between">
               <button className={BTN_SECONDARY} onClick={() => go(-1)} disabled={i === 0}>← Prev</button>
               <span className="font-mono text-xs tabular-nums text-white/85">{Math.min(i + 1, total)} / {total}</span>
@@ -145,13 +166,24 @@ export function Flashcards({
   );
 }
 
-// A single 3D-flip card. Fixed height; the back scrolls if long.
+// A single flip card. Fixed height; the back scrolls if long.
+//
+// Only one face is in the DOM at a time, and at rest the card carries no transform
+// at all. The flip is two short keyframe halves (index.css): turn edge-on, swap
+// the face, turn back. The earlier version kept both faces alive inside a
+// preserve-3d box rotated 180deg, which meant the back was scrolled through a 3D
+// transform: the browser could not scroll it on the compositor, so it repainted
+// the whole card every frame and the text rendered soft.
 function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flipped: boolean; onFlip: () => void; flagged: boolean; onFlag: () => void }) {
+  // The face actually on screen. It trails `flipped` by the first half of the turn.
+  const [shown, setShown] = useState(flipped);
+  const [turned, setTurned] = useState(false);
+  const leaving = shown !== flipped;
+  const anim = leaving ? "pic-flip-out" : turned ? "pic-flip-in" : "pic-card-in";
   return (
-    <div style={{ perspective: 1400 }}>
       <div
-        className="relative cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
-        style={{ height: "24rem", transformStyle: "preserve-3d", transition: "transform 0.5s", transform: flipped ? "rotateY(180deg)" : "none" }}
+        className={`${anim} relative cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900 dark:focus-visible:ring-offset-slate-950`}
+        style={{ height: "24rem", ["--flip-dir" as string]: flipped ? 1 : -1 }}
         role="button"
         tabIndex={0}
         aria-pressed={flipped}
@@ -163,9 +195,14 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
             onFlip();
           }
         }}
+        onAnimationEnd={(e) => {
+          if (e.target !== e.currentTarget || !leaving) return;
+          setShown(flipped);
+          setTurned(true);
+        }}
       >
-        {/* Front */}
-        <div className="absolute inset-0 flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900" style={{ backfaceVisibility: "hidden" }}>
+        {!shown ? (
+        <div className="flex h-full flex-col p-6">
           <div className="flex items-start justify-between">
             <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">{card.domain}</div>
             <FlagButton flagged={flagged} onFlag={onFlag} />
@@ -176,9 +213,8 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
           </div>
           <p className="text-center text-xs text-slate-500 dark:text-slate-400">Tap for a worked example →</p>
         </div>
-
-        {/* Back */}
-        <div className="absolute inset-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+        ) : (
+        <div className="h-full overflow-y-auto overscroll-contain p-6">
           <div className="flex items-start justify-between">
             <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{card.name}</h3>
             <FlagButton flagged={flagged} onFlag={onFlag} />
@@ -214,8 +250,8 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
             )}
           </div>
         </div>
+        )}
       </div>
-    </div>
   );
 }
 

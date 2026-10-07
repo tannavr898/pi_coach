@@ -19,8 +19,24 @@ import { track } from "./analytics";
 import { markStudy, postActivity } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY } from "./ui";
 
-// Enough to find a pattern in what you're missing, short enough to finish.
-const QUESTIONS_PER_ROUND = 8;
+// How long a round can be. Five is a warm-up between classes, ten is enough to
+// find a pattern in what you're missing, and forty is a sitting that starts to
+// feel like the written exam. Forty is also the server's ceiling for one draw.
+const LENGTHS = [5, 10, 20, 40] as const;
+const DEFAULT_LENGTH = 10;
+// Remembered locally like the deck choice: a preference, not progress.
+const LENGTH_KEY = "pic-quiz-length";
+// The most marks /api/study/mark takes in one request.
+const MARKS_PER_REQUEST = 60;
+
+function savedLength(): number {
+  try {
+    const n = Number(localStorage.getItem(LENGTH_KEY));
+    return (LENGTHS as readonly number[]).includes(n) ? n : DEFAULT_LENGTH;
+  } catch {
+    return DEFAULT_LENGTH;
+  }
+}
 const LEVELS: Level[] = ["district", "state", "icdc"];
 const LEVEL_LABEL: Record<Level, string> = { district: "District", state: "State", icdc: "ICDC" };
 const LEVEL_BLURB: Record<Level, string> = {
@@ -106,6 +122,15 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
   const [avail, setAvail] = useState<Record<Level, number> | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [level, setLevel] = useState<Level>(defaultLevel ?? "district");
+  const [length, setLength] = useState<number>(savedLength);
+  function pickLength(n: number) {
+    setLength(n);
+    try {
+      localStorage.setItem(LENGTH_KEY, String(n));
+    } catch {
+      /* private mode: the choice still holds for this round */
+    }
+  }
   // Bumped to force a fresh draw. A Finance cluster round has 312 icdc questions
   // behind it, so a second attempt should be new questions, not a reshuffle of the
   // same handful.
@@ -124,7 +149,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
   useEffect(() => {
     let active = true;
     setDrawn(null);
-    getQuiz({ ...filter, level, count: QUESTIONS_PER_ROUND })
+    getQuiz({ ...filter, level, count: length })
       .then((r) => {
         if (!active) return;
         setDrawn(r.questions);
@@ -134,7 +159,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
     return () => {
       active = false;
     };
-  }, [filter, level, round]);
+  }, [filter, level, length, round]);
 
   // Default to a tier this filter can actually fill, so Start is live on open
   // instead of making the student hunt for the one that works.
@@ -145,7 +170,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
   }, [avail, level]);
 
   function start() {
-    const picked = shuffle(drawn ?? []).slice(0, QUESTIONS_PER_ROUND);
+    const picked = shuffle(drawn ?? []).slice(0, length);
     if (!picked.length) return;
     setQuestions(picked);
     setPicks({});
@@ -190,9 +215,15 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
           evidence: "quiz" as const,
           verdict: (wasRight ? "correct" : "missed") as "correct" | "missed",
         }));
-      })
-      .slice(0, 60); // the server's per-request ceiling
-    void markStudy(marks);
+      });
+    // A long icdc round carries two or three terms a question, which is more
+    // marks than one request takes. Sent in order, one batch at a time, so two
+    // batches touching the same term cannot race each other.
+    void (async () => {
+      for (let k = 0; k < marks.length; k += MARKS_PER_REQUEST) {
+        await markStudy(marks.slice(k, k + MARKS_PER_REQUEST));
+      }
+    })();
     // The finished round as a whole, which is what a chapter assignment asks for.
     void postActivity({
       kind: "quiz",
@@ -260,6 +291,8 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
               avail={avail}
               level={level}
               onLevel={setLevel}
+              length={length}
+              onLength={pickLength}
               scope={scope}
               onScope={setScope}
               exam={exam}
@@ -285,6 +318,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
               questions={questions}
               picks={picks}
               level={level}
+              length={length}
               remaining={Math.max(0, (avail?.[level] ?? 0) - questions.length)}
               onAgain={() => {
                 setRound((r) => r + 1);
@@ -302,13 +336,15 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
   );
 }
 
-function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onScope, exam, deckSize, onStart }: {
+function IntroPanel({ title, loading, loadErr, avail, level, onLevel, length, onLength, scope, onScope, exam, deckSize, onStart }: {
   title?: string;
   loading: boolean;
   loadErr: string | null;
   avail: Record<Level, number> | null;
   level: Level;
   onLevel: (l: Level) => void;
+  length: number;
+  onLength: (n: number) => void;
   scope: Scope;
   onScope: (s: Scope) => void;
   // Absent when the launcher has no event in hand, which is what hides the exam
@@ -401,6 +437,36 @@ function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onS
         </div>
       </div>
 
+      <div className="space-y-2">
+        <div className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">Length</div>
+        <div className="flex flex-wrap gap-2">
+          {LENGTHS.map((n) => {
+            const active = n === length;
+            return (
+              <button
+                key={n}
+                aria-pressed={active}
+                aria-label={`${n} questions`}
+                onClick={() => onLength(n)}
+                className={`tap rounded-full border px-3.5 py-1.5 font-mono text-xs font-semibold tabular-nums transition ${
+                  active
+                    ? "border-indigo-400 bg-indigo-50 text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+        {/* Only said when it is true: a small deck cannot fill a long round. */}
+        {!loading && available > 0 && available < length && (
+          <p className="text-xs leading-snug text-slate-500 dark:text-slate-400">
+            This draw only has {available} at {LEVEL_LABEL[level]}, so the round stops there. Widen "Draw from" for more.
+          </p>
+        )}
+      </div>
+
       {loadErr && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">Couldn't load questions: {loadErr}</p>
       )}
@@ -412,7 +478,7 @@ function IntroPanel({ title, loading, loadErr, avail, level, onLevel, scope, onS
 
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-500 dark:text-slate-400">
-          {loading ? "Loading questions…" : available ? `${Math.min(available, QUESTIONS_PER_ROUND)} questions this round` : "Pick a difficulty with questions"}
+          {loading ? "Loading questions…" : available ? `${Math.min(available, length)} question${Math.min(available, length) === 1 ? "" : "s"} this round` : "Pick a difficulty with questions"}
         </span>
         <button className={BTN_PRIMARY} disabled={!available} onClick={onStart}>Start →</button>
       </div>
@@ -492,10 +558,11 @@ function QuestionPanel({ question, index, total, picked, onChoose, onNext, isLas
   );
 }
 
-function ResultsPanel({ questions, picks, level, remaining, onAgain, onClose }: {
+function ResultsPanel({ questions, picks, level, length, remaining, onAgain, onClose }: {
   questions: QuizQuestion[];
   picks: Record<string, string>;
   level: Level;
+  length: number;
   // How many questions this scope still has that this round did not use.
   remaining: number;
   onAgain: () => void;
@@ -541,7 +608,7 @@ function ResultsPanel({ questions, picks, level, remaining, onAgain, onClose }: 
       <div className="flex flex-col gap-2 sm:flex-row">
         {remaining > 0 && (
           <button className={`${BTN_SECONDARY} w-full sm:flex-1`} onClick={onAgain}>
-            Another {QUESTIONS_PER_ROUND} ({remaining} left)
+            Another {Math.min(length, remaining)} ({remaining} left)
           </button>
         )}
         <button className={`${BTN_PRIMARY} w-full sm:flex-1`} onClick={onClose}>Done →</button>

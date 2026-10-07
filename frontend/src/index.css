@@ -132,6 +132,46 @@
   animation: pic-blink 5.5s ease-in-out infinite;
 }
 
+/* Flashcard flip, in two halves: the showing face turns edge-on, the component
+   swaps faces, and the new one turns in from the other side. Transform only, so
+   it runs on the compositor, and neither half leaves a transform behind: at rest
+   the card is a flat, ordinary box, which is what keeps the back's own scrolling
+   smooth and its text sharp. `--flip-dir` (1 or -1) is set by the component so
+   flipping back turns the opposite way. */
+@keyframes pic-flip-out {
+  from {
+    transform: perspective(1400px) rotateY(0deg);
+  }
+  to {
+    transform: perspective(1400px) rotateY(calc(var(--flip-dir, 1) * 90deg));
+  }
+}
+@keyframes pic-flip-in {
+  from {
+    transform: perspective(1400px) rotateY(calc(var(--flip-dir, 1) * -90deg));
+  }
+  to {
+    transform: perspective(1400px) rotateY(0deg);
+  }
+}
+/* `forwards` holds the card edge-on for the frame it takes to swap faces. */
+.pic-flip-out {
+  animation: pic-flip-out 0.13s cubic-bezier(0.5, 0, 0.9, 0.5) forwards;
+}
+.pic-flip-in {
+  animation: pic-flip-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* A new card arriving in the deck. */
+@keyframes pic-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.pic-card-in {
+  animation: pic-card-in 0.18s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

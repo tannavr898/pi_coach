@@ -45,7 +45,7 @@ LEARN_MIN_PER_TERM = 1.5   # flip a card, read the example
 BLITZ_MIN = 5              # one Mastery Blitz round
 TERMS_PER_BLITZ = 5        # matches blitz.tsx: a drill takes a random 5 of what it's given
 ROLEPLAY_MIN = 20          # prep + present + read the feedback
-QUIZ_MIN = 8               # one Knowledge Check round: 8 questions, no clock
+QUIZ_MIN = 8               # one Knowledge Check round at its default ten questions, no clock
 
 # --- scheduling rules ---------------------------------------------------------
 # Review is capped during the learn phase so it can never crowd out new material;
