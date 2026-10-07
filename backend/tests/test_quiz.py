@@ -628,3 +628,36 @@ def test_a_short_key_is_not_rejected_for_a_meaningless_ratio():
     others[1]["text"] = "A copyright filing."
     others[2]["text"] = "A design right form."
     gen_quiz._validate(q, "district", cards)
+
+
+def test_an_overlong_option_is_rejected():
+    """Four options of 130 characters each test reading, not business. The
+    difference between them is the thing a student has to be able to see."""
+    q = _question(terms.all_terms()[:3])
+    q["options"][0]["text"] = "A reason that runs on well past the point of being skimmable " * 3
+    with pytest.raises(gen_quiz.Rejected, match="over 110 chars"):
+        gen_quiz._validate(q, "district", terms.all_terms()[:3])
+
+
+def test_an_overlong_stem_is_rejected():
+    q = _question(terms.all_terms()[:3])
+    q["question"] = "A manager faces a decision. " * 12 + " What should she do?"
+    with pytest.raises(gen_quiz.Rejected, match="max 280"):
+        gen_quiz._validate(q, "district", terms.all_terms()[:3])
+
+
+def test_a_normal_length_question_survives_both_ceilings():
+    """The ceilings are generous against the hand-authored half of the bank, so
+    an ordinary question must not trip them."""
+    gen_quiz._validate(_question(terms.all_terms()[:3]), "district", terms.all_terms()[:3])
+
+
+def test_nothing_in_the_bank_is_bloated_past_the_ceilings():
+    """The one paid generation run shipped 17% of options and 31% of stems past
+    these limits, which is what turned those questions into reading tests."""
+    bank = json.loads(gen_quiz._BANK.read_text(encoding="utf-8"))["questions"]
+    fat_options = [q["id"] for q in bank
+                   if max(len(o["text"]) for o in q["options"]) > gen_quiz._MAX_OPTION_CHARS]
+    fat_stems = [q["id"] for q in bank if len(q["question"]) > gen_quiz._MAX_STEM_CHARS]
+    assert not fat_options, f"{len(fat_options)} with an overlong option: {fat_options[:10]}"
+    assert not fat_stems, f"{len(fat_stems)} with an overlong stem: {fat_stems[:10]}"

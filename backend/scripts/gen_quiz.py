@@ -84,6 +84,15 @@ _LENGTH_GIVEAWAY = 1.15
 # ...and at least this many characters longer. Roughly half a line on a phone,
 # which is the point a skimming student can see the difference without counting.
 _LENGTH_GIVEAWAY_CHARS = 12
+
+# Ceilings on the question itself. A student comparing four 130-character options
+# is being tested on reading rather than on business, and the difference between
+# the options is the thing that has to be visible. Set from the hand-authored half
+# of the bank, where the 99th percentile option is 58 characters and the 99th
+# percentile stem is 249: generous against that, and the generated half ran 17% of
+# options and 31% of stems past it.
+_MAX_OPTION_CHARS = 110
+_MAX_STEM_CHARS = 280
 # Being a few characters longer than the next option is noise. Past this the length
 # is visible to a student skimming four lines, which is what the audit counts.
 _VISIBLY_LONGER = 1.15
@@ -191,6 +200,8 @@ def _validate(q: dict, level: str, cards: list[dict]) -> dict:
     stem = str(q.get("question", "")).strip()
     if len(stem) < 15:
         raise Rejected("stem missing or too short")
+    if len(stem) > _MAX_STEM_CHARS:
+        raise Rejected(f"stem is {len(stem)} chars (max {_MAX_STEM_CHARS}); cut the scene, not the problem")
 
     opts = q.get("options") or []
     if len(opts) != 4:
@@ -198,6 +209,11 @@ def _validate(q: dict, level: str, cards: list[dict]) -> dict:
     texts = [str(o.get("text", "")).strip() for o in opts]
     if not all(texts):
         raise Rejected("an option has no text")
+    overlong = [len(t) for t in texts if len(t) > _MAX_OPTION_CHARS]
+    if overlong:
+        raise Rejected(
+            f"{len(overlong)} option(s) over {_MAX_OPTION_CHARS} chars (longest {max(overlong)}); "
+            "the difference between the options has to be readable at a glance")
     if len({t.lower() for t in texts}) != 4:
         raise Rejected("duplicate option text")
     if any(_BANNED_OPTION.search(t) for t in texts):
