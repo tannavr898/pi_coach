@@ -59,7 +59,7 @@ function LegalPage({ title, children }: { title: string; children: ReactNode }) 
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="border-b border-slate-200/80 bg-white/60 backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/50">
+      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
           <a href="/" className="flex items-center gap-2.5">
             <BrandMark size={26} />
@@ -74,8 +74,8 @@ function LegalPage({ title, children }: { title: string; children: ReactNode }) 
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{title}</h1>
+      <main className="mx-auto w-full max-w-3xl flex-1 border-x border-slate-200 bg-white px-5 py-10 dark:border-slate-800 dark:bg-slate-900 sm:px-8">
+        <h1 className="pic-title font-display text-3xl font-semibold tracking-[-0.03em]">{title}</h1>
         <p className="mt-2 font-mono text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
           Last updated {LAST_UPDATED}
         </p>
@@ -128,7 +128,7 @@ function Bullets({ items }: { items: ReactNode[] }) {
 // shade of the panel's own hue reads as deliberate emphasis.
 function Callout({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-3 text-sm leading-relaxed text-indigo-950 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-50">
+    <div className="border-y border-slate-200 py-3 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:text-slate-200">
       {children}
     </div>
   );

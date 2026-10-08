@@ -281,7 +281,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/85">◎ Knowledge Check</span>
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/85">Knowledge Check</span>
           <button onClick={() => requestCloseRef.current()} aria-label="Close Knowledge Check" className="rounded-lg px-2 py-1 text-white/70 transition hover:bg-white/10 hover:text-white">✕</button>
         </div>
 
@@ -484,7 +484,7 @@ function IntroPanel({ title, loading, loadErr, avail, level, onLevel, length, on
         <span className="text-xs text-slate-500 dark:text-slate-400">
           {loading ? "Loading questions…" : available ? `${Math.min(available, length)} question${Math.min(available, length) === 1 ? "" : "s"} this round` : "Pick a difficulty with questions"}
         </span>
-        <button className={BTN_PRIMARY} disabled={!available} onClick={onStart}>Start →</button>
+        <button className={BTN_PRIMARY} disabled={!available} onClick={onStart}>Start</button>
       </div>
     </div>
   );
@@ -555,7 +555,7 @@ function QuestionPanel({ question, index, total, picked, onChoose, onNext, isLas
           <span role="status" aria-live="polite" className={`text-sm font-semibold ${gotIt ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
             {gotIt ? "Correct" : `Not quite. The answer is ${right?.id.toUpperCase()}`}
           </span>
-          <button className={BTN_PRIMARY} autoFocus onClick={onNext}>{isLast ? "See results →" : "Next →"}</button>
+          <button className={BTN_PRIMARY} autoFocus onClick={onNext}>{isLast ? "See results" : "Next"}</button>
         </div>
       )}
     </div>
@@ -591,11 +591,11 @@ function ResultsPanel({ questions, picks, level, length, remaining, onAgain, onC
       </div>
 
       {missed.length > 0 && (
-        <div className="max-h-72 space-y-2 overflow-y-auto">
+        <div className="max-h-72 overflow-y-auto border-t border-slate-200 dark:border-slate-800">
           {missed.map((q) => {
             const chosen = q.options.find((o) => o.id === picks[q.id]);
             return (
-              <div key={q.id} className="rounded-xl border border-red-200 bg-red-50/70 p-3 dark:border-red-900/50 dark:bg-red-950/30">
+              <div key={q.id} className="border-b border-slate-200 py-2.5 dark:border-slate-800">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{q.concepts.join(" + ") || q.topic}</span>
                   <span className="shrink-0 font-mono text-[11px] text-slate-500 dark:text-slate-400">{LEVEL_LABEL[q.level]}</span>
@@ -615,7 +615,7 @@ function ResultsPanel({ questions, picks, level, length, remaining, onAgain, onC
             Another {Math.min(length, remaining)} ({remaining} left)
           </button>
         )}
-        <button className={`${BTN_PRIMARY} w-full sm:flex-1`} onClick={onClose}>Done →</button>
+        <button className={`${BTN_PRIMARY} w-full sm:flex-1`} onClick={onClose}>Done</button>
       </div>
       <p className="text-center text-[11px] text-slate-400 dark:text-slate-500">
         A quiz round counts toward a term's progress, but only a Blitz or a role-play can mark it known.

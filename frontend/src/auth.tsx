@@ -502,7 +502,6 @@ export function AuthModal({
       >
         {confirmSent ? (
           <div className="text-center">
-            <div className="text-3xl">📬</div>
             <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Check your email</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               We sent a confirmation link to <strong className={`font-semibold ${PH_MASK}`}>{email}</strong>. Click it, then come back and log in.
@@ -513,7 +512,6 @@ export function AuthModal({
           </div>
         ) : reset === "sent" ? (
           <div className="text-center">
-            <div className="text-3xl">📬</div>
             <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Check your email</h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               If <strong className={`font-semibold ${PH_MASK}`}>{email.trim()}</strong> has an account, a link to reset your password is on its way. It can take a minute, and it may land in spam.

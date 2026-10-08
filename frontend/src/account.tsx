@@ -53,7 +53,7 @@ export function AccountSettings({ me, onRefresh }: { me: Me | null; onRefresh: (
     <div className="space-y-5">
       <div>
         <Eyebrow>Account</Eyebrow>
-        <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Account settings</h1>
+        <h1 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em] pic-title">Account settings</h1>
       </div>
       {/* A reset link leads with the one thing they came to do. */}
       {recovery && <PasswordSection />}

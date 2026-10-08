@@ -287,7 +287,7 @@ export function useFrameSampler(): FrameSampler {
  */
 export function VideoConsent(props: { onAccept: () => void; onDecline: () => void; error?: string | null }) {
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+    <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
       <div className="flex items-center gap-2">
         <h3 className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
           Add video to this rep?
@@ -349,7 +349,7 @@ export function VideoConsent(props: { onAccept: () => void; onDecline: () => voi
 export function VideoIndicator(props: { sampler: FrameSampler; onDisable: () => void }) {
   const { sampler } = props;
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-800/60">
+    <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium text-red-700 dark:text-red-400">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-600" aria-hidden />
@@ -470,7 +470,7 @@ export function GazeAnchor({ frameCount }: { frameCount: number }) {
 
 function Stat(props: { label: string; count: number; total: number; percent?: number }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+    <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
       <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{props.label}</div>
       <div className="mt-1 font-display text-xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">
         {props.count} <span className="text-sm font-normal text-slate-500">of {props.total}</span>
@@ -496,7 +496,7 @@ function Stat(props: { label: string; count: number; total: number; percent?: nu
 export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
   if (metrics.checks === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+      <div className="text-sm text-slate-600 dark:text-slate-300">
         We couldn't read any frames from this rep, so there's nothing to report here. Your content and
         delivery feedback are unaffected.
       </div>
@@ -525,7 +525,7 @@ export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
           number this product exists to not produce, and when the sample was too
           small to move anything, saying THAT is the honest result, not a gap. */}
       {metrics.adjustment_reason && (
-        <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-start gap-3 border-t border-slate-200 pt-3 dark:border-slate-800">
           <span
             className={`shrink-0 font-mono text-sm font-semibold tabular-nums ${
               metrics.delivery_adjustment > 0
@@ -560,7 +560,7 @@ export function VideoPanel({ metrics }: { metrics: VideoMetrics }) {
 
       {/* The disclaimer is part of the result, not fine print tucked elsewhere,
           the credibility of every number above depends on it being read. */}
-      <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400">
+      <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
         {metrics.disclaimer}
       </p>
     </div>
@@ -658,7 +658,7 @@ export function VideoOptIn(props: {
 
 function Notice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300">
+    <div className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
       {children}
     </div>
   );

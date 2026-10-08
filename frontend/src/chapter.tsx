@@ -39,7 +39,7 @@ import {
   type ThreadSummary,
 } from "./progress";
 import { StudentProfileView } from "./profile";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, LogoLoader, PageLoader, SideGroup, SideItem, Sidebar } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, LogoLoader, PageHead, PageLoader, SideGroup, SideItem, Sidebar } from "./ui";
 import { invalidate, useCached } from "./cache";
 import { track } from "./analytics";
 
@@ -285,10 +285,10 @@ export function ChapterTab({
             );
           })}
         </SideGroup>
+        <div className="px-2.5">
+          <RefreshButton chapterId={current.chapter.id} />
+        </div>
       </Sidebar>
-      <div className="flex justify-end pt-5">
-        <RefreshButton chapterId={current.chapter.id} />
-      </div>
 
       {current.chapter.status !== "active" ? (
         <ReviewCard m={current} />
@@ -347,16 +347,9 @@ function RefreshButton({ chapterId }: { chapterId: string }) {
 
 function ChapterHeader({ m, right }: { m: Membership; right?: ReactNode }) {
   return (
-    <Card>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Eyebrow>{m.role === "manager" ? "You manage" : "Your chapter"}</Eyebrow>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{m.chapter.name}</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{m.chapter.school_name}</p>
-        </div>
-        {right}
-      </div>
-    </Card>
+    <PageHead sub={`${m.role === "manager" ? "You manage" : "Your chapter"}, ${m.chapter.school_name}`} title={m.chapter.name}>
+      {right}
+    </PageHead>
   );
 }
 
@@ -364,7 +357,7 @@ function ReviewCard({ m }: { m: Membership }) {
   return (
     <Card>
       <Eyebrow>{m.chapter.status === "rejected" ? "Not approved" : "Under review"}</Eyebrow>
-      <h1 className="mt-1 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">{m.chapter.name}</h1>
+      <h1 className="mt-1 font-display text-xl font-semibold pic-title">{m.chapter.name}</h1>
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
         {m.chapter.status === "rejected"
           ? "We couldn't verify this chapter. If you think that's a mistake, send us a note through Feedback with your school's details."
@@ -379,7 +372,7 @@ function PendingCard({ m, onDone }: { m: Membership; onDone: () => void }) {
   return (
     <Card>
       <Eyebrow>Request sent</Eyebrow>
-      <h1 className="mt-1 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">{m.chapter.name}</h1>
+      <h1 className="mt-1 font-display text-xl font-semibold pic-title">{m.chapter.name}</h1>
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
         A manager at {m.chapter.school_name} needs to approve you. Once they do, this tab shows your chapter's updates and assignments.
       </p>
@@ -405,7 +398,7 @@ function JoinOrRegister({ onDone, canJoin = true, onCancel }: { onDone: () => vo
       {!onCancel && (
         <div>
           <Eyebrow>Chapter</Eyebrow>
-          <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Practice with your chapter</h1>
+          <h1 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em] pic-title">Practice with your chapter</h1>
           <p className="mt-1 max-w-prose text-sm text-slate-600 dark:text-slate-300">
             Join your school's chapter to get updates and assignments from your advisor, or register your chapter if you run one.
           </p>
@@ -722,7 +715,7 @@ function StudentPost({ p, onStart }: { p: ChapterPost; onStart: (p: ChapterPost)
         </div>
         {p.kind === "assignment" && p.mine?.status !== "done" && (
           <button className={`${BTN_PRIMARY} shrink-0`} onClick={() => { track("chapter_assignment_started", { kind: p.assignment_kind }); onStart(p); }}>
-            Start →
+            Start
           </button>
         )}
       </div>
@@ -854,7 +847,7 @@ function ManagerView({
       <ChapterHeader
         m={m}
         right={
-          <div className="rounded-xl border border-slate-200 px-4 py-2.5 text-right dark:border-slate-700">
+          <div className="text-right">
             <div className="text-xs text-slate-500 dark:text-slate-400">Student join code</div>
             <div className="font-mono text-xl font-semibold tracking-[0.2em] text-slate-900 dark:text-slate-100">{codes.join_code}</div>
           </div>
@@ -975,11 +968,11 @@ function RosterTable({ students, loading, joinCode, onOpen }: { students: Roster
   }
 
   return (
-    <Card className="border-slate-200 p-0 dark:border-slate-800">
+    <div className="pic-bleed border-y border-slate-200 dark:border-slate-800">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[44rem] text-left text-sm">
+        <table className="w-full min-w-[44rem] text-left text-sm [&_td:first-child]:pl-[var(--pic-pad)] [&_th:first-child]:pl-[var(--pic-pad)]">
           <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-800">
+            <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/40">
               {COLUMNS.map((c) => {
                 const on = sort.key === c.key;
                 return (
@@ -1017,7 +1010,7 @@ function RosterTable({ students, loading, joinCode, onOpen }: { students: Roster
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -1406,7 +1399,7 @@ function ManagerSettings({ roster, onLeft }: { roster: Roster; onLeft: () => voi
             ["join", "Student join code", ch.join_code, "Give this to members. Each request still needs your approval."],
             ["manager", "Manager code", ch.manager_code, "Only for co-advisors and officers. Anyone with it can see every student's progress."],
           ] as const).map(([which, label, code, help]) => (
-            <div key={which} className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <div key={which} className="border-t border-slate-200 pt-3 dark:border-slate-800">
               <div className={LABEL}>{label}</div>
               <div className="mt-1 font-mono text-xl font-semibold tracking-[0.2em] text-slate-900 dark:text-slate-100">{code}</div>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{help}</p>

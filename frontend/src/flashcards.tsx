@@ -140,9 +140,9 @@ export function Flashcards({
           <>
             <FlipCard key={card.id} card={card} flipped={flipped} onFlip={() => setFlipped((f) => !f)} flagged={flags.isFlagged(card.id)} onFlag={() => flags.toggle(card.id)} />
             <div className="mt-3 flex items-center justify-between">
-              <button className={BTN_SECONDARY} onClick={() => go(-1)} disabled={i === 0}>← Prev</button>
+              <button className={BTN_SECONDARY} onClick={() => go(-1)} disabled={i === 0}>Prev</button>
               <span className="font-mono text-xs tabular-nums text-white/85">{Math.min(i + 1, total)} / {total}</span>
-              <button className={BTN_SECONDARY} onClick={() => go(1)} disabled={i >= total - 1}>Next →</button>
+              <button className={BTN_SECONDARY} onClick={() => go(1)} disabled={i >= total - 1}>Next</button>
             </div>
             <p className="mt-2 text-center text-[11px] text-white/60">Tap the card to flip · ← → to move · space to flip · ★ to flag</p>
           </>
@@ -197,7 +197,7 @@ function FlipCard({ card, flipped, onFlip, flagged, onFlag }: { card: Term; flip
             <h2 className="font-display text-2xl font-semibold text-slate-900 dark:text-slate-100">{card.name}</h2>
             {card.coaches && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{card.coaches}</p>}
           </div>
-          <p className="text-center text-xs text-slate-500 dark:text-slate-400">Tap for a worked example →</p>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400">Tap for a worked example</p>
         </div>
         ) : (
         <div className="h-full overflow-y-auto overscroll-contain p-6">

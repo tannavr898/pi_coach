@@ -83,7 +83,7 @@ export function StudentProfileView({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <Eyebrow>Student profile</Eyebrow>
-                <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{name}</h1>
+                <h1 className="mt-1 font-display text-2xl font-semibold tracking-[-0.03em] pic-title">{name}</h1>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                   {data.event || "Hasn't picked an event yet"}
                   {" · "}

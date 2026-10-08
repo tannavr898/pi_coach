@@ -169,7 +169,7 @@ export function TourShell(props: {
                 step.footer
               ) : (
                 <button onClick={next} className={`${BTN_PRIMARY} px-5 py-2`}>
-                  Next →
+                  Next
                 </button>
               )}
             </div>
@@ -195,16 +195,16 @@ export function FeatureIntro(props: {
   onDismiss: () => void;
 }) {
   return (
-    <div className="mb-5 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40 sm:p-5">
+    <div className="pic-bleed pic-inset border-b border-slate-200 py-4 dark:border-slate-800">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-500">
             First time here
           </p>
-          <h2 className="mt-1.5 font-display text-base font-semibold text-indigo-900 dark:text-indigo-100">
+          <h2 className="mt-0.5 font-display text-base font-semibold text-slate-900 dark:text-slate-100">
             {props.title}
           </h2>
-          <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-indigo-800/90 dark:text-indigo-200/90">
+          <p className="mt-1 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             {props.body}
           </p>
         </div>

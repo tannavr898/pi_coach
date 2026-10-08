@@ -288,7 +288,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/85">⚡ Mastery Blitz</span>
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-white/85">Mastery Blitz</span>
           <button onClick={() => requestCloseRef.current()} aria-label="Close Mastery Blitz" className="rounded-lg px-2 py-1 text-white/70 transition hover:bg-white/10 hover:text-white">✕</button>
         </div>
 
@@ -357,10 +357,10 @@ function ModePills({ mode, onMode }: { mode: "type" | "speak"; onMode: (m: "type
         <button
           key={m}
           disabled={m === "speak" && !CAN_RECORD}
-          className={`tap rounded-md px-3 py-1.5 transition disabled:opacity-40 ${mode === m ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}
+          className={`tap rounded-md px-3 py-1.5 transition disabled:opacity-40 ${mode === m ? "bg-white font-medium text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.12)] dark:bg-slate-700 dark:text-slate-100" : "text-slate-500 dark:text-slate-400"}`}
           onClick={() => onMode(m)}
         >
-          {m === "type" ? "✍️ Type" : "🎙️ Speak"}
+          {m === "type" ? "Type" : "Speak"}
         </button>
       ))}
     </div>
@@ -409,7 +409,7 @@ function IntroPanel({ scenario, scenarioErr, count, mode, onMode, areas, area, o
       {scenarioErr ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">Couldn't load a scenario: {scenarioErr}</p>
       ) : (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+        <div className="border-y border-slate-200 py-4 dark:border-slate-800">
           <div className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">Your scenario</div>
           {scenario ? (
             <p className="mt-1 text-sm leading-relaxed text-slate-800 dark:text-slate-100">{scenario.text}</p>
@@ -420,7 +420,7 @@ function IntroPanel({ scenario, scenarioErr, count, mode, onMode, areas, area, o
       )}
       <div className="flex items-center justify-between">
         <ModePills mode={mode} onMode={onMode} />
-        <button className={BTN_PRIMARY} disabled={!scenario} onClick={onStart}>Start the blitz →</button>
+        <button className={BTN_PRIMARY} disabled={!scenario} onClick={onStart}>Start the blitz</button>
       </div>
     </div>
   );
@@ -480,7 +480,7 @@ function DrillPanel(props: {
           className="h-28 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
       ) : (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-800/60">
+        <div className="rounded-lg border border-slate-200 px-4 py-4 dark:border-slate-800">
           {props.micErr && <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{props.micErr}</div>}
           {props.recording ? (
             <div className="flex items-center justify-between">
@@ -488,7 +488,7 @@ function DrillPanel(props: {
               <button className={BTN_SECONDARY} onClick={props.onStopRec}>Stop</button>
             </div>
           ) : props.value ? (
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">✓ Answer captured. Next up →</p>
+            <p className="text-sm text-emerald-700 dark:text-emerald-400">Answer captured. Next up.</p>
           ) : (
             <button onClick={props.onStartRec} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
               <span className="h-2.5 w-2.5 rounded-full bg-white" /> Record your answer
@@ -498,7 +498,7 @@ function DrillPanel(props: {
       )}
 
       <div className="flex justify-end">
-        <button className={BTN_PRIMARY} onClick={props.onNext}>{props.isLast ? "Finish & grade →" : "Next term →"}</button>
+        <button className={BTN_PRIMARY} onClick={props.onNext}>{props.isLast ? "Finish & grade" : "Next term"}</button>
       </div>
     </div>
   );
@@ -523,10 +523,10 @@ function ResultsPanel({ terms, results, unheard, scoreErr, stats, onAgain }: {
   const correct = results.filter((r) => r.verdict === "correct").length;
   const partial = results.filter((r) => r.verdict === "partial").length;
   const tone: Record<string, string> = {
-    correct: "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/50 dark:bg-emerald-950/30",
-    partial: "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/30",
-    missed: "border-red-200 bg-red-50/70 dark:border-red-900/50 dark:bg-red-950/30",
-    unheard: "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50",
+    correct: "text-emerald-600 dark:text-emerald-400",
+    partial: "text-amber-600 dark:text-amber-400",
+    missed: "text-red-600 dark:text-red-400",
+    unheard: "text-slate-500 dark:text-slate-400",
   };
   const badge: Record<string, string> = { correct: "✓ Correct", partial: "~ Partial", missed: "✗ Missed", unheard: "Not graded" };
   return (
@@ -545,17 +545,17 @@ function ResultsPanel({ terms, results, unheard, scoreErr, stats, onAgain }: {
         )}
       </div>
 
-      <div className="max-h-72 space-y-2 overflow-y-auto">
+      <div className="max-h-72 overflow-y-auto border-t border-slate-200 dark:border-slate-800">
         {terms.map((t) => {
           const r = results.find((x) => x.term_id === t.id);
           // A spoken answer that never transcribed was not sent for grading.
           const v = unheard.has(t.id) ? "unheard" : r?.verdict ?? "missed";
           const note = v === "unheard" ? "We couldn't transcribe this answer, so it wasn't counted. Check your mic, or switch to Type." : r?.note;
           return (
-            <div key={t.id} className={`rounded-xl border p-3 ${tone[v]}`}>
+            <div key={t.id} className="border-b border-slate-200 py-2.5 dark:border-slate-800">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t.name}</span>
-                <span className="shrink-0 font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300">{badge[v]}</span>
+                <span className={`shrink-0 text-xs font-medium ${tone[v]}`}>{badge[v]}</span>
               </div>
               {note && <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{note}</p>}
             </div>
@@ -563,7 +563,7 @@ function ResultsPanel({ terms, results, unheard, scoreErr, stats, onAgain }: {
         })}
       </div>
 
-      <button className={`${BTN_PRIMARY} w-full`} onClick={onAgain}>Done →</button>
+      <button className={`${BTN_PRIMARY} w-full`} onClick={onAgain}>Done</button>
     </div>
   );
 }

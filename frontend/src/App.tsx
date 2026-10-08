@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode, type RefObject } from "react";
 import {
   type Criterion,
   type CriterionScore,
@@ -1396,7 +1396,6 @@ export default function App() {
       <Shell width={view === "home" || view === "course" ? "full" : wide ? "wide" : "narrow"}>
         {error && (
           <div className="mb-5 mt-6 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-            <span className="mt-0.5">⚠</span>
             <span className="flex-1">{error}</span>
             {errorAction?.forError === error && (
               <button onClick={errorAction.run} className="font-semibold underline underline-offset-2">
@@ -1411,7 +1410,6 @@ export default function App() {
             just aren't logged in, practice itself never needed an account. */}
         {oauthError && (
           <div className="mb-5 mt-6 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-            <span className="mt-0.5">⚠</span>
             <span className="flex-1">{oauthError}</span>
             <button
               onClick={() => { dismissOAuthError(); openAuth("login"); }}
@@ -1490,7 +1488,7 @@ export default function App() {
             <PageLoader label="Loading your chapter" />
           ) : (
             <Card>
-              <h1 className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Your chapter lives here</h1>
+              <h1 className="font-display text-xl font-semibold pic-title">Your chapter lives here</h1>
               <p className="mt-2 max-w-prose text-sm text-slate-600 dark:text-slate-300">
                 Log in to see your chapter's updates, assignments, and messages, or to join one with a code from your advisor.
               </p>
@@ -1513,7 +1511,7 @@ export default function App() {
             <PageLoader label="Loading your account" />
           ) : (
             <Card>
-              <h1 className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Account settings</h1>
+              <h1 className="font-display text-xl font-semibold pic-title">Account settings</h1>
               <p className="mt-2 max-w-prose text-sm text-slate-600 dark:text-slate-300">
                 Log in to change your name, email, or password.
               </p>
@@ -1811,7 +1809,7 @@ function DemoRibbon({ onExit }: { onExit: () => void }) {
           onClick={onExit}
           className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
         >
-          Try it for real →
+          Try it for real
         </button>
       </div>
     </div>
@@ -1917,7 +1915,7 @@ export function AdminApp() {
           </p>
           <div className="flex items-center gap-3">
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            <a href="/" className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900">Exit →</a>
+            <a href="/" className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900">Exit</a>
           </div>
         </div>
       </div>
@@ -1968,7 +1966,7 @@ export function AdminApp() {
                     >
                       {busy === "clear" ? "Clearing…" : "Clear sample data"}
                     </button>
-                    <a href="/" className="inline-flex items-center justify-center rounded-xl border border-indigo-300 bg-indigo-50 px-5 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/50 dark:text-indigo-300">Open your real Home →</a>
+                    <a href="/" className="inline-flex items-center justify-center rounded-xl border border-indigo-300 bg-indigo-50 px-5 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-900/60 dark:bg-indigo-950/50 dark:text-indigo-300">Open your real Home</a>
                   </div>
                   {msg && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{msg}</p>}
                 </>
@@ -2092,7 +2090,7 @@ function DemoStepHeader({ step, title, blurb, backLabel, onBack }: {
           </button>
         )}
       </div>
-      <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">{title}</h1>
+      <h1 className="mt-2 font-display text-2xl font-semibold tracking-[-0.03em] pic-title">{title}</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">{blurb}</p>
     </div>
   );
@@ -2118,7 +2116,7 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
         </div>
       </Card>
 
-      <details className="group rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <details className="group pic-bleed pic-inset border-y border-slate-200 bg-slate-50 py-3 dark:border-slate-800 dark:bg-slate-800/30">
         <summary className="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-200">Show what's graded (the evaluation criteria)</summary>
         <div className="mt-4">
           <CoverSheet scenario={s} embedded />
@@ -2132,10 +2130,10 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
 
       <Card>
         <h3 className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">The judge follows up</h3>
-        <ol className="mt-3 space-y-2">
+        <ol className="mt-3 border-t border-slate-200 dark:border-slate-800">
           {s.followup_questions.map((q, i) => (
-            <li key={i} className="flex gap-2 rounded-xl bg-indigo-50/60 px-3 py-2.5 text-sm text-slate-800 dark:bg-indigo-950/40 dark:text-slate-100">
-              <span className="font-mono text-xs font-semibold text-indigo-500">Q{i + 1}</span>
+            <li key={i} className="flex items-baseline gap-3 border-b border-slate-200 py-2.5 text-sm text-slate-800 dark:border-slate-800 dark:text-slate-100">
+              <span className="font-mono text-xs text-slate-500 dark:text-slate-400">Q{i + 1}</span>
               <span>{q}</span>
             </li>
           ))}
@@ -2151,7 +2149,7 @@ function DemoScenarioStep({ onNext }: { onNext: () => void }) {
           Now see how PI Coach grades it, as a percentage, skill by skill.
         </p>
         <button className={`${BTN_PRIMARY} w-full sm:w-auto`} onClick={onNext}>
-          See the graded feedback →
+          See the graded feedback
         </button>
       </div>
     </div>
@@ -2269,7 +2267,7 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
       <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white p-5 shadow-xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
         {state === "done" ? (
           <div className="py-4 text-center">
-            <p className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Thanks! 🙌</p>
+            <p className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Thanks!</p>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Your feedback helps make PI Coach better.</p>
             <button className={`mt-4 ${BTN_PRIMARY}`} onClick={onClose}>Close</button>
           </div>
@@ -2466,7 +2464,7 @@ function ProductTour(props: {
         <div className="flex flex-wrap gap-2">
           {CAN_RECORD && (
             <button className={`${BTN_PRIMARY} px-5 py-2`} onClick={() => props.onStartRep("speak")}>
-              🎙️ Start out loud
+              Start out loud
             </button>
           )}
           <button className={`${BTN_SECONDARY} px-4 py-2`} onClick={() => props.onStartRep("type")}>
@@ -2685,7 +2683,7 @@ function IntroPreview(props: { onReplay: () => void }) {
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
       <Eyebrow>Onboarding preview</Eyebrow>
-      <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+      <h1 className="mt-2 font-display text-2xl font-semibold tracking-[-0.03em] pic-title">
         First-visit cards
       </h1>
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">
@@ -3035,7 +3033,7 @@ function AllowanceNotice({ usage, onSignIn }: { usage: Usage; onSignIn: () => vo
   const video = usage.video.limit === UNLIMITED ? "Unlimited" : `${usage.video.remaining} left`;
 
   return (
-    <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="mt-6 border-t border-slate-200 pt-5 text-[13px] dark:border-slate-800">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <span className="font-medium text-slate-700 dark:text-slate-200">This month</span>
         <span className="text-slate-600 dark:text-slate-300">
@@ -3046,9 +3044,7 @@ function AllowanceNotice({ usage, onSignIn }: { usage: Usage; onSignIn: () => vo
         </span>
         <span className="text-slate-600 dark:text-slate-300">
           Video <strong className="font-semibold text-slate-800 dark:text-slate-100">{anon ? "Account needed" : video}</strong>
-          <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-            Beta
-          </span>
+          <span className="ml-1.5 text-slate-500 dark:text-slate-400">(beta)</span>
         </span>
         {usage.voice.limit !== UNLIMITED && (
           <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">resets {usage.resets_on}</span>
@@ -3965,8 +3961,8 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
   }
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-indigo-50/70 px-6 py-12 dark:border-indigo-900/50 dark:bg-indigo-950/30 sm:px-10 sm:py-14">
-      <div className="max-w-xl">
+    <section className="pic-outro pic-bleed border-t border-slate-200 px-6 pb-20 pt-16 dark:border-slate-800 sm:pb-24 sm:pt-20">
+      <div className="mx-auto max-w-xl text-center [&_form]:mx-auto">
         <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
           Walk in ready.
         </h2>
@@ -3975,14 +3971,14 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
         </p>
         <div className="mt-7">
           <button onClick={onStart} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
-            Ready to practice? →
+            Ready to practice?
           </button>
         </div>
 
         {/* Secondary: launch updates, deliberately quieter than the practice CTA. */}
         <div className="mt-10 border-t border-indigo-100 pt-6 dark:border-indigo-900/50">
           {state === "done" ? (
-            <p className="rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm font-medium text-indigo-800 dark:border-indigo-900/60 dark:bg-slate-900 dark:text-indigo-300">
+            <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
               You're on the list. We'll email you the moment it ships.
             </p>
           ) : (
@@ -4806,6 +4802,7 @@ function FeedbackScreen(props: {
 
         {!inShell && <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />}
 
+        <div className={inShell && !props.priorSnapshot ? "pic-flush" : ""}>
         {tab === "overview" && <OverviewTab score={score} />}
         {tab === "analysis" && <AnalysisTab score={score} />}
         {tab === "transcript" && (
@@ -4829,6 +4826,7 @@ function FeedbackScreen(props: {
             <CoverSheet scenario={props.scenario} />
           </div>
         )}
+        </div>
 
         <p className="max-w-[78ch] border-t border-slate-200 pt-5 text-[13px] leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Your score weights <strong className="font-semibold text-slate-700 dark:text-slate-200">performance indicators</strong> (60%),
@@ -4909,9 +4907,9 @@ function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSna
   const delta = after.percent - before.percent;
   const deltaTone = delta > 0 ? "text-emerald-600 dark:text-emerald-400" : delta < 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-500 dark:text-slate-400";
   return (
-    <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
+    <div className="border-b border-slate-200 pb-5 dark:border-slate-800">
       <div className="flex items-center justify-between">
-        <Eyebrow>Same scenario, before → after</Eyebrow>
+        <Eyebrow>Same scenario, before and after</Eyebrow>
         <span className={`font-mono text-sm font-semibold ${deltaTone}`}>
           {delta > 0 ? `+${delta}` : delta} pts
         </span>
@@ -4943,8 +4941,8 @@ function BeforeAfterCard({ before, after }: { before: RunSnapshot; after: RunSna
 
 function BeforeAfterStat({ label, before, after, improved }: { label: string; before: string; after: string; improved: boolean }) {
   return (
-    <div className="rounded-lg bg-white/70 px-3 py-2 dark:bg-slate-900/50">
-      <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</div>
+    <div>
+      <div className="text-[13px] text-slate-500 dark:text-slate-400">{label}</div>
       <div className="mt-0.5 flex items-baseline gap-1.5 text-sm">
         <span className="text-slate-400 line-through dark:text-slate-500">{before}</span>
         <span className="text-slate-300 dark:text-slate-600">→</span>
@@ -5116,7 +5114,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
   // Optional: sessions stored before the depth award have no `depth` in their jsonb.
   const d = a.depth;
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card>
         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
           <div>
@@ -5132,13 +5130,13 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
         </div>
       </Card>
 
-      <Card className={c.bonus > 0 ? "border-fuchsia-200 dark:border-fuchsia-900/60" : ""}>
+      <Card>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">✨ Creativity bonus</h3>
+            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Creativity bonus</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">Bonus only: a plain, correct answer never loses points here</p>
           </div>
-          <span className={`font-mono text-sm font-semibold ${c.bonus > 0 ? "text-fuchsia-600 dark:text-fuchsia-400" : "text-slate-500 dark:text-slate-400"}`}>
+          <span className={`font-mono text-sm font-semibold ${c.bonus > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
             {c.bonus > 0 ? `+${fmtNum(c.bonus)}` : "+0"}
           </span>
         </div>
@@ -5146,17 +5144,17 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
           <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{c.justification}</p>
         )}
         {c.evidence && (
-          <p className={`mt-1.5 border-l-2 border-fuchsia-200 pl-2.5 text-xs italic text-slate-500 dark:border-fuchsia-900/60 dark:text-slate-400 ${PH_MASK}`}>
+          <p className={`mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400 ${PH_MASK}`}>
             “{c.evidence}”
           </p>
         )}
       </Card>
 
       {d && (
-        <Card className={d.bonus > 0 ? "border-emerald-200 dark:border-emerald-900/60" : ""}>
+        <Card>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">📚 Depth bonus</h3>
+              <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Depth bonus</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Bonus only: for bringing in a related term and actually using it: naming one earns nothing
               </p>
@@ -5169,7 +5167,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
             <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{d.justification}</p>
           )}
           {d.evidence && (
-            <p className={`mt-1.5 border-l-2 border-emerald-200 pl-2.5 text-xs italic text-slate-500 dark:border-emerald-900/60 dark:text-slate-400 ${PH_MASK}`}>
+            <p className={`mt-1.5 border-l-2 border-indigo-200 pl-2.5 text-xs italic text-slate-500 dark:border-indigo-900/60 dark:text-slate-400 ${PH_MASK}`}>
               “{d.evidence}”
             </p>
           )}
@@ -5187,10 +5185,10 @@ function fmtNum(n: number): string {
 function MathChecksCard({ checks }: { checks: MathCheck[] }) {
   const wrong = checks.filter((c) => c.ok === false).length;
   return (
-    <Card className="border-indigo-200 dark:border-indigo-900/60">
+    <Card>
       <div className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
-          🧮 Math check
+          Math check
         </h3>
         <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {wrong === 0 ? "all verified" : `${wrong} to fix`}
@@ -5199,21 +5197,16 @@ function MathChecksCard({ checks }: { checks: MathCheck[] }) {
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         Every calculation is recomputed by our server, not the AI, so this is exact.
       </p>
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 border-t border-slate-200 dark:border-slate-800">
         {checks.map((c, i) => {
           const good = c.ok === true;
           const bad = c.ok === false;
-          const tone = bad
-            ? "border-red-200 bg-red-50/60 dark:border-red-900/60 dark:bg-red-950/30"
-            : good
-              ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-              : "border-slate-200 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40";
           const icon = bad ? "✗" : good ? "✓" : "•";
           const iconTone = bad ? "text-red-600" : good ? "text-emerald-600" : "text-slate-400";
           const unit = c.unit ? ` ${c.unit}` : "";
           return (
-            <div key={i} className={`rounded-xl border ${tone} px-3 py-2.5`}>
-              <div className="flex items-start gap-2">
+            <div key={i} className="border-b border-slate-200 py-2.5 dark:border-slate-800">
+              <div className="flex items-start gap-2.5">
                 <span className={`mt-0.5 font-bold ${iconTone}`}>{icon}</span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{c.label || "Calculation"}</p>
@@ -5247,17 +5240,17 @@ function MathChecksCard({ checks }: { checks: MathCheck[] }) {
 function CriteriaTab({ scores }: { scores: CriterionScore[] }) {
   const groups = groupByDomain(scores);
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {groups.map((g) => {
         const p = g.rows.reduce((a, r) => a + r.points, 0);
         const m = g.rows.reduce((a, r) => a + r.max_points, 0);
         return (
           <Card key={g.domain}>
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
               <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{g.domain}</h3>
-              <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{p}/{m}</span>
+              <span className="font-mono text-sm font-medium text-slate-500 dark:text-slate-400">{p}/{m}</span>
             </div>
-            <div className="mt-3 space-y-2.5">
+            <div>
               {g.rows.map((r) => (
                 <CriterionRow key={r.criterion_id} r={r} />
               ))}
@@ -5274,7 +5267,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {m.delivery_components.length > 0 && (
         <Card>
           <div className="flex items-center justify-between">
@@ -5324,7 +5317,7 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 border-y border-slate-200 dark:border-slate-800 sm:grid-cols-4">
         <Stat label="Pace" value={String(m.pace_wpm)} unit="WPM" ok={m.pace_flag === "good"} />
         <Stat label="Fillers" value={String(m.filler_count)} unit={`${m.filler_per_min}/min`} ok={m.filler_count === 0} />
         <Stat label="Long pauses" value={String(m.long_pauses.length)} unit={m.longest_pause_seconds ? `max ${m.longest_pause_seconds}s` : "none"} ok={m.long_pauses.length === 0} />
@@ -5364,10 +5357,10 @@ function DeliveryTab({ metrics: m, audioBlob }: { metrics: DeliveryMetrics; audi
         </Card>
       )}
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+      <p className="text-[13px] text-slate-500 dark:text-slate-400">
         Delivery is deterministic timing measured from your audio: accurate and honest. It does not judge tone,
         confidence, or accent.
-      </div>
+      </p>
     </div>
   );
 }
@@ -5377,10 +5370,10 @@ const SPEAKER_BAR = ["bg-indigo-500", "bg-teal-500", "bg-amber-500", "bg-rose-50
 
 function TalkBalance({ metrics: m }: { metrics: DeliveryMetrics }) {
   return (
-    <Card className={m.dominated_by ? "border-amber-200 dark:border-amber-900/60" : ""}>
+    <Card>
       <div className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">
-          🎙️ Talk-time balance
+          Talk-time balance
         </h3>
         <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">team event</span>
       </div>
@@ -5399,7 +5392,7 @@ function TalkBalance({ metrics: m }: { metrics: DeliveryMetrics }) {
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {m.speakers.map((s, i) => (
-          <div key={s.speaker} className="flex items-center gap-2.5 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800">
+          <div key={s.speaker} className="flex items-center gap-2.5 py-1">
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${SPEAKER_BAR[i % SPEAKER_BAR.length]}`} />
             <div className="min-w-0">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
@@ -5416,7 +5409,7 @@ function TalkBalance({ metrics: m }: { metrics: DeliveryMetrics }) {
 
       {m.balance_note && (
         <p className={`mt-3 text-xs leading-relaxed ${m.dominated_by ? "text-amber-800 dark:text-amber-300" : "text-slate-500 dark:text-slate-400"}`}>
-          {m.dominated_by ? "⚠ " : "✓ "}{m.balance_note}
+          {m.balance_note}
         </p>
       )}
     </Card>
@@ -5429,14 +5422,17 @@ const TIME_HINT: Record<DeliveryMetrics["time_flag"], string> = {
   long: "near limit",
 };
 
+// One delivery figure. Emerald when it is where it should be, amber when it is
+// worth a look; the colour is a dot and a faint wash, as on the summary strips.
 function Stat({ label, value, unit, ok }: { label: string; value: string; unit?: string; ok: boolean }) {
-  const tone = ok
-    ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/60 dark:bg-emerald-950/30"
-    : "border-amber-200 bg-amber-50/50 dark:border-amber-900/60 dark:bg-amber-950/30";
+  const tone = ok ? LEVEL_COLOR.exemplary : LEVEL_COLOR.developing;
   return (
-    <div className={`rounded-xl border ${tone} px-3 py-2.5`}>
-      <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 font-mono text-xl font-bold text-slate-900 dark:text-slate-100">{value}</div>
+    <div className="pic-tone border-l border-slate-200 px-4 py-3 first:border-l-0 dark:border-slate-800 max-sm:[&:nth-child(3)]:border-l-0 max-sm:[&:nth-child(n+3)]:border-t" style={{ "--c": tone } as CSSProperties}>
+      <div className="flex items-center gap-1.5 text-[13px] text-slate-500 dark:text-slate-400">
+        <LevelDot color={tone} />
+        {label}
+      </div>
+      <div className="mt-0.5 text-xl font-semibold tracking-[-0.03em] tabular-nums text-slate-900 dark:text-slate-100">{value}</div>
       {unit && <div className="text-xs text-slate-500 dark:text-slate-400">{unit}</div>}
     </div>
   );
@@ -5452,12 +5448,12 @@ function CriterionRow({ r }: { r: CriterionScore }) {
   const headline = r.headline || truncate(r.feedback.replace(/\*\*/g, ""), 90);
   const hasDetail = !!r.feedback || r.evidence.length > 0 || r.gaps.length > 0;
   return (
-    <div className={`rounded-xl border ${tone.border} ${tone.bg}`}>
+    <div className="border-b border-slate-200 last:border-b-0 dark:border-slate-800">
       <button
         type="button"
         onClick={() => hasDetail && setOpen((o) => !o)}
         aria-expanded={open}
-        className={`flex w-full items-start justify-between gap-3 px-3.5 py-3 text-left ${hasDetail ? "cursor-pointer" : "cursor-default"}`}
+        className={`flex w-full items-start justify-between gap-3 py-3 text-left ${hasDetail ? "cursor-pointer" : "cursor-default"}`}
       >
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
@@ -5467,13 +5463,16 @@ function CriterionRow({ r }: { r: CriterionScore }) {
           {headline && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{headline}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${tone.badge}`}>{tone.label}</span>
-          <span className="font-mono text-xs font-semibold text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-slate-600 dark:text-slate-300">
+            <LevelDot color={LEVEL_COLOR[r.level]} />
+            {tone.label}
+          </span>
+          <span className="font-mono text-xs text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
           {hasDetail && <span className="text-xs text-slate-500 dark:text-slate-400">{open ? "▾" : "▸"}</span>}
         </div>
       </button>
       {open && hasDetail && (
-        <div className="border-t border-black/5 px-3.5 pb-3 pt-2.5 dark:border-white/10">
+        <div className="max-w-[80ch] pb-4">
           {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
           {r.evidence.length > 0 && (
             <div className={`mt-2 flex flex-wrap gap-1.5 ${PH_MASK}`}>
@@ -5493,11 +5492,11 @@ function CriterionRow({ r }: { r: CriterionScore }) {
 
 function GapList({ gaps }: { gaps: string[] }) {
   return (
-    <div className="mt-2.5 rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2 dark:border-amber-900/60 dark:bg-amber-950/30">
-      <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">To raise the level, add</p>
-      <ul className="mt-1.5 space-y-1">
+    <div className="mt-3">
+      <p className="text-[13px] font-medium text-amber-700 dark:text-amber-400">To raise the level, add</p>
+      <ul className="mt-1 space-y-1">
         {gaps.map((g, i) => (
-          <li key={i} className="flex gap-1.5 text-xs text-amber-900 dark:text-amber-200"><span className="text-amber-500">+</span><span>{g}</span></li>
+          <li key={i} className="flex gap-1.5 text-[13px] text-slate-700 dark:text-slate-200"><span className="text-amber-500">+</span><span>{g}</span></li>
         ))}
       </ul>
     </div>
@@ -5559,12 +5558,12 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
     if (open) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [open]);
   return (
-    <div ref={ref} className={`rounded-xl border ${tone.border} ${tone.bg}`}>
+    <div ref={ref} className="border-b border-slate-200 dark:border-slate-800">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-start justify-between gap-2 px-3 py-2.5 text-left"
+        className="flex w-full items-start justify-between gap-2 py-2.5 text-left"
       >
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
@@ -5574,13 +5573,16 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
           {!open && headline && <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{headline}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone.badge}`}>{tone.label}</span>
-          <span className="font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-600 dark:text-slate-300">
+            <LevelDot color={LEVEL_COLOR[r.level]} />
+            {tone.label}
+          </span>
+          <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300">{r.points}/{r.max_points}</span>
           <span className="text-xs text-slate-500 dark:text-slate-400">{open ? "▾" : "▸"}</span>
         </div>
       </button>
       {open && (
-        <div className="space-y-2 border-t border-black/5 px-3 pb-3 pt-2.5 dark:border-white/10">
+        <div className="space-y-2 pb-3">
           {r.feedback && <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{richText(r.feedback)}</p>}
           {r.evidence.length > 0 && (
             <div className={`flex flex-wrap gap-1.5 ${PH_MASK}`}>
@@ -5593,8 +5595,8 @@ function TranscriptNoteRow({ r, open, onToggle }: { r: CriterionScore; open: boo
           )}
           {showGaps && <GapList gaps={r.gaps} />}
           {showSuggestion && (
-            <p className="rounded-lg border border-dashed border-indigo-300 bg-indigo-50/70 px-2.5 py-1.5 text-xs leading-relaxed text-indigo-800 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200">
-              <span className="font-semibold">💡 Could’ve said:</span> <span className="italic">“{r.suggestion}”</span>
+            <p className="text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">
+              <span className="font-medium text-indigo-700 dark:text-indigo-300">You could have said:</span> <span className="italic">“{r.suggestion}”</span>
             </p>
           )}
         </div>
@@ -6007,12 +6009,12 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
 
 function FAQItem({ q, children }: { q: string; children: ReactNode }) {
   return (
-    <details className="group rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition open:shadow-md dark:border-slate-800 dark:bg-slate-900">
+    <details className="group pic-inset border-b border-slate-200 py-3.5 dark:border-slate-800">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
         <span className="font-display text-[15px] font-semibold text-slate-900 dark:text-slate-100">{q}</span>
         <span className="shrink-0 text-slate-400 transition group-open:rotate-45 dark:text-slate-500">＋</span>
       </summary>
-      <div className="mt-3 space-y-2.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{children}</div>
+      <div className="mt-3 max-w-[76ch] space-y-2.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{children}</div>
     </details>
   );
 }
@@ -6020,27 +6022,22 @@ function FAQItem({ q, children }: { q: string; children: ReactNode }) {
 function FAQGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="mb-3 font-display text-sm font-semibold uppercase tracking-wider text-indigo-500">{title}</h2>
-      <div className="space-y-2.5">{children}</div>
+      <h2 className="pic-bleed pic-inset -mt-px border-y border-slate-200 bg-slate-50 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">{title}</h2>
+      <div className="pic-bleed">{children}</div>
     </section>
   );
 }
 
 function FAQPage({ onStart }: { onStart: () => void }) {
   return (
-    <div className="space-y-10">
-      <section className="pt-2">
-        <Eyebrow>Questions &amp; answers</Eyebrow>
-        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
-          How PI Coach works
-          <br />
-          <span className="text-indigo-600 dark:text-indigo-400">and why it's different.</span>
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-          Honest answers about the AI, how we grade, how we compare to other tools, whether it's allowed, and how
-          to actually get better with it.
-        </p>
-      </section>
+    <div>
+      <PageHead
+        sub="Questions and answers"
+        title="How PI Coach works, and why it's different"
+        blurb="Honest answers about the AI, how we grade, how we compare to other tools, whether it's allowed, and how to actually get better with it."
+      >
+        <button className={BTN_PRIMARY} onClick={onStart}>Start practicing</button>
+      </PageHead>
 
       <FAQGroup title="Using the AI">
         <FAQItem q="How does the AI actually work?">
@@ -6164,13 +6161,13 @@ function FAQPage({ onStart }: { onStart: () => void }) {
         </FAQItem>
       </FAQGroup>
 
-      <Card className="border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30">
+      <Card className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Still have a question?</h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Use the 💬 Feedback button up top. We read everything.</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Use the Feedback button up top. We read everything.</p>
           </div>
-          <button className={BTN_PRIMARY} onClick={onStart}>Start practicing →</button>
+          <button className={BTN_PRIMARY} onClick={onStart}>Start practicing</button>
         </div>
       </Card>
     </div>

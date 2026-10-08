@@ -304,11 +304,19 @@
 :is(button, a).bg-indigo-600:hover:not(:disabled) {
   background-image: linear-gradient(180deg, #5558ee, #4338ca);
 }
+.uppercase {
+  letter-spacing: 0;
+  text-transform: none;
+}
 .font-mono.uppercase {
   font-family: var(--font-sans);
   font-size: 0.75rem;
-  letter-spacing: 0;
-  text-transform: none;
+}
+/* The first section under a page's summary strip does not need its own rule:
+   the strip's bottom edge is already there. */
+.pic-flush > * > :first-child {
+  border-top-width: 0;
+  padding-top: 0;
 }
 
 /* Loader: the concentric brand mark rippling. A shrink→expand wave travels from

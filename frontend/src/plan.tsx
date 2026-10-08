@@ -57,7 +57,7 @@ const MICROLABEL = "font-mono text-[10px] font-semibold uppercase tracking-[0.12
 const TEXT_ACTION =
   "rounded-md text-sm font-medium text-slate-600 underline-offset-4 transition hover:text-slate-900 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-40 dark:text-slate-300 dark:hover:text-slate-100";
 const INPUT =
-  "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 
 // --- helpers ------------------------------------------------------------------
 
@@ -259,7 +259,7 @@ export function StudyPlanSection({
               setEditing(true);
             }}
           >
-            {plan ? `Plan for ${course.event}` : "Build my plan →"}
+            {plan ? `Plan for ${course.event}` : "Build my plan"}
           </button>
         </div>
       </Card>
@@ -642,7 +642,7 @@ function PlanBuilder({
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button className={BTN_PRIMARY} disabled={!valid || saving} onClick={save}>
-          {saving ? "Saving…" : authed ? (initial ? "Save changes" : "Save my plan →") : "Create an account to save this plan"}
+          {saving ? "Saving…" : authed ? (initial ? "Save changes" : "Save my plan") : "Create an account to save this plan"}
         </button>
         <button className={BTN_SECONDARY} onClick={onCancel} disabled={saving}>
           Cancel
@@ -1041,34 +1041,34 @@ function TaskRow({
               Study cards
             </button>
             <button className={primary(flipped)} disabled={busy} onClick={() => onLaunch(task, "blitz")}>
-              ⚡ Blitz
+              Blitz
             </button>
             {/* Free to run, so it never competes with the Blitz for the day's
                 allowance. Secondary because a Blitz proves a term and a quiz
                 cannot (backend/app/study.py). */}
             <button className={primary(false)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
-              ◎ Quiz
+              Quiz
             </button>
           </>
         )}
         {task.kind === "review" && (
           <>
             <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "blitz")}>
-              ⚡ Blitz {task.term_ids.length}
+              Blitz {task.term_ids.length}
             </button>
             <button className={primary(false)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
-              ◎ Quiz
+              Quiz
             </button>
           </>
         )}
         {task.kind === "quiz" && (
           <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
-            Start practice test →
+            Start practice test
           </button>
         )}
         {(task.kind === "roleplay" || task.kind === "mock") && (
           <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "practice")}>
-            {task.kind === "mock" ? "Start mock run →" : "Start role-play →"}
+            {task.kind === "mock" ? "Start mock run" : "Start role-play"}
           </button>
         )}
       </div>}
@@ -1247,7 +1247,7 @@ export function PlanTodayCard({ plan, onOpen }: { plan: StudyPlan; onOpen: () =>
           </p>
         </div>
         <button className={`${BTN_SECONDARY} shrink-0`} onClick={onOpen}>
-          Open my plan →
+          Open my plan
         </button>
       </div>
       {shown.length > 0 && (
@@ -1275,13 +1275,13 @@ export function PlanTodayCard({ plan, onOpen }: { plan: StudyPlan; onOpen: () =>
 
 export function PlanNudge({ eventName, onOpen }: { eventName: string; onOpen: () => void }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Studying for <span className="font-semibold text-slate-900 dark:text-slate-100">{eventName}</span>? Add your
         competition dates and get a day-by-day plan.
       </p>
       <button className={`${TEXT_ACTION} text-indigo-700 dark:text-indigo-300`} onClick={onOpen}>
-        Build my plan →
+        Build my plan
       </button>
     </div>
   );
