@@ -3291,7 +3291,7 @@ function FormRow({ label, note, children }: { label: string; note?: string; chil
         {label}
         {note && <span className="block text-[13px] font-normal text-slate-500 dark:text-slate-400">{note}</span>}
       </div>
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{children}</div>
     </div>
   );
 }
@@ -4017,66 +4017,123 @@ function WaitlistCTA({ onStart }: { onStart: () => void }) {
   );
 }
 
+// The run of a role-play, down the sidebar: what is done, where you are, what is
+// left, and the skills this scenario tests. Every step screen renders it, so the
+// list stays put while the page beside it changes.
+const REP_STEPS = ["Get ready", "Prep", "Your presentation", "Judge's questions", "Feedback"];
+
+function RepSidebar({ scenario, step }: { scenario: ScenarioResponse; step: number }) {
+  return (
+    <Sidebar>
+      <SideGroup title="This role-play">
+        <ol className="flex gap-1 overflow-x-auto lg:block">
+          {REP_STEPS.map((label, i) => {
+            const done = i < step;
+            const on = i === step;
+            return (
+              <li
+                key={label}
+                aria-current={on ? "step" : undefined}
+                className={`flex items-center gap-2.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm ${
+                  on
+                    ? "pic-on font-medium text-indigo-700 dark:text-indigo-300"
+                    : done
+                      ? "text-slate-400 dark:text-slate-500"
+                      : "text-slate-600 dark:text-slate-300"
+                }`}
+              >
+                <span
+                  className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border text-[10px] ${
+                    done
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : on
+                        ? "border-indigo-500 text-indigo-600 dark:text-indigo-300"
+                        : "border-slate-300 text-slate-500 dark:border-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                {label}
+              </li>
+            );
+          })}
+        </ol>
+      </SideGroup>
+      <SideGroup title="Skills being tested" className="hidden lg:block">
+        <ul className="space-y-1.5 px-2.5 text-sm text-slate-600 dark:text-slate-300">
+          {scenario.criteria.map((c) => (
+            <li key={c.id} className="truncate">{c.name}</li>
+          ))}
+        </ul>
+      </SideGroup>
+    </Sidebar>
+  );
+}
+
+// The head of a step that runs against a clock. The clock floats at the right
+// and follows the page down, so it is always in view; the title sits beside it
+// on a wide screen and under it on a phone.
+function RepHead({ sub, title, clock }: { sub: ReactNode; title: ReactNode; clock: ReactNode }) {
+  return (
+    <>
+      <div className="pointer-events-none sticky top-[68px] z-10 flex justify-end pt-4 sm:-mb-[84px]">
+        <div className="pointer-events-auto max-w-full">{clock}</div>
+      </div>
+      <div className="sm:pr-[21rem]">
+        <PageHead sub={sub} title={title} />
+      </div>
+    </>
+  );
+}
+
 function ReadyScreen(props: { scenario: ScenarioResponse; onStart: () => void }) {
   const s = props.scenario;
   const prepMin = Math.round(s.timing.prep_seconds / 60);
   const presentMin = Math.round(s.timing.present_seconds / 60);
   const targetMin = Math.round(s.timing.target_seconds / 60);
+  const n = s.followup_questions.length;
   return (
-    <div className="space-y-4">
-      <Card>
-        <Eyebrow>Ready when you are</Eyebrow>
-        <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          {s.topic}
-        </h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{scenarioSubtitle(s)}</p>
-        <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Your scenario is written. Take a breath: the prep clock only starts when you press the button.
-        </p>
+    <div>
+      <RepSidebar scenario={s} step={0} />
+      <PageHead
+        sub={scenarioSubtitle(s) || "Your role-play"}
+        title={s.topic}
+        blurb="Your scenario is written. Take a breath: the prep clock only starts when you press the button."
+      >
+        <button className={BTN_PRIMARY} onClick={props.onStart}>
+          Start prep ({fmt(s.timing.prep_seconds)})
+        </button>
+      </PageHead>
+      <div className="pic-bleed">
+        <FormRow label="Have ready">Pen and paper, or open notes. You'll outline your plan during prep.</FormRow>
+        <FormRow label="Timing">
+          <strong className="font-semibold">{prepMin} minutes</strong> to read and plan, then{" "}
+          <strong className="font-semibold">{presentMin} to present</strong>. That window includes the judge's questions.
+        </FormRow>
+        <FormRow label="Aim for">
+          Wrap your pitch in about <strong className="font-semibold">{targetMin} {targetMin === 1 ? "minute" : "minutes"}</strong>, leaving the rest for the follow-up.
+        </FormRow>
+        <FormRow label="Where">Find a quiet spot and present out loud. You can type or speak.</FormRow>
+        <FormRow label="Follow-up">
+          At the end the judge asks {n === 1 ? "a follow-up question" : `${n} follow-up questions`}. You'll answer {n === 1 ? "it" : "those"} too.
+        </FormRow>
         {s.team && (
-          <p className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-xs text-indigo-900 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-200">
-            <strong className="font-semibold">Team event:</strong> you get more time: {prepMin} minutes to prep and {presentMin} to present.
-            If you record, we'll pick up both partners' voices and show how the talking was split.
-          </p>
+          <FormRow label="Team event">
+            You get more time: {prepMin} minutes to prep and {presentMin} to present. If you record, we'll pick up both
+            partners' voices and show how the talking was split.
+          </FormRow>
         )}
         {s.quantitative && (
-          <p className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
-            <strong className="font-semibold">🧮 Numbers matter here:</strong> show your calculations. Any math you do is
-            recomputed on our server, exactly, so your figures get checked, not guessed at.
-          </p>
+          <FormRow label="Numbers matter">
+            Show your calculations. Any math you do is recomputed on our server, exactly, so your figures get checked,
+            not guessed at.
+          </FormRow>
         )}
-
-        <h3 className="mt-6 font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Before you start</h3>
-        <ul className="mt-2 space-y-2 text-sm text-slate-700 dark:text-slate-200">
-          <Tip icon="✏️">Grab a pen and paper (or open notes). You'll outline your plan during prep.</Tip>
-          <Tip icon="⏱️">
-            <strong className="font-semibold">{prepMin} minutes</strong> to read and plan, then{" "}
-            <strong className="font-semibold">{presentMin} to present</strong>, that window includes the judge's questions.
-          </Tip>
-          <Tip icon="🎯">
-            Aim to wrap your pitch in about <strong className="font-semibold">{targetMin} {targetMin === 1 ? "minute" : "minutes"}</strong>, leaving the rest for the follow-up.
-          </Tip>
-          <Tip icon="🗣️">Find a quiet spot and present out loud: type or use 🎙️ Speak.</Tip>
-          <Tip icon="❓">
-            At the end the judge asks {s.followup_questions.length === 1 ? "a follow-up question" : `${s.followup_questions.length} follow-up questions`}. You'll answer {s.followup_questions.length === 1 ? "it" : "those"} too.
-          </Tip>
-        </ul>
-
-        <button className={`mt-6 ${BTN_PRIMARY}`} onClick={props.onStart}>
-          I'm ready: start prep ({fmt(s.timing.prep_seconds)}) →
-        </button>
-      </Card>
-      <RubricNote scenario={s} />
+        <div className={`pic-inset border-t pt-5 border-slate-200 dark:border-slate-800`}>
+          <RubricNote scenario={s} />
+        </div>
+      </div>
     </div>
-  );
-}
-
-function Tip({ icon, children }: { icon: string; children: ReactNode }) {
-  return (
-    <li className="flex gap-2.5">
-      <span className="select-none">{icon}</span>
-      <span>{children}</span>
-    </li>
   );
 }
 
@@ -4084,13 +4141,26 @@ function PrepScreen(props: { scenario: ScenarioResponse; onStart: () => void }) 
   const prep = props.scenario.timing.prep_seconds;
   const left = useCountdown(prep, true, props.onStart);
   return (
-    <div className="space-y-4">
-      <TimerBar label="Prep time" left={left} total={prep} tone="indigo" sticky />
-      <CoverSheet scenario={props.scenario} />
-      <SituationSheet text={props.scenario.situation} />
-      <button className={BTN_PRIMARY} onClick={props.onStart}>
-        I'm done prepping. I'm ready to present →
-      </button>
+    <div>
+      <RepSidebar scenario={props.scenario} step={1} />
+      <RepHead
+        sub={scenarioSubtitle(props.scenario) || "Prep"}
+        title={props.scenario.topic}
+        clock={<TimerBar label="Prep time" left={left} total={prep} tone="indigo" />}
+      />
+      <div className={`pic-bleed pic-inset border-y bg-slate-50 py-5 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800`}>
+        <div className="max-w-[78ch]">
+          <SituationSheet text={props.scenario.situation} embedded />
+        </div>
+      </div>
+      <div className="max-w-4xl pt-6">
+        <CoverSheet scenario={props.scenario} embedded />
+      </div>
+      <div className={`mt-6 flex justify-end border-t pt-5 border-slate-200 dark:border-slate-800`}>
+        <button className={BTN_PRIMARY} onClick={props.onStart}>
+          I'm done prepping, present now
+        </button>
+      </div>
     </div>
   );
 }
@@ -4114,7 +4184,7 @@ function PresentClock({ remaining, running, total, autoCountdown }: {
   const tone = !running
     ? autoCountdown !== null ? "amber" : "indigo"
     : remaining === 0 ? "red" : wrapUp ? "amber" : "slate";
-  return <TimerBar label={label} left={remaining} total={total} tone={tone} sticky />;
+  return <TimerBar label={label} left={remaining} total={total} tone={tone} />;
 }
 
 // A quick breather between prep and presenting, so the participant walks in on
@@ -4122,26 +4192,26 @@ function PresentClock({ remaining, running, total, autoCountdown }: {
 function WalkinScreen(props: { scenario: ScenarioResponse; onEnter: () => void }) {
   const s = props.scenario;
   return (
-    <div className="space-y-4">
-      <Card className="text-center">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-indigo-50 dark:bg-indigo-950/50">
-          <span className="text-3xl">🚪</span>
-        </div>
-        <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-          You're up next
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Prep's done. Take a breath, gather your notes, and walk in when you're ready. The presentation clock
-          <strong className="font-semibold text-slate-800 dark:text-slate-200"> won't start until you begin speaking or typing</strong>, so there's no rush to press this.
-        </p>
-        <div className="mx-auto mt-4 max-w-md rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
-          Open with a greeting and a firm handshake energy, state who you are and your recommendation up front, then
-          walk the judge through it. You've got {Math.round(s.timing.present_seconds / 60)} minutes for everything.
-        </div>
-        <button className={`mt-6 ${BTN_PRIMARY}`} onClick={props.onEnter}>
-          Enter the room →
+    <div>
+      <RepSidebar scenario={s} step={2} />
+      <PageHead
+        sub="Prep is done"
+        title="You're up next"
+        blurb={
+          <>
+            Take a breath, gather your notes, and walk in when you're ready. The presentation clock
+            <strong className="font-semibold text-slate-800 dark:text-slate-200"> won't start until you begin speaking or typing</strong>, so there's no rush to press this.
+          </>
+        }
+      >
+        <button className={BTN_PRIMARY} onClick={props.onEnter}>
+          Enter the room
         </button>
-      </Card>
+      </PageHead>
+      <p className="max-w-[70ch] border-t border-slate-200 pt-5 text-sm leading-relaxed text-slate-600 dark:border-slate-800 dark:text-slate-300">
+        Open with a greeting and a firm handshake energy, state who you are and your recommendation up front, then
+        walk the judge through it. You've got {Math.round(s.timing.present_seconds / 60)} minutes for everything.
+      </p>
     </div>
   );
 }
@@ -4182,20 +4252,25 @@ function RespondScreen(props: {
     props.onChange(v);
   };
   return (
-    <div className="space-y-4">
-      <PresentClock remaining={props.remaining} running={props.running} total={props.scenario.timing.present_seconds} autoCountdown={props.autoCountdown} />
+    <div>
+      <RepSidebar scenario={props.scenario} step={2} />
+      <RepHead
+        sub={scenarioSubtitle(props.scenario) || "Your presentation"}
+        title={props.scenario.topic}
+        clock={<PresentClock remaining={props.remaining} running={props.running} total={props.scenario.timing.present_seconds} autoCountdown={props.autoCountdown} />}
+      />
 
-      <details className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Show scenario &amp; what you're graded on</summary>
-        <div className="mt-3 space-y-4">
+      <details className="pic-bleed pic-inset border-y border-slate-200 bg-slate-50 py-3 text-sm dark:border-slate-800 dark:bg-slate-800/30">
+        <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-200">Show the scenario and what you're graded on</summary>
+        <div className="mt-3 max-w-4xl space-y-4 pb-2">
           <SituationSheet text={props.scenario.situation} embedded />
           <CoverSheet scenario={props.scenario} embedded />
         </div>
       </details>
 
-      <Card>
+      <div className="max-w-4xl pt-6">
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Your presentation</h3>
+          <h2 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">Your presentation</h2>
           {CAN_RECORD && <ModeToggle mode={props.mode} onMode={props.onMode} />}
         </div>
 
@@ -4238,27 +4313,24 @@ function RespondScreen(props: {
 
         <div className="mt-4 flex justify-end">
           <button className={`${BTN_PRIMARY} w-full sm:w-auto`} onClick={props.onContinue} disabled={!canContinue}>
-            Continue to the judge's questions →
+            Continue to the judge's questions
           </button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
 
 function ModeToggle({ mode, onMode }: { mode: ResponseMode; onMode: (m: ResponseMode) => void }) {
   return (
-    <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-0.5 text-xs font-medium">
-      {(["type", "speak"] as const).map((m) => (
-        <button
-          key={m}
-          className={`tap rounded-md px-3 py-1.5 transition ${mode === m ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}
-          onClick={() => onMode(m)}
-        >
-          {m === "type" ? "✍️ Type" : "🎙️ Speak"}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      value={mode}
+      onChange={onMode}
+      options={[
+        { value: "type", label: "Type" },
+        { value: "speak", label: "Speak" },
+      ]}
+    />
   );
 }
 
@@ -4340,10 +4412,10 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart, onRecordingStart }: { a
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-4 py-4">
+    <div className="rounded-lg border border-slate-200 px-4 py-4 dark:border-slate-800">
       {err && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{err}</div>}
       {state === "idle" && (
-        <button onClick={start} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
+        <button onClick={start} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
           <span className="h-2.5 w-2.5 rounded-full bg-white" /> Start recording
         </button>
       )}
@@ -4358,9 +4430,9 @@ function VoiceRecorder({ audioBlob, onRecorded, onStart, onRecordingStart }: { a
       )}
       {state === "recorded" && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">✓ Recorded: listen back below.</div>
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">Recorded. Listen back below.</div>
           {previewUrl && <audio controls src={previewUrl} className="w-full" />}
-          <button onClick={reset} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 font-mono text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200">↺ Re-record</button>
+          <button onClick={reset} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 font-mono text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200">Record again</button>
         </div>
       )}
     </div>
@@ -4394,28 +4466,34 @@ function FollowupScreen(props: {
     props.onChange(v);
   };
   return (
-    <div className="space-y-4">
-      <PresentClock remaining={props.remaining} running={props.running} total={props.scenario.timing.present_seconds} autoCountdown={props.autoCountdown} />
-      <Card>
+    <div>
+      <RepSidebar scenario={props.scenario} step={3} />
+      <RepHead
+        sub={props.scenario.topic}
+        title="The judge asks you"
+        clock={<PresentClock remaining={props.remaining} running={props.running} total={props.scenario.timing.present_seconds} autoCountdown={props.autoCountdown} />}
+      />
+      <ol className="pic-bleed border-t border-slate-200 dark:border-slate-800">
+        {qs.map((q, i) => (
+          <li key={i} className="pic-inset grid grid-cols-[28px_minmax(0,1fr)] items-baseline gap-3 border-b border-slate-200 py-3 text-sm text-slate-800 dark:border-slate-800 dark:text-slate-100">
+            <span className="font-mono text-xs text-slate-500 dark:text-slate-400">Q{i + 1}</span>
+            <span className="max-w-[78ch] leading-relaxed">{q}</span>
+          </li>
+        ))}
+        {qs.length === 0 && <li className="pic-inset border-b border-slate-200 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">No follow-up questions for this scenario.</li>}
+      </ol>
+
+      <div className="max-w-4xl pt-6">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">The judge asks you</h2>
+          <h2 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">Your answer</h2>
           {CAN_RECORD && <ModeToggle mode={props.mode} onMode={props.onMode} />}
         </div>
-        <ol className="mt-3 space-y-2">
-          {qs.map((q, i) => (
-            <li key={i} className="flex gap-2 rounded-xl bg-indigo-50/60 px-3 py-2.5 text-sm text-slate-800 dark:bg-indigo-950/40 dark:text-slate-100">
-              <span className="font-mono text-xs font-semibold text-indigo-500">Q{i + 1}</span>
-              <span>{q}</span>
-            </li>
-          ))}
-          {qs.length === 0 && <li className="text-sm text-slate-500 dark:text-slate-400">No follow-up questions for this scenario.</li>}
-        </ol>
 
         {props.mode === "type" ? (
           <>
-            <label className="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Your answer</label>
             <textarea
-              className={`mt-2 h-40 ${TEXTAREA_CLS}`}
+              className={`mt-3 h-40 ${TEXTAREA_CLS}`}
+              aria-label="Your answer"
               placeholder="Answer the judge's questions directly. This is graded as part of your response."
               value={props.value}
               onChange={(e) => handleType(e.target.value)}
@@ -4423,9 +4501,8 @@ function FollowupScreen(props: {
             <div className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{wordCount(props.value)} words</div>
           </>
         ) : (
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">Answer out loud</label>
-            <div className="mt-2">
+          <div className="mt-3">
+            <div>
               <VoiceRecorder audioBlob={props.audioBlob} onRecorded={props.onRecorded} onStart={props.onStart} />
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -4444,10 +4521,10 @@ function FollowupScreen(props: {
 
         <div className="mt-4 flex justify-end">
           <button className={`${BTN_PRIMARY} w-full sm:w-auto`} onClick={props.onSubmit} disabled={!canSubmit}>
-            Submit for feedback →
+            Submit for feedback
           </button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -4460,22 +4537,16 @@ function FollowupScreen(props: {
 // can play their recording back during the wait instead of watching a spinner.
 function DeliveryFirstScreen({ scenario, delivery, audioBlob }: { scenario: ScenarioResponse; delivery: DeliveryMetrics; audioBlob: Blob | null }) {
   return (
-    <div className="space-y-5">
-      <Card>
-        <Eyebrow>Delivery: ready now</Eyebrow>
-        <h2 className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100">
-          {scenario.topic}
-        </h2>
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 dark:border-indigo-900/60 dark:bg-indigo-950/40">
-          <span className="pic-spin h-4 w-4 shrink-0 rounded-full border-2 border-indigo-300 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-300" aria-hidden />
-          <div>
-            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">Grading your content…</p>
-            <p className="text-xs leading-relaxed text-indigo-800/80 dark:text-indigo-300/80">
-              Read your delivery below while we score your indicators and solution. Your full feedback drops in here in a few seconds.
-            </p>
-          </div>
-        </div>
-      </Card>
+    <div>
+      <RepSidebar scenario={scenario} step={4} />
+      <PageHead sub="Delivery, ready now" title={scenario.topic} />
+      <div className="mb-6 flex items-center gap-3 border-y border-slate-200 py-3.5 dark:border-slate-800">
+        <span className="pic-spin h-4 w-4 shrink-0 rounded-full border-2 border-indigo-300 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-300" aria-hidden />
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">Grading your content.</span> Read your
+          delivery below while we score your indicators and solution. Your full feedback drops in here in a few seconds.
+        </p>
+      </div>
       <DeliveryTab metrics={delivery} audioBlob={audioBlob} />
     </div>
   );
@@ -5732,7 +5803,7 @@ function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedd
             ? "The business skills this role-play assesses, with what a strong answer looks like, so you can aim for it."
             : "The business skills this role-play assesses, by name, just like a real role-play sheet. You supply the substance."}
         </p>
-        <ul className="mt-3 space-y-2.5">
+        <ul className="mt-3 border-t border-slate-200 dark:border-slate-800">
           {s.criteria.map((c) => (
             <CriterionBrief key={c.id} c={c} learn={learn} />
           ))}
@@ -5756,7 +5827,7 @@ function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedd
 // like (the teaching layer).
 function CriterionBrief({ c, learn }: { c: Criterion; learn: boolean }) {
   return (
-    <li className="rounded-xl border border-slate-200 bg-white/60 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-900/50">
+    <li className="border-b border-slate-200 py-2.5 last:border-b-0 dark:border-slate-800">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{c.name}</span>
         <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -5788,13 +5859,11 @@ function SituationSheet({ text, embedded }: { text: string; embedded?: boolean }
 
 function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
   return (
-    <Card className="border-slate-200 bg-white/60 dark:border-slate-800 dark:bg-slate-900/60">
-      <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-        You'll be graded on {scenario.criteria.length} business skills for this role-play, each scored
-        Novice → Exemplary with specific feedback and the exact phrases that earned credit. Practice coaching
-        against our own evaluation framework, not an official competition score.
-      </p>
-    </Card>
+    <p className="max-w-[78ch] text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+      You'll be graded on {scenario.criteria.length} business skills for this role-play, each scored
+      Novice → Exemplary with specific feedback and the exact phrases that earned credit. Practice coaching
+      against our own evaluation framework, not an official competition score.
+    </p>
   );
 }
 
@@ -5806,27 +5875,30 @@ function HonestyNote() {
   );
 }
 
-function TimerBar({ label, left, total, tone, sticky = false }: { label: string; left: number; total: number; tone: "indigo" | "amber" | "slate" | "red"; sticky?: boolean }) {
+// The clock, as a small floating bar in the dock's own material. The tone colours
+// the figure and the bar under it, never the whole thing, so a warning reads as
+// a change in the number you are already watching.
+function TimerBar({ label, left, total, tone }: { label: string; left: number; total: number; tone: "indigo" | "amber" | "slate" | "red" }) {
   const tones = {
-    indigo: { box: "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-200", num: "text-indigo-700 dark:text-indigo-300", bar: "bg-indigo-500" },
-    amber: { box: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200", num: "text-amber-700 dark:text-amber-300", bar: "bg-amber-500" },
-    slate: { box: "border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200", num: "text-slate-900 dark:text-slate-100", bar: "bg-slate-400" },
-    red: { box: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200", num: "text-red-600 dark:text-red-300", bar: "bg-red-500" },
+    indigo: { num: "text-indigo-700 dark:text-indigo-300", bar: "bg-indigo-500" },
+    amber: { num: "text-amber-600 dark:text-amber-300", bar: "bg-amber-500" },
+    slate: { num: "text-slate-900 dark:text-slate-100", bar: "bg-slate-400" },
+    red: { num: "text-red-600 dark:text-red-300", bar: "bg-red-500" },
   }[tone];
   const pct = total > 0 ? Math.max(0, Math.min(100, (left / total) * 100)) : 0;
   const announce = useTimerMilestone(label, left);
   return (
     <div
-      className={`rounded-2xl border px-4 py-3 shadow-sm ${tones.box} ${sticky ? "sticky top-[68px] z-10" : ""}`}
+      className="pic-dock flex max-w-full items-center gap-4 rounded-[14px] px-4 py-2.5 sm:max-w-[20rem]"
       role="timer"
       aria-label={`${label}: ${fmt(left)} remaining`}
     >
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">{label}</div>
-        <div className={`font-mono text-2xl font-bold tabular-nums ${tones.num}`} aria-hidden="true">{fmt(left)}</div>
-      </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-black/5" aria-hidden="true">
-        <div className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${tones.bar}`} style={{ width: `${pct}%` }} />
+      <div className="min-w-0 flex-1 text-[13px] leading-snug text-slate-600 dark:text-slate-300">{label}</div>
+      <div className="shrink-0">
+        <div className={`font-mono text-2xl font-medium leading-none tabular-nums ${tones.num}`} aria-hidden="true">{fmt(left)}</div>
+        <div className="mt-1.5 h-[3px] w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden="true">
+          <div className={`h-full origin-left transition-transform duration-1000 ease-linear ${tones.bar}`} style={{ transform: `scaleX(${pct / 100})` }} />
+        </div>
       </div>
       {/* Coarse spoken checkpoints: a per-second live region would flood a
           screen reader, so we only announce as the clock crosses a threshold. */}
@@ -5874,8 +5946,8 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
   }, [key]);
 
   return (
-    <Card>
-      <div className="flex flex-col items-center gap-6 py-12">
+    <div>
+      <div className="flex flex-col items-center gap-6 py-16">
         {/* The brand mark as a rippling target: 5 concentric layers (2 real rings
             + 2 background-colored "gap" rings + a glowing indigo dot) share one
             wave keyframe, staggered center→edge so the pulse travels outward. The
@@ -5887,7 +5959,6 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
 
         <div className="text-center">
           <p className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</p>
-          <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.22em] text-indigo-500">PI Coach</p>
         </div>
 
         {/* Indeterminate progress sweep. */}
@@ -5926,7 +5997,7 @@ function LoadingScreen({ title, steps }: { title: string; steps: string[] }) {
           })}
         </ul>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -6107,177 +6178,189 @@ function FAQPage({ onStart }: { onStart: () => void }) {
 }
 
 
+// The page's sections, in order: the sidebar's contents list and the anchors.
+const TIP_SECTIONS: [id: string, label: string][] = [
+  ["tips-method", "The four beats"],
+  ["tips-visuals", "Visuals"],
+  ["tips-playbook", "Before and during"],
+  ["tips-notebook", "Your notebook page"],
+  ["tips-time", "Filling the time"],
+];
+
 function TipsPage({ onStart }: { onStart: () => void }) {
+  const [at, setAt] = useState(TIP_SECTIONS[0][0]);
+  const go = (id: string) => {
+    setAt(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   return (
-    <div className="space-y-14">
-      {/* Hero */}
-      <section className="pt-2">
-        <Eyebrow>Competition tips</Eyebrow>
-        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
-          Don't just mention the skill.<br />
-          <span className="text-indigo-600 dark:text-indigo-400">Own it.</span>
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-          The competitors who place run every skill they're assessed on through the same four beats, and back it with a
-          visual the judge can't forget. Here's the method, with a worked example you can copy.
-        </p>
-      </section>
+    <div>
+      {/* Reads as a reference page: contents down the side, one article. */}
+      <Sidebar>
+        <SideGroup title="On this page" className="hidden lg:block">
+          {TIP_SECTIONS.map(([id, label]) => (
+            <SideItem key={id} active={at === id} onClick={() => go(id)}>{label}</SideItem>
+          ))}
+        </SideGroup>
+      </Sidebar>
 
-      {/* The DECA method */}
-      <section>
-        <SectionHead eyebrow="The core skill" title="The method for nailing a skill">
-          One running example: <strong className="font-semibold text-slate-700 dark:text-slate-200">channel strategy</strong> for
-          BrightBean, a small coffee roaster: carried through all four beats.
-        </SectionHead>
-        {/* The four beats read as one connected sequence, not a wall of identical
-            cards, a spine runs down through the numbered nodes so it's clear each
-            beat builds on the last, and Connect (where the points live) is lifted. */}
-        <ol className="relative mt-7 space-y-5 before:absolute before:bottom-5 before:left-[19px] before:top-5 before:w-px before:bg-slate-200 dark:before:bg-slate-800">
-          <MethodStep
-            n="1" accent="indigo" title="Define"
-            todo="Clearly and confidently define the skill or any key terms right away. Skip the textbook jargon: keep it simple and conversational so the judge knows you grasp the core concept."
-            example={<>“Channel strategy is just <em>how our product gets from us into the customer's hands</em>: the path it travels to reach them.”</>}
-          />
-          <MethodStep
-            n="2" accent="violet" title="Explain"
-            todo="Elaborate on why this skill matters to a business. Its broader impact, what it does, and why a company has to pay attention to it in the real world."
-            example={<>“Get the mix right and you control both your <em>margins</em> and how many customers you can reach. Lean on one channel and you're exposed; spread too thin and you lose focus.”</>}
-          />
-          <MethodStep
-            n="3" accent="fuchsia" title="Connect" highlight="Earns the most points"
-            todo="Directly apply the skill to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy. That's the systems thinking judges reward."
-            example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar. It captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
-          />
-          <MethodStep
-            n="4" accent="amber" title="Above & Beyond"
-            todo="Differentiate yourself. Add a creative element beyond the prompt: a quick chart, a real-world statistic, a famous brand case, or a niche business term."
-            example={<>“Quick math: 200 regulars at $20/mo is <em>~$48K/yr recurring</em>, about what a second wholesale account brings but at double the margin. (then I'd sketch a bar comparing the two.)”</>}
-          />
-        </ol>
-        <p className="mt-5 flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 px-4 py-3.5 text-sm leading-relaxed text-indigo-900 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200">
-          <span className="mt-0.5 shrink-0 font-mono text-xs font-bold uppercase tracking-wider text-indigo-500">Tip</span>
-          <span>If your sentence about the skill could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong>: tie it to the scenario in front of you.</span>
-        </p>
-      </section>
+      <PageHead
+        sub="Competition tips"
+        title="Don't just mention the skill. Own it."
+        blurb="The competitors who place run every skill they're assessed on through the same four beats, and back it with a visual the judge can't forget. Here's the method, with a worked example you can copy."
+      >
+        <button className={BTN_PRIMARY} onClick={onStart}>Start practicing</button>
+      </PageHead>
 
-      {/* Visuals */}
-      <section>
-        <SectionHead title="Use visuals to your advantage">
-          You get pen and paper in prep: most competitors only scribble notes. Draw <em>one</em> clean visual, turn it
-          toward the judge, and reference it out loud. Here's what to reach for and when.
-        </SectionHead>
-        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <VisualCard chart={<ChartBars />} title="Bar chart" when="Comparing 2-3 options on cost, margin, or risk to justify your pick." />
-          <VisualCard chart={<ChartLine />} title="Trend line" when="Anchoring the problem in data: a sales dip, a target, a before/after." />
-          <VisualCard chart={<ChartMatrix />} title="2×2 matrix" when="Positioning choices on two axes (effort vs impact) to defend priorities." />
-          <VisualCard chart={<ChartTimeline />} title="Timeline" when="Laying a rollout over weeks or quarters so the judge sees execution." />
-        </div>
-        <p className="mt-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Keep it large and labeled, and <strong className="font-semibold text-slate-900 dark:text-slate-100">say it out loud</strong> as you point
-          (“as you can see on my timeline…”). One confident visual beats a page of cramped notes.
-        </p>
-      </section>
+      <div className="space-y-16 border-t border-slate-200 pt-10 dark:border-slate-800">
+        {/* The method. One table, because the four beats are one sequence: what
+            to do in each, and the same running example carried through all of
+            them. Connect is where the points are, and says so in words. */}
+        <section id="tips-method" className="scroll-mt-24">
+          <SectionHead title="The method for nailing a skill">
+            One running example: <strong className="font-semibold text-slate-700 dark:text-slate-200">channel strategy</strong> for
+            BrightBean, a small coffee roaster, carried through all four beats.
+          </SectionHead>
+          <ol className="pic-bleed mt-7 border-t border-slate-200 dark:border-slate-800">
+            <MethodStep
+              n="1" title="Define"
+              todo="Clearly and confidently define the skill or any key terms right away. Skip the textbook jargon: keep it simple and conversational so the judge knows you grasp the core concept."
+              example={<>“Channel strategy is just <em>how our product gets from us into the customer's hands</em>: the path it travels to reach them.”</>}
+            />
+            <MethodStep
+              n="2" title="Explain"
+              todo="Elaborate on why this skill matters to a business. Its broader impact, what it does, and why a company has to pay attention to it in the real world."
+              example={<>“Get the mix right and you control both your <em>margins</em> and how many customers you can reach. Lean on one channel and you're exposed; spread too thin and you lose focus.”</>}
+            />
+            <MethodStep
+              n="3" title="Connect" highlight="Earns the most points"
+              todo="Directly apply the skill to your specific role-play scenario. Weave the concept into your actual proposed solution, product, or strategy. That's the systems thinking judges reward."
+              example={<>“For BrightBean, I'd add a <em>direct-to-consumer subscription</em> next to the coffee bar. It captures our regulars at full margin and gives us first-party data wholesale never will.”</>}
+            />
+            <MethodStep
+              n="4" title="Above & Beyond"
+              todo="Differentiate yourself. Add a creative element beyond the prompt: a quick chart, a real-world statistic, a famous brand case, or a niche business term."
+              example={<>“Quick math: 200 regulars at $20/mo is <em>~$48K/yr recurring</em>, about what a second wholesale account brings but at double the margin. (then I'd sketch a bar comparing the two.)”</>}
+            />
+          </ol>
+          <p className="mt-5 max-w-[72ch] text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            <strong className="font-semibold text-slate-900 dark:text-slate-100">Check yourself.</strong> If your sentence about the skill could apply to <em>any</em> company, you've only <strong className="font-semibold">Defined</strong> it. The points live in <strong className="font-semibold">Connect</strong>: tie it to the scenario in front of you.
+          </p>
+        </section>
 
-      {/* Before & during */}
-      <section>
-        <SectionHead eyebrow="The playbook" title="Before & during the role-play" />
-        {/* A numbered four-phase playbook (Prep → Delivery), not a wall of four
-            identical feature cards: leading numbers + varied heights read as a
-            sequence you move through. */}
-        <div className="mt-7 grid items-start gap-4 sm:grid-cols-2">
-          <TipCard n="01" phase="Prep time" title="Own your 10 minutes" items={[
-            "Read the situation twice; underline the actual ask.",
-            "Map each assessed skill to a moment in your plan.",
-            "Draft your visual early, not at the last minute.",
-            "Outline your open and close so you bookend strong.",
-          ]} />
-          <TipCard n="02" phase="Structure" title="A shape judges reward" items={[
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Open:</strong> greet, confirm your role, preview.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk the solution, hit every assessed skill through all four beats.</>,
-            <><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> restate the recommendation, invite questions.</>,
-          ]} />
-          <TipCard n="03" phase="Follow-up" title="Handle the questions" items={[
-            "Take a beat: a short pause beats rambling.",
-            "Answer directly, then tie back to your recommendation.",
-            "If unsure, reason out loud; judges reward sound thinking.",
-          ]} />
-          <TipCard n="04" phase="Delivery" title="Sound like a pro" items={[
-            "Steady pace (~130-160 wpm); trade “um” for a pause.",
-            "Make eye contact and use the judge's name.",
-            "Use the time, but leave room for the questions.",
-          ]} />
-        </div>
-      </section>
-
-      {/* Notebook */}
-      <section>
-        <SectionHead title="How to lay out your notebook page">
-          Your prep paper is a map you'll present from, not an essay. Set it up the same way every time so, under
-          pressure, your eyes always know where to look. Here's a layout that works.
-        </SectionHead>
-        <div className="mt-7 grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-          <NotebookMock />
-          <div className="space-y-3">
-            <NotebookStep n="1" title="Company & your role" body="Top of the page: the company name and the exact role you're playing. It anchors everything and stops you slipping out of character." />
-            <NotebookStep n="2" title="The problem, in one line" body="Force yourself to write the actual ask in a single sentence. If you can't, you haven't found it yet: reread the situation." />
-            <NotebookStep n="3" title="Each indicator + your own definition" body="List the skills you're assessed on. Next to each, write a short definition in YOUR words. That's your Define beat, ready to go." />
-            <NotebookStep n="4" title="A tie-back bullet per indicator" body="Under each, one bullet on how it applies to THIS scenario. That bullet is your Connect beat, where the points live." />
-            <NotebookStep n="5" title="Open & close" body="Jot your first line and last line. Bookending strong is half the impression, and it saves you when nerves hit." />
+        <section id="tips-visuals" className="scroll-mt-24">
+          <SectionHead title="Use visuals to your advantage">
+            You get pen and paper in prep: most competitors only scribble notes. Draw <em>one</em> clean visual, turn it
+            toward the judge, and reference it out loud. Here's what to reach for and when.
+          </SectionHead>
+          <div className="mt-7 grid overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 sm:grid-cols-2 lg:grid-cols-4">
+            <VisualCard chart={<ChartBars />} title="Bar chart" when="Comparing 2-3 options on cost, margin, or risk to justify your pick." />
+            <VisualCard chart={<ChartLine />} title="Trend line" when="Anchoring the problem in data: a sales dip, a target, a before/after." />
+            <VisualCard chart={<ChartMatrix />} title="2×2 matrix" when="Positioning choices on two axes (effort vs impact) to defend priorities." />
+            <VisualCard chart={<ChartTimeline />} title="Timeline" when="Laying a rollout over weeks or quarters so the judge sees execution." />
           </div>
-        </div>
-      </section>
+          <p className="mt-5 max-w-[72ch] text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            Keep it large and labeled, and <strong className="font-semibold text-slate-900 dark:text-slate-100">say it out loud</strong> as you point
+            (“as you can see on my timeline…”). One confident visual beats a page of cramped notes.
+          </p>
+        </section>
 
-      {/* Fill the time */}
-      <section>
-        <SectionHead title="Acronyms, and how to fill the time">
-          Two things separate a thin four-minute answer from a full, confident one: giving the judge a structure they
-          can follow, and having enough depth to actually use the window.
-        </SectionHead>
-        <div className="mt-7 grid gap-4 md:grid-cols-2">
-          <Card className="border-indigo-200 dark:border-indigo-900/60">
-            <Eyebrow>Use an acronym</Eyebrow>
-            <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Give the judge a handle</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              When you explain a process or plan, coin a simple acronym and walk its letters. It makes you sound
-              organized, helps the judge follow, and makes your answer memorable when they score you afterward.
-            </p>
-            <p className="mt-3 rounded-xl bg-slate-50 px-3.5 py-3 text-sm text-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
-              “My retention plan follows <strong className="font-semibold">R.A.M.P.</strong>: <strong className="font-semibold">R</strong>eward loyalty,
-              <strong className="font-semibold"> A</strong>utomate the outreach, <strong className="font-semibold">M</strong>easure repeat visits,
-              <strong className="font-semibold"> P</strong>ilot before rollout.”
-            </p>
-            <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-              Keep it to 3-5 letters and make each one real. A clear structure beats a clever-but-empty one.
-            </p>
-          </Card>
-          <Card>
-            <Eyebrow>Fill the time with substance</Eyebrow>
-            <h3 className="mt-2 font-display text-base font-semibold text-slate-900 dark:text-slate-100">Add depth, not padding</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              Running short? Don't slow down or repeat: add another layer. Each of these buys real time and earns points:
-            </p>
-            <ul className="mt-3 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
-              <Tip icon="④">Run every skill through all four beats (Define → Explain → Connect → Above &amp; Beyond).</Tip>
-              <Tip icon="⚖️">Name a second option you considered and why you rejected it.</Tip>
-              <Tip icon="🔢">Quantify: a rough number, a cost, or a target makes it concrete.</Tip>
-              <Tip icon="🗓️">Add an implementation timeline (first 30 days, then 90).</Tip>
-              <Tip icon="⚠️">Raise a risk and how you'd handle it: judges love foresight.</Tip>
-              <Tip icon="🏆">Drop a real brand example or a quick stat as proof.</Tip>
-            </ul>
-          </Card>
-        </div>
-      </section>
+        {/* A numbered four-phase playbook (Prep to Delivery): the numbers carry
+            the order, and the cells share their rules so it reads as one object. */}
+        <section id="tips-playbook" className="scroll-mt-24">
+          <SectionHead title="Before & during the role-play" />
+          <div className="mt-7 grid overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 sm:grid-cols-2">
+            <TipCard n="01" phase="Prep time" title="Own your 10 minutes" items={[
+              "Read the situation twice; underline the actual ask.",
+              "Map each assessed skill to a moment in your plan.",
+              "Draft your visual early, not at the last minute.",
+              "Outline your open and close so you bookend strong.",
+            ]} />
+            <TipCard n="02" phase="Structure" title="A shape judges reward" items={[
+              <><strong className="font-semibold text-slate-900 dark:text-slate-100">Open:</strong> greet, confirm your role, preview.</>,
+              <><strong className="font-semibold text-slate-900 dark:text-slate-100">Body:</strong> walk the solution, hit every assessed skill through all four beats.</>,
+              <><strong className="font-semibold text-slate-900 dark:text-slate-100">Close:</strong> restate the recommendation, invite questions.</>,
+            ]} />
+            <TipCard n="03" phase="Follow-up" title="Handle the questions" items={[
+              "Take a beat: a short pause beats rambling.",
+              "Answer directly, then tie back to your recommendation.",
+              "If unsure, reason out loud; judges reward sound thinking.",
+            ]} />
+            <TipCard n="04" phase="Delivery" title="Sound like a pro" items={[
+              "Steady pace (~130-160 wpm); trade “um” for a pause.",
+              "Make eye contact and use the judge's name.",
+              "Use the time, but leave room for the questions.",
+            ]} />
+          </div>
+        </section>
 
-      {/* CTA */}
-      <Card className="border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <section id="tips-notebook" className="scroll-mt-24">
+          <SectionHead title="How to lay out your notebook page">
+            Your prep paper is a map you'll present from, not an essay. Set it up the same way every time so, under
+            pressure, your eyes always know where to look. Here's a layout that works.
+          </SectionHead>
+          <div className="mt-7 grid gap-x-10 gap-y-6 lg:grid-cols-[1.1fr_1fr]">
+            <NotebookMock />
+            <ol className="border-t border-slate-200 dark:border-slate-800">
+              <NotebookStep n="1" title="Company & your role" body="Top of the page: the company name and the exact role you're playing. It anchors everything and stops you slipping out of character." />
+              <NotebookStep n="2" title="The problem, in one line" body="Force yourself to write the actual ask in a single sentence. If you can't, you haven't found it yet: reread the situation." />
+              <NotebookStep n="3" title="Each indicator + your own definition" body="List the skills you're assessed on. Next to each, write a short definition in YOUR words. That's your Define beat, ready to go." />
+              <NotebookStep n="4" title="A tie-back bullet per indicator" body="Under each, one bullet on how it applies to THIS scenario. That bullet is your Connect beat, where the points live." />
+              <NotebookStep n="5" title="Open & close" body="Jot your first line and last line. Bookending strong is half the impression, and it saves you when nerves hit." />
+            </ol>
+          </div>
+        </section>
+
+        <section id="tips-time" className="scroll-mt-24">
+          <SectionHead title="Acronyms, and how to fill the time">
+            Two things separate a thin four-minute answer from a full, confident one: giving the judge a structure they
+            can follow, and having enough depth to actually use the window.
+          </SectionHead>
+          <div className="mt-7 grid gap-x-10 gap-y-8 md:grid-cols-2">
+            <div className="border-t border-slate-200 pt-5 dark:border-slate-800">
+              <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">Give the judge a handle</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                When you explain a process or plan, coin a simple acronym and walk its letters. It makes you sound
+                organized, helps the judge follow, and makes your answer memorable when they score you afterward.
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+                “My retention plan follows <strong className="font-semibold">R.A.M.P.</strong>: <strong className="font-semibold">R</strong>eward loyalty,
+                <strong className="font-semibold"> A</strong>utomate the outreach, <strong className="font-semibold">M</strong>easure repeat visits,
+                <strong className="font-semibold"> P</strong>ilot before rollout.”
+              </p>
+              <p className="mt-3 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
+                Keep it to 3-5 letters and make each one real. A clear structure beats a clever-but-empty one.
+              </p>
+            </div>
+            <div className="border-t border-slate-200 pt-5 dark:border-slate-800">
+              <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">Add depth, not padding</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                Running short? Don't slow down or repeat: add another layer. Each of these buys real time and earns points:
+              </p>
+              <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+                {[
+                  "Run every skill through all four beats (Define → Explain → Connect → Above & Beyond).",
+                  "Name a second option you considered and why you rejected it.",
+                  "Quantify: a rough number, a cost, or a target makes it concrete.",
+                  "Add an implementation timeline (first 30 days, then 90).",
+                  "Raise a risk and how you'd handle it: judges love foresight.",
+                  "Drop a real brand example or a quick stat as proof.",
+                ].map((t) => (
+                  <li key={t} className="flex gap-2.5"><span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" />{t}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6 dark:border-slate-800">
           <div>
             <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Ready to put it into reps?</h3>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Generate a scenario and run the four beats live.</p>
           </div>
-          <button className={BTN_PRIMARY} onClick={onStart}>Start practicing →</button>
+          <button className={BTN_PRIMARY} onClick={onStart}>Start practicing</button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -6286,66 +6369,52 @@ function SectionHead({ eyebrow, title, children }: { eyebrow?: string; title: st
   return (
     <div className="max-w-2xl">
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-      <h2 className={`font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl ${eyebrow ? "mt-2" : ""}`}>{title}</h2>
+      <h2 className={`font-display text-2xl font-semibold tracking-[-0.02em] text-slate-900 dark:text-slate-100 ${eyebrow ? "mt-2" : ""}`}>{title}</h2>
       {children && <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{children}</p>}
     </div>
   );
 }
 
-const METHOD_ACCENT = {
-  indigo: { badge: "bg-indigo-600", rule: "border-l-indigo-400 dark:border-l-indigo-500", tag: "text-indigo-500" },
-  violet: { badge: "bg-violet-600", rule: "border-l-violet-400 dark:border-l-violet-500", tag: "text-violet-500" },
-  fuchsia: { badge: "bg-fuchsia-600", rule: "border-l-fuchsia-400 dark:border-l-fuchsia-500", tag: "text-fuchsia-500" },
-  amber: { badge: "bg-amber-500", rule: "border-l-amber-400 dark:border-l-amber-500", tag: "text-amber-600 dark:text-amber-500" },
-} as const;
-
-function MethodStep({ n, title, accent, todo, example, highlight }: {
-  n: string; title: string; accent: keyof typeof METHOD_ACCENT; todo: ReactNode; example: ReactNode; highlight?: string;
+// One beat of the method: its number and name, what to do, and the running
+// example, as a row of a table.
+function MethodStep({ n, title, todo, example, highlight }: {
+  n: string; title: string; todo: ReactNode; example: ReactNode; highlight?: string;
 }) {
-  const a = METHOD_ACCENT[accent];
   return (
-    <li className="relative flex gap-4 sm:gap-5">
-      <span className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold text-white shadow-sm ${a.badge}`}>{n}</span>
-      <div className="min-w-0 flex-1 pb-1">
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h3>
-          {highlight && (
-            <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700 dark:bg-fuchsia-950/60 dark:text-fuchsia-300">{highlight}</span>
-          )}
-        </div>
-        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{todo}</p>
-        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 dark:border-slate-800 dark:bg-slate-800/40">
-          <span className={`font-mono text-[10px] font-semibold uppercase tracking-[0.15em] ${a.tag}`}>Example</span>
-          <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{example}</p>
-        </div>
+    <li className="pic-inset grid gap-x-6 gap-y-2 border-b border-slate-200 py-4 dark:border-slate-800 md:grid-cols-[170px_minmax(0,1fr)_minmax(0,1fr)]">
+      <div>
+        <h3 className="flex items-baseline gap-2.5 font-display text-base font-semibold text-slate-900 dark:text-slate-100">
+          <span className="font-mono text-xs font-medium text-slate-500 dark:text-slate-400">{n}</span>
+          {title}
+        </h3>
+        {highlight && <p className="mt-0.5 pl-[1.15rem] text-[13px] font-medium text-indigo-600 dark:text-indigo-400">{highlight}</p>}
       </div>
+      <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{todo}</p>
+      <p className="text-sm leading-relaxed text-slate-800 dark:text-slate-100">{example}</p>
     </li>
   );
 }
 
 function VisualCard({ chart, title, when }: { chart: ReactNode; title: string; when: string }) {
   return (
-    <div className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
-      <div className="grid h-24 place-items-center rounded-xl bg-slate-50 dark:bg-slate-800/40">{chart}</div>
+    <div className="-mb-px -mr-px flex flex-col border-b border-r border-slate-200 p-5 dark:border-slate-800">
+      <div className="grid h-20 place-items-center">{chart}</div>
       <p className="mt-3 font-display text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
-      <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{when}</p>
+      <p className="mt-1 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">{when}</p>
     </div>
   );
 }
 
 function TipCard({ n, phase, title, items }: { n: string; phase: string; title: string; items: ReactNode[] }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center gap-3">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-indigo-100 font-mono text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">{n}</span>
-        <div className="min-w-0">
-          <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">{phase}</div>
-          <h3 className="font-display text-base font-semibold leading-tight text-slate-900 dark:text-slate-100">{title}</h3>
-        </div>
+    <div className="-mb-px -mr-px border-b border-r border-slate-200 p-6 dark:border-slate-800">
+      <div className="text-[13px] text-slate-500 dark:text-slate-400">
+        <span className="font-mono">{n}</span> {phase}
       </div>
+      <h3 className="mt-0.5 font-display text-base font-semibold leading-tight text-slate-900 dark:text-slate-100">{title}</h3>
       <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
         {items.map((it, i) => (
-          <li key={i} className="flex gap-2"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-indigo-400" />{it}</li>
+          <li key={i} className="flex gap-2.5"><span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" /><span>{it}</span></li>
         ))}
       </ul>
     </div>
@@ -6354,13 +6423,13 @@ function TipCard({ n, phase, title, items }: { n: string; phase: string; title: 
 
 function NotebookStep({ n, title, body }: { n: string; title: string; body: string }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-indigo-100 font-mono text-xs font-bold text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">{n}</span>
+    <li className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-3 border-b border-slate-200 py-3 dark:border-slate-800">
+      <span className="font-mono text-xs leading-5 text-slate-500 dark:text-slate-400">{n}</span>
       <div>
-        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</p>
         <p className="mt-0.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{body}</p>
       </div>
-    </div>
+    </li>
   );
 }
 
