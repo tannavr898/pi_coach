@@ -14,7 +14,7 @@
 // can start a term and demote one but never mark it known (backend/app/study.py).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getQuiz, type Level, type QuizQuestion, type Term } from "./api";
+import { getQuiz, reportStat, type Level, type QuizQuestion, type Term } from "./api";
 import { track } from "./analytics";
 import { markStudy, postActivity } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY, useScrollLock } from "./ui";
@@ -224,6 +224,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
         await markStudy(marks.slice(k, k + MARKS_PER_REQUEST));
       }
     })();
+    reportStat("quiz", questions.length);
     // The finished round as a whole, which is what a chapter assignment asks for.
     void postActivity({
       kind: "quiz",

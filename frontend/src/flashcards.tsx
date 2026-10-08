@@ -6,7 +6,7 @@
 // highlighted; any card can be flagged to study later (persisted via useFlags).
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getAllTerms, getEvents, getTerms, type EventSummary, type FlashcardExample, type Term } from "./api";
+import { getAllTerms, getEvents, getTerms, reportStat, type EventSummary, type FlashcardExample, type Term } from "./api";
 import { getCourse, getProgress, markStudy, postActivity, type Course } from "./progress";
 import type { FlagsApi } from "./flags";
 import { BTN_PRIMARY, BTN_SECONDARY, FilterChip, LEVEL_COLOR, LevelDot, LogoLoader, Meter, PageHead, PageLoader, Sidebar, SideGroup, SideItem, Strip, UNGRADED_COLOR, useScrollLock } from "./ui";
@@ -110,6 +110,7 @@ export function Flashcards({
   totalRef.current = total;
   useEffect(() => () => {
     const seen = [...marked.current];
+    reportStat("flashcards", seen.length);
     if (seen.length) void postActivity({ kind: "flashcards", term_ids: seen, score: seen.length, total: totalRef.current });
   }, []);
 

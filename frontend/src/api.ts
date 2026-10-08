@@ -394,10 +394,22 @@ export function getEvents(): Promise<EventSummary[]> {
 }
 
 // Site-wide totals. `show` is false until there are enough to be worth showing.
-export type PublicStats = { roleplays: number; blitzes: number; scenarios: number; show: boolean };
+// `visible` names the totals that have cleared their own threshold on the server,
+// in the order the landing page should prefer them.
+export type PublicStatKey = "roleplays" | "blitzes" | "scenarios" | "quizzes" | "questions" | "cards";
+export type PublicStats = Record<PublicStatKey, number> & { visible: PublicStatKey[]; show: boolean };
 
 export function getPublicStats(): Promise<PublicStats> {
   return request<PublicStats>("/api/stats");
+}
+
+// A finished quiz round (count = questions answered) or a flipped-through deck
+// (count = cards turned over), for the site-wide totals. Sent signed in or not:
+// both work without an account, and nothing else counts a signed-out student.
+// Fire-and-forget, a counter must never get in the way of studying.
+export function reportStat(kind: "quiz" | "flashcards", count: number): void {
+  if (count < 1) return;
+  void request("/api/stats/report", { method: "POST", body: JSON.stringify({ kind, count }) }).catch(() => {});
 }
 
 // Study terms by id, a weak-term deck, a flagged set, or a course unit. Graded

@@ -358,10 +358,14 @@ async def bump_scenario_served(scenario_id: str) -> None:
 # atomic under concurrent reps, same reason as bump_scenario_served.
 
 
-async def bump_stat(kind: str) -> None:
+async def bump_stat(kind: str, n: int = 1) -> None:
+    """Add `n` to a counter. The SQL function adds one at a time, so a batch is
+    that many calls over the one pooled connection: `n` is small (a quiz round, a
+    deck) and this only ever runs after the response has gone out."""
     async with conn() as client:
-        resp = await client.post(f"{_base()}/rpc/bump_stat", headers=_headers(), json={"p_kind": kind})
-    resp.raise_for_status()
+        for _ in range(n):
+            resp = await client.post(f"{_base()}/rpc/bump_stat", headers=_headers(), json={"p_kind": kind})
+            resp.raise_for_status()
 
 
 async def get_stats() -> dict[str, int]:

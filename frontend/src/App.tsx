@@ -8,6 +8,7 @@ import {
   type Level,
   type MathCheck,
   type Mode,
+  type PublicStatKey,
   type PublicStats,
   type RubricLevel,
   type ScenarioResponse,
@@ -3668,19 +3669,21 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
 }
 
 // The row of figures under the product shot, the way Vercel and Stripe follow a
-// hero with numbers. What the product holds is always shown; the live usage
-// counters (backend stats.py) join it only once the server says there are enough
-// role-plays to be worth mentioning, and a total that is still tiny is dropped
-// rather than printed next to a big one.
-const HERO_STAT_FLOOR = 25;
+// hero with numbers. What the product holds is always shown. A live usage total
+// (backend stats.py) joins it only once it has cleared its own threshold, which
+// the server decides and reports as `visible`, so a busy counter can appear while
+// a quiet one stays off the page.
+const STAT_LABEL: Record<PublicStatKey, string> = {
+  roleplays: "Role-plays graded",
+  questions: "Quiz questions answered",
+  cards: "Flashcards flipped",
+  scenarios: "Scenarios written",
+  quizzes: "Quizzes finished",
+  blitzes: "Blitz drills graded",
+};
 
 function HeroFacts({ stats }: { stats: PublicStats | null }) {
-  const live = stats
-    ? [
-        { n: stats.roleplays, label: "Role-plays graded" },
-        { n: stats.scenarios, label: "Scenarios written" },
-      ].filter((i) => i.n >= HERO_STAT_FLOOR)
-    : [];
+  const live = stats ? stats.visible.map((k) => ({ n: stats[k], label: STAT_LABEL[k] })) : [];
   const facts = [...live, { n: 28, label: "DECA events covered" }, { n: 830, label: "Study flashcards" }, { n: 1487, label: "Quiz questions" }, { n: 282, label: "Skills we can grade" }].slice(0, 4);
   return (
     <dl className="mx-auto mt-14 grid max-w-5xl grid-cols-2 border-y border-slate-200 text-left dark:border-slate-800 sm:mt-20 sm:grid-cols-4">

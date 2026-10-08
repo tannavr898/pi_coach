@@ -66,6 +66,17 @@ FIRST_ROLEPLAY_AFTER = 3   # a brand-new plan leads with learning, not a cold re
 # date approaches, which is when knowing where the gaps are is worth most.
 QUIZ_EVERY = {"learn": 5, "sharpen": 3}
 FIRST_QUIZ_AFTER = 2       # early enough to expose gaps while there is time to fix them
+# Role-plays with a real person: a teammate, an advisor, a parent playing the
+# judge. The app can rehearse the content, but not the room: eye contact, a
+# handshake, a human who interrupts. The plan aims for six to eight of them
+# before the first competition and spreads them over the days that are left, so
+# skipping one pulls the rest closer together instead of dropping it.
+LIVE_MIN = 20
+LIVE_TARGET_RANGE = (6, 8)
+LIVE_FULL_TARGET_DAYS = 42   # six weeks or more of runway: aim for the top of the range
+LIVE_MIN_GAP = 2             # never two days running; it takes another person's time
+FIRST_LIVE_AFTER = 4         # a few days' notice to line someone up
+LIVE_EVERY_AFTER_FIRST = 7   # between later stages (State to ICDC): keep one a week
 KEEP_SHARP_BATCHES = 2     # sharpen-phase filler, so free days aren't empty
 DETAIL_DAYS = 14
 HISTORY_KEEP = 60
@@ -125,6 +136,14 @@ def progress_map(rows: list[dict], tz_offset_min: int) -> dict[str, dict]:
 def session_dates(rows: list[dict], tz_offset_min: int) -> list[date]:
     """Local dates of completed role-plays, oldest first."""
     out = [local_date_of(r.get("created_at"), tz_offset_min) for r in rows]
+    return sorted(d for d in out if d)
+
+
+def live_dates(rows: list[dict], tz_offset_min: int) -> list[date]:
+    """Local dates of role-plays done with a real person, oldest first. These are
+    activity rows of kind "live", the one thing in the plan a student reports
+    themselves: there is no way for the app to see it happen."""
+    out = [local_date_of(r.get("created_at"), tz_offset_min) for r in rows if r.get("kind") == "live"]
     return sorted(d for d in out if d)
 
 
@@ -190,6 +209,24 @@ def _task(kind: str, day: date, title: str, detail: str, minutes: int, *,
         "criterion_name": criterion_name,
         "tier": tier,
     }
+
+
+def _live_plan(stages: list[dict], today: date, done: int) -> dict:
+    """How many live role-plays to aim for before the first competition still
+    ahead, and how far apart that puts them from here."""
+    first = next((s for s in stages if s["date"] > today), None)
+    if not first:
+        return {"until": None, "target": 0, "left": 0, "gap": LIVE_EVERY_AFTER_FIRST}
+    runway = (first["date"] - today).days
+    taper = TAPER_DAYS_SHORT if runway < SHORT_RUNWAY_DAYS else TAPER_DAYS
+    open_days = max(0, runway - taper)
+    lo, hi = LIVE_TARGET_RANGE
+    target = hi if open_days >= LIVE_FULL_TARGET_DAYS else lo + (hi - lo) * open_days // LIVE_FULL_TARGET_DAYS
+    # A short runway can't hold six without doubling up; it gets what fits.
+    left = min(max(0, target - done), open_days // LIVE_MIN_GAP)
+    gap = max(LIVE_MIN_GAP, open_days // left) if left else LIVE_EVERY_AFTER_FIRST
+    # The target shown is the one this runway can actually reach.
+    return {"until": first["date"], "target": done + left, "left": left, "gap": gap}
 
 
 def _learn_cost(n: int) -> int:
@@ -326,10 +363,32 @@ def _fill_day(day: date, budget: int, phase: str, target: dict | None, queue: li
             remaining -= BLITZ_MIN
         return tasks
 
+    # A role-play with a real person, on its own spacing. Before the first
+    # competition that spacing is whatever fits the target into the days left;
+    # after it, one a week. It stands in for the solo rep on the day it lands.
+    had_live = False
+    live = ctx["live"]
+    before_first = bool(target and live["until"] and target["date"] == live["until"])
+    due_gap = live["gap"] if before_first else LIVE_EVERY_AFTER_FIRST
+    if (live["left"] > 0 or not before_first) and (day - ctx["last_live"]).days >= due_gap:
+        mins = min(LIVE_MIN, remaining)
+        if before_first:
+            live["left"] -= 1
+            live["n"] += 1
+            count = f"Number {live['n']} of {live['target']} before {stage_name}."
+        else:
+            count = f"One a week keeps the room familiar before {stage_name}."
+        tasks.append(_task("live", day, "Role-play with a real person",
+                           "Ask a teammate, your advisor or a parent to play the judge. Present out loud, "
+                           f"shake hands, take their questions. {count}", mins))
+        remaining -= mins
+        ctx["last_live"] = day
+        had_live = True
+
     # Role-play on cadence. A day shorter than a full rep still gets one, it just
     # takes the whole day, or a 15-minutes-a-day student would never practice.
     last = ctx["last_roleplay"]
-    if (day - last).days >= ROLEPLAY_EVERY[phase]:
+    if not had_live and remaining > 0 and (day - last).days >= ROLEPLAY_EVERY[phase]:
         mins = min(ROLEPLAY_MIN, remaining)
         focus = ctx["weak_names"][0] if ctx["weak_names"] else ""
         title = f"Role-play: {focus}" if focus else "Role-play"
@@ -417,8 +476,12 @@ def _fill_day(day: date, budget: int, phase: str, target: dict | None, queue: li
 
 def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[dict], today: date, *,
               frozen_today: list[dict] | None = None, last_roleplay: date | None = None,
-              scale: float = 1.0, until: date | None = None) -> dict:
+              live: list[date] | None = None, scale: float = 1.0, until: date | None = None) -> dict:
     stages = _stages(inputs, today)
+    # Reps already reported, not counting today's: today's own task is either in
+    # the frozen list or about to be planned, and must not count itself as done.
+    live_before = [d for d in (live or []) if d < today]
+    live_plan = {**_live_plan(stages, today, len(live_before)), "n": len(live_before)}
     state = {k: dict(v) for k, v in progress.items()}
     queue = _queue(course, inputs.get("goal", "core"), state, weak)
     core_remaining = sum(len(g["term_ids"]) for g in queue if g["tier"] == "core")
@@ -431,6 +494,11 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
         # starting every simulation from the same offset is both simpler and
         # harmless, the worst case is one extra test.
         "last_quiz": today - timedelta(days=QUIZ_EVERY["learn"] - FIRST_QUIZ_AFTER),
+        "live": live_plan,
+        # With none done yet, the first lands a few days out (or sooner, when the
+        # spacing itself is shorter than that).
+        "last_live": live_before[-1] if live_before
+        else today - timedelta(days=max(0, live_plan["gap"] - FIRST_LIVE_AFTER)),
         "weak_names": [w["name"] for w in weak],
         "proven_core": [],
         "proven_extended": [],
@@ -461,6 +529,11 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
                     ctx["last_roleplay"] = day
                 if task["kind"] == "quiz":
                     ctx["last_quiz"] = day
+                if task["kind"] == "live":
+                    ctx["last_live"] = day
+                    if ctx["live"]["left"] > 0:
+                        ctx["live"]["left"] -= 1
+                        ctx["live"]["n"] += 1
             _remove_from_queue(queue, done_ids)
         else:
             tasks = _fill_day(day, budget, phase, target, queue, state, course_ids, ctx)
@@ -476,6 +549,7 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
         day += timedelta(days=1)
 
     return {"stages": stages, "days": days, "core_remaining": core_remaining,
+            "live_target": live_plan["target"],
             "proven_core": ctx["proven_core"], "proven_extended": ctx["proven_extended"],
             "extended_remaining": sum(len(g["term_ids"]) for g in _queue(course, "all", progress, weak) if g["tier"] == "extended")}
 
@@ -494,7 +568,8 @@ def _fmt(d: date) -> str:
 
 
 def _feasibility(course: dict, inputs: dict, progress: dict, weak: list[dict], today: date,
-                 sim: dict, last_roleplay: date | None, frozen_today: list[dict] | None) -> dict:
+                 sim: dict, last_roleplay: date | None, frozen_today: list[dict] | None,
+                 live: list[date] | None = None) -> dict:
     stages = [s for s in sim["stages"] if s["date"] > today]
     first = stages[0] if stages else None
     remaining = sim["core_remaining"]
@@ -538,7 +613,7 @@ def _feasibility(course: dict, inputs: dict, progress: dict, weak: list[dict], t
     out["status"] = "behind"
     pct = round(100 * out["core_by_first_stage"] / remaining)
     needed = _needed_minutes(course, inputs, progress, weak, today, first["date"], remaining,
-                             last_roleplay, frozen_today)
+                             last_roleplay, frozen_today, live)
     if needed:
         out["needed_minutes_per_day"] = needed
         out["message"] = (f"At this pace you'll prove about {pct}% of the core path by {first['name']}. "
@@ -552,7 +627,7 @@ def _feasibility(course: dict, inputs: dict, progress: dict, weak: list[dict], t
 
 def _needed_minutes(course: dict, inputs: dict, progress: dict, weak: list[dict], today: date,
                     stage_date: date, remaining: int, last_roleplay: date | None,
-                    frozen_today: list[dict] | None) -> int | None:
+                    frozen_today: list[dict] | None, live: list[date] | None = None) -> int | None:
     """The per-study-day minutes that would finish the core path before the first
     competition, or None if no realistic amount would (runway too short)."""
     active = [m for m in inputs["day_minutes"] if m > 0]
@@ -562,7 +637,7 @@ def _needed_minutes(course: dict, inputs: dict, progress: dict, weak: list[dict]
 
     def ok(scale: float) -> bool:
         sim = _simulate(course, inputs, progress, weak, today, frozen_today=frozen_today,
-                        last_roleplay=last_roleplay, scale=scale, until=stage_date)
+                        last_roleplay=last_roleplay, live=live, scale=scale, until=stage_date)
         f = _finish_date(sim["proven_core"], remaining)
         return bool(f and f < stage_date)
 
@@ -598,6 +673,7 @@ def _weeks(days: list[dict]) -> list[dict]:
             "new_terms": sum(len(t["term_ids"]) for t in tasks if t["kind"] in ("learn", "weak")),
             "reviews": sum(1 for t in tasks if t["kind"] == "review"),
             "roleplays": sum(1 for t in tasks if t["kind"] in ("roleplay", "mock")),
+            "live": sum(1 for t in tasks if t["kind"] == "live"),
             "minutes": sum(d["planned"] for d in chunk),
             "stages": [d["stage"] for d in chunk if d["stage"]],
         })
@@ -626,6 +702,7 @@ _CALENDAR_LABEL = {
     "weak": "Shore up flagged skills",
     "review": "Review Blitz",
     "roleplay": "Role-play",
+    "live": "Role-play with a real person",
     "mock": "Mock competition run",
 }
 
@@ -654,17 +731,18 @@ def _day_out(d: dict) -> dict:
 
 
 def build_plan(inputs: dict, progress: dict[str, dict], weak: list[dict], today: date, *,
-               frozen_today: list[dict] | None = None, last_roleplay: date | None = None) -> dict | None:
+               frozen_today: list[dict] | None = None, last_roleplay: date | None = None,
+               live: list[date] | None = None) -> dict | None:
     """The whole plan for a student, from today through their last competition.
 
-    `progress` is `progress_map()` output; `weak` is `weak_criteria()` output.
-    Returns None for an unknown event.
+    `progress` is `progress_map()` output; `weak` is `weak_criteria()` output;
+    `live` is `live_dates()` output. Returns None for an unknown event.
     """
     course = courses.course_for(inputs.get("event_id", ""))
     if not course:
         return None
     sim = _simulate(course, inputs, progress, weak, today, frozen_today=frozen_today,
-                    last_roleplay=last_roleplay)
+                    last_roleplay=last_roleplay, live=live)
     days = sim["days"]
     today_day = days[0] if days and days[0]["date"] == today else {
         "date": today, "weekday": _weekday(today), "budget": 0, "planned": 0,
@@ -676,7 +754,9 @@ def build_plan(inputs: dict, progress: dict[str, dict], weak: list[dict], today:
         "goal": inputs.get("goal", "core"),
         "day_minutes": list(inputs["day_minutes"]),
         "stages": [{**s, "date": s["date"].isoformat()} for s in sim["stages"]],
-        "feasibility": _feasibility(course, inputs, progress, weak, today, sim, last_roleplay, frozen_today),
+        "feasibility": _feasibility(course, inputs, progress, weak, today, sim, last_roleplay, frozen_today, live),
+        "live_done": len(live or []),
+        "live_target": sim["live_target"],
         "today": _day_out(today_day),
         "days": [_day_out(d) for d in days[:DETAIL_DAYS]],
         "weeks": _weeks(days),
@@ -689,10 +769,11 @@ def build_plan(inputs: dict, progress: dict[str, dict], weak: list[dict], today:
 
 
 def task_status(task: dict, progress: dict[str, dict], sessions_on_day: int, day: date,
-                roleplay_index: int = 0) -> dict:
+                roleplay_index: int = 0, live_on_day: int = 0) -> dict:
     """Overlay how far a student has got on one task. Derived from progress, never
     self-reported: a learn task is done when its terms are PROVEN (study.py's rule),
-    not when the cards were flipped."""
+    not when the cards were flipped. The one exception is a role-play with a real
+    person, which only the student can tell us happened."""
     ids = task.get("term_ids") or []
     kind = task["kind"]
     if kind in ("learn", "weak"):
@@ -704,22 +785,24 @@ def task_status(task: dict, progress: dict[str, dict], sessions_on_day: int, day
         fresh = sum(1 for t in ids if (progress.get(t, {}).get("last_seen") or date.min) >= day)
         return {**task, "progress_done": fresh, "progress_total": len(ids), "seen": 0,
                 "done": bool(ids) and fresh == len(ids)}
-    done = sessions_on_day > roleplay_index
+    done = live_on_day > 0 if kind == "live" else sessions_on_day > roleplay_index
     return {**task, "progress_done": int(done), "progress_total": 1, "seen": 0, "done": done}
 
 
-def overlay_status(tasks: list[dict], progress: dict[str, dict], sessions: list[date], day: date) -> list[dict]:
+def overlay_status(tasks: list[dict], progress: dict[str, dict], sessions: list[date], day: date,
+                   live: list[date] | None = None) -> list[dict]:
     on_day = sum(1 for s in sessions if s == day)
+    live_on_day = sum(1 for d in (live or []) if d == day)
     out, rp = [], 0
     for t in tasks:
-        out.append(task_status(t, progress, on_day, day, rp))
+        out.append(task_status(t, progress, on_day, day, rp, live_on_day))
         if t["kind"] in ("roleplay", "mock"):
             rp += 1
     return out
 
 
 def rollover(history: list[dict], frozen_date: date | None, frozen_tasks: list[dict] | None,
-             progress: dict[str, dict], sessions: list[date]) -> list[dict]:
+             progress: dict[str, dict], sessions: list[date], live: list[date] | None = None) -> list[dict]:
     """Score the last frozen day into history before today's tasks replace it.
 
     Scored against CURRENT progress, so a unit finished a day late still counts as
@@ -728,7 +811,7 @@ def rollover(history: list[dict], frozen_date: date | None, frozen_tasks: list[d
     """
     hist = [h for h in (history or []) if h.get("date") != (frozen_date.isoformat() if frozen_date else None)]
     if frozen_date and frozen_tasks:
-        scored = overlay_status(frozen_tasks, progress, sessions, frozen_date)
+        scored = overlay_status(frozen_tasks, progress, sessions, frozen_date, live)
         hist.append({"date": frozen_date.isoformat(), "planned": len(scored),
                      "done": sum(1 for t in scored if t["done"])})
     hist.sort(key=lambda h: h["date"])

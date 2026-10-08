@@ -17,6 +17,7 @@ import { track } from "./analytics";
 import {
   deletePlan,
   getMyPlan,
+  markLiveRoleplay,
   previewPlan,
   savePlan,
   type Course,
@@ -41,6 +42,7 @@ const KIND_LABEL: Record<PlanTask["kind"], string> = {
   weak: "Shore up",
   review: "Review",
   roleplay: "Role-play",
+  live: "With a person",
   mock: "Mock run",
   quiz: "Practice test",
 };
@@ -149,10 +151,25 @@ export function StudyPlanSection({
   }, [matches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const launch = useCallback(
-    async (task: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => {
+    async (task: PlanTask, how: "study" | "blitz" | "practice" | "quiz" | "live") => {
       track("plan_task_started", { kind: task.kind, how });
       if (how === "practice") {
         onPractice(task.criterion_name || undefined);
+        return;
+      }
+      // A role-play with a real person happens away from the app, so the student
+      // tells us. Refetch so the tick and the count come from the server.
+      if (how === "live") {
+        setBusy(true);
+        setError(null);
+        try {
+          if (!(await markLiveRoleplay())) throw new Error("Couldn't save that. Check your connection and try again.");
+          setPlan(await getMyPlan());
+        } catch (e) {
+          setError(errText(e));
+        } finally {
+          setBusy(false);
+        }
         return;
       }
       // The scheduled practice test carries no terms on purpose: it rehearses the
@@ -666,7 +683,7 @@ function PlanPanel({
 }: {
   plan: StudyPlan;
   busy: boolean;
-  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
+  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz" | "live") => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -884,7 +901,7 @@ function TodayCard({
 }: {
   plan: StudyPlan;
   busy: boolean;
-  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
+  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz" | "live") => void;
   onEdit: () => void;
   // A chapter manager's view: the same checklist, no buttons to act on it.
   readOnly?: boolean;
@@ -896,6 +913,7 @@ function TodayCard({
   const nextStudy = plan.days.slice(1).find((d) => d.tasks.length > 0);
   const allDone = tasks.length > 0 && nextIdx === -1;
   const pct = day.planned ? Math.round((100 * doneMin) / day.planned) : 0;
+  const nextStage = plan.stages.find((st) => !st.past);
 
   return (
     <Card>
@@ -951,6 +969,16 @@ function TodayCard({
         </p>
       ) : null}
 
+      {plan.live_target > 0 && nextStage && (
+        <p className="mt-3 text-[13px] text-slate-500 dark:text-slate-400">
+          Role-plays with a real person:{" "}
+          <span className="font-mono tabular-nums text-slate-700 dark:text-slate-200">
+            {plan.live_done} of {plan.live_target}
+          </span>{" "}
+          before {nextStage.name}. The plan spaces the rest out for you.
+        </p>
+      )}
+
       {tasks.length > 0 && (
         <ol className="mt-2 divide-y divide-slate-100 dark:divide-slate-800">
           {tasks.map((t, i) => (
@@ -996,7 +1024,7 @@ function TaskRow({
   task: PlanTask;
   isNext: boolean;
   busy: boolean;
-  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz") => void;
+  onLaunch: (t: PlanTask, how: "study" | "blitz" | "practice" | "quiz" | "live") => void;
   readOnly?: boolean;
 }) {
   const termTask = task.kind === "learn" || task.kind === "weak";
@@ -1065,6 +1093,20 @@ function TaskRow({
           <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "quiz")}>
             Start practice test
           </button>
+        )}
+        {/* The one task the app cannot see: marking it done is the student's word.
+            The second button is for the scenario to present from. */}
+        {task.kind === "live" && (
+          <>
+            {!task.done && (
+              <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "live")}>
+                Mark it done
+              </button>
+            )}
+            <button className={primary(false)} disabled={busy} onClick={() => onLaunch(task, "practice")}>
+              Get a scenario
+            </button>
+          </>
         )}
         {(task.kind === "roleplay" || task.kind === "mock") && (
           <button className={primary(true)} disabled={busy} onClick={() => onLaunch(task, "practice")}>
@@ -1177,6 +1219,7 @@ function AheadCard({ plan }: { plan: StudyPlan }) {
                   <th className="py-2 pr-3 font-semibold">Phase</th>
                   <th className="py-2 pr-3 text-right font-semibold">New terms</th>
                   <th className="py-2 pr-3 text-right font-semibold">Role-plays</th>
+                  <th className="py-2 pr-3 text-right font-semibold">With a person</th>
                   <th className="py-2 text-right font-semibold">Time</th>
                 </tr>
               </thead>
@@ -1202,6 +1245,9 @@ function AheadCard({ plan }: { plan: StudyPlan }) {
                       </td>
                       <td className="py-2 pr-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
                         {w.roleplays || "-"}
+                      </td>
+                      <td className="py-2 pr-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
+                        {w.live || "-"}
                       </td>
                       <td className="py-2 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
                         {w.minutes ? fmtMinutes(w.minutes) : "-"}

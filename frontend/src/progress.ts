@@ -310,7 +310,7 @@ export type PlanInputs = {
   goal: PlanGoal;
 };
 
-export type PlanTaskKind = "learn" | "weak" | "review" | "roleplay" | "mock" | "quiz";
+export type PlanTaskKind = "learn" | "weak" | "review" | "roleplay" | "mock" | "quiz" | "live";
 export type PlanTask = {
   id: string;
   kind: PlanTaskKind;
@@ -345,6 +345,7 @@ export type PlanWeek = {
   new_terms: number;
   reviews: number;
   roleplays: number;
+  live: number;
   minutes: number;
   stages: string[];
 };
@@ -375,6 +376,10 @@ export type StudyPlan = {
   phases: PlanPhaseRun[];
   calendar: PlanCalendarDay[];
   history: PlanHistoryDay[];
+  // Role-plays with a real person: reported so far, and the number the plan is
+  // aiming for before the first competition still ahead.
+  live_done: number;
+  live_target: number;
   saved: boolean;
 };
 
@@ -692,6 +697,19 @@ export async function postActivity(a: { kind: "quiz" | "blitz" | "flashcards"; t
     invalidate("/api/chapters");
   } catch {
     /* recording must never break a drill */
+  }
+}
+
+// A role-play done with a real person. The plan cannot see it happen, so this is
+// the one task a student reports themselves. Unlike postActivity it reports
+// failure: the button that calls it has to know whether to stay ticked.
+export async function markLiveRoleplay(): Promise<boolean> {
+  try {
+    await authFetch("/api/activity", { method: "POST", body: JSON.stringify({ kind: "live", term_ids: [], score: 1, total: 1 }) });
+    invalidate("/api/plan", "/api/chapters");
+    return true;
+  } catch {
+    return false;
   }
 }
 

@@ -296,3 +296,100 @@ def test_a_previewed_plan_survives_the_response_model():
     assert r.status_code == 200, r.text
     kinds = {t["kind"] for d in r.json()["days"] for t in d["tasks"]}
     assert "quiz" in kinds, kinds
+
+
+# --- role-plays with a real person ---------------------------------------------
+
+
+def live_days(days, before=None):
+    return [d["date"] for d in days for t in d["tasks"] if t["kind"] == "live" and (before is None or d["date"] < before)]
+
+
+def test_a_full_runway_schedules_eight_live_role_plays_before_the_competition():
+    stage = TODAY + timedelta(days=90)
+    got = live_days(full_days(inputs(days_out=90)), before=stage)
+    assert len(got) == 8, got
+
+
+def test_a_shorter_runway_still_aims_for_at_least_six():
+    for days_out in (30, 45, 60):
+        stage = TODAY + timedelta(days=days_out)
+        got = live_days(full_days(inputs(days_out=days_out)), before=stage)
+        assert 6 <= len(got) <= 8, (days_out, got)
+
+
+def test_live_role_plays_are_spread_out_and_never_on_consecutive_days():
+    got = live_days(full_days(inputs(days_out=90)))
+    gaps = [(b - a).days for a, b in zip(got, got[1:])]
+    assert min(gaps) >= plan.LIVE_MIN_GAP, gaps
+    assert max(gaps) - min(gaps) <= 1, gaps  # evenly spaced, not bunched at one end
+
+
+def test_the_first_live_role_play_gives_a_few_days_notice():
+    got = live_days(full_days(inputs(days_out=90)))
+    assert (got[0] - TODAY).days == plan.FIRST_LIVE_AFTER
+
+
+def test_reported_live_role_plays_count_toward_the_target():
+    done = [TODAY - timedelta(days=n) for n in (20, 13, 6)]
+    stage = TODAY + timedelta(days=90)
+    got = live_days(full_days(inputs(days_out=90), live=done), before=stage)
+    assert len(got) == 5, got
+    p = plan.build_plan(inputs(days_out=90), {}, [], TODAY, live=done)
+    assert (p["live_done"], p["live_target"]) == (3, 8)
+
+
+def test_a_skipped_live_role_play_pulls_the_rest_closer_instead_of_dropping_one():
+    """Nothing done with forty days left still plans the whole target."""
+    early = live_days(full_days(inputs(days_out=90)))
+    late_today = TODAY + timedelta(days=50)
+    inp = inputs(stages=[{"name": "District", "date": (TODAY + timedelta(days=90)).isoformat()}])
+    late = live_days(full_days(inp, today=late_today))
+    assert len(late) >= 6
+    assert (late[1] - late[0]).days < (early[1] - early[0]).days
+
+
+def test_a_live_day_replaces_the_solo_role_play_and_respects_the_budget():
+    for minutes in (10, 20, 30, 60):
+        for d in full_days(inputs(days_out=90, minutes=minutes)):
+            kinds = [t["kind"] for t in d["tasks"]]
+            if "live" in kinds:
+                assert "roleplay" not in kinds, d["date"]
+            assert d["planned"] <= d["budget"], (minutes, d["date"])
+
+
+def test_no_live_role_plays_in_the_taper_or_on_competition_day():
+    stage = TODAY + timedelta(days=90)
+    for d in full_days(inputs(days_out=90)):
+        if d["phase"] in ("taper", "competition"):
+            assert all(t["kind"] != "live" for t in d["tasks"]), d["date"]
+    assert stage not in live_days(full_days(inputs(days_out=90)))
+
+
+def test_a_live_task_is_done_only_when_the_student_reports_it():
+    task = plan._task("live", TODAY, "Role-play with a real person", "", 20)
+    assert not plan.overlay_status([task], {}, [TODAY], TODAY)[0]["done"]  # a solo rep does not tick it
+    assert plan.overlay_status([task], {}, [], TODAY, [TODAY])[0]["done"]
+
+
+def test_live_dates_reads_only_live_activity_rows():
+    rows = [{"kind": "quiz", "created_at": "2026-09-10T15:00:00Z"},
+            {"kind": "live", "created_at": "2026-09-12T15:00:00Z"}]
+    assert plan.live_dates(rows, 0) == [date(2026, 9, 12)]
+
+
+def test_live_role_plays_survive_the_response_model():
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    body = {
+        "event_id": EVENT,
+        "stages": [{"name": "District", "date": (date.today() + timedelta(days=45)).isoformat()}],
+        "day_minutes": [30] * 7,
+        "goal": "core",
+    }
+    r = TestClient(app).post("/api/plan/preview", json=body)
+    assert r.status_code == 200, r.text
+    assert r.json()["live_target"] >= 6
+    assert any(t["kind"] == "live" for d in r.json()["days"] for t in d["tasks"])

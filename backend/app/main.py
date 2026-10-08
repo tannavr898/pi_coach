@@ -23,7 +23,7 @@ Endpoints:
 - GET  /api/me             name + chapter memberships (+ unread counts)
 - /api/chapters/...        chapters: create, join, roster, student profiles,
                            feed and assignments, messages (see that section)
-- POST /api/activity       record a finished quiz / Blitz / flashcard set
+- POST /api/activity       record a finished quiz / Blitz / flashcard set, or a live role-play
 
 Plus the server-rendered study pages (app/seo.py): /flashcards, /flashcards/{event},
 /robots.txt and /sitemap.xml. Those are plain HTML rather than JSON, they are the
@@ -108,6 +108,7 @@ from .schemas import (
     PlanInputs,
     PlanResponse,
     PublicStats,
+    StatReport,
     QuizQuestion,
     QuizResponse,
     Sampling,
@@ -775,6 +776,16 @@ async def get_stats() -> PublicStats:
     return PublicStats(**await stats.snapshot())
 
 
+@app.post("/api/stats/report", dependencies=[Depends(rate_limit)])
+async def report_stat(req: StatReport, background: BackgroundTasks) -> dict:
+    """A finished quiz round or a flipped-through deck, reported by the browser so
+    the site-wide totals include it. Anonymous on purpose: both work signed out,
+    and those are exactly the students no other table sees. Counts only, clamped
+    in app/stats.py."""
+    background.add_task(stats.report, req.kind, req.count)
+    return {"ok": True}
+
+
 @app.post("/api/score-delivery", response_model=DeliveryResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 async def score_delivery(
     audio: UploadFile = File(...),
@@ -1250,19 +1261,21 @@ def _plan_day(local_date: str, tz_offset: int) -> tuple[date, int]:
     return day, tz
 
 
-async def _plan_context(user: dict, tz: int) -> tuple[dict, list[dict], list[date]]:
-    """Progress map, weak criteria, and role-play dates, everything the planner reads."""
-    rows, sessions = await asyncio.gather(
+async def _plan_context(user: dict, tz: int) -> tuple[dict, list[dict], list[date], list[date]]:
+    """Progress map, weak criteria, role-play dates, and the dates of role-plays
+    done with a real person: everything the planner reads."""
+    rows, sessions, acts = await asyncio.gather(
         db.list_study_progress(user["id"]),
         db.list_sessions(user["id"], limit=200, select=db.PROGRESS_SELECT),
+        db.list_activity([user["id"]]),
     )
     weak = plan.weak_criteria(progress.compute_progress(sessions)["criterion_mastery"])
-    return plan.progress_map(rows, tz), weak, plan.session_dates(sessions, tz)
+    return plan.progress_map(rows, tz), weak, plan.session_dates(sessions, tz), plan.live_dates(acts, tz)
 
 
 def _plan_out(built: dict, prog: dict, sessions: list[date], day: date, *, saved: bool,
-              history: list[dict]) -> PlanResponse:
-    today_tasks = plan.overlay_status(built["today"]["tasks"], prog, sessions, day)
+              history: list[dict], live: list[date] | None = None) -> PlanResponse:
+    today_tasks = plan.overlay_status(built["today"]["tasks"], prog, sessions, day, live)
     built["today"]["tasks"] = today_tasks
     if built["days"] and built["days"][0]["date"] == day.isoformat():
         built["days"][0]["tasks"] = today_tasks
@@ -1287,13 +1300,14 @@ async def preview_plan(
     prog: dict = {}
     weak: list[dict] = []
     sessions: list[date] = []
+    live: list[date] = []
     if user and config.has_supabase():
         try:
-            prog, weak, sessions = await _plan_context(user, tz)
+            prog, weak, sessions, live = await _plan_context(user, tz)
         except httpx.HTTPError as exc:
             log.warning("plan preview progress load failed: %s", exc)
-    built = plan.build_plan(inputs, prog, weak, day, last_roleplay=sessions[-1] if sessions else None)
-    return _plan_out(built, prog, sessions, day, saved=False, history=[])
+    built = plan.build_plan(inputs, prog, weak, day, last_roleplay=sessions[-1] if sessions else None, live=live)
+    return _plan_out(built, prog, sessions, day, saved=False, history=[], live=live)
 
 
 @app.get("/api/plan", response_model=PlanResponse)
@@ -1307,7 +1321,7 @@ async def get_plan(
         raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
     day, tz = _plan_day(local_date, tz_offset)
     try:
-        row, (prog, weak, sessions) = await asyncio.gather(
+        row, (prog, weak, sessions, live) = await asyncio.gather(
             db.get_study_plan(user["id"]), _plan_context(user, tz)
         )
     except httpx.HTTPError as exc:
@@ -1325,12 +1339,12 @@ async def get_plan(
         # Last-roleplay excludes today's sessions, or doing today's rep early would
         # make the freshly-frozen list think it wasn't due.
         prior = [s for s in sessions if s < day]
-        built = plan.build_plan(inputs, prog, weak, day, last_roleplay=prior[-1] if prior else None)
+        built = plan.build_plan(inputs, prog, weak, day, last_roleplay=prior[-1] if prior else None, live=live)
         if not built:
             raise HTTPException(status_code=404, detail="Your plan's event no longer exists.")
         old_date = row.get("today_date")
         history = plan.rollover(history, date.fromisoformat(old_date) if old_date else None,
-                                row.get("today_tasks"), prog, sessions)
+                                row.get("today_tasks"), prog, sessions, live)
         try:
             await db.upsert_study_plan(user["id"], {
                 "event_id": inputs["event_id"],
@@ -1343,10 +1357,10 @@ async def get_plan(
             # Unfrozen just means today may reshuffle, still show the plan.
             log.warning("plan snapshot save failed: %s", exc)
     else:
-        built = plan.build_plan(inputs, prog, weak, day, frozen_today=frozen, last_roleplay=last_rp)
+        built = plan.build_plan(inputs, prog, weak, day, frozen_today=frozen, last_roleplay=last_rp, live=live)
         if not built:
             raise HTTPException(status_code=404, detail="Your plan's event no longer exists.")
-    return _plan_out(built, prog, sessions, day, saved=True, history=history)
+    return _plan_out(built, prog, sessions, day, saved=True, history=history, live=live)
 
 
 @app.put("/api/plan", response_model=PlanResponse)
@@ -1762,15 +1776,15 @@ async def _plan_readonly(student_id: str, day: date, tz: int) -> PlanResponse | 
     row = await db.get_study_plan(student_id)
     if not row:
         return None
-    prog, weak, sessions = await _plan_context({"id": student_id}, tz)
+    prog, weak, sessions, live = await _plan_context({"id": student_id}, tz)
     inputs = {k: row[k] for k in ("event_id", "stages", "day_minutes", "goal")}
     frozen = row.get("today_tasks") if row.get("today_date") == day.isoformat() else None
     prior = [s for s in sessions if s < day] if frozen is None else sessions
     built = plan.build_plan(inputs, prog, weak, day, frozen_today=frozen,
-                            last_roleplay=prior[-1] if prior else None)
+                            last_roleplay=prior[-1] if prior else None, live=live)
     if not built:
         return None
-    return _plan_out(built, prog, sessions, day, saved=True, history=row.get("history") or [])
+    return _plan_out(built, prog, sessions, day, saved=True, history=row.get("history") or [], live=live)
 
 
 def _summary(r: dict) -> SessionSummary:
@@ -2072,7 +2086,8 @@ async def mark_chapter_read(chapter_id: str, req: ReadMark, user: dict = Depends
 async def record_activity(req: ActivityIn, user: dict = Depends(current_user)) -> dict:
     """A finished quiz, Blitz run, or flashcard set: the completion record that
     assignments are checked against. Domains are derived here from the term ids,
-    never taken from the client."""
+    never taken from the client. Kind "live" is a role-play the student did with a
+    real person, which the study plan counts (app/plan.py)."""
     if not config.has_supabase():
         raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
     domains = sorted({t["domain_id"] for t in terms.get_terms(req.term_ids) if t.get("domain_id")})

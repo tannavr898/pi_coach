@@ -623,13 +623,25 @@ class StudyMarkResponse(BaseModel):
 
 
 class PublicStats(BaseModel):
-    """Site-wide totals (app/stats.py). `show` says whether there are enough to put
-    on the landing page."""
+    """Site-wide totals (app/stats.py). `visible` names the ones that have cleared
+    their own threshold, in display order; `show` is whether any has."""
 
     roleplays: int = 0
     blitzes: int = 0
     scenarios: int = 0
+    quizzes: int = 0
+    questions: int = 0
+    cards: int = 0
+    visible: list[str] = []
     show: bool = False
+
+
+class StatReport(BaseModel):
+    """Study the browser did on its own, for the site-wide counters."""
+
+    kind: Literal["quiz", "flashcards"]
+    # Questions answered in the finished round, or cards turned over.
+    count: int = Field(ge=1, le=1000)
 
 
 # --- study plans --------------------------------------------------------------
@@ -657,7 +669,8 @@ class PlanTask(BaseModel):
     id: str
     # "quiz" is a scheduled practice test: cluster-wide multiple choice, carrying
     # no term_ids because it deliberately reaches past the day's deck.
-    kind: Literal["learn", "weak", "review", "roleplay", "mock", "quiz"]
+    # "live" is a role-play with a real person, the one self-reported task.
+    kind: Literal["learn", "weak", "review", "roleplay", "mock", "quiz", "live"]
     title: str
     detail: str = ""
     minutes: int = 0
@@ -689,6 +702,7 @@ class PlanWeek(BaseModel):
     new_terms: int = 0
     reviews: int = 0
     roleplays: int = 0
+    live: int = 0
     minutes: int = 0
     stages: list[str] = []
 
@@ -744,6 +758,10 @@ class PlanResponse(BaseModel):
     phases: list[PlanPhaseRun] = []
     calendar: list[PlanCalendarDay] = []
     history: list[PlanHistoryDay] = []
+    # Role-plays with a real person: how many they've reported, and how many the
+    # plan is aiming for before the first competition still ahead.
+    live_done: int = 0
+    live_target: int = 0
     # False for a signed-out preview (or an unsaved what-if).
     saved: bool = False
 
@@ -1070,7 +1088,8 @@ class ReadMark(BaseModel):
 
 
 class ActivityIn(BaseModel):
-    kind: Literal["quiz", "blitz", "flashcards"]
+    # "live" is a role-play done with a real person: no terms, no score.
+    kind: Literal["quiz", "blitz", "flashcards", "live"]
     term_ids: list[str] = Field(default=[], max_length=1000)
     score: int = Field(default=0, ge=0, le=1000)
     total: int = Field(default=0, ge=0, le=1000)
