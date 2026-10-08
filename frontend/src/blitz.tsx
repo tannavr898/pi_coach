@@ -15,7 +15,7 @@ import {
   type Term,
 } from "./api";
 import { markStudy, postActivity } from "./progress";
-import { BTN_PRIMARY, BTN_SECONDARY, LogoLoader } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, LogoLoader, useScrollLock } from "./ui";
 
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
 const SECONDS_PER_TERM = 45; // the time-pressure window
@@ -251,6 +251,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
 
   // Modal a11y: focus the dialog on open, trap Tab inside it, close on Esc, and
   // restore focus to wherever the user was when it closes.
+  useScrollLock();
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const node = dialogRef.current;
@@ -274,14 +275,16 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" onClick={() => requestCloseRef.current()}>
+    // A plain scrim rather than a backdrop blur: blurring the whole page behind a
+    // panel that is changing on top of it costs a repaint of both every frame.
+    <div className="fixed inset-0 z-50 flex overflow-y-auto overscroll-contain bg-slate-950/80 p-4" onClick={() => requestCloseRef.current()}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Mastery Blitz"
         tabIndex={-1}
-        className="w-full max-w-xl focus:outline-none"
+        className="pic-card-in m-auto w-full max-w-xl focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
@@ -457,7 +460,7 @@ function DrillPanel(props: {
         Term {props.index + 1} of {props.total}: {props.term.name}.
       </span>
       <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
-        <div className={`h-full rounded-full transition-all duration-1000 ease-linear ${low ? "bg-red-500" : "bg-indigo-500"}`} style={{ width: `${(props.secondsLeft / SECONDS_PER_TERM) * 100}%` }} />
+        <div className={`h-full rounded-full origin-left transition-transform duration-1000 ease-linear ${low ? "bg-red-500" : "bg-indigo-500"}`} style={{ transform: `scaleX(${props.secondsLeft / SECONDS_PER_TERM})` }} />
       </div>
 
       <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">{props.scenario}</div>

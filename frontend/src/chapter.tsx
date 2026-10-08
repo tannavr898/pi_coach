@@ -39,7 +39,7 @@ import {
   type ThreadSummary,
 } from "./progress";
 import { StudentProfileView } from "./profile";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, LogoLoader, PageLoader } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, LogoLoader, PageLoader, SideGroup, SideItem, Sidebar } from "./ui";
 import { invalidate, useCached } from "./cache";
 import { track } from "./analytics";
 
@@ -266,31 +266,27 @@ export function ChapterTab({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
-        {memberships.length > 1 && (
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Your chapters">
+      {/* The chapters sit in the sidebar where the row of chapter buttons used to
+          be; the open chapter's own sections follow them (see Tabs below). */}
+      <Sidebar>
+        <SideGroup title="Your chapters">
           {memberships.map((m) => {
-            const on = m.chapter.id === current.chapter.id;
             const unread = m.unread_feed + m.unread_messages;
             return (
-              <button
+              <SideItem
                 key={m.chapter.id}
-                role="tab"
-                aria-selected={on}
+                active={m.chapter.id === current.chapter.id}
                 onClick={() => setQ({ c: m.chapter.id, tab: null, student: null, thread: null })}
-                className={`rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
-                  on
-                    ? "border-indigo-600 bg-indigo-600 text-white"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                }`}
+                sub={m.role === "manager" ? "You manage" : "My chapter"}
+                right={unread > 0 ? <span className="font-mono text-[13px] tabular-nums text-slate-500 dark:text-slate-400">{unread}</span> : undefined}
               >
-                {m.chapter.name} · {m.role === "manager" ? "Manage" : "My chapter"}
-                {unread > 0 && <span className="ml-1.5 font-mono text-xs tabular-nums">({unread})</span>}
-              </button>
+                {m.chapter.name}
+              </SideItem>
             );
           })}
-        </div>
-        )}
+        </SideGroup>
+      </Sidebar>
+      <div className="flex justify-end pt-5">
         <RefreshButton chapterId={current.chapter.id} />
       </div>
 
@@ -334,7 +330,7 @@ function RefreshButton({ chapterId }: { chapterId: string }) {
       }}
       disabled={busy}
       aria-label="Refresh chapter"
-      className="ml-auto inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
     >
       {busy ? (
         <LogoLoader size={16} label="Refreshing" />
@@ -543,28 +539,24 @@ function RegisterCard({ onDone }: { onDone: () => void }) {
 
 // --- shared bits ----------------------------------------------------------------
 
+// The sections of the open chapter. They render into the sidebar, under the list
+// of chapters, which leaves the page itself to the section being read.
 function Tabs<T extends string>({ value, onChange, items }: { value: T; onChange: (v: T) => void; items: { key: T; label: string; badge?: number }[] }) {
   return (
-    <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist">
-      {items.map((it) => (
-        <button
-          key={it.key}
-          role="tab"
-          aria-selected={value === it.key}
-          onClick={() => onChange(it.key)}
-          className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition ${
-            value === it.key
-              ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
-              : "border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-          }`}
-        >
-          {it.label}
-          {!!it.badge && (
-            <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white">{it.badge}</span>
-          )}
-        </button>
-      ))}
-    </div>
+    <Sidebar>
+      <SideGroup title="This chapter">
+        {items.map((it) => (
+          <SideItem
+            key={it.key}
+            active={value === it.key}
+            onClick={() => onChange(it.key)}
+            right={it.badge ? <span className="font-mono text-[13px] tabular-nums text-slate-500 dark:text-slate-400">{it.badge}</span> : undefined}
+          >
+            {it.label}
+          </SideItem>
+        ))}
+      </SideGroup>
+    </Sidebar>
   );
 }
 

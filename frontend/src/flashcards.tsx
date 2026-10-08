@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getAllTerms, getEvents, getTerms, type EventSummary, type FlashcardExample, type Term } from "./api";
 import { getCourse, getProgress, markStudy, postActivity, type Course } from "./progress";
 import type { FlagsApi } from "./flags";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, LogoLoader, PageLoader } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, FilterChip, LEVEL_COLOR, LevelDot, LogoLoader, Meter, PageHead, PageLoader, Sidebar, SideGroup, SideItem, Strip, UNGRADED_COLOR, useScrollLock } from "./ui";
 
 // The four beats, the same method the Tips page teaches, but the CONTENT is
 // specific to each term (from the card's worked example), not a fixed blurb.
@@ -81,21 +81,7 @@ export function Flashcards({
     return () => window.removeEventListener("keydown", onKey);
   }); // re-bind each render so go() closes over current i
 
-  // Freeze the page behind the deck. Unlocked, a wheel or swipe that ran past the
-  // end of a card's back chained into the library underneath and dragged all of it
-  // along behind the scrim. The padding stands in for the scrollbar so nothing
-  // shifts sideways when it disappears.
-  useEffect(() => {
-    const { style } = document.body;
-    const prev = { overflow: style.overflow, paddingRight: style.paddingRight };
-    const gap = window.innerWidth - document.documentElement.clientWidth;
-    style.overflow = "hidden";
-    if (gap > 0) style.paddingRight = `${gap}px`;
-    return () => {
-      style.overflow = prev.overflow;
-      style.paddingRight = prev.paddingRight;
-    };
-  }, []);
+  useScrollLock();
 
   const total = cards.length;
   const card = total ? cards[Math.min(i, total - 1)] : null;
@@ -272,6 +258,9 @@ function FlagButton({ flagged, onFlag }: { flagged: boolean; onFlag: () => void 
 // Library: all terms, grouped by domain, weak sets highlighted.
 // ---------------------------------------------------------------------------
 
+const LEVELS = ["novice", "developing", "proficient", "exemplary"] as const;
+type Lv = (typeof LEVELS)[number];
+const LEVEL_LABEL: Record<Lv, string> = { novice: "Novice", developing: "Developing", proficient: "Proficient", exemplary: "Exemplary" };
 const LEVEL_RANK: Record<string, number> = { novice: 0, developing: 1, proficient: 2, exemplary: 3 };
 
 // Where the chosen deck is remembered. Local to the browser like `pic-theme` and
@@ -295,24 +284,22 @@ export function FlashcardLibrary({
   onQuiz: (cards: Term[], title?: string, opts?: { exam?: string; scope?: "deck" | "cluster" | "all"; level?: "district" | "state" | "icdc" }) => void;
 }) {
   const [all, setAll] = useState<Term[] | null>(null);
-  const [weakIds, setWeakIds] = useState<Set<string>>(new Set());
+  // The level each graded criterion sits at, from the student's sessions. Empty
+  // signed out, and then every term simply reads "Not yet graded".
+  const [levels, setLevels] = useState<Map<string, Lv>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  // Domains collapse by default so the whole library fits on a screen or two;
-  // open the one you want. A live search auto-expands every match.
-  const [openDomains, setOpenDomains] = useState<Set<string>>(new Set());
-  const toggleDomain = (d: string) =>
-    setOpenDomains((s) => {
-      const n = new Set(s);
-      n.has(d) ? n.delete(d) : n.add(d);
-      return n;
-    });
+  // What the table is showing: every term, one of the two sets, or one domain.
+  // null until they choose, which resolves to the first domain.
+  const [picked, setPicked] = useState<string | null>(null);
+  const [levelFilter, setLevelFilter] = useState<Lv | "ungraded" | "all">("all");
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
 
   // The deck filter: which event's terms the library is scoped to. "" is the whole
-  // 830-term corpus. This is the one thing the library was missing, a competitor
-  // studies for ONE event, and 830 cards grouped by all 13 domains buries the ~250
-  // that are actually theirs. Remembered locally so it survives a reload and does
-  // not need an account; the event catalog is public either way.
+  // 830-term corpus. A competitor studies for ONE event, and 830 cards grouped by
+  // all 13 domains buries the ~250 that are actually theirs. Remembered locally so
+  // it survives a reload and does not need an account; the event catalog is public
+  // either way.
   const [deckId, setDeckId] = useState<string>(() => {
     if (initialDeck) return initialDeck;
     try {
@@ -329,14 +316,11 @@ export function FlashcardLibrary({
     getAllTerms()
       .then((c) => active && setAll(c))
       .catch((e) => active && setError(e instanceof Error ? e.message : String(e)));
-    // Weak criteria come from progress; failure is non-fatal (no highlights).
+    // Levels come from progress; failure is non-fatal (nothing is graded).
     getProgress()
       .then((p) => {
         if (!active) return;
-        const weak = new Set(
-          p.criterion_mastery.filter((m) => LEVEL_RANK[m.consistent_level] <= 1).map((m) => m.criterion_id),
-        );
-        setWeakIds(weak);
+        setLevels(new Map(p.criterion_mastery.map((m) => [m.criterion_id, m.consistent_level as Lv])));
       })
       .catch(() => {});
     // The event picker. Non-fatal: without it the deck filter just isn't offered.
@@ -382,350 +366,261 @@ export function FlashcardLibrary({
     [all, deckIds],
   );
 
-  // Weakness comes from graded sessions, so only terms with a criterion can be weak
-  // study-only terms have nothing to be weak against.
-  const isWeak = (t: Term) => !!t.criterion_id && weakIds.has(t.criterion_id);
+  // A level comes from graded sessions, so only terms with a criterion can have
+  // one; study-only terms have nothing to be graded against.
+  const levelOf = (t: Term): Lv | null => (t.criterion_id ? levels.get(t.criterion_id) ?? null : null);
+  const isWeak = (t: Term) => {
+    const l = levelOf(t);
+    return l !== null && LEVEL_RANK[l] <= 1;
+  };
 
   const flaggedCards = useMemo(() => scoped.filter((c) => flags.flags.has(c.id)), [scoped, flags.flags]);
-  const recommended = useMemo(() => scoped.filter(isWeak), [scoped, weakIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  const recommended = useMemo(() => scoped.filter(isWeak), [scoped, levels]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Group by domain, honoring the search filter.
-  const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = scoped.filter((c) => !q || c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q));
-    const order: string[] = [];
-    const by: Record<string, Term[]> = {};
-    for (const c of filtered) {
-      if (!by[c.domain]) {
-        by[c.domain] = [];
-        order.push(c.domain);
-      }
-      by[c.domain].push(c);
-    }
-    return order.sort((a, b) => a.localeCompare(b)).map((d) => ({ domain: d, cards: by[d] }));
-  }, [scoped, query]);
+  const domains = useMemo(() => {
+    const by = new Map<string, Term[]>();
+    for (const c of scoped) by.set(c.domain, [...(by.get(c.domain) ?? []), c]);
+    return [...by.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([domain, cards]) => ({ domain, cards }));
+  }, [scoped]);
 
-  const searching = query.trim().length > 0;
-  const allOpen = groups.length > 0 && groups.every((g) => openDomains.has(g.domain));
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
+  // A domain that is not in the current deck falls back to the first one that is.
+  const current =
+    picked === "all" || picked === "weak" || picked === "flagged" || domains.some((d) => d.domain === picked)
+      ? (picked as string)
+      : domains[0]?.domain ?? "all";
 
-  if (error) return <p className="mx-auto max-w-3xl py-10 text-center text-sm text-red-600 dark:text-red-400">Couldn't load the library: {error}</p>;
+  const title = searching
+    ? `Results for "${query.trim()}"`
+    : current === "all"
+      ? "All terms"
+      : current === "weak"
+        ? "Weakest for you"
+        : current === "flagged"
+          ? "Flagged to study later"
+          : current;
+  // A search looks through the whole deck, whatever set is selected.
+  const inSet = searching
+    ? scoped.filter((c) => c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q))
+    : current === "all"
+      ? scoped
+      : current === "weak"
+        ? recommended
+        : current === "flagged"
+          ? flaggedCards
+          : domains.find((d) => d.domain === current)?.cards ?? [];
+
+  // Weakest first, ungraded last, then by name.
+  const order = (t: Term) => {
+    const l = levelOf(t);
+    return l === null ? 4 : LEVEL_RANK[l];
+  };
+  const visible = inSet
+    .filter((c) => {
+      if (flaggedOnly && !flags.flags.has(c.id)) return false;
+      if (levelFilter === "all") return true;
+      const l = levelOf(c);
+      return levelFilter === "ungraded" ? l === null : l === levelFilter;
+    })
+    .sort((a, b) => order(a) - order(b) || a.name.localeCompare(b.name));
+  const filtered = flaggedOnly || levelFilter !== "all";
+  const countAt = (cards: Term[], l: Lv | null) => cards.filter((c) => levelOf(c) === l).length;
+  // Quizzing the whole deck draws from the event's exam; anything narrower is
+  // just "questions on these terms".
+  const quizOpts = current === "all" && !searching && !filtered ? (deck ? { exam: deck.exam, scope: "cluster" as const } : { scope: "all" as const }) : { exam: deck?.exam };
+
+  if (error) return <p className="py-10 text-center text-sm text-red-600 dark:text-red-400">Couldn't load the library: {error}</p>;
   if (!all) {
     return (
-      <div className="mx-auto max-w-3xl">
-        <PageLoader label="Loading the library" />
+      <div className="pt-6">
+        <PageLoader label="Loading the library" card={false} />
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Eyebrow>All domains</Eyebrow>
-          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-            {deck ? `${deck.event}: ${scoped.length} terms` : `All ${all.length} terms, by domain`}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Front: the term. Back: a plain definition, a worked example run through the four beats, and the one mistake to avoid. Flag any card ★ to study later.</p>
-        </div>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search terms…"
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:w-64"
-        />
-      </div>
+  const pick = (key: string) => {
+    setPicked(key);
+    setQuery("");
+  };
+  // Grouped into DECA's clusters, matching how the events are presented everywhere
+  // else; a flat list of 28 is a wall.
+  const clusters = [...new Set(events.map((e) => e.cluster))];
 
-      <DeckBar
-        events={events}
-        deckId={deckId}
-        deck={deck}
-        count={scoped.length}
-        onPick={setDeckId}
-        onStudy={() => scoped.length && onStudy(scoped, undefined, deck ? deck.event : "All terms")}
-        onBlitz={() => scoped.length && onBlitz(scoped, deck ? deck.event : "All terms")}
-        onQuiz={() =>
-          scoped.length &&
-          onQuiz(scoped, deck ? deck.event : "All terms", deck ? { exam: deck.exam, scope: "cluster" } : { scope: "all" })
-        }
+  return (
+    <div>
+      <Sidebar>
+        {/* Scope the library to one event's deck. The event to terms join is the
+            same one the course path uses (backend courses.py), fetched through
+            getCourse, so the deck here and My path can never disagree. */}
+        {events.length > 0 && (
+          <SideGroup title="Event">
+            <div className="relative mx-0.5">
+              <select
+                value={deckId}
+                onChange={(e) => setDeckId(e.target.value)}
+                aria-label="Filter the library to an event"
+                className="tap w-full appearance-none truncate rounded-lg border border-slate-200 bg-white py-1.5 pl-2.5 pr-8 text-sm font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                <option value="">Every event</option>
+                {clusters.map((cluster) => (
+                  <optgroup key={cluster} label={cluster}>
+                    {events.filter((e) => e.cluster === cluster).map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-xs text-slate-400">▾</span>
+            </div>
+          </SideGroup>
+        )}
+        <SideGroup title="Sets">
+          <SideItem active={!searching && current === "all"} onClick={() => pick("all")} right={<Count n={scoped.length} />}>All terms</SideItem>
+          <SideItem active={!searching && current === "weak"} onClick={() => pick("weak")} right={<Count n={recommended.length} />}>Weakest for you</SideItem>
+          <SideItem active={!searching && current === "flagged"} onClick={() => pick("flagged")} right={<Count n={flaggedCards.length} />}>Flagged</SideItem>
+        </SideGroup>
+        <SideGroup title="Domains">
+          {domains.map(({ domain, cards }) => (
+            <SideItem
+              key={domain}
+              active={!searching && current === domain}
+              onClick={() => pick(domain)}
+              right={<Meter total={cards.length} parts={LEVELS.map((l) => ({ color: LEVEL_COLOR[l], n: countAt(cards, l) }))} />}
+            >
+              {domain}
+            </SideItem>
+          ))}
+        </SideGroup>
+      </Sidebar>
+
+      <PageHead sub={deck ? deck.event : "Every event"} title={title}>
+        <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-slate-400 dark:border-slate-700 dark:bg-slate-900">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+            <circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M9.2 9.2 13 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search terms"
+            aria-label="Search terms"
+            className="w-32 min-w-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
+          />
+        </label>
+        <button className={BTN_SECONDARY} disabled={!visible.length} onClick={() => onQuiz(visible, title, quizOpts)}>Quiz</button>
+        <button className={BTN_SECONDARY} disabled={!visible.length} onClick={() => onBlitz(visible, title)}>Blitz</button>
+        <button className={BTN_PRIMARY} disabled={!visible.length} onClick={() => onStudy(visible, undefined, title)}>
+          Study {visible.length} card{visible.length === 1 ? "" : "s"}
+        </button>
+      </PageHead>
+
+      <Strip
+        cells={[
+          ...LEVELS.map((l) => ({ label: LEVEL_LABEL[l], value: countAt(inSet, l), tone: LEVEL_COLOR[l] })),
+          { label: "Not yet graded", value: countAt(inSet, null), tone: UNGRADED_COLOR },
+        ]}
       />
 
-
-      {/* The two drills, side by side: produce a term under pressure, or check
-          whether you know it at all. Blitz costs a grading call and needs an
-          account; the quiz is served from a pre-generated bank and needs neither. */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 dark:border-indigo-900/60 dark:bg-indigo-950/30">
-          <div>
-            <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Mastery Blitz</h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Rapid drill: one scenario, {5} terms, {45}s each: apply each term in DECA format, graded instantly at the end.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {recommended.length > 0 && (
-              <button className={BTN_PRIMARY} onClick={() => onBlitz(recommended, "Your weak terms")}>Blitz weak terms →</button>
-            )}
-            <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onBlitz(all, "All terms")}>Blitz random terms →</button>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-5 dark:border-sky-900/60 dark:bg-sky-950/30">
-          <div>
-            <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">◎ Knowledge Check</h3>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Multiple choice at district, state or ICDC difficulty. No clock, no account: every answer explains itself the moment you pick it.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {recommended.length > 0 && (
-              <button className={BTN_SECONDARY} onClick={() => onQuiz(recommended, "Your weak terms", { exam: deck?.exam })}>Quiz weak terms →</button>
-            )}
-            <button className={BTN_SECONDARY} disabled={!all.length} onClick={() => all.length && onQuiz(all, "All terms", { exam: deck?.exam, scope: "all" })}>Quiz random terms →</button>
-          </div>
-        </div>
+      <div className="pic-bleed pic-inset flex flex-wrap items-center gap-1.5 border-b border-slate-200 py-3 dark:border-slate-800">
+        <span className="mr-1 text-xs font-medium text-slate-500 dark:text-slate-400">Level</span>
+        <FilterChip on={levelFilter === "all"} onClick={() => setLevelFilter("all")}>All</FilterChip>
+        {LEVELS.map((l) => (
+          <FilterChip key={l} on={levelFilter === l} onClick={() => setLevelFilter(l)}>
+            <LevelDot color={LEVEL_COLOR[l]} />
+            {LEVEL_LABEL[l]}
+          </FilterChip>
+        ))}
+        <FilterChip on={levelFilter === "ungraded"} onClick={() => setLevelFilter("ungraded")}>
+          <LevelDot color={UNGRADED_COLOR} />
+          Not yet graded
+        </FilterChip>
+        <span className="min-w-2 flex-1" />
+        <FilterChip on={flaggedOnly} onClick={() => setFlaggedOnly((v) => !v)}>★ Flagged only</FilterChip>
       </div>
 
-      {/* Highlighted sets */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SetCard
-          tone="indigo"
-          title="Recommended for you"
-          subtitle={recommended.length ? `The ${recommended.length} criteria you've been weakest on.` : "Finish some sessions and your weak spots show up here."}
-          count={recommended.length}
-          onStudy={() => recommended.length && onStudy(recommended, undefined, "Recommended for you")}
-          onBlitz={() => recommended.length && onBlitz(recommended, "Recommended for you")}
-          onQuiz={() => recommended.length && onQuiz(recommended, "Recommended for you", { exam: deck?.exam })}
-        />
-        <SetCard
-          tone="amber"
-          title="Flagged to study later"
-          subtitle={flaggedCards.length ? `${flaggedCards.length} card${flaggedCards.length === 1 ? "" : "s"} you starred.` : "Star ★ any card to add it here."}
-          count={flaggedCards.length}
-          onStudy={() => flaggedCards.length && onStudy(flaggedCards, undefined, "Flagged to study later")}
-          onBlitz={() => flaggedCards.length && onBlitz(flaggedCards, "Flagged to study later")}
-          onQuiz={() => flaggedCards.length && onQuiz(flaggedCards, "Flagged to study later", { exam: deck?.exam })}
-        />
-      </div>
-
-      {/* Domains, collapsed by default so the full library fits on a screen;
-          open the one you want. A live search auto-expands every match. */}
-      <div className="flex items-center justify-between px-1 pt-1">
-        <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-          {groups.length} domain{groups.length === 1 ? "" : "s"}
-        </div>
-        {!searching && groups.length > 0 && (
-          <button
-            onClick={() => setOpenDomains(allOpen ? new Set() : new Set(groups.map((g) => g.domain)))}
-            className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            {allOpen ? "Collapse all" : "Expand all"}
-          </button>
-        )}
-      </div>
-
-      {groups.map(({ domain, cards }) => {
-        const weakHere = cards.filter(isWeak).length;
-        const open = searching || openDomains.has(domain);
-        const panelId = `domain-${domain.replace(/\s+/g, "-")}`;
-        return (
-          <Card key={domain}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="min-w-0 flex-1">
-                <button
-                  onClick={() => !searching && toggleDomain(domain)}
-                  aria-expanded={open}
-                  aria-controls={panelId}
-                  disabled={searching}
-                  className="flex w-full items-center gap-2 text-left"
-                >
-                  <svg
-                    viewBox="0 0 12 12"
-                    width="12"
-                    height="12"
-                    aria-hidden="true"
-                    className={`shrink-0 text-slate-400 transition-transform duration-200 dark:text-slate-500 ${open ? "rotate-90" : ""} ${searching ? "opacity-0" : ""}`}
-                  >
-                    <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{domain}</span>
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{cards.length}</span>
-                  {weakHere > 0 && (
-                    <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">{weakHere} to drill</span>
-                  )}
-                </button>
-              </h2>
-              <div className="flex shrink-0 items-center gap-2">
-                <button className={BTN_SECONDARY} onClick={() => onBlitz(cards, domain)}>⚡ Blitz</button>
-                <button className={BTN_SECONDARY} onClick={() => onQuiz(cards, domain, { exam: deck?.exam })}>◎ Quiz</button>
-                <button className={BTN_SECONDARY} onClick={() => onStudy(cards, undefined, domain)}>Study domain →</button>
-              </div>
+      {visible.length > 0 ? (
+        <div className="pic-bleed overflow-x-auto">
+          <div className="min-w-[540px]">
+            <div className="pic-inset grid grid-cols-[minmax(0,1fr)_130px_minmax(0,0.7fr)_28px] items-center gap-3.5 border-b border-slate-200 bg-slate-50 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+              <span>Term</span>
+              <span>Level</span>
+              <span>{searching || current === "all" || current === "weak" || current === "flagged" ? "Domain" : "Topic"}</span>
+              <span />
             </div>
-            {open && (
-              <div id={panelId} className="mt-3 flex flex-wrap gap-2">
-                {cards.map((c) => {
-                  const weak = isWeak(c);
-                  const flagged = flags.flags.has(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => onStudy(cards, c.id, domain)}
-                      className={`group inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left text-xs font-medium transition ${
-                        weak
-                          ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-800"
-                      }`}
-                    >
-                      <span
-                        role="button"
-                        tabIndex={-1}
-                        onClick={(e) => { e.stopPropagation(); flags.toggle(c.id); }}
-                        className={flagged ? "text-amber-500" : "text-slate-300 group-hover:text-amber-400 dark:text-slate-600"}
-                      >
-                        {flagged ? "★" : "☆"}
-                      </span>
-                      {c.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-        );
-      })}
-      {groups.length === 0 && <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">No terms match "{query}".</p>}
-    </div>
-  );
-}
-
-// Scope the library to one event's deck.
-//
-// The library holds all 830 terms across 13 domains, but a competitor is studying
-// for exactly ONE event, and roughly 250 of those cards are theirs. Without this,
-// finding them meant knowing which domains your event draws from, which is the
-// app's internal model, not something a student should have to learn.
-//
-// The event->terms join is the same one the course path uses (backend courses.py),
-// fetched through getCourse, so the deck here and the Study tab can never disagree.
-function DeckBar({
-  events,
-  deckId,
-  deck,
-  count,
-  onPick,
-  onStudy,
-  onBlitz,
-  onQuiz,
-}: {
-  events: EventSummary[];
-  deckId: string;
-  deck: Course | null;
-  count: number;
-  onPick: (id: string) => void;
-  onStudy: () => void;
-  onBlitz: () => void;
-  onQuiz: () => void;
-}) {
-  // Grouped into DECA's clusters, matching how the events are presented everywhere
-  // else, a flat list of 28 is a wall.
-  const clusters = useMemo(() => {
-    const order: string[] = [];
-    const by: Record<string, EventSummary[]> = {};
-    for (const e of events) {
-      if (!by[e.cluster]) {
-        by[e.cluster] = [];
-        order.push(e.cluster);
-      }
-      by[e.cluster].push(e);
-    }
-    return order.map((c) => ({ cluster: c, events: by[c] }));
-  }, [events]);
-
-  if (!events.length) return null;
-
-  return (
-    <div
-      className={`rounded-2xl border p-5 transition-colors ${
-        deck
-          ? "border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/30"
-          : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-      }`}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">
-            {deck ? `Studying for ${deck.event}` : "Studying for one event?"}
-          </h3>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            {deck
-              ? `${count} cards, the ones this event actually exercises. ${deck.core_count} of them are skills we grade you on.`
-              : "Narrow the library to just the terms your event draws on."}
-          </p>
+            {visible.map((c) => {
+              const l = levelOf(c);
+              const flagged = flags.flags.has(c.id);
+              return (
+                <div
+                  key={c.id}
+                  className="pic-inset grid grid-cols-[minmax(0,1fr)_130px_minmax(0,0.7fr)_28px] items-center gap-3.5 border-b border-slate-200 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
+                >
+                  <button
+                    onClick={() => onStudy(visible, c.id, title)}
+                    className="truncate py-2.5 text-left text-sm font-medium text-slate-900 hover:text-indigo-700 dark:text-slate-100 dark:hover:text-indigo-300"
+                  >
+                    {c.name}
+                  </button>
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap text-[13px] text-slate-600 dark:text-slate-300">
+                    <LevelDot color={l ? LEVEL_COLOR[l] : UNGRADED_COLOR} />
+                    {l ? LEVEL_LABEL[l] : "Not yet graded"}
+                  </span>
+                  <span className="truncate text-[13px] text-slate-500 dark:text-slate-400">
+                    {searching || current === "all" || current === "weak" || current === "flagged" ? c.domain : c.topic}
+                  </span>
+                  <button
+                    onClick={() => flags.toggle(c.id)}
+                    aria-label={flagged ? `Remove the flag from ${c.name}` : `Flag ${c.name} to study later`}
+                    aria-pressed={flagged}
+                    className={`tap text-right text-base leading-none ${flagged ? "text-amber-500" : "text-slate-300 hover:text-amber-400 dark:text-slate-600"}`}
+                  >
+                    {flagged ? "★" : "☆"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="deck-pick">
-            Filter the library to an event
-          </label>
-          <select
-            id="deck-pick"
-            value={deckId}
-            onChange={(e) => onPick(e.target.value)}
-            className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
-            <option value="">Every term</option>
-            {clusters.map(({ cluster, events: inCluster }) => (
-              <optgroup key={cluster} label={cluster}>
-                {inCluster.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <button className={BTN_SECONDARY} disabled={!count} onClick={onStudy}>
-            Study →
-          </button>
-          <button className={BTN_SECONDARY} disabled={!count} onClick={onBlitz}>
-            ⚡ Blitz
-          </button>
-          <button className={BTN_SECONDARY} disabled={!count} onClick={onQuiz}>
-            ◎ Quiz
-          </button>
-        </div>
+      ) : (
+        <p className="py-8 text-sm text-slate-500 dark:text-slate-400">
+          {searching
+            ? `No terms match "${query.trim()}".`
+            : filtered
+              ? "No terms match these filters. Clear one to see more."
+              : current === "weak"
+                ? "Finish some role-plays and the terms you have been weakest on show up here."
+                : current === "flagged"
+                  ? "Star any term to add it here."
+                  : "No terms here yet."}
+        </p>
+      )}
+
+      {/* What the three buttons at the top do, said once and quietly. */}
+      <div className="mt-6 grid gap-x-8 gap-y-3 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400 sm:grid-cols-3">
+        <p><span className="font-medium text-slate-700 dark:text-slate-200">Study</span> flips through the cards: a plain definition, a worked example run through the four beats, and the one mistake to avoid.</p>
+        <p><span className="font-medium text-slate-700 dark:text-slate-200">Blitz</span> is a rapid drill: one scenario, 5 terms, 45 seconds each, graded at the end.</p>
+        <p><span className="font-medium text-slate-700 dark:text-slate-200">Quiz</span> is multiple choice at district, state or ICDC difficulty. No clock, and every answer explains itself.</p>
       </div>
       {deck && (
-        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-[13px] text-slate-500 dark:text-slate-400">
           {/* A real link, not a view switch: this deck also exists as a public page
               that needs no account, which is what you send a team partner. */}
           <a
             className="font-medium text-indigo-600 transition hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
             href={`/flashcards/${deck.event_id}`}
           >
-            Open the shareable {deck.event} deck page →
-          </a>{" "}
-          Readable without signing in, so you can send it to your partner.
+            Open the shareable {deck.event} deck page
+          </a>
+          . Readable without signing in, so you can send it to your partner.
         </p>
       )}
     </div>
   );
 }
 
-function SetCard({ tone, title, subtitle, count, onStudy, onBlitz, onQuiz }: { tone: "indigo" | "amber"; title: string; subtitle: string; count: number; onStudy: () => void; onBlitz: () => void; onQuiz: () => void }) {
-  const toneCls =
-    tone === "indigo"
-      ? "border-indigo-200 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/40"
-      : "border-amber-200 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/30";
-  return (
-    <div className={`rounded-2xl border p-5 ${toneCls}`}>
-      <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{subtitle}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button className={`${BTN_PRIMARY} disabled:opacity-40`} disabled={count === 0} onClick={onStudy}>
-          Study {count > 0 ? `${count} card${count === 1 ? "" : "s"}` : ""} →
-        </button>
-        <button className={`${BTN_SECONDARY} disabled:opacity-40`} disabled={count === 0} onClick={onBlitz}>⚡ Blitz</button>
-        <button className={`${BTN_SECONDARY} disabled:opacity-40`} disabled={count === 0} onClick={onQuiz}>◎ Quiz</button>
-      </div>
-    </div>
-  );
+function Count({ n }: { n: number }) {
+  return <span className="font-mono text-[13px] tabular-nums text-slate-500 dark:text-slate-400">{n}</span>;
 }

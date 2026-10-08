@@ -4,9 +4,53 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", "Inter", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  /* Tighter corners than Tailwind's defaults: controls sit at 7 to 8px and the
+     largest surface (a dialog) at 16px, so nothing reads as a soft pillow. */
+  --radius-lg: 0.4375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
+}
+
+/* Tokens for the hand-written layers below (the shell, the dock, the glow).
+   Tailwind utilities carry their own light and dark values; these are only for
+   the rules in this file, and they follow the same `.dark` switch. */
+:root {
+  --pic-canvas: #f6f7fb;
+  --pic-surface: #ffffff;
+  --pic-line: #e2e8f0;
+  --pic-tint: #eef0ff;
+  --pic-tint-line: #c7d2fe;
+  --pic-title-a: #4f46e5;
+  --pic-title-b: #0284c7;
+  --pic-glow-a: rgba(99, 102, 241, 0.34);
+  --pic-glow-b: rgba(14, 165, 233, 0.24);
+  --pic-glow-c: rgba(16, 185, 129, 0.13);
+  --pic-dot: rgba(79, 70, 229, 0.2);
+  --pic-spot: rgba(99, 102, 241, 0.2);
+  --pic-pad: 16px;
+}
+.dark {
+  --pic-canvas: #0a0f1f;
+  --pic-surface: #0f172a;
+  --pic-line: #1e293b;
+  --pic-tint: #181c44;
+  --pic-tint-line: #312e81;
+  --pic-title-a: #a5b4fc;
+  --pic-title-b: #7dd3fc;
+  --pic-glow-a: rgba(99, 102, 241, 0.42);
+  --pic-glow-b: rgba(14, 165, 233, 0.22);
+  --pic-glow-c: rgba(16, 185, 129, 0.12);
+  --pic-dot: rgba(165, 180, 252, 0.16);
+  --pic-spot: rgba(129, 140, 248, 0.2);
+}
+@media (min-width: 640px) {
+  :root {
+    --pic-pad: 28px;
+  }
 }
 
 @layer base {
@@ -16,22 +60,13 @@
   }
   body {
     font-family: var(--font-sans);
-    /* Soft slate canvas: a faint indigo wash at the top, over a subtle diamond
-       lattice (two crisscrossed hairline gradients, no images, GPU-cheap). */
-    background-color: #f6f7fb;
-    background-image:
-      radial-gradient(120% 55% at 50% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
-      repeating-linear-gradient(45deg, rgba(79, 70, 229, 0.05) 0 1px, transparent 1px 30px),
-      repeating-linear-gradient(-45deg, rgba(79, 70, 229, 0.05) 0 1px, transparent 1px 30px);
+    /* A flat slate canvas. The glow and dot grid sit on `.pic-app` below, so
+       they scroll away with the top of the page instead of following it. */
+    background-color: var(--pic-canvas);
     color: #0f172a;
     min-height: 100dvh;
   }
   .dark body {
-    background-color: #0a0f1f;
-    background-image:
-      radial-gradient(120% 55% at 50% -12%, rgba(99, 102, 241, 0.2), transparent 60%),
-      repeating-linear-gradient(45deg, rgba(129, 140, 248, 0.06) 0 1px, transparent 1px 30px),
-      repeating-linear-gradient(-45deg, rgba(129, 140, 248, 0.06) 0 1px, transparent 1px 30px);
     color: #e2e8f0;
   }
   /* Native form controls + the audio player follow the theme. */
@@ -42,6 +77,238 @@
   .dark audio {
     color-scheme: dark;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The app frame: a grey canvas with a soft glow and a dot grid at the top, and
+   the white content sheet rising out of it.
+
+   Everything here is a still picture or a transform. The glow is three static
+   radial gradients on one layer that drifts as a whole; the dot grid never
+   moves; the cursor light is one element moved once per frame. Nothing repaints
+   on scroll, and the reduced-motion rule further down stops all of it.
+--------------------------------------------------------------------------- */
+.pic-app {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+.pic-app::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -10%;
+  right: -10%;
+  top: -160px;
+  height: 560px;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 55% at 22% 45%, var(--pic-glow-a), transparent 70%),
+    radial-gradient(34% 50% at 68% 35%, var(--pic-glow-b), transparent 70%),
+    radial-gradient(28% 44% at 48% 70%, var(--pic-glow-c), transparent 70%);
+  animation: pic-drift 24s ease-in-out infinite alternate;
+}
+.pic-app::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  height: 420px;
+  pointer-events: none;
+  background-image: radial-gradient(var(--pic-dot) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+}
+@keyframes pic-drift {
+  to {
+    transform: translate3d(5%, 4%, 0) scale(1.14) rotate(5deg);
+  }
+}
+/* The cursor light. Fixed, so its position is just the pointer's; AppFrame
+   moves it with a transform and shows it only for a real mouse. */
+.pic-ptr {
+  position: fixed;
+  z-index: -1;
+  left: -260px;
+  top: -260px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(circle, var(--pic-spot), transparent 65%);
+  will-change: transform;
+}
+
+/* The floating dock. The border is a gradient drawn in the border box, with the
+   surface colour painted over the padding box. */
+.pic-dock {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--pic-surface), var(--pic-surface)) padding-box,
+    linear-gradient(135deg, var(--pic-tint-line), var(--pic-line) 45%, var(--pic-tint-line)) border-box;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 28px -14px rgba(15, 23, 42, 0.25);
+}
+.dark .pic-dock {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+}
+/* The pill behind the active dock item. The dock sets its width and offset; it
+   may only glide once it has been placed, so it never slides in from the left
+   edge on first paint. */
+.pic-pill {
+  background: linear-gradient(180deg, #6366f1, #4f46e5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 6px 16px -6px #4f46e5;
+}
+.pic-pill.live {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s;
+}
+
+/* The content sheet. Clear at the top so the glow shows through behind the page
+   title, solid further down; the hairlines at its sides fade in the same way,
+   so there is no edge where the colour stops. Which sides have a hairline at
+   all is Shell's call (a `border-x` or `border-l` utility); this only says how
+   one is drawn. */
+.pic-main {
+  border-image: linear-gradient(to bottom, transparent 40px, var(--pic-line) 320px) 1;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--pic-surface) 45%, transparent) 130px,
+    var(--pic-surface) 360px
+  );
+  padding-inline: var(--pic-pad);
+}
+/* Children arrive in a short stagger. `both` holds the first frame during the
+   delay; once done the transform is gone, so nothing is left on its own layer. */
+.pic-main > * {
+  animation: pic-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.pic-main > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+.pic-main > :nth-child(3) {
+  animation-delay: 0.1s;
+}
+.pic-main > :nth-child(4) {
+  animation-delay: 0.15s;
+}
+.pic-main > :nth-child(n + 5) {
+  animation-delay: 0.2s;
+}
+@keyframes pic-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+/* Runs a child out to the sheet's edges (a table, a strip, a filter bar);
+   `.pic-inset` gives its rows the sheet's own inset back. */
+.pic-bleed {
+  margin-inline: calc(-1 * var(--pic-pad));
+}
+.pic-inset {
+  padding-inline: var(--pic-pad);
+}
+
+/* Page titles: indigo into sky. `.pic-grad` is the same fill for a phrase inside
+   a longer headline, where it has to wrap with the line it sits in. */
+.pic-title,
+.pic-grad {
+  background: linear-gradient(90deg, var(--pic-title-a), var(--pic-title-b));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pic-title {
+  width: fit-content;
+}
+.pic-grad {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+/* The landing hero's product shot: a soft indigo light under the frame, the way
+   a screenshot sits on Linear's or Raycast's front page. Static, one layer. */
+.pic-stage {
+  position: relative;
+}
+.pic-stage::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 8% 6% -6%;
+  border-radius: 40%;
+  background: radial-gradient(closest-side, var(--pic-glow-a), transparent);
+  filter: blur(40px);
+}
+/* The closing call to action sits on its own pool of light instead of in a box. */
+.pic-outro {
+  background: radial-gradient(60% 90% at 50% 100%, var(--pic-glow-a), transparent 70%),
+    radial-gradient(40% 70% at 30% 100%, var(--pic-glow-b), transparent 70%);
+}
+/* A summary cell that stands for a scoring level carries a faint wash of that
+   level's colour, set as `--c` on the cell. */
+.pic-tone {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--c) 13%, transparent), transparent 88%);
+}
+/* The selected row of a sidebar list. */
+.pic-on {
+  background: linear-gradient(90deg, var(--pic-tint), color-mix(in srgb, var(--pic-tint) 35%, transparent));
+  box-shadow: inset 0 0 0 1px var(--pic-tint-line);
+}
+/* Bars that fill on arrival, and the trend line that draws itself. */
+.pic-grow {
+  transform-origin: left;
+  animation: pic-grow 0.7s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes pic-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+.pic-draw {
+  stroke-dasharray: 1;
+  animation: pic-draw 1.1s 0.25s ease-out both;
+}
+@keyframes pic-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Two app-wide corrections, UNLAYERED on purpose so they beat Tailwind's
+   utilities (the touch-device note at the bottom of this file explains why
+   that works).
+
+   1. Every solid indigo button gets the same lit finish: a slightly lighter
+      top, a hairline sheen, and a soft glow underneath. Written against the
+      utility class so the buttons that spell out `bg-indigo-600` by hand match
+      the ones that use BTN_PRIMARY.
+   2. Small labels were set in uppercase mono with wide tracking. That treatment
+      is on every generated dashboard, so it is switched off here: the same
+      labels now read as plain small text in the body face. Mono stays for what
+      it is good at, which is numbers.
+--------------------------------------------------------------------------- */
+:is(button, a).bg-indigo-600 {
+  background-image: linear-gradient(180deg, #6366f1, #4f46e5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 6px 16px -8px #4f46e5;
+}
+:is(button, a).bg-indigo-600:hover:not(:disabled) {
+  background-image: linear-gradient(180deg, #5558ee, #4338ca);
+}
+.font-mono.uppercase {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Loader: the concentric brand mark rippling. A shrink→expand wave travels from

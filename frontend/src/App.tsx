@@ -29,7 +29,7 @@ import {
   postScore,
 } from "./api";
 import { identifyEmail, PH_MASK, track, trackBeacon } from "./analytics";
-import { BrandMark, LogoLoader, PageLoader } from "./ui";
+import { AppFrame, BrandMark, BTN_PRIMARY, BTN_SECONDARY, Card, CountUp, DockPill, Eyebrow, LEVEL_COLOR, LevelDot, LogoLoader, PageHead, PageLoader, Shell, Sidebar, SideGroup, SideItem, Strip, useInShell } from "./ui";
 import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
 import { useVisited, type Surface } from "./visited";
@@ -1332,7 +1332,7 @@ export default function App() {
   const wide = view === "home" || (view === "practice" && stage === "feedback") || view === "tips" || view === "chapter";
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <AppFrame>
       <SiteHeader
         view={view}
         onView={goToView}
@@ -1393,9 +1393,9 @@ export default function App() {
           }}
         />
       )}
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-8 ${view === "home" || view === "course" ? "max-w-[88rem]" : wide ? "max-w-6xl" : "max-w-3xl"}`}>
+      <Shell width={view === "home" || view === "course" ? "full" : wide ? "wide" : "narrow"}>
         {error && (
-          <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <div className="mb-5 mt-6 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
             <span className="mt-0.5">⚠</span>
             <span className="flex-1">{error}</span>
             {errorAction?.forError === error && (
@@ -1410,7 +1410,7 @@ export default function App() {
             with the retry right here: nothing they were doing was lost, they
             just aren't logged in, practice itself never needed an account. */}
         {oauthError && (
-          <div className="mb-5 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="mb-5 mt-6 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
             <span className="mt-0.5">⚠</span>
             <span className="flex-1">{oauthError}</span>
             <button
@@ -1724,7 +1724,7 @@ export default function App() {
             )}
           </>
         )}
-      </main>
+      </Shell>
       <SiteFooter />
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
       {/* Landing only: a signed-in visitor gets HomePage here, and this is
@@ -1745,7 +1745,7 @@ export default function App() {
           }}
         />
       )}
-    </div>
+    </AppFrame>
   );
 }
 
@@ -1765,10 +1765,10 @@ export function DemoApp() {
   }, [step]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <AppFrame>
       <SiteHeader view="practice" onView={exit} onPractice={exit} onHome={exit} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
       <DemoRibbon onExit={exit} />
-      <main className={`w-full flex-1 mx-auto px-5 pb-20 pt-7 ${step === "feedback" ? "max-w-6xl" : "max-w-3xl"}`}>
+      <Shell width={step === "feedback" ? "wide" : "narrow"}>
         {step === "scenario" ? (
           <DemoScenarioStep onNext={() => setStep("feedback")} />
         ) : (
@@ -1792,10 +1792,10 @@ export function DemoApp() {
             />
           </div>
         )}
-      </main>
+      </Shell>
       <SiteFooter />
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
-    </div>
+    </AppFrame>
   );
 }
 
@@ -2764,16 +2764,13 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
   chapterBadge?: number | null;
 }) {
   const chapterCount = chapterBadge ? (
-    <span className="ml-1.5 rounded-full bg-indigo-600 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-white">
+    <span className="ml-1.5 rounded-full bg-slate-900/10 px-1.5 py-0.5 font-mono text-[10px] tabular-nums dark:bg-white/15">
       {chapterBadge}
       <span className="sr-only"> unread</span>
     </span>
   ) : null;
   // A dot only when we have a visited-tracker AND the surface is still unseen.
   const dot = (s: Surface) => (unvisited?.(s) ? <NavDot /> : null);
-  // Below `md` the full nav can't fit a phone's width without overflowing (the
-  // horizontal-scroll "bar"), so it collapses into a disclosure menu. The theme
-  // toggle stays inline, it's a one-tap affordance students use constantly.
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     if (!menuOpen) return;
@@ -2784,24 +2781,41 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
   // Any menu choice both runs the action and closes the sheet.
   const pick = (fn?: () => void) => () => { setMenuOpen(false); fn?.(); };
 
+  const dock = useRef<HTMLDivElement>(null);
+  const account = authReady && (userEmail ? (
+    <AccountMenu email={userEmail} onSignOut={onSignOut} onAccount={onAccount} onReplayTour={onReplayTour} />
+  ) : (
+    <>
+      <button
+        onClick={onLogin}
+        className="whitespace-nowrap rounded-[9px] px-2.5 py-1.5 text-sm text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+      >
+        Log in
+      </button>
+      <button
+        onClick={onSignup}
+        className="whitespace-nowrap rounded-[9px] bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+      >
+        Sign up
+      </button>
+    </>
+  ));
+
   return (
-    <header className="sticky top-0 z-20 bg-white/70 backdrop-blur-md dark:bg-slate-950/60">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3.5">
-        <button onClick={() => onView("home")} className="flex min-w-0 items-center gap-2.5 text-left">
-          <BrandMark />
-          <div className="min-w-0 leading-none">
-            <div className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">PI Coach</div>
-            <div className="mt-1 truncate font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">DECA role-play practice</div>
-          </div>
+    <header className="sticky top-3 z-20 mx-3 mt-3 flex flex-col items-center">
+      {/* The dock: one floating bar, sized to its contents. The pill behind the
+          active item is DockPill; it finds the item by aria-current. */}
+      <div ref={dock} className="pic-dock relative flex max-w-full items-center gap-0.5 rounded-[14px] p-[5px]">
+        <DockPill dock={dock} activeKey={`${view}|${userEmail ? 1 : 0}|${chapterBadge}`} />
+        <button onClick={() => onView("home")} className="relative z-[1] flex items-center gap-2 py-1 pl-2 pr-3 text-left">
+          <BrandMark size={20} />
+          <span className="whitespace-nowrap font-display text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100">PI Coach</span>
         </button>
 
         {/* Desktop nav (md+): the full inline row. */}
-        <nav className="hidden items-center gap-4 md:flex md:gap-5">
-          {userEmail ? (
-            <NavLink active={view === "home"} onClick={onHome}>Home</NavLink>
-          ) : (
-            <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
-          )}
+        <nav className="hidden items-center gap-0.5 md:flex">
+          {userEmail && <NavLink active={view === "home"} onClick={onHome}>Home</NavLink>}
+          <NavLink active={view === "practice"} onClick={onPractice}>Practice</NavLink>
           {/* One Study item, and it is open to everyone. It used to be three:
               Study (the event path), Library (the in-app browser) and Flashcards
               (the public SEO pages). Those first two are now modes inside this
@@ -2813,96 +2827,74 @@ function SiteHeader({ view, onView, onPractice, onHome, theme, onToggleTheme, on
           )}
           <NavLink active={view === "tips"} onClick={() => onView("tips")}>Tips{dot("tips")}</NavLink>
           <NavLink active={view === "faq"} onClick={() => onView("faq")}>FAQ{dot("faq")}</NavLink>
+          <span aria-hidden className="mx-1.5 h-[18px] w-px bg-slate-200 dark:bg-slate-700" />
           <button
             onClick={onFeedback}
-            aria-label="Send feedback"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-sm font-medium text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:text-slate-300 dark:hover:border-indigo-800"
+            className="whitespace-nowrap rounded-[9px] px-2.5 py-1.5 text-sm text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           >
-            <span className="text-sm leading-none">💬</span>
-            <span>Feedback</span>
+            Feedback
           </button>
-          {authReady && (userEmail ? (
-            <AccountMenu email={userEmail} onSignOut={onSignOut} onAccount={onAccount} onReplayTour={onReplayTour} />
-          ) : (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={onLogin}
-                className="text-sm font-medium text-slate-600 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
-              >
-                Log in
-              </button>
-              <button
-                onClick={onSignup}
-                className="inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-              >
-                Sign up
-              </button>
-            </div>
-          ))}
+          {account}
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
         </nav>
 
-        {/* Mobile cluster (< md): theme toggle + hamburger. */}
-        <div className="flex items-center gap-1 md:hidden">
+        {/* Mobile cluster (< md): theme toggle + hamburger. Below `md` the full
+            nav can't fit a phone's width, so it collapses into a disclosure menu;
+            the theme toggle stays inline, students use it constantly. */}
+        <div className="flex items-center gap-0.5 md:hidden">
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           <button
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-[9px] text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
             </svg>
           </button>
         </div>
       </div>
-      <div className="h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
 
       {/* Mobile disclosure sheet. Full-width stacked items with 44px+ hit areas. */}
       {menuOpen && (
-        <nav className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:hidden">
-          <div className="mx-auto flex max-w-5xl flex-col gap-1">
-            {userEmail ? (
-              <MobileNavItem active={view === "home"} onClick={pick(onHome)}>Home</MobileNavItem>
-            ) : (
-              <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
-            )}
-            <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study{dot("course")}</MobileNavItem>
-            {chapterBadge !== null && (
-              <MobileNavItem active={view === "chapter"} onClick={pick(() => onView("chapter"))}>Chapter{chapterCount}</MobileNavItem>
-            )}
-            <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips{dot("tips")}</MobileNavItem>
-            <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ{dot("faq")}</MobileNavItem>
-            <MobileNavItem active={false} onClick={pick(onFeedback)}>💬 Feedback</MobileNavItem>
-            {authReady && (userEmail ? (
-              <>
-                {onReplayTour && (
-                  <MobileNavItem active={false} onClick={pick(onReplayTour)}>Replay the tour</MobileNavItem>
-                )}
-                <div className={`mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{userEmail}</div>
-                {onAccount && (
-                  <MobileNavItem active={view === "account"} onClick={pick(onAccount)}>Account settings</MobileNavItem>
-                )}
-                <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
-              </>
-            ) : (
-              <div className="mt-2 flex flex-col gap-2">
-                <button
-                  onClick={pick(onLogin)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  Log in
-                </button>
-                <button
-                  onClick={pick(onSignup)}
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                  Sign up
-                </button>
-              </div>
-            ))}
-          </div>
+        <nav className="pic-dock mt-2 flex w-full max-w-sm flex-col gap-1 rounded-[14px] p-2 md:hidden">
+          {userEmail && <MobileNavItem active={view === "home"} onClick={pick(onHome)}>Home</MobileNavItem>}
+          <MobileNavItem active={view === "practice"} onClick={pick(onPractice)}>Practice</MobileNavItem>
+          <MobileNavItem active={view === "course"} onClick={pick(() => onView("course"))}>Study{dot("course")}</MobileNavItem>
+          {chapterBadge !== null && (
+            <MobileNavItem active={view === "chapter"} onClick={pick(() => onView("chapter"))}>Chapter{chapterCount}</MobileNavItem>
+          )}
+          <MobileNavItem active={view === "tips"} onClick={pick(() => onView("tips"))}>Tips{dot("tips")}</MobileNavItem>
+          <MobileNavItem active={view === "faq"} onClick={pick(() => onView("faq"))}>FAQ{dot("faq")}</MobileNavItem>
+          <MobileNavItem active={false} onClick={pick(onFeedback)}>Feedback</MobileNavItem>
+          {authReady && (userEmail ? (
+            <>
+              {onReplayTour && (
+                <MobileNavItem active={false} onClick={pick(onReplayTour)}>Replay the tour</MobileNavItem>
+              )}
+              <div className={`mt-1 truncate px-3 pt-2 text-xs text-slate-500 dark:text-slate-400 ${PH_MASK}`}>{userEmail}</div>
+              {onAccount && (
+                <MobileNavItem active={view === "account"} onClick={pick(onAccount)}>Account settings</MobileNavItem>
+              )}
+              <MobileNavItem active={false} onClick={pick(onSignOut)}>Sign out</MobileNavItem>
+            </>
+          ) : (
+            <div className="mt-2 flex flex-col gap-2">
+              <button
+                onClick={pick(onLogin)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Log in
+              </button>
+              <button
+                onClick={pick(onSignup)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-700"
+              >
+                Sign up
+              </button>
+            </div>
+          ))}
         </nav>
       )}
     </header>
@@ -2926,7 +2918,7 @@ function AccountMenu({ email, onSignOut, onHome, onAccount, onReplayTour }: { em
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Account"
-        className="tap inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white transition hover:bg-indigo-700"
+        className="tap ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900"
       >
         {initial}
       </button>
@@ -2974,18 +2966,13 @@ function NavLink({ active, onClick, children }: { active: boolean; onClick: () =
     <button
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`group relative px-0.5 py-1 text-sm font-medium tracking-tight transition-colors ${
+      className={`relative z-[1] inline-flex items-center whitespace-nowrap rounded-[9px] px-3 py-1.5 text-sm transition-colors duration-200 ${
         active
-          ? "text-indigo-600 dark:text-indigo-300"
+          ? "font-medium text-white"
           : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
       }`}
     >
       {children}
-      <span
-        className={`pointer-events-none absolute -bottom-0.5 left-0 right-0 h-0.5 origin-left rounded-full bg-indigo-500 transition-transform duration-300 ease-out dark:bg-indigo-400 ${
-          active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-        }`}
-      />
     </button>
   );
 }
@@ -2996,7 +2983,7 @@ function MobileNavItem({ active, onClick, children }: { active: boolean; onClick
     <button
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`flex min-h-11 items-center rounded-xl px-3 text-left text-sm font-medium transition ${
+      className={`flex min-h-11 items-center rounded-lg px-3 text-left text-sm font-medium transition ${
         active
           ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300"
           : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -3029,18 +3016,6 @@ function ThemeToggle({ theme, onToggle }: { theme: "light" | "dark"; onToggle: (
     </button>
   );
 }
-
-function Eyebrow({ children }: { children: ReactNode }) {
-  return (
-    <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-indigo-500">{children}</p>
-  );
-}
-
-const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-40";
-
-const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800";
 
 // --- screens ---------------------------------------------------------------
 
@@ -3125,147 +3100,198 @@ function PickScreen(props: {
   );
   const selected = props.events.find((e) => e.id === props.eventId) || null;
   const suggestions = selected?.suggestions ?? [];
+  const [find, setFind] = useState("");
+  const q = find.trim().toLowerCase();
+  const shown = q ? props.events.filter((e) => e.name.toLowerCase().includes(q)) : props.events;
 
   return (
-    <div className="space-y-6">
-      <section className="pt-4">
-        <Eyebrow>Set up your role-play</Eyebrow>
-        <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Build your role-play
-        </h1>
-        <p className="mt-3 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Pick your event and we'll write an original scenario built around it, then prep against a real
-          timer, present out loud, and get honest, per-criterion feedback.
-        </p>
+    <div>
+      {/* From `lg` up the events are a list down the sidebar, grouped by cluster,
+          so choosing one never pushes the form down the page. Narrower screens
+          keep the native picker in the form below: a 28-row list above the form
+          would bury it. */}
+      <Sidebar>
+        <div className="hidden lg:contents">
+          <label className="mx-0.5 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-slate-400 dark:border-slate-700 dark:bg-slate-900">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden>
+              <circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M9.2 9.2 13 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <input
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+              placeholder="Find an event"
+              aria-label="Find an event"
+              className="w-full min-w-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
+            />
+          </label>
+          {clusters.map((cluster) => {
+            const list = shown.filter((e) => e.cluster === cluster);
+            return list.length ? (
+              <SideGroup key={cluster} title={cluster}>
+                {list.map((e) => (
+                  <SideItem key={e.id} active={e.id === props.eventId} onClick={() => props.onEvent(e.id)}>
+                    {e.name}
+                  </SideItem>
+                ))}
+              </SideGroup>
+            ) : null;
+          })}
+          {props.events.length > 0 && shown.length === 0 && (
+            <p className="px-2.5 text-sm text-slate-500 dark:text-slate-400">No event matches that.</p>
+          )}
+        </div>
+      </Sidebar>
+
+      <PageHead
+        sub={selected ? selected.name : "Practice"}
+        title="Build your role-play"
+        blurb="Pick your event and we'll write an original scenario built around it, then prep against a real timer, present out loud, and get honest, per-criterion feedback."
+      >
         <button
           onClick={props.onTips}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+          className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
         >
-          New to DECA role-plays? Read the competition tips →
+          New to role-plays? Read the tips
         </button>
-      </section>
+      </PageHead>
 
-      <Card className="overflow-hidden p-0">
-        <div className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
-          <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Set up a role-play</h2>
-        </div>
-        <div className="space-y-5 px-6 py-5">
-          <Field label="Which event are you practicing for?">
-            <div className="relative">
-              <select
-                className={SELECT_CLS}
-                value={props.eventId}
-                onChange={(e) => props.onEvent(e.target.value)}
-              >
-                <option value="">Choose your event…</option>
-                {clusters.map((cluster) => (
-                  <optgroup key={cluster} label={cluster}>
-                    {props.events
-                      .filter((e) => e.cluster === cluster)
-                      .map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">▾</span>
-            </div>
-            {selected ? (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="mr-1.5 inline-block rounded-full bg-indigo-50 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
-                  {selected.kind}
-                </span>
-                {selected.quantitative && (
-                  <span className="mr-1.5 inline-block rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
-                    🧮 math-checked
-                  </span>
-                )}
+      <div className="pic-bleed">
+        <FormRow label="Event" note={selected ? undefined : "Start here"}>
+          <div className="relative lg:hidden">
+            <select
+              className={SELECT_CLS}
+              value={props.eventId}
+              onChange={(e) => props.onEvent(e.target.value)}
+              aria-label="Which event are you practicing for?"
+            >
+              <option value="">Choose your event…</option>
+              {clusters.map((cluster) => (
+                <optgroup key={cluster} label={cluster}>
+                  {props.events
+                    .filter((e) => e.cluster === cluster)
+                    .map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">▾</span>
+          </div>
+          {selected ? (
+            <div className="max-lg:mt-2">
+              <p className="hidden text-sm font-medium text-slate-900 dark:text-slate-100 lg:block">{selected.name}</p>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400 lg:mt-0.5">
+                {selected.kind.charAt(0).toUpperCase() + selected.kind.slice(1)}
+                {selected.quantitative ? ", math-checked. " : ". "}
                 {selected.blurb}
               </p>
-            ) : (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                {props.events.length ? "Grouped by cluster. Pick the one you compete in." : "Loading events…"}
-              </p>
-            )}
-          </Field>
-
-          <Field label="Anything specific you want to focus on? (optional)">
-            <textarea
-              className={`h-20 ${TEXTAREA_CLS}`}
-              placeholder={
-                selected
-                  ? `e.g. "${suggestions[0] ?? "a challenge you want to practice"}", or leave blank for a surprise scenario`
-                  : "Pick your event above first"
-              }
-              value={props.request}
-              onChange={(e) => props.onRequest(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) props.onGenerate();
-              }}
-              maxLength={400}
-              disabled={!selected}
-            />
-            {suggestions.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {suggestions.map((ex) => (
-                  <button
-                    key={ex}
-                    type="button"
-                    onClick={() => props.onRequest(ex)}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-indigo-800"
-                  >
-                    {ex}
-                  </button>
-                ))}
-              </div>
-            )}
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              Leave it blank and we'll write a realistic scenario for your event. Add a focus to steer it.
+            </div>
+          ) : (
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 max-lg:mt-2">
+              {props.events.length ? (
+                <>
+                  <span className="lg:hidden">Grouped by cluster. Pick the one you compete in.</span>
+                  <span className="hidden lg:inline">Pick the one you compete in from the list on the left.</span>
+                </>
+              ) : (
+                "Loading events…"
+              )}
             </p>
-          </Field>
+          )}
+        </FormRow>
 
-          <Field label="Mode">
-            <Segmented
-              value={props.practiceMode}
-              onChange={(v) => props.onPracticeMode(v as Mode)}
-              options={[
-                { value: "competition", label: "Competition" },
-                { value: "learn", label: "Learn" },
-              ]}
-            />
-            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-              {props.practiceMode === "competition"
-                ? "Like the real room: you see the skill names being assessed, but not the answer key."
-                : "Teaches as you go: see each skill, what “good” looks like, and coaching in your feedback."}
-            </p>
-          </Field>
+        <FormRow label="Focus" note="Optional">
+          <textarea
+            className={`h-20 ${TEXTAREA_CLS}`}
+            placeholder={
+              selected
+                ? `e.g. "${suggestions[0] ?? "a challenge you want to practice"}", or leave blank for a surprise scenario`
+                : "Pick your event first"
+            }
+            aria-label="Anything specific you want to focus on? (optional)"
+            value={props.request}
+            onChange={(e) => props.onRequest(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) props.onGenerate();
+            }}
+            maxLength={400}
+            disabled={!selected}
+          />
+          {suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {suggestions.map((ex) => (
+                <button
+                  key={ex}
+                  type="button"
+                  onClick={() => props.onRequest(ex)}
+                  className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[13px] text-slate-600 transition hover:border-indigo-300 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-800"
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
+          )}
+          <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
+            Leave it blank and we'll write a realistic scenario for your event. Add a focus to steer it.
+          </p>
+        </FormRow>
 
-          <Field label="Level">
-            <Segmented
-              value={props.level}
-              onChange={(v) => props.onLevel(v as Level)}
-              options={[
-                { value: "district", label: "District" },
-                { value: "state", label: "State" },
-                { value: "icdc", label: "ICDC" },
-              ]}
-            />
-          </Field>
+        <FormRow label="Level">
+          <Segmented
+            value={props.level}
+            onChange={(v) => props.onLevel(v as Level)}
+            options={[
+              { value: "district", label: "District" },
+              { value: "state", label: "State" },
+              { value: "icdc", label: "ICDC" },
+            ]}
+          />
+        </FormRow>
 
-          <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
-            <HonestyNote />
-            <button
-              className={`${BTN_PRIMARY} w-full whitespace-nowrap sm:w-auto`}
-              onClick={props.onGenerate}
-              disabled={!props.eventId}
-            >
-              Generate scenario →
-            </button>
-          </div>
+        <FormRow label="Mode">
+          <Segmented
+            value={props.practiceMode}
+            onChange={(v) => props.onPracticeMode(v as Mode)}
+            options={[
+              { value: "competition", label: "Competition" },
+              { value: "learn", label: "Learn" },
+            ]}
+          />
+          <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
+            {props.practiceMode === "competition"
+              ? "Like the real room: you see the skill names being assessed, but not the answer key."
+              : "Teaches as you go: see each skill, what “good” looks like, and coaching in your feedback."}
+          </p>
+        </FormRow>
+
+        <div className="pic-inset flex flex-col items-stretch gap-3 border-t border-slate-200 pt-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+          <HonestyNote />
+          <button
+            className={`${BTN_PRIMARY} w-full whitespace-nowrap sm:w-auto`}
+            onClick={props.onGenerate}
+            disabled={!props.eventId}
+          >
+            Generate role-play
+          </button>
         </div>
-      </Card>
+      </div>
+    </div>
+  );
+}
+
+// One labelled row of a setup form: the label in a fixed left column, the
+// control beside it, a hairline above. Stacks on a phone.
+function FormRow({ label, note, children }: { label: string; note?: string; children: ReactNode }) {
+  return (
+    <div className="pic-inset grid gap-x-6 gap-y-2 border-t border-slate-200 py-5 dark:border-slate-800 sm:grid-cols-[150px_minmax(0,1fr)]">
+      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+        {label}
+        {note && <span className="block text-[13px] font-normal text-slate-500 dark:text-slate-400">{note}</span>}
+      </div>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
@@ -3420,14 +3446,15 @@ function RepNudge({ onStart, onDismiss, onShown }: { onStart: () => void; onDism
 
 function LandingPage({ onStart, onQuickRep, onTips, supabaseEnabled, onSignIn, onSignup }: { onStart: () => void; onQuickRep: () => void; onTips: () => void; supabaseEnabled?: boolean; onSignIn?: () => void; onSignup?: () => void }) {
   return (
-    <div className="pb-10">
+    <div className="mx-auto max-w-6xl pb-6">
       <HeroSection onStart={onStart} onQuickRep={onQuickRep} onTips={onTips} />
-      {/* Rhythm varies around an 8rem base (6 → 8 → 10 → 8rem) so the page feels
-          paced by hand rather than stamped on a uniform grid. */}
+      <div className="mt-20 sm:mt-28">
+        <FeatureGrid />
+      </div>
       <div className="mt-24 sm:mt-32">
         <HowItWorksSection />
       </div>
-      <div className="mt-28 sm:mt-40">
+      <div className="mt-24 sm:mt-32">
         <FeedbackExplainerSection />
       </div>
       <div className="mt-24 sm:mt-32">
@@ -3445,32 +3472,30 @@ function LandingPage({ onStart, onQuickRep, onTips, supabaseEnabled, onSignIn, o
 // email waitlist once accounts are live).
 function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onStart: () => void; onSignIn?: () => void }) {
   return (
-    <section className="overflow-hidden rounded-3xl border border-indigo-100 bg-indigo-50/70 px-6 py-12 dark:border-indigo-900/50 dark:bg-indigo-950/30 sm:px-10 sm:py-14">
-      <div className="max-w-xl">
-        <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
-          Keep every rep, and watch yourself get ready.
-        </h2>
-        <p className="mt-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          A free account saves your sessions and shows how your delivery and your weakest skills improve over time.
-          You can keep practicing without one, signing up just remembers your reps.
-        </p>
-        <div className="mt-7 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <button onClick={onSignup} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
-            Sign up free →
-          </button>
-          <button onClick={onStart} className="text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
-            or just start practicing →
-          </button>
-        </div>
-        {onSignIn && (
-          <p className="mt-5 text-sm text-slate-500 dark:text-slate-400">
-            Already have an account?{" "}
-            <button onClick={onSignIn} className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
-              Log in
-            </button>
-          </p>
-        )}
+    <section className="pic-outro pic-bleed border-t border-slate-200 px-6 pb-20 pt-16 text-center dark:border-slate-800 sm:pb-24 sm:pt-20">
+      <h2 className="mx-auto max-w-2xl font-display text-3xl font-semibold tracking-[-0.03em] text-balance text-slate-900 dark:text-slate-100 sm:text-5xl">
+        Keep every rep, and watch yourself get ready.
+      </h2>
+      <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-slate-600 dark:text-slate-300">
+        A free account saves your sessions and shows how your delivery and your weakest skills improve over time.
+        You can keep practicing without one, signing up just remembers your reps.
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <button onClick={onSignup} className={`${BTN_PRIMARY} px-5 py-2.5 text-base`}>
+          Sign up free
+        </button>
+        <button onClick={onStart} className={`${BTN_SECONDARY} px-5 py-2.5 text-base`}>
+          Just start practicing
+        </button>
       </div>
+      {onSignIn && (
+        <p className="mt-5 text-sm text-slate-500 dark:text-slate-400">
+          Already have an account?{" "}
+          <button onClick={onSignIn} className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400">
+            Log in
+          </button>
+        </p>
+      )}
     </section>
   );
 }
@@ -3480,7 +3505,7 @@ function SignupCTA({ onSignup, onStart, onSignIn }: { onSignup: () => void; onSt
 function SectionHeading({ title, blurb }: { title: string; blurb?: string }) {
   return (
     <div className="max-w-2xl">
-      <h2 className="font-display text-3xl font-semibold tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
+      <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-balance text-slate-900 dark:text-slate-100 sm:text-4xl">
         {title}
       </h2>
       {blurb && <p className="mt-4 text-base leading-relaxed text-pretty text-slate-600 dark:text-slate-300">{blurb}</p>}
@@ -3587,69 +3612,43 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
     };
   }, []);
   return (
-    // Asymmetric, left-aligned composition: a narrower copy column (5/12) paired
-    // with a wider media column (7/12), and the two are deliberately staggered on
-    // the vertical axis, copy nudged down, media held at the top, so the hero
-    // reads as hand-placed rather than centered on a symmetric grid.
-    <section ref={heroRef} className="grid items-start gap-12 pt-2 lg:grid-cols-12 lg:gap-10">
-      <div className="lg:col-span-5 lg:pt-10">
-        <Eyebrow>DECA role-play practice</Eyebrow>
-        <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.06] tracking-tight text-balance text-slate-900 dark:text-slate-100 sm:text-5xl">
-          Practice DECA role-plays out loud, then{" "}
-          {/* Emphasis by a real mark, not a gradient fill: a concise straight
-              underline with a thinner, lighter second rule beneath it. Painted as
-              two stacked linear-gradient layers so both follow the phrase onto a
-              second line (box-decoration-break: clone) instead of detaching when
-              the text wraps. */}
-          <span
-            className="text-indigo-600 dark:text-indigo-400"
-            style={{
-              WebkitBoxDecorationBreak: "clone",
-              boxDecorationBreak: "clone",
-              backgroundImage:
-                "linear-gradient(#6366f1, #6366f1), linear-gradient(#a5b4fc, #a5b4fc)",
-              backgroundRepeat: "no-repeat, no-repeat",
-              backgroundPosition: "left 100%, left calc(100% - 3px)",
-              backgroundSize: "100% 2px, 100% 1px",
-              paddingBottom: "0.1em",
-            }}
-          >
-            see exactly where you stand
-          </span>
-          .
-        </h1>
-        <p className="mt-5 font-display text-lg font-medium text-slate-500 dark:text-slate-400">
-          Rehearse the room before you're in it.
-        </p>
-        <p className="mt-4 max-w-md text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Pick your event, get an original scenario built around it, prep against a real timer,
-          present out loud, and get honest, per-criterion feedback on content and delivery.
-        </p>
-        <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          <button onClick={onStart} className={`${BTN_PRIMARY} px-6 py-3 text-base`}>
-            Ready to practice? →
-          </button>
-          <button onClick={onQuickRep} className={`${BTN_SECONDARY} px-6 py-3 text-base`}>
-            Try a 2-minute rep →
-          </button>
-        </div>
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          No account needed, your first {FREE_ROLEPLAYS} role-plays are free.{" "}
-          <button
-            onClick={onTips}
-            className="font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            New to DECA role-plays? →
-          </button>
-        </p>
-        {stats?.show && <HeroStats stats={stats} />}
+    // The front page of a product site, in the order Linear and Raycast use: one
+    // line of news, the headline, the two ways in, then the product itself, big,
+    // sitting on its own light. Centred, because the screenshot below is what
+    // anchors the page and it is as wide as the column.
+    <section ref={heroRef} className="pt-8 text-center sm:pt-14">
+      <button
+        onClick={onTips}
+        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 py-1 pl-1 pr-3 text-[13px] text-slate-600 transition hover:border-indigo-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300 dark:hover:border-indigo-800 dark:hover:text-slate-100"
+      >
+        <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">New to DECA?</span>
+        Read how role-plays are judged
+        <span aria-hidden>→</span>
+      </button>
+      <h1 className="mx-auto mt-6 max-w-4xl font-display text-[2.6rem] font-semibold leading-[1.04] tracking-[-0.04em] text-balance text-slate-900 dark:text-slate-100 sm:text-6xl lg:text-7xl">
+        Practice DECA <span className="whitespace-nowrap">role-plays</span> out loud, then <span className="pic-grad">see exactly where you stand</span>.
+      </h1>
+      <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-pretty text-slate-600 dark:text-slate-300">
+        Rehearse the room before you're in it. Pick your event, get an original scenario, prep against a real
+        timer, present out loud, and get honest feedback on every skill.
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <button onClick={onStart} className={`${BTN_PRIMARY} px-5 py-2.5 text-base`}>
+          Start a role-play
+        </button>
+        <button onClick={onQuickRep} className={`${BTN_SECONDARY} px-5 py-2.5 text-base`}>
+          Try a 2-minute rep
+        </button>
       </div>
+      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+        No account needed. Your first {FREE_ROLEPLAYS} role-plays are free.
+      </p>
 
       {/* Native 16:9 mockup, no letterbox, so object-cover fills with no crop.
-          Kept under ~960px CSS so at 2x DPR it downscales from the 1920px source. */}
-      <div className="lg:col-span-7">
+          Kept under ~1100px CSS so at 2x DPR it downscales from the 1920px source. */}
+      <div className="pic-stage mx-auto mt-12 max-w-5xl sm:mt-16">
         <div
-          className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-[0_20px_45px_-15px_rgba(79,70,229,0.35)] dark:border-slate-800"
+          className="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-900 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.5)] dark:border-slate-700 sm:rounded-2xl"
           style={{ aspectRatio: "16 / 9" }}
         >
           <video
@@ -3666,34 +3665,133 @@ function HeroSection({ onStart, onQuickRep, onTips }: { onStart: () => void; onQ
           />
         </div>
       </div>
+
+      <HeroFacts stats={stats?.show ? stats : null} />
     </section>
   );
 }
 
-// One quiet line of proof under the hero CTAs, not a row of big-number tiles: the
-// numbers are the server's own counters (backend stats.py), and the server only
-// says `show` once there are enough role-plays to be worth mentioning. A single
-// total that's still tiny is dropped rather than printed next to a big one.
+// The row of figures under the product shot, the way Vercel and Stripe follow a
+// hero with numbers. What the product holds is always shown; the live usage
+// counters (backend stats.py) join it only once the server says there are enough
+// role-plays to be worth mentioning, and a total that is still tiny is dropped
+// rather than printed next to a big one.
 const HERO_STAT_FLOOR = 25;
 
-function HeroStats({ stats }: { stats: PublicStats }) {
-  const items = [
-    { n: stats.roleplays, label: "role-plays graded" },
-    { n: stats.scenarios, label: "original scenarios written" },
-    { n: stats.blitzes, label: "Blitz drills" },
-  ].filter((i) => i.n >= HERO_STAT_FLOOR);
-  if (!items.length) return null;
+function HeroFacts({ stats }: { stats: PublicStats | null }) {
+  const live = stats
+    ? [
+        { n: stats.roleplays, label: "Role-plays graded" },
+        { n: stats.scenarios, label: "Scenarios written" },
+      ].filter((i) => i.n >= HERO_STAT_FLOOR)
+    : [];
+  const facts = [...live, { n: 28, label: "DECA events covered" }, { n: 830, label: "Study flashcards" }, { n: 1487, label: "Quiz questions" }, { n: 282, label: "Skills we can grade" }].slice(0, 4);
   return (
-    <p className="mt-6 flex flex-wrap gap-x-5 gap-y-1 border-t border-slate-200 pt-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
-      {items.map((i) => (
-        <span key={i.label}>
-          <span className="font-mono font-semibold tabular-nums text-slate-900 dark:text-slate-100">
-            {i.n.toLocaleString()}
-          </span>{" "}
-          {i.label}
-        </span>
+    <dl className="mx-auto mt-14 grid max-w-5xl grid-cols-2 border-y border-slate-200 text-left dark:border-slate-800 sm:mt-20 sm:grid-cols-4">
+      {facts.map((f, i) => (
+        <div key={f.label} className={`border-slate-200 px-5 py-5 dark:border-slate-800 ${i % 2 ? "border-l" : "sm:border-l"} ${i > 1 ? "border-t sm:border-t-0" : ""} ${i === 0 ? "sm:border-l-0" : ""}`}>
+          <dd className="font-display text-3xl font-semibold tracking-[-0.03em] tabular-nums text-slate-900 dark:text-slate-100">
+            {f.n >= 1000 ? f.n.toLocaleString() : <CountUp value={f.n} />}
+          </dd>
+          <dt className="mt-1 text-sm text-slate-500 dark:text-slate-400">{f.label}</dt>
+        </div>
       ))}
-    </p>
+    </dl>
+  );
+}
+
+// What is in the product, as one ruled grid instead of a row of floating cards:
+// the cells share their borders, the way Vercel and Linear lay out features, so
+// the section reads as a single object with structure. Each cell shows a small
+// piece of the real interface, filled from the sample session.
+function FeatureGrid() {
+  const cell = "flex flex-col gap-5 border-slate-200 p-6 dark:border-slate-800 sm:p-8";
+  const h = "font-display text-lg font-semibold tracking-[-0.01em] text-slate-900 dark:text-slate-100";
+  const p = "mt-1.5 max-w-[46ch] text-[15px] leading-relaxed text-slate-600 dark:text-slate-300";
+  const terms: [string, RubricLevel | null][] = [
+    ["Breach of Contract Recognition", "novice"],
+    ["Promotional Strategy", "developing"],
+    ["Customer Relationship Thinking", "proficient"],
+    ["Distribution and Channel Strategy", "exemplary"],
+    ["Consumer Protection and Fair Dealing", null],
+  ];
+  return (
+    <section>
+      <SectionHeading
+        title="Everything a role-play asks of you, in one place"
+        blurb="The scenario, the clock, the judge's questions and the score sheet, plus the vocabulary underneath them."
+      />
+      <div className="mt-10 grid overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-6">
+        <div className={`${cell} border-b lg:col-span-3 lg:border-r`}>
+          <div>
+            <h3 className={h}>An original scenario, every time</h3>
+            <p className={p}>Written for your event and level, around the skills you choose. You never get the same one twice.</p>
+          </div>
+          <div className="mt-auto rounded-lg border border-slate-200 bg-slate-50 p-4 text-left dark:border-slate-800 dark:bg-slate-800/40">
+            <div className="text-[13px] text-slate-500 dark:text-slate-400">{DEMO_SCENARIO.event || "Food Marketing"}, District</div>
+            <div className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{DEMO_SCENARIO.topic}</div>
+            <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">{DEMO_SCENARIO.situation}</p>
+          </div>
+        </div>
+
+        <div className={`${cell} border-b lg:col-span-3`}>
+          <div>
+            <h3 className={h}>Present out loud, against the real clock</h3>
+            <p className={p}>Ten minutes to prep, then you talk. We time it, transcribe it, and count pace, fillers and pauses.</p>
+          </div>
+          <div className="mt-auto flex items-end justify-between gap-6">
+            <div>
+              <div className="font-mono text-4xl font-medium tabular-nums tracking-tight text-slate-900 dark:text-slate-100">07:42</div>
+              <div className="mt-2 h-[3px] w-40 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                <i className="pic-grow block h-full w-[77%] bg-indigo-500" />
+              </div>
+            </div>
+            <dl className="grid grid-cols-3 gap-x-5 text-left">
+              {[["148", "words/min"], ["3.1", "fillers/min"], ["2", "long pauses"]].map(([n, l]) => (
+                <div key={l}>
+                  <dd className="font-mono text-base font-medium tabular-nums text-slate-900 dark:text-slate-100">{n}</dd>
+                  <dt className="text-xs text-slate-500 dark:text-slate-400">{l}</dt>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+
+        <div className={`${cell} border-b lg:col-span-4 lg:border-b-0 lg:border-r`}>
+          <div>
+            <h3 className={h}>A level for every skill, with the reason</h3>
+            <p className={p}>Each skill is scored Novice to Exemplary against its own bar, with the exact words that earned the credit.</p>
+          </div>
+          <div className="mt-auto border-t border-slate-200 dark:border-slate-800">
+            {DEMO_SCORE.scores.slice(0, 4).map((r) => (
+              <div key={r.criterion_id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 border-b border-slate-200 py-2 text-left last:border-b-0 dark:border-slate-800 sm:grid-cols-[minmax(0,220px)_112px_minmax(0,1fr)]">
+                <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{r.name}</span>
+                <span className="inline-flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">
+                  <LevelDot color={LEVEL_COLOR[r.level]} />
+                  {LEVEL_TONE[r.level].label}
+                </span>
+                <span className="col-span-2 truncate text-[13px] text-slate-500 dark:text-slate-400 sm:col-span-1">{r.headline}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={`${cell} lg:col-span-2`}>
+          <div>
+            <h3 className={h}>The vocabulary, tracked</h3>
+            <p className={p}>830 flashcards, quizzes and a timed Blitz, with a dated study plan for your event.</p>
+          </div>
+          <div className="mt-auto space-y-2">
+            {terms.map(([name, lv]) => (
+              <div key={name} className="flex items-center gap-2 text-left text-[13px] text-slate-600 dark:text-slate-300">
+                <LevelDot color={lv ? LEVEL_COLOR[lv] : "#94a3b8"} />
+                <span className="truncate">{name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -3831,9 +3929,9 @@ function FeedbackExplainerSection() {
         <a
           href="/demo"
           onClick={() => track("demo_opened", { from: "landing" })}
-          className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/60 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/70"
+          className={BTN_SECONDARY}
         >
-          See exactly what the feedback looks like →
+          See a full sample session
         </a>
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
           A full sample session. Click through the scenario and every graded tab, no account needed.
@@ -4383,20 +4481,6 @@ function DeliveryFirstScreen({ scenario, delivery, audioBlob }: { scenario: Scen
   );
 }
 
-function ScorePill({ label, value, weight }: { label: string; value: number; weight: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 px-2 py-1.5 dark:border-slate-800">
-      <div className="font-mono text-[9px] uppercase tracking-wide text-slate-500 dark:text-slate-400 truncate">{label}</div>
-      <div className="mt-0.5 flex items-baseline justify-between gap-1">
-        <span className="font-mono text-lg font-bold leading-none text-slate-900 dark:text-slate-100">
-          {value}<span className="text-xs font-medium text-slate-400">%</span>
-        </span>
-        <span className="font-mono text-[9px] leading-none text-slate-500 dark:text-slate-400">{weight}</span>
-      </div>
-    </div>
-  );
-}
-
 type FeedbackTab = "overview" | "transcript" | "delivery" | "video" | "analysis" | "criteria" | "scenario";
 
 // How long on the score screen counts as "they've read it". Long enough that it
@@ -4591,53 +4675,65 @@ function FeedbackScreen(props: {
     { key: "scenario", label: "Scenario" },
   ];
 
+  const inShell = useInShell();
+  const levelName = level.charAt(0).toUpperCase() + level.slice(1);
+
   return (
-    <div className="lg:grid lg:grid-cols-[300px_1fr] lg:items-start lg:gap-6">
-      {/* Score rail: sticks alongside the detail on wide screens. */}
-      <div className="lg:sticky lg:top-24">
-        <Card>
-          <Eyebrow>Framework feedback</Eyebrow>
-          <h2 className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-slate-900 dark:text-slate-100">
-            {props.scenario.topic}
-          </h2>
-          <div className="mt-5 flex items-end gap-1.5">
-            <span className="font-mono text-5xl font-bold leading-none text-slate-900 dark:text-slate-100">{Math.round(pct)}</span>
-            <span className="mb-1 font-mono text-lg font-medium text-slate-300 dark:text-slate-600">%</span>
-          </div>
-          <div className="mt-3"><LevelMeter level={level} /></div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <ScorePill label="Indicators" value={Math.round(score.pi_section_percent)} weight="60%" />
-            <ScorePill label="Analysis" value={Math.round(score.analytical?.section_percent ?? 0)} weight="25%" />
-            <ScorePill label="Present" value={Math.round(score.presentation?.section_percent ?? 0)} weight="15%" />
-          </div>
-          <p className="mt-4 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            Weighted across {score.scores.length} performance indicators (60%), your problem-solving (25%),
-            and presentation (15%){props.delivery ? ", blending your voice delivery into presentation" : ""}.
-            Practice coaching, not an official competition score.
-          </p>
-          <button
-            onClick={() => setShowCard(true)}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-900/60 dark:bg-indigo-950/40 dark:text-indigo-200 dark:hover:bg-indigo-950/70"
-          >
-            <BrandMark size={16} />
-            Challenge a friend
-          </button>
-          <div className="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+    <div>
+      {/* The tabs are a list down the sidebar, which leaves the full width for
+          the feedback itself. Outside the app frame (the product tour) there is
+          no sidebar to use, so they fall back to a row above the content. */}
+      {inShell && (
+        <Sidebar>
+          <SideGroup title="This role-play">
+            {tabs.map((t) => (
+              <SideItem
+                key={t.key}
+                active={t.key === tab}
+                onClick={() => setTab(t.key as FeedbackTab)}
+                right={t.badge ? <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">{t.badge}</span> : undefined}
+              >
+                {t.label}
+              </SideItem>
+            ))}
+          </SideGroup>
+          <SideGroup title="Levels" className="hidden px-2.5 lg:block">
             <LevelLegend />
-          </div>
-        </Card>
-      </div>
+          </SideGroup>
+        </Sidebar>
+      )}
+
+      <PageHead sub={scenarioSubtitle(props.scenario) || "Framework feedback"} title={props.scenario.topic}>
+        <button className={BTN_SECONDARY} onClick={() => setShowCard(true)}>
+          <BrandMark size={16} />
+          Challenge a friend
+        </button>
+        {!props.readOnly && (
+          <button className={BTN_PRIMARY} onClick={props.onTryAgain ?? props.onRestart}>
+            {props.onTryAgain ? "Try it again" : "Practice again"}
+          </button>
+        )}
+      </PageHead>
+      <Strip
+        cells={[
+          { label: `Overall, ${levelName}`, value: `${Math.round(pct)}%`, tone: LEVEL_COLOR[level] },
+          { label: "Indicators (60%)", value: `${Math.round(score.pi_section_percent)}%` },
+          { label: "Analysis (25%)", value: `${Math.round(score.analytical?.section_percent ?? 0)}%` },
+          { label: "Presentation (15%)", value: `${Math.round(score.presentation?.section_percent ?? 0)}%` },
+          { label: "Points", value: `${score.total_points} / ${score.max_points}` },
+        ]}
+      />
 
       {showCard && (
         <GauntletCardModal scenario={props.scenario} score={score} onClose={() => setShowCard(false)} />
       )}
 
-      <div className="mt-5 space-y-5 lg:mt-0">
+      <div className="mt-6 space-y-6">
         {props.priorSnapshot && (
           <BeforeAfterCard before={props.priorSnapshot} after={snapshotOf(score, props.delivery)} />
         )}
 
-        <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />
+        {!inShell && <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as FeedbackTab)} />}
 
         {tab === "overview" && <OverviewTab score={score} />}
         {tab === "analysis" && <AnalysisTab score={score} />}
@@ -4663,7 +4759,7 @@ function FeedbackScreen(props: {
           </div>
         )}
 
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/60 px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+        <p className="max-w-[78ch] border-t border-slate-200 pt-5 text-[13px] leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Your score weights <strong className="font-semibold text-slate-700 dark:text-slate-200">performance indicators</strong> (60%),
           your <strong className="font-semibold text-slate-700 dark:text-slate-200">analytical problem-solving</strong> (25%), and
           your <strong className="font-semibold text-slate-700 dark:text-slate-200">presentation</strong> (15%).{" "}
@@ -4671,50 +4767,46 @@ function FeedbackScreen(props: {
             <>Presentation blends measured delivery, pace, fillers, pauses, timing, with how you handled the follow-up. It never judges tone, confidence, or charisma.</>
           ) : (
             <>Typed practice scores presentation from your written structure and follow-up. Switch to{" "}
-              <strong className="font-semibold text-slate-700 dark:text-slate-200">🎙️ Speak</strong> to fold your voice delivery in too.</>
-          )}
-        </div>
+              <strong className="font-semibold text-slate-700 dark:text-slate-200">Speak</strong> to fold your voice delivery in too.</>
+          )}{" "}
+          Practice coaching, not an official competition score.
+        </p>
 
         {!props.loggedIn && props.onSignIn && (
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
-            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
-              Want to see if you improve next time?
-            </p>
-            <p className="mt-1 text-sm text-indigo-800/90 dark:text-indigo-300/90">
-              Create a free account and we'll track your delivery and your weakest skills across sessions, and save this one.
-            </p>
-            <button className={`mt-3 ${BTN_PRIMARY}`} onClick={props.onSignIn}>
-              Sign in to track my progress →
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Want to see if you improve next time?</p>
+              <p className="mt-1 max-w-[70ch] text-sm text-slate-600 dark:text-slate-300">
+                Create a free account and we'll track your delivery and your weakest skills across sessions, and save this one.
+              </p>
+            </div>
+            <button className={BTN_PRIMARY} onClick={props.onSignIn}>
+              Sign in to track my progress
             </button>
           </div>
         )}
 
-        {!props.readOnly && <div className="flex flex-col gap-2.5 sm:flex-row">
-          {props.onTryAgain && (
-            <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={props.onTryAgain}>
-              🔁 Try this scenario again
+        {!props.readOnly && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-5 dark:border-slate-800">
+            {props.onTryAgain && (
+              <button className={BTN_PRIMARY} onClick={props.onTryAgain}>
+                Try this scenario again
+              </button>
+            )}
+            <button className={BTN_SECONDARY} onClick={props.onRestart}>
+              Practice a new scenario
             </button>
-          )}
-          <button
-            className={`inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 ${props.onTryAgain ? "sm:flex-1" : "w-full"}`}
-            onClick={props.onRestart}
-          >
-            Practice a new scenario →
-          </button>
-        </div>}
-        {props.onTryAgain && (
-          <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-            Re-running the same scenario is the fastest way to see your feedback pay off.
-          </p>
-        )}
-
-        {props.onStudyCriteria && (
-          <button
-            onClick={() => props.onStudyCriteria?.(studyIds)}
-            className="w-full text-center text-sm font-medium text-indigo-600 transition hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            📇 Study {weakIds.length > 0 ? "your weak criteria" : "these criteria"} →
-          </button>
+            {props.onStudyCriteria && (
+              <button className={BTN_SECONDARY} onClick={() => props.onStudyCriteria?.(studyIds)}>
+                Study {weakIds.length > 0 ? "your weak criteria" : "these criteria"}
+              </button>
+            )}
+            {props.onTryAgain && (
+              <p className="w-full text-[13px] text-slate-500 dark:text-slate-400">
+                Re-running the same scenario is the fastest way to see your feedback pay off.
+              </p>
+            )}
+          </div>
         )}
 
         {/* Scroll sentinel: reaching it means they read to the end of the
@@ -4839,7 +4931,7 @@ function TabBar(props: {
 function OverviewTab({ score }: { score: ScoreResponse }) {
   const final = score.final;
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0">
       {score.math_checks.length > 0 && <MathChecksCard checks={score.math_checks} />}
       {score.summary && (
         <Card>
@@ -4873,10 +4965,10 @@ function OverviewTab({ score }: { score: ScoreResponse }) {
         </Card>
       )}
       {(score.strengths.length > 0 || score.improvements.length > 0) && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
           {score.strengths.length > 0 && (
-            <Card className="border-emerald-200 dark:border-emerald-900/60">
-              <h3 className="font-display text-sm font-semibold text-emerald-800 dark:text-emerald-400">Strengths</h3>
+            <Card>
+              <h3 className="font-display text-sm font-semibold text-emerald-700 dark:text-emerald-400">Strengths</h3>
               <ul className="mt-2 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
                 {score.strengths.map((s, i) => (
                   <li key={i} className="flex gap-2"><span className="text-emerald-500">✓</span>{s}</li>
@@ -4885,8 +4977,8 @@ function OverviewTab({ score }: { score: ScoreResponse }) {
             </Card>
           )}
           {score.improvements.length > 0 && (
-            <Card className="border-amber-200 dark:border-amber-900/60">
-              <h3 className="font-display text-sm font-semibold text-amber-800 dark:text-amber-400">Focus next time</h3>
+            <Card>
+              <h3 className="font-display text-sm font-semibold text-amber-700 dark:text-amber-400">Focus next time</h3>
               <ul className="mt-2 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
                 {score.improvements.map((s, i) => (
                   <li key={i} className="flex gap-2"><span className="text-amber-500">→</span>{s}</li>
@@ -5596,34 +5688,22 @@ function highlight(text: string, marks: Mark[], active: string | null, onSelect:
 
 // --- shared bits -----------------------------------------------------------
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <div className="mb-1.5 flex items-baseline justify-between">
-        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
-        {hint && <span className="font-mono text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">{hint}</span>}
-      </div>
-      {children}
-    </label>
-  );
-}
-
 const TEXTAREA_CLS =
-  "w-full resize-y rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 p-3.5 text-sm leading-relaxed shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
+  "w-full resize-y rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 px-3 py-2.5 text-sm leading-relaxed transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
 
 const SELECT_CLS =
-  "w-full appearance-none rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 px-3.5 py-2.5 pr-10 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
+  "w-full appearance-none rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 dark:text-slate-100 px-3 py-2 pr-10 text-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20";
 
 function Segmented<T extends string>(props: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
   return (
-    <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-1">
+    <div className="inline-flex flex-wrap gap-0.5 rounded-lg border border-slate-200 bg-slate-100/70 p-[3px] dark:border-slate-800 dark:bg-slate-800/60">
       {props.options.map((o) => {
         const on = o.value === props.value;
         return (
           <button
             key={o.value}
             onClick={() => props.onChange(o.value)}
-            className={`tap rounded-lg px-4 py-1.5 text-sm font-medium transition ${on ? "bg-white text-indigo-700 shadow-sm dark:bg-slate-700 dark:text-indigo-300" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"}`}
+            className={`tap rounded-md px-3 py-1 text-[13.5px] transition ${on ? "bg-white font-medium text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.12)] dark:bg-slate-700 dark:text-slate-100" : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"}`}
           >
             {o.label}
           </button>
@@ -5772,16 +5852,6 @@ function useTimerMilestone(label: string, left: number) {
     );
   }, [label, left]);
   return msg;
-}
-
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-2xl border bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06),0_1px_2px_rgba(15,23,42,0.04)] transition-shadow duration-200 hover:shadow-[0_6px_24px_rgba(15,23,42,0.08)] dark:bg-slate-900 dark:shadow-none dark:hover:shadow-none ${className || "border-slate-200 dark:border-slate-800"}`}
-    >
-      {children}
-    </div>
-  );
 }
 
 // Animated loader built from the target logo: concentric "radar" rings pulse
@@ -6387,29 +6457,6 @@ const LEVEL_TONE: Record<RubricLevel, { label: string; badge: string; bg: string
 };
 
 const LEVEL_ORDER: RubricLevel[] = ["novice", "developing", "proficient", "exemplary"];
-const LEVEL_FILL: Record<RubricLevel, string> = {
-  novice: "bg-red-400",
-  developing: "bg-amber-400",
-  proficient: "bg-sky-400",
-  exemplary: "bg-emerald-400",
-};
-
-// Signature: a 4-segment meter for the rubric bands. Segments up to the achieved
-// level are filled in their own band color; the rest stay faint.
-function LevelMeter({ level }: { level: RubricLevel }) {
-  const idx = LEVEL_ORDER.indexOf(level);
-  return (
-    <div className="inline-flex items-center gap-1.5">
-      <div className="flex gap-0.5">
-        {LEVEL_ORDER.map((lv, i) => (
-          <span key={lv} className={`h-1.5 w-6 rounded-full ${i <= idx ? LEVEL_FILL[lv] : "bg-slate-200 dark:bg-slate-700"}`} />
-        ))}
-      </div>
-      <span className="font-mono text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">{LEVEL_TONE[level].label}</span>
-    </div>
-  );
-}
-
 function richText(s: string): ReactNode {
   if (!s) return s;
   return s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
@@ -6430,7 +6477,7 @@ function LevelLegend() {
           {LEVEL_TONE[lv].label}
         </span>
       ))}
-      <span className="text-slate-500 dark:text-slate-400">· green = top band, not a perfect score</span>
+      <span className="w-full text-slate-500 dark:text-slate-400">Green is the top band, not a perfect score.</span>
     </div>
   );
 }

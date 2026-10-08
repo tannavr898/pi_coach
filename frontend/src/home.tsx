@@ -21,7 +21,7 @@ import {
   type SessionSummary,
 } from "./progress";
 import { PlanNudge, PlanTodayCard } from "./plan";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, PageLoader } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, InlineLoader, PageHead, PageLoader, Sidebar, SideGroup, SideItem, Strip } from "./ui";
 import { useCached } from "./cache";
 import { ChartFrame, SkillRadar, TrendLine, VolumeBars } from "./charts";
 import { track } from "./analytics";
@@ -86,8 +86,8 @@ export function HomePage(props: {
 
   if (progressQ.loading || sessionsQ.loading) {
     return (
-      <div className="mx-auto max-w-[84rem]">
-        <PageLoader label="Loading your dashboard" />
+      <div className="pt-6">
+        <PageLoader label="Loading your dashboard" card={false} />
       </div>
     );
   }
@@ -96,27 +96,59 @@ export function HomePage(props: {
   const count = progress?.sessions_count ?? 0;
   const allCriterionIds = (progress?.criterion_mastery ?? []).map((m) => m.criterion_id);
 
+  const latest = sessions?.[0] ?? null;
+  const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
   return (
-    <div className="mx-auto max-w-[84rem] space-y-5">
+    <div className="space-y-6">
+      {/* History lives in the sidebar: every past role-play, one click from its
+          feedback. Below the page on a phone, where the next rep comes first. */}
+      <Sidebar below>
+        <SideGroup title="Recent role-plays">
+          {sessions === null ? (
+            <InlineLoader label="Loading role-plays" />
+          ) : sessions.length === 0 ? (
+            <p className="px-2.5 text-sm text-slate-500 dark:text-slate-400">Your completed role-plays show up here.</p>
+          ) : (
+            sessions.slice(0, 12).map((x) => (
+              <SideItem
+                key={x.id}
+                onClick={() => props.onOpenSession(x.id)}
+                sub={`${fmtDate(x.created_at)}${x.filler_per_min != null ? `, ${x.filler_per_min.toFixed(1)} fillers/min` : ", typed"}${x.retry_of_session_id ? ", retry" : ""}`}
+                right={<span className="font-mono text-[13px] tabular-nums text-slate-600 dark:text-slate-300">{x.content_score}%</span>}
+              >
+                {x.topic || x.event || "Role-play"}
+              </SideItem>
+            ))
+          )}
+        </SideGroup>
+      </Sidebar>
+
       {/* 1: Start, always at the top */}
-      <Card>
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <Eyebrow>Ready when you are</Eyebrow>
-            <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-              Let's run a role-play.
-            </h1>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-              {count > 0
-                ? `${count} session${count === 1 ? "" : "s"} in. Keep showing up. That's how the numbers below move.`
-                : "Pick your event, present out loud, and get honest per-criterion feedback."}
-            </p>
-          </div>
-          <button className={`${BTN_PRIMARY} shrink-0 px-6 py-3 text-base`} onClick={props.onStart}>
-            Start a role-play →
-          </button>
-        </div>
-      </Card>
+      <div>
+        <PageHead
+          sub={today}
+          title="Ready when you are"
+          blurb={
+            count > 0
+              ? "Keep showing up. That's how the numbers below move."
+              : "Pick your event, present out loud, and get honest per-criterion feedback."
+          }
+        >
+          <button className={BTN_SECONDARY} onClick={props.onOpenStudy}>Open Study</button>
+          <button className={BTN_PRIMARY} onClick={props.onStart}>Start a role-play</button>
+        </PageHead>
+        {count > 0 && (
+          <Strip
+            cells={[
+              { label: "Role-plays", value: count },
+              { label: "Latest score", value: latest ? `${latest.content_score}%` : "None yet" },
+              { label: "Fillers per minute", value: latest?.filler_per_min != null ? latest.filler_per_min.toFixed(1) : "Typed" },
+              { label: "Skills graded", value: allCriterionIds.length },
+            ]}
+          />
+        )}
+      </div>
 
       {plan ? (
         <PlanTodayCard plan={plan} onOpen={props.onOpenStudy} />
@@ -138,6 +170,7 @@ export function HomePage(props: {
         onOpenSession={props.onOpenSession}
         onPracticeCriterion={props.onPracticeCriterion}
         onOpenFlashcards={props.onOpenFlashcards}
+        recent={false}
       >
         {/* Flashcards deck */}
         <Card className="lg:col-span-3">
@@ -155,9 +188,9 @@ export function HomePage(props: {
             </div>
             <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row">
               {weak && (
-                <button className={BTN_PRIMARY} onClick={() => props.onOpenFlashcards([weak.criterion_id])}>Study the recommendation →</button>
+                <button className={BTN_PRIMARY} onClick={() => props.onOpenFlashcards([weak.criterion_id])}>Study the recommendation</button>
               )}
-              <button className={BTN_SECONDARY} onClick={props.onOpenLibrary}>Open flashcard library →</button>
+              <button className={BTN_SECONDARY} onClick={props.onOpenLibrary}>Open flashcard library</button>
             </div>
           </div>
         </Card>
@@ -182,9 +215,11 @@ export function ProfilePanels(props: {
   onOpenSession: (id: string) => void;
   onPracticeCriterion?: (name: string) => void;
   onOpenFlashcards?: (ids: string[]) => void;
+  // The recent role-plays list. Home turns it off because its sidebar is that list.
+  recent?: boolean;
   children?: ReactNode;
 }) {
-  const { progress, sessions, domains, course } = props;
+  const { progress, sessions, domains, course, recent = true } = props;
   const [radarScope, setRadarScope] = useState<"event" | "all">("event");
   const own = !props.subjectName;
   const whose = own ? "Your" : `${props.subjectName}'s`;
@@ -223,23 +258,21 @@ export function ProfilePanels(props: {
   const volume = weeklyVolume((sessions ?? []).map((x) => x.created_at));
 
   return (
-    <div className="grid gap-5 lg:grid-cols-3">
+    <div className={`grid gap-x-8 gap-y-7 lg:grid-cols-3 ${recent ? "" : "[&>*:first-child]:border-t-0 [&>*:first-child]:pt-0"}`}>
       {/* Skill radar (13 domains) + weakest-criterion coaching (the headline) */}
-      <Card className="lg:col-span-2">
+      <Card className={recent ? "lg:col-span-2" : "lg:col-span-3"}>
         {canFilter && (
           <div className="mb-3 flex flex-wrap items-center justify-end gap-1.5">
-            <span className="mr-auto font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-              Showing
-            </span>
+            <span className="mr-auto text-xs font-medium text-slate-500 dark:text-slate-400">Showing</span>
             {(["event", "all"] as const).map((sc) => (
               <button
                 key={sc}
                 onClick={() => { setRadarScope(sc); track("radar_filter_changed", { scope: sc, own }); }}
                 aria-pressed={radarScope === sc}
-                className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                className={`rounded-full border px-3 py-1 text-[13px] transition ${
                   radarScope === sc
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                    ? "border-indigo-200 bg-indigo-50 font-medium text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300"
+                    : "border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 }`}
               >
                 {sc === "event" ? course?.event ?? "Event" : "All domains"}
@@ -256,7 +289,7 @@ export function ProfilePanels(props: {
           }
         >
           {radarData.length >= 3 && count > 0 ? (
-            <div className="grid items-center gap-6 sm:grid-cols-[1.4fr_1fr]">
+            <div className="grid items-center gap-6 sm:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
               <SkillRadar data={radarData} max={3} />
               <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                 {[...radarData]
@@ -285,14 +318,16 @@ export function ProfilePanels(props: {
         )}
 
         {weak && (
-          <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/40">
-            <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">{own ? "Your next focus" : "Biggest gap"}</div>
-            <h2 className="mt-1 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{weak.name}</h2>
-            <p className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{weak.note}</p>
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+            <div className="min-w-0">
+              <Eyebrow>{own ? "Work on next" : "Biggest gap"}</Eyebrow>
+              <h2 className="mt-0.5 font-display text-base font-semibold text-slate-900 dark:text-slate-100">{weak.name}</h2>
+              <p className="mt-1 max-w-[70ch] text-sm leading-relaxed text-slate-600 dark:text-slate-300">{weak.note}</p>
+            </div>
             {props.onPracticeCriterion && props.onOpenFlashcards && (
-              <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
-                <button className={`${BTN_PRIMARY} sm:flex-1`} onClick={() => props.onPracticeCriterion?.(weak.name)}>Practice it →</button>
-                <button className={`${BTN_SECONDARY} sm:flex-1`} onClick={() => props.onOpenFlashcards?.([weak.criterion_id])}>Study this criterion</button>
+              <div className="flex flex-wrap gap-2">
+                <button className={BTN_SECONDARY} onClick={() => props.onOpenFlashcards?.([weak.criterion_id])}>Study it</button>
+                <button className={BTN_PRIMARY} onClick={() => props.onPracticeCriterion?.(weak.name)}>Practice it</button>
               </div>
             )}
           </div>
@@ -300,7 +335,7 @@ export function ProfilePanels(props: {
       </Card>
 
       {/* Recent sessions */}
-      <Card className="lg:col-span-1">
+      {recent && <Card className="lg:col-span-1">
         <Eyebrow>Recent role-plays</Eyebrow>
         {sessions === null ? (
           <InlineLoader label="Loading role-plays" />
@@ -329,7 +364,7 @@ export function ProfilePanels(props: {
             ))}
           </ul>
         )}
-      </Card>
+      </Card>}
 
       {/* Score trend */}
       <Card className="lg:col-span-1">

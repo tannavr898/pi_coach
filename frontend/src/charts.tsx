@@ -129,7 +129,7 @@ export function TrendLine({
           </text>
         </g>
       ))}
-      <polyline points={line} fill="none" className={STROKE[color]} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={line} pathLength={1} fill="none" className={`pic-draw ${STROKE[color]}`} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => (
         <circle key={i} cx={x(i)} cy={y(p.value)} r={i === points.length - 1 ? 4 : 2.5} className={`${MARK[color]} stroke-white dark:stroke-slate-900`} strokeWidth={1.5}>
           <title>{`${p.label}: ${p.value}${valueSuffix}`}</title>

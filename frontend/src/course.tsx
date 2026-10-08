@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getEvents, getTerms, type EventSummary, type Term } from "./api";
 import { StudyPlanSection } from "./plan";
 import { enrollCourse, getCourse, getMyCourse, type Course, type CourseUnit } from "./progress";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, Eyebrow, PageLoader } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, BTN_SMALL, FilterChip, PageHead, PageLoader, Strip } from "./ui";
 
 export function StudyCourse({
   authed,
@@ -166,216 +166,163 @@ export function StudyCourse({
   const total = tier === "core" ? course.core_count : course.total;
   const percent = tier === "core" ? course.core_percent : course.percent;
   const seen = tier === "core" ? course.core_learning : course.learning_count;
-  const seenPercent = total ? Math.round((100 * (done + seen)) / total) : 0;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      {/* Any error raised once a course is on screen -- enrolling is the main one.
-          The guard above only catches errors that prevented a course loading at
-          all, so without this an enroll failure was literally invisible: the
-          button appeared to do nothing and no message was ever shown. */}
-      {error && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} aria-label="Dismiss" className="shrink-0 font-semibold">
-            ✕
-          </button>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Eyebrow>Study course</Eyebrow>
-          <h1 className="mt-2 flex flex-wrap items-center gap-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-            {course.event}
-            {course.enrolled && (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                ✓ Your path
-              </span>
-            )}
-          </h1>
-          <p className="mt-1 max-w-xl text-sm text-slate-600 dark:text-slate-300">
-            {course.core_count} core terms across {visible.length} units. Finish the core path and you'll know every
-            skill we grade for this event, then practice is about delivery, not vocabulary.
-          </p>
-        </div>
+    <div>
+      <PageHead
+        sub={course.enrolled ? "My path, your event" : "My path"}
+        title={course.event}
+        blurb={`${course.core_count} core terms across ${visible.length} units. Finish the core path and you'll know every skill we grade for this event, then practice is about delivery, not vocabulary.`}
+      >
         <button className={BTN_SECONDARY} onClick={() => setCourse(null)} disabled={busy}>
           Change event
         </button>
-      </div>
-
-      <StudyPlanSection
-        course={course}
-        authed={authed}
-        refreshKey={refreshKey}
-        onStudy={onStudy}
-        onBlitz={onBlitz}
-        onQuiz={onQuiz}
-        onPractice={onPractice}
-        onSignup={onSignup}
-        onHasPlan={setHasPlan}
-        // Saving a plan enrolls its event, so the "Your path" badge should follow.
-        onSaved={() => {
-          getCourse(course.event_id)
-            .then(setCourse)
-            .catch(() => {});
-        }}
-      />
+        {/* The no-cost drill, open whether or not you're signed in. This is the
+            whole-course button, so it opens on the CLUSTER rather than on this
+            event's terms: the paper a Business Finance competitor sits covers the
+            Finance cluster, and a test that quietly narrows to one event's four
+            domains is the wrong rehearsal. The deck scope is still one tap away
+            inside. */}
+        <button
+          className={BTN_SECONDARY}
+          disabled={busy || !allIds.length}
+          onClick={() => launch(allIds, course.event, onQuiz, { exam: course.exam, scope: "cluster" })}
+        >
+          Quiz
+        </button>
+        {/* Blitz the whole course: the drill picks its own 5 from whatever it's
+            given. With a plan on screen its next task is the one indigo action,
+            so this steps down to secondary. */}
+        <button
+          className={hasPlan ? BTN_SECONDARY : BTN_PRIMARY}
+          disabled={busy || !allIds.length}
+          onClick={() => launch(allIds, course.event, onBlitz)}
+        >
+          Blitz {allIds.length} terms
+        </button>
+      </PageHead>
 
       {/* Headline progress. Core gets the number; "everything" is the deeper pass. */}
-      <Card>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <div className="font-mono text-[11px] uppercase tracking-wider text-indigo-500">
-              {tier === "core" ? "Core path" : "Full mastery"}
-            </div>
-            <div className="font-mono text-3xl font-bold leading-none text-slate-900 dark:text-slate-100">
-              {done}
-              <span className="text-lg text-slate-300 dark:text-slate-600">/{total}</span>
-              <span className="ml-2 text-base font-semibold text-indigo-600 dark:text-indigo-400">{percent}%</span>
-            </div>
-            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              proven{seen > 0 && <> · {seen} more seen, not yet proven</>}
-            </div>
+      <Strip
+        cells={[
+          { label: tier === "core" ? "Core terms proven" : "Terms proven", value: `${done} of ${total}` },
+          { label: "Complete", value: `${percent}%` },
+          { label: "Seen, not yet proven", value: seen },
+          { label: "Units", value: visible.length },
+        ]}
+      />
+      <div className="pic-bleed pic-inset flex flex-wrap items-center gap-1.5 border-b border-slate-200 py-3 dark:border-slate-800">
+        <span className="mr-1 text-xs font-medium text-slate-500 dark:text-slate-400">Show</span>
+        <FilterChip on={tier === "core"} onClick={() => setTier("core")}>Core path ({course.core_count})</FilterChip>
+        <FilterChip on={tier === "all"} onClick={() => setTier("all")}>Everything ({course.total})</FilterChip>
+        <span className="min-w-2 flex-1" />
+        {authed && !course.enrolled && (
+          <>
+            <span className="text-[13px] text-slate-500 dark:text-slate-400">
+              Sets this as your event. Switching later keeps everything you've already proved.
+            </span>
+            <button className={BTN_PRIMARY} onClick={start} disabled={busy}>
+              Start this path
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="space-y-6 pt-6">
+        {/* Any error raised once a course is on screen -- enrolling is the main
+            one. The guard above only catches errors that prevented a course
+            loading at all, so without this an enroll failure was literally
+            invisible: the button appeared to do nothing and no message was ever
+            shown. */}
+        {error && (
+          <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} aria-label="Dismiss" className="shrink-0 font-semibold">
+              ✕
+            </button>
           </div>
-          <div className="flex gap-2">
-            <TierTab active={tier === "core"} onClick={() => setTier("core")} label={`Core path (${course.core_count})`} />
-            <TierTab active={tier === "all"} onClick={() => setTier("all")} label={`Everything (${course.total})`} />
-          </div>
-        </div>
-        <Bar percent={percent} behind={seenPercent} className="mt-3" />
-        {done < total && (
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            Flipping a card marks it seen. A term counts as proven once you use it correctly in a
-            Blitz, or apply it in a graded role-play.
-          </p>
         )}
         {!authed && (
-          <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="text-sm text-amber-700 dark:text-amber-300">
             You're browsing this path signed out: nothing is being saved. Make an account to keep your progress over
             the summer.
           </p>
         )}
-        {authed && !course.enrolled && (
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button className={BTN_PRIMARY} onClick={start} disabled={busy}>
-              Start this path →
-            </button>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Sets this as your event. Switching later keeps everything you've already proved.
-            </span>
-          </div>
-        )}
-      </Card>
 
-      {/* Blitz the whole course: the drill picks its own 5 from whatever it's given. */}
-      <div
-        className={`flex flex-col items-start justify-between gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center ${
-          hasPlan
-            ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-            : "border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30"
-        }`}
-      >
+        <StudyPlanSection
+          course={course}
+          authed={authed}
+          refreshKey={refreshKey}
+          onStudy={onStudy}
+          onBlitz={onBlitz}
+          onQuiz={onQuiz}
+          onPractice={onPractice}
+          onSignup={onSignup}
+          onHasPlan={setHasPlan}
+          // Saving a plan enrolls its event, so the "Your path" badge should follow.
+          onSaved={() => {
+            getCourse(course.event_id)
+              .then(setCourse)
+              .catch(() => {});
+          }}
+        />
+
         <div>
-          <h3 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">⚡ Blitz this course</h3>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Five random terms from {tier === "core" ? "your core path" : "the whole course"}, 45 seconds each.
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <button
-            className={hasPlan ? BTN_SECONDARY : BTN_PRIMARY}
-            disabled={busy || !allIds.length}
-            onClick={() => launch(allIds, course.event, onBlitz)}
-          >
-            Blitz {allIds.length} terms →
-          </button>
-          {/* The no-cost counterpart, open whether or not you're signed in. This
-              is the whole-course button, so it opens on the CLUSTER rather than on
-              this event's terms: the paper a Business Finance competitor sits
-              covers the Finance cluster, and a test that quietly narrows to one
-              event's four domains is the wrong rehearsal. The deck scope is still
-              one tap away inside. */}
-          <button
-            className={BTN_SECONDARY}
-            disabled={busy || !allIds.length}
-            onClick={() => launch(allIds, course.event, onQuiz, { exam: course.exam, scope: "cluster" })}
-          >
-            ◎ Quiz
-          </button>
+          <h2 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">Units</h2>
+          {done < total && (
+            <p className="mt-1 max-w-[70ch] text-[13px] text-slate-500 dark:text-slate-400">
+              Flipping a card marks it seen. A term counts as proven once you use it correctly in a Blitz, or apply
+              it in a graded role-play.
+            </p>
+          )}
+          <div className="pic-bleed mt-3 overflow-x-auto border-t border-slate-200 dark:border-slate-800">
+            <div className="min-w-[620px]">
+              {visible.map((u) => {
+                const ids = unitIds(u);
+                const done = unitDone(u);
+                const total = unitTotal(u);
+                const seen = unitSeen(u);
+                return (
+                  <div
+                    key={u.id}
+                    className="pic-inset grid grid-cols-[minmax(0,1fr)_minmax(120px,200px)_auto] items-center gap-5 border-b border-slate-200 py-2.5 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{u.topic}</div>
+                      <div className="truncate text-[13px] text-slate-500 dark:text-slate-400">
+                        {u.domain}, {ids.length} term{ids.length === 1 ? "" : "s"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-baseline justify-between gap-2 font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                        <span>{total > 0 && done === total ? "Done" : seen > 0 ? `${seen} seen` : ""}</span>
+                        <span>{done}/{total}</span>
+                      </div>
+                      <Bar
+                        percent={total ? Math.round((100 * done) / total) : 0}
+                        behind={total ? Math.round((100 * (done + seen)) / total) : 0}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button className={BTN_SMALL} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
+                        Blitz
+                      </button>
+                      <button className={BTN_SMALL} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz, { exam: course.exam, scope: "deck" })}>
+                        Quiz
+                      </button>
+                      <button className={BTN_SMALL} disabled={busy} onClick={() => launch(ids, u.topic, (c, t) => onStudy(c, undefined, t))}>
+                        Study
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
-
-      {visible.map((u) => {
-        const ids = unitIds(u);
-        const done = unitDone(u);
-        const total = unitTotal(u);
-        const seen = unitSeen(u);
-        return (
-          <Card key={u.id}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {u.domain}
-                </div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{u.topic}</h2>
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    {ids.length}
-                  </span>
-                  {total > 0 && done === total && (
-                    <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      ✓ done
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">
-                  {seen > 0 && done < total && (
-                    <span className="text-slate-400 dark:text-slate-500">{seen} seen · </span>
-                  )}
-                  {done}/{total}
-                </span>
-                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onBlitz)}>
-                  ⚡ Blitz
-                </button>
-                <button className={BTN_SECONDARY} disabled={busy} onClick={() => launch(ids, u.topic, onQuiz, { exam: course.exam, scope: "deck" })}>
-                  ◎ Quiz
-                </button>
-                <button
-                  className={BTN_SECONDARY}
-                  disabled={busy}
-                  onClick={() => launch(ids, u.topic, (c, t) => onStudy(c, undefined, t))}
-                >
-                  Study →
-                </button>
-              </div>
-            </div>
-            <Bar
-              percent={total ? Math.round((100 * done) / total) : 0}
-              behind={total ? Math.round((100 * (done + seen)) / total) : 0}
-              className="mt-3"
-            />
-          </Card>
-        );
-      })}
     </div>
-  );
-}
-
-function TierTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-        active
-          ? "bg-indigo-600 text-white"
-          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -402,7 +349,7 @@ function Bar({
   const seenPct = behind == null ? 0 : Math.max(pct, clamp(behind));
   return (
     <div
-      className={`relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}
+      className={`relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ${className}`}
       role="progressbar"
       aria-valuenow={pct}
       aria-valuemin={0}
@@ -449,54 +396,52 @@ function EventPicker({
 
   if (!events) {
     return (
-      <div className="mx-auto max-w-3xl">
-        <PageLoader label="Loading events" />
+      <div className="pt-6">
+        <PageLoader label="Loading events" card={false} />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
-      <div>
-        <Eyebrow>Study course</Eyebrow>
-        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-          What are you competing in?
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-          Pick your event and we'll build the study path for it: the business terms that event actually draws on,
-          ordered, in units you can finish one at a time. Start in the summer and the season is about delivery.
-        </p>
+    <div>
+      <PageHead
+        sub="My path"
+        title="What are you competing in?"
+        blurb="Pick your event and we'll build the study path for it: the business terms that event actually draws on, ordered, in units you can finish one at a time. Start in the summer and the season is about delivery."
+      >
         {/* Not everyone arrives ready to commit to an event, and making the whole
             corpus unreachable until they do is a wall in front of the thing they
             came to read. */}
         {onBrowseAll && (
-          <button
-            onClick={onBrowseAll}
-            className="mt-3 text-sm font-semibold text-indigo-600 underline-offset-2 transition hover:underline dark:text-indigo-400"
-          >
-            Or browse all domains without picking one →
+          <button className={BTN_SECONDARY} onClick={onBrowseAll}>
+            Browse all domains instead
           </button>
         )}
-      </div>
+      </PageHead>
 
-      {byCluster.map(({ cluster, events: list }) => (
-        <Card key={cluster}>
-          <h2 className="font-display text-lg font-semibold text-slate-900 dark:text-slate-100">{cluster}</h2>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="pic-bleed border-t border-slate-200 dark:border-slate-800">
+        {byCluster.map(({ cluster, events: list }) => (
+          <section key={cluster}>
+            <h2 className="pic-inset border-b border-slate-200 bg-slate-50 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+              {cluster}
+            </h2>
             {list.map((e) => (
               <button
                 key={e.id}
                 disabled={busy}
                 onClick={() => onPick(e.id)}
-                className="rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-indigo-300 hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-indigo-800 dark:hover:bg-slate-800"
+                className="pic-inset tap grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-0.5 border-b border-slate-200 py-2.5 text-left transition-colors hover:bg-slate-50 disabled:opacity-40 dark:border-slate-800 dark:hover:bg-slate-800/40 sm:grid-cols-[minmax(0,260px)_minmax(0,1fr)_auto]"
               >
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{e.name}</div>
-                {e.blurb && <div className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{e.blurb}</div>}
+                <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{e.name}</span>
+                <span className="order-last col-span-2 truncate text-[13px] text-slate-500 dark:text-slate-400 sm:order-none sm:col-span-1">{e.blurb}</span>
+                <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden className="text-slate-400">
+                  <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             ))}
-          </div>
-        </Card>
-      ))}
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

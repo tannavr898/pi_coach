@@ -27,6 +27,7 @@ import { type Term } from "./api";
 import { StudyCourse } from "./course";
 import type { FlagsApi } from "./flags";
 import { FlashcardLibrary } from "./flashcards";
+import { Sidebar, SideGroup, SideItem } from "./ui";
 
 export type StudyMode = "path" | "domains";
 
@@ -79,12 +80,16 @@ export function StudyTab({
     }
   }, [mode]);
 
-  // The two halves are different widths (the course reads as a column, the
-  // browser as a grid), so the toggle tracks whichever is below it rather than
-  // floating off to one side on a wide screen.
   return (
-    <div className={`mx-auto space-y-5 ${mode === "path" ? "max-w-5xl" : "max-w-6xl"}`}>
-      <ModeToggle mode={mode} onMode={setMode} />
+    <div>
+      {/* The two modes head the sidebar, so My path and All domains read as one
+          place; whichever is open adds its own lists underneath. */}
+      <Sidebar>
+        <SideGroup title="Study">
+          <SideItem active={mode === "path"} onClick={() => setMode("path")} sub="Your event, in order">My path</SideItem>
+          <SideItem active={mode === "domains"} onClick={() => setMode("domains")} sub="Everything, by topic">All domains</SideItem>
+        </SideGroup>
+      </Sidebar>
 
       {/* Both stay mounted once opened would be nicer still, but the course does
           its own refetching on refreshKey and the library holds the whole corpus,
@@ -107,7 +112,7 @@ export function StudyTab({
               has to outlive the tab, so the ask belongs exactly here rather than
               in front of the door. */}
           {!authed && (
-            <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <p className="pt-5 text-sm text-slate-600 dark:text-slate-300">
               Browse, flip and quiz as much as you like.{" "}
               <button onClick={onSignup} className="font-semibold text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400">
                 Create a free account
@@ -124,46 +129,6 @@ export function StudyTab({
           />
         </>
       )}
-    </div>
-  );
-}
-
-function ModeToggle({ mode, onMode }: { mode: StudyMode; onMode: (m: StudyMode) => void }) {
-  const options: { id: StudyMode; label: string; hint: string }[] = [
-    { id: "path", label: "My path", hint: "Your event, in order" },
-    { id: "domains", label: "All domains", hint: "Everything, by topic" },
-  ];
-  return (
-    <div
-      role="tablist"
-      aria-label="Study mode"
-      className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900"
-    >
-      {options.map((o) => {
-        const active = o.id === mode;
-        return (
-          <button
-            key={o.id}
-            role="tab"
-            aria-selected={active}
-            onClick={() => onMode(o.id)}
-            className={`tap rounded-lg px-4 py-2 text-left transition ${
-              active
-                ? "bg-white shadow-sm dark:bg-slate-800"
-                : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <span
-              className={`block text-sm font-semibold ${
-                active ? "text-slate-900 dark:text-slate-100" : ""
-              }`}
-            >
-              {o.label}
-            </span>
-            <span className="mt-0.5 block text-[11px] leading-none text-slate-500 dark:text-slate-400">{o.hint}</span>
-          </button>
-        );
-      })}
     </div>
   );
 }

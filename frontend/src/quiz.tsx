@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getQuiz, type Level, type QuizQuestion, type Term } from "./api";
 import { track } from "./analytics";
 import { markStudy, postActivity } from "./progress";
-import { BTN_PRIMARY, BTN_SECONDARY } from "./ui";
+import { BTN_PRIMARY, BTN_SECONDARY, useScrollLock } from "./ui";
 
 // How long a round can be. Five is a warm-up between classes, ten is enough to
 // find a pattern in what you're missing, and forty is a sitting that starts to
@@ -245,6 +245,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
 
   // Modal a11y, matching MasteryBlitz: focus in, Tab trapped, Esc closes, focus
   // restored on the way out.
+  useScrollLock();
   const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const node = dialogRef.current;
@@ -267,14 +268,16 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm" onClick={() => requestCloseRef.current()}>
+    // A plain scrim rather than a backdrop blur: blurring the whole page behind a
+    // panel that is changing on top of it costs a repaint of both every frame.
+    <div className="fixed inset-0 z-50 flex overflow-y-auto overscroll-contain bg-slate-950/80 p-4" onClick={() => requestCloseRef.current()}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Knowledge Check"
         tabIndex={-1}
-        className="w-full max-w-xl focus:outline-none"
+        className="pic-card-in m-auto w-full max-w-xl focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
@@ -303,6 +306,7 @@ export function KnowledgeCheck({ cards, title, exam, defaultScope = "deck", defa
 
           {phase === "quiz" && current && (
             <QuestionPanel
+              key={current.id}
               question={current}
               index={i}
               total={questions.length}
@@ -499,13 +503,13 @@ function QuestionPanel({ question, index, total, picked, onChoose, onNext, isLas
   const right = question.options.find((o) => o.correct);
   const gotIt = !!chosen?.correct;
   return (
-    <div className="space-y-4">
+    <div className="pic-card-in space-y-4">
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">Question {index + 1} / {total}</span>
         <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400">{LEVEL_LABEL[question.level]} · {question.topic}</span>
       </div>
       <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
-        <div className="h-full rounded-full bg-indigo-500 transition-all duration-300" style={{ width: `${((index + (picked ? 1 : 0)) / total) * 100}%` }} />
+        <div className="h-full origin-left rounded-full bg-indigo-500 transition-transform duration-300" style={{ transform: `scaleX(${(index + (picked ? 1 : 0)) / total})` }} />
       </div>
 
       <p className="text-[15px] font-medium leading-relaxed text-slate-900 dark:text-slate-100">{question.question}</p>
