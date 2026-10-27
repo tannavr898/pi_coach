@@ -239,6 +239,30 @@ async def delete_study_plan(user_id: str) -> None:
     resp.raise_for_status()
 
 
+# --- diagnostics -----------------------------------------------------------
+# One row per attempt, kept as history so a retake can show progress. The
+# per-question review is NOT stored: it is rebuilt from the bank when needed, and
+# `question_ids` is all a retake needs to avoid repeating the last test.
+
+DIAGNOSTIC_SELECT = "event_id,exam,level,total,correct,unsure,domains,question_ids,created_at"
+
+
+async def insert_diagnostic(user_id: str, row: dict) -> None:
+    async with conn() as client:
+        resp = await client.post(
+            f"{_base()}/diagnostic_result",
+            headers={**_headers(), "Prefer": "return=minimal"},
+            json={**row, "user_id": user_id},
+        )
+    resp.raise_for_status()
+
+
+async def list_diagnostics(user_id: str, limit: int = 10) -> list[dict]:
+    params = {"user_id": f"eq.{user_id}", "select": DIAGNOSTIC_SELECT,
+              "order": "created_at.desc", "limit": str(limit)}
+    return await _get("diagnostic_result", params)
+
+
 # --- scenario cache --------------------------------------------------------
 # Shared inventory of already-generated scenarios, keyed by the interpreted
 # request (see supabase/schema.sql for why the key is shaped the way it is).

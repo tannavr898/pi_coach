@@ -602,7 +602,7 @@ export function FlashcardLibrary({
       {/* What the three buttons at the top do, said once and quietly. */}
       <div className="mt-6 grid gap-x-8 gap-y-3 text-[13px] leading-relaxed text-slate-500 dark:text-slate-400 sm:grid-cols-3">
         <p><span className="font-medium text-slate-700 dark:text-slate-200">Study</span> flips through the cards: a plain definition, a worked example run through the four beats, and the one mistake to avoid.</p>
-        <p><span className="font-medium text-slate-700 dark:text-slate-200">Blitz</span> is a rapid drill: one scenario, 5 terms, 45 seconds each, graded at the end.</p>
+        <p><span className="font-medium text-slate-700 dark:text-slate-200">Blitz</span> is a rapid drill: one scenario, 5 terms, 60 seconds each, graded at the end.</p>
         <p><span className="font-medium text-slate-700 dark:text-slate-200">Quiz</span> is multiple choice at district, state or ICDC difficulty. No clock, and every answer explains itself.</p>
       </div>
       {deck && (

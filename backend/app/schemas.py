@@ -1107,3 +1107,93 @@ class AdminChapter(BaseModel):
 
 class AdminChapterStatus(BaseModel):
     status: Literal["active", "rejected", "pending"]
+
+
+# --- diagnostic ------------------------------------------------------------
+
+
+class DiagnosticOption(BaseModel):
+    """An option as served DURING the test: no key, no rationale. The answer key
+    only comes back with the scored result, so the test measures instead of teaching."""
+
+    id: str
+    text: str
+
+
+class DiagnosticQuestion(BaseModel):
+    id: str
+    domain_id: str = ""
+    domain: str = ""
+    topic: str = ""
+    question: str
+    options: list[DiagnosticOption] = []
+
+
+class DiagnosticTest(BaseModel):
+    event_id: str
+    exam: str = ""
+    level: Literal["district", "state", "icdc"] = "district"
+    questions: list[DiagnosticQuestion] = []
+
+
+class DiagnosticAnswer(BaseModel):
+    question_id: str = Field(min_length=1, max_length=60)
+    choice: str = Field(default="unsure", max_length=8)  # an option id, or "unsure"
+
+
+class DiagnosticSubmit(BaseModel):
+    event_id: str = Field(min_length=1, max_length=60)
+    level: Literal["district", "state", "icdc"] = "district"
+    answers: list[DiagnosticAnswer] = Field(min_length=1, max_length=60)
+
+
+class DiagnosticDomain(BaseModel):
+    domain_id: str
+    name: str = ""
+    asked: int = 0
+    correct: int = 0
+    wrong: int = 0
+    unsure: int = 0
+    band: Literal["mastered", "developing", "needs_work"] = "developing"
+    pattern: str = ""  # gaps | misconceptions | mixed | ""
+    term_ids: list[str] = []  # the cards behind the misses, for a one-tap practice deck
+    change: float | None = None  # share-correct change since the previous attempt
+
+
+class DiagnosticReviewOption(BaseModel):
+    id: str
+    text: str
+    correct: bool = False
+    rationale: str = ""
+
+
+class DiagnosticReviewItem(BaseModel):
+    question_id: str
+    domain_id: str = ""
+    topic: str = ""
+    question: str
+    outcome: Literal["correct", "wrong", "unsure"]
+    choice: str = ""
+    correct_id: str = ""
+    options: list[DiagnosticReviewOption] = []
+    term_ids: list[str] = []
+
+
+class DiagnosticResult(BaseModel):
+    event_id: str
+    exam: str = ""
+    level: Literal["district", "state", "icdc"] = "district"
+    total: int = 0
+    correct: int = 0
+    unsure: int = 0
+    domains: list[DiagnosticDomain] = []
+    question_ids: list[str] = []
+    created_at: str = ""
+    saved: bool = False  # false for a signed-out visitor: the browser keeps it
+    review: list[DiagnosticReviewItem] = []  # only on the fresh result, not the stored history
+    previous: dict | None = None  # {created_at, correct, total} of the attempt this one is compared to
+
+
+class DiagnosticHistory(BaseModel):
+    latest: DiagnosticResult | None = None
+    attempts: list[DiagnosticResult] = []  # newest first, without the review

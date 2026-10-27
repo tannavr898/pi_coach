@@ -17,6 +17,7 @@ Endpoints:
 - GET  /api/stats          site-wide totals: role-plays, Blitz drills, scenarios
 - GET  /api/course/{id}    an event's study path (anonymous-friendly)
 - POST /api/course/enroll  start/switch the signed-in user's path
+- GET/POST /api/diagnostic the starting-point quiz: a balanced test, scored by domain
 - POST /api/study/mark     fold a flip/quiz/blitz/role-play result into progress
 - POST /api/plan/preview   a study plan from inputs, unsaved (anonymous-friendly)
 - GET/PUT/DELETE /api/plan the signed-in user's saved study plan
@@ -55,7 +56,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPE
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_samples, blitz, chapters, config, courses, db, delivery, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
+from . import admin_samples, blitz, chapters, config, courses, db, delivery, diagnostic, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
@@ -71,6 +72,12 @@ from .schemas import (
     ChapterInfo,
     ChapterJoin,
     CodeRotate,
+    DiagnosticHistory,
+    DiagnosticQuestion,
+    DiagnosticOption,
+    DiagnosticResult,
+    DiagnosticSubmit,
+    DiagnosticTest,
     MeResponse,
     Membership,
     MessageIn,
@@ -985,6 +992,106 @@ def get_quiz(
     return QuizResponse(questions=[QuizQuestion(**q) for q in drawn], counts=available)
 
 
+# --- diagnostic ------------------------------------------------------------
+# A fixed 30-question quiz that maps what a student knows by domain (app/diagnostic.py).
+# Served and scored from the offline bank: no model call, so it is open to
+# signed-out visitors. Signed-in results are kept as history and read by the plan.
+
+def _diag_result(row: dict) -> DiagnosticResult:
+    return DiagnosticResult(
+        event_id=row["event_id"], exam=row.get("exam", ""), level=row.get("level", "district"),
+        total=row["total"], correct=row["correct"], unsure=row.get("unsure", 0),
+        domains=row.get("domains") or [], question_ids=row.get("question_ids") or [],
+        created_at=row.get("created_at", ""), saved=True)
+
+
+@app.get("/api/diagnostic", response_model=DiagnosticTest)
+def get_diagnostic(
+    response: Response,
+    event_id: str = Query(min_length=1, max_length=60),
+    level: Literal["district", "state", "icdc"] = "district",
+    exclude: str = Query(default="", max_length=2500),
+) -> DiagnosticTest:
+    """The test for an event's written exam: balanced across its domains, with the
+    answer key and rationales withheld (they come back with the scored result).
+    `exclude` is the previous attempt's question ids, avoided so a retake is fresh."""
+    response.headers["Cache-Control"] = "no-store"
+    if not events.get_event(event_id):
+        raise HTTPException(status_code=404, detail="Unknown event.")
+    skip = {x.strip() for x in exclude.split(",") if x.strip()}
+    drawn = diagnostic.build(event_id, level, skip)
+    if not drawn:
+        raise HTTPException(status_code=404, detail="No questions available for that event yet.")
+    _, exam = diagnostic.domains_for_event(event_id)
+    return DiagnosticTest(
+        event_id=event_id, exam=exam, level=level,
+        questions=[DiagnosticQuestion(
+            id=q["id"], domain_id=q["domain_id"], domain=q.get("domain", ""), topic=q.get("topic", ""),
+            question=q["question"], options=[DiagnosticOption(id=o["id"], text=o["text"]) for o in q["options"]],
+        ) for q in drawn])
+
+
+@app.post("/api/diagnostic", response_model=DiagnosticResult, dependencies=[Depends(rate_limit)])
+async def submit_diagnostic(req: DiagnosticSubmit, user: dict | None = Depends(optional_user)) -> DiagnosticResult:
+    """Score a finished test from the bank (the client's own grading is never
+    trusted). Signed-in: the result is saved as history, compared with the previous
+    attempt, and folded into study progress. Signed-out: scored and returned, and
+    the browser keeps it until they sign in."""
+    ev = events.get_event(req.event_id)
+    if not ev:
+        raise HTTPException(status_code=404, detail="Unknown event.")
+    graded = diagnostic.grade([a.model_dump() for a in req.answers])
+    if not graded["total"]:
+        raise HTTPException(status_code=422, detail="No known questions in that submission.")
+    _, exam = diagnostic.domains_for_event(req.event_id)
+    result = DiagnosticResult(event_id=req.event_id, exam=exam, level=req.level,
+                              total=graded["total"], correct=graded["correct"], unsure=graded["unsure"],
+                              domains=graded["domains"], question_ids=graded["question_ids"],
+                              created_at=datetime.now(timezone.utc).isoformat(), review=graded["review"])
+    if user and config.has_supabase():
+        try:
+            prior = await db.list_diagnostics(user["id"], limit=1)
+            if prior and prior[0].get("event_id") == req.event_id:
+                change = diagnostic.compare(prior[0].get("domains") or [], graded["domains"])
+                for d in result.domains:
+                    d.change = change.get(d.domain_id)
+                result.previous = {"created_at": prior[0]["created_at"], "correct": prior[0]["correct"],
+                                   "total": prior[0]["total"]}
+            await db.insert_diagnostic(user["id"], {
+                "event_id": req.event_id, "exam": exam, "level": req.level, "total": graded["total"],
+                "correct": graded["correct"], "unsure": graded["unsure"],
+                "domains": [{k: v for k, v in d.items() if k != "change"} for d in graded["domains"]],
+                "question_ids": graded["question_ids"]})
+            result.saved = True
+        except httpx.HTTPError as exc:
+            # The student has their result either way; only the history is lost.
+            log.warning("diagnostic save failed: %s", exc)
+        marks = diagnostic.study_marks(graded["review"])
+        if marks:
+            try:
+                ids = sorted({m["term_id"] for m in marks if terms.get_term(m["term_id"])})
+                current = {r["term_id"]: r for r in await db.list_study_progress(user["id"], ids)}
+                rows = [study.apply(current.get(m["term_id"]), m["term_id"], m["evidence"], m["verdict"])
+                        for m in marks if m["term_id"] in ids]
+                await db.upsert_study_progress(user["id"], rows)
+            except httpx.HTTPError as exc:
+                log.warning("diagnostic progress fold failed: %s", exc)
+    return result
+
+
+@app.get("/api/diagnostic/history", response_model=DiagnosticHistory)
+async def diagnostic_history(user: dict = Depends(current_user)) -> DiagnosticHistory:
+    """The signed-in student's attempts, newest first."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
+    try:
+        rows = await db.list_diagnostics(user["id"], limit=10)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Couldn't load your diagnostic results.") from exc
+    attempts = [_diag_result(r) for r in rows]
+    return DiagnosticHistory(latest=attempts[0] if attempts else None, attempts=attempts)
+
+
 @app.post("/api/transcribe", response_model=TranscribeResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 def transcribe(audio: UploadFile = File(...)) -> TranscribeResponse:
     """Transcript only (no delivery metrics), used for spoken blitz answers, which
@@ -1273,6 +1380,17 @@ async def _plan_context(user: dict, tz: int) -> tuple[dict, list[dict], list[dat
     return plan.progress_map(rows, tz), weak, plan.session_dates(sessions, tz), plan.live_dates(acts, tz)
 
 
+async def _diag_rank(user_id: str) -> dict[str, str]:
+    """{domain_id: band} from the student's newest diagnostic, for the plan to order
+    units by. Best-effort: no result, or a failed read, just means no reordering."""
+    try:
+        rows = await db.list_diagnostics(user_id, limit=1)
+    except httpx.HTTPError as exc:
+        log.warning("diagnostic read for plan failed: %s", exc)
+        return {}
+    return diagnostic.domain_rank(rows[0].get("domains") or []) if rows else {}
+
+
 def _plan_out(built: dict, prog: dict, sessions: list[date], day: date, *, saved: bool,
               history: list[dict], live: list[date] | None = None) -> PlanResponse:
     today_tasks = plan.overlay_status(built["today"]["tasks"], prog, sessions, day, live)
@@ -1306,6 +1424,8 @@ async def preview_plan(
             prog, weak, sessions, live = await _plan_context(user, tz)
         except httpx.HTTPError as exc:
             log.warning("plan preview progress load failed: %s", exc)
+    if user and config.has_supabase():
+        inputs["diagnostic"] = await _diag_rank(user["id"])
     built = plan.build_plan(inputs, prog, weak, day, last_roleplay=sessions[-1] if sessions else None, live=live)
     return _plan_out(built, prog, sessions, day, saved=False, history=[], live=live)
 
@@ -1321,8 +1441,8 @@ async def get_plan(
         raise HTTPException(status_code=503, detail="Accounts are not enabled on this server.")
     day, tz = _plan_day(local_date, tz_offset)
     try:
-        row, (prog, weak, sessions, live) = await asyncio.gather(
-            db.get_study_plan(user["id"]), _plan_context(user, tz)
+        row, (prog, weak, sessions, live), diag = await asyncio.gather(
+            db.get_study_plan(user["id"]), _plan_context(user, tz), _diag_rank(user["id"])
         )
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="Couldn't load your study plan.") from exc
@@ -1330,6 +1450,7 @@ async def get_plan(
         raise HTTPException(status_code=404, detail="No study plan yet.")
 
     inputs = {k: row[k] for k in ("event_id", "stages", "day_minutes", "goal")}
+    inputs["diagnostic"] = diag
     last_rp = sessions[-1] if sessions else None
     history = row.get("history") or []
     frozen = row.get("today_tasks") if row.get("today_date") == day.isoformat() else None

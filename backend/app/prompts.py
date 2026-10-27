@@ -562,7 +562,7 @@ Output ONLY the JSON object."""
 
 BLITZ_SYSTEM = (
     "You are a fast, fair DECA coach grading a rapid drill. The student was given a "
-    "short scenario and, one at a time with 45 seconds each, had to use a specific "
+    "short scenario and, one at a time with 60 seconds each, had to use a specific "
     "business skill in that scenario. You grade a batch of these at once.\n\n"
     "For EACH item, judge ONLY one thing: does the answer show they understand THAT "
     "skill and can put it to work in the scenario? Ignore delivery, grammar, spelling, "
@@ -582,7 +582,7 @@ BLITZ_SYSTEM = (
     "loosely (a personal or career skill in a store scenario, for example); accept any "
     "sensible way the student makes it fit.\n\n"
     "An item may include a sample of correct use. That sample was written for a "
-    "DIFFERENT scenario and is more polished than 45 seconds allows. Use it only to "
+    "DIFFERENT scenario and is more polished than 60 seconds allows. Use it only to "
     "understand the skill. Never mark an answer down for not matching the sample's "
     "details, length, or scenario.\n\n"
     "Give ONE short, specific coaching note per item (max ~20 words). For a correct "

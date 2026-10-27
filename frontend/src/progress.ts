@@ -749,3 +749,135 @@ export function adminListChapters(passphrase: string, status: "pending" | "activ
 export function adminSetChapterStatus(passphrase: string, id: string, status: "active" | "rejected" | "pending"): Promise<{ status: string }> {
   return adminFetch(`/api/admin/chapters/${id}/status`, passphrase, { method: "POST", body: JSON.stringify({ status }) });
 }
+
+// --- diagnostic ------------------------------------------------------------
+// The starting-point quiz (backend/app/diagnostic.py): 30 questions balanced
+// across the domains of the student's written exam, with a "Not sure" answer, scored
+// by domain. Served and scored from the offline bank, so it is open signed-out.
+
+export type DiagnosticBand = "mastered" | "developing" | "needs_work";
+
+export type DiagnosticQuestion = {
+  id: string;
+  domain_id: string;
+  domain: string;
+  topic: string;
+  question: string;
+  // No key and no rationale: those only come back with the scored result, so the
+  // test measures instead of teaching.
+  options: { id: string; text: string }[];
+};
+
+export type DiagnosticTest = {
+  event_id: string;
+  exam: string;
+  level: "district" | "state" | "icdc";
+  questions: DiagnosticQuestion[];
+};
+
+export type DiagnosticDomain = {
+  domain_id: string;
+  name: string;
+  asked: number;
+  correct: number;
+  wrong: number;
+  unsure: number;
+  band: DiagnosticBand;
+  // gaps: ideas not met yet. misconceptions: ideas held backwards. Different fixes.
+  pattern: "" | "gaps" | "misconceptions" | "mixed";
+  // The cards behind the misses, for a one-tap study deck.
+  term_ids: string[];
+  // Change in share correct since the previous attempt (0.25 = 25 points up).
+  change?: number | null;
+};
+
+export type DiagnosticReviewItem = {
+  question_id: string;
+  domain_id: string;
+  topic: string;
+  question: string;
+  outcome: "correct" | "wrong" | "unsure";
+  choice: string;
+  correct_id: string;
+  options: { id: string; text: string; correct: boolean; rationale: string }[];
+  term_ids: string[];
+};
+
+export type DiagnosticResult = {
+  event_id: string;
+  exam: string;
+  level: "district" | "state" | "icdc";
+  total: number;
+  correct: number;
+  unsure: number;
+  domains: DiagnosticDomain[];
+  question_ids: string[];
+  created_at: string;
+  saved: boolean;
+  // Only on a fresh result. A stored one is rebuilt from the bank's own ids.
+  review?: DiagnosticReviewItem[];
+  previous?: { created_at: string; correct: number; total: number } | null;
+};
+
+export type DiagnosticAnswer = { question_id: string; choice: string };
+
+const DIAG_HISTORY_KEY = "/api/diagnostic/history";
+
+export function getDiagnosticTest(
+  eventId: string,
+  level: DiagnosticTest["level"],
+  exclude: string[] = [],
+): Promise<DiagnosticTest> {
+  const params = new URLSearchParams({ event_id: eventId, level });
+  if (exclude.length) params.set("exclude", exclude.join(","));
+  return maybeAuthFetch<DiagnosticTest>(`/api/diagnostic?${params}`);
+}
+
+export async function submitDiagnostic(
+  eventId: string,
+  level: DiagnosticTest["level"],
+  answers: DiagnosticAnswer[],
+): Promise<DiagnosticResult> {
+  const r = await maybeAuthFetch<DiagnosticResult>("/api/diagnostic", {
+    method: "POST",
+    body: JSON.stringify({ event_id: eventId, level, answers }),
+  });
+  // The plan reads the newest result, and the card shows it.
+  invalidate(DIAG_HISTORY_KEY, "/api/plan", "/api/course");
+  return r;
+}
+
+// Signed-in history, newest first. Empty (not an error) when signed out.
+export function getDiagnosticHistory(): Promise<DiagnosticResult[]> {
+  return cached<DiagnosticResult[]>(DIAG_HISTORY_KEY, async () => {
+    const token = await getAccessToken().catch(() => null);
+    if (!token) return [];
+    const r = await authFetch<{ attempts: DiagnosticResult[] }>(DIAG_HISTORY_KEY);
+    return r.attempts;
+  });
+}
+export const diagnosticHistoryKey = DIAG_HISTORY_KEY;
+
+// A signed-out visitor's last attempt lives in this browser until they sign in.
+// The answers are kept with it so the attempt can be saved to the account then,
+// instead of asking them to sit the test twice.
+const LOCAL_KEY = "pic-diagnostic-local";
+export type LocalDiagnostic = { result: DiagnosticResult; answers: DiagnosticAnswer[] };
+
+export function readLocalDiagnostic(): LocalDiagnostic | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    return raw ? (JSON.parse(raw) as LocalDiagnostic) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeLocalDiagnostic(v: LocalDiagnostic | null): void {
+  try {
+    if (v) localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...v, result: { ...v.result, review: undefined } }));
+    else localStorage.removeItem(LOCAL_KEY);
+  } catch {
+    /* private mode: the result still shows this session */
+  }
+}

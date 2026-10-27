@@ -18,7 +18,7 @@ import { markStudy, postActivity } from "./progress";
 import { BTN_PRIMARY, BTN_SECONDARY, LogoLoader, useScrollLock } from "./ui";
 
 const CAN_RECORD = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
-const SECONDS_PER_TERM = 45; // the time-pressure window
+const SECONDS_PER_TERM = 60; // the time-pressure window
 const TERMS_PER_BLITZ = 5;
 
 type Phase = "intro" | "drill" | "scoring" | "results";

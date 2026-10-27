@@ -27,6 +27,8 @@ import { type Term } from "./api";
 import { StudyCourse } from "./course";
 import type { FlagsApi } from "./flags";
 import { FlashcardLibrary } from "./flashcards";
+import { DiagnosticCard } from "./diagnostic";
+import type { DiagnosticResult } from "./progress";
 import { Sidebar, SideGroup, SideItem } from "./ui";
 
 export type StudyMode = "path" | "domains";
@@ -57,6 +59,9 @@ export function StudyTab({
   onQuiz,
   onPractice,
   onSignup,
+  diagnostic,
+  onTakeDiagnostic,
+  onSeeDiagnostic,
 }: {
   authed: boolean;
   refreshKey?: number;
@@ -69,6 +74,9 @@ export function StudyTab({
   onQuiz: (cards: Term[], title?: string, opts?: QuizOpts) => void;
   onPractice: (criterionName?: string) => void;
   onSignup: () => void;
+  diagnostic: DiagnosticResult | null;
+  onTakeDiagnostic: () => void;
+  onSeeDiagnostic: () => void;
 }) {
   const [mode, setMode] = useState<StudyMode>(() => initialMode ?? readMode());
 
@@ -95,6 +103,10 @@ export function StudyTab({
           its own refetching on refreshKey and the library holds the whole corpus,
           so swapping is already instant after the first visit to each. */}
       {mode === "path" ? (
+        <>
+        <div className="pb-5 pt-5">
+          <DiagnosticCard latest={diagnostic} onTake={onTakeDiagnostic} onSeeResults={onSeeDiagnostic} />
+        </div>
         <StudyCourse
           authed={authed}
           refreshKey={refreshKey}
@@ -105,6 +117,7 @@ export function StudyTab({
           onSignup={onSignup}
           onBrowseAll={() => setMode("domains")}
         />
+        </>
       ) : (
         <>
           {/* Everything here works signed out: the cards, the search, the flags

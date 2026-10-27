@@ -9,6 +9,7 @@
 // Every number still maps to a next action; no badges/leaderboards/streak games.
 
 import { useState, type ReactNode } from "react";
+import { DiagnosticCard } from "./diagnostic";
 import { getDomains, type DomainSummary } from "./api";
 import {
   getMyPlan,
@@ -17,6 +18,7 @@ import {
   myCourseOrNull,
   planKey,
   type Course,
+  type DiagnosticResult,
   type ProgressResponse,
   type SessionSummary,
 } from "./progress";
@@ -64,6 +66,9 @@ export function HomePage(props: {
   onOpenLibrary: () => void;
   onOpenSession: (id: string) => void;
   onOpenStudy: () => void;
+  diagnostic: DiagnosticResult | null;
+  onTakeDiagnostic: () => void;
+  onSeeDiagnostic: () => void;
 }) {
   // Each read comes from the cache (cache.ts): after the first visit the
   // dashboard paints immediately from the last answer and refreshes underneath.
@@ -155,6 +160,8 @@ export function HomePage(props: {
       ) : course ? (
         <PlanNudge eventName={course.event} onOpen={props.onOpenStudy} />
       ) : null}
+
+      <DiagnosticCard latest={props.diagnostic} onTake={props.onTakeDiagnostic} onSeeResults={props.onSeeDiagnostic} />
 
       {error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">

@@ -334,6 +334,45 @@ create policy "own rows" on public.study_plan
 
 
 -- ---------------------------------------------------------------------------
+-- Diagnostics: `diagnostic_result` (many rows per user, newest is current).
+--
+-- A finished diagnostic quiz (app/diagnostic.py): how the student did in each
+-- domain of their written exam, banded mastered | developing | needs_work. Kept as
+-- history, not overwritten, so a retake can show change per domain. The study plan
+-- reads the newest row to put weak domains first.
+--
+-- Stored are the per-domain counts and the ids of the questions asked (so a retake
+-- can avoid repeating them). The questions and answers themselves are not, the bank
+-- is the source for those.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.diagnostic_result (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  event_id      text not null,                        -- events.json id
+  exam          text not null default '',
+  level         text not null default 'district',     -- district | state | icdc
+  total         int not null,
+  correct       int not null,
+  unsure        int not null default 0,
+  domains       jsonb not null default '[]'::jsonb,   -- [{domain_id, name, asked, correct, wrong, unsure, band, pattern, term_ids}]
+  question_ids  text[] not null default '{}',
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists diagnostic_result_user_idx
+  on public.diagnostic_result (user_id, created_at desc);
+
+alter table public.diagnostic_result enable row level security;
+
+drop policy if exists "own rows" on public.diagnostic_result;
+create policy "own rows" on public.diagnostic_result
+  for all
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+
+-- ---------------------------------------------------------------------------
 -- Site-wide stats: `app_stat` (one row per counter).
 --
 -- Running totals of role-plays graded, Blitz drills graded, and scenarios freshly

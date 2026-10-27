@@ -40,7 +40,7 @@ import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
 import { AccountSettings } from "./account";
 import { adminListChapters, adminSetChapterStatus, clearSamples, confirmScenarioSeen, fetchUsage, getMessages, getMyPlan, getPosts, getProgress, getRoster, getSession, getSessions, getThreads, markStudy, messagesKey, myCourseOrNull, planKey, saveSession, scoreVideo, seedSamples, type AdminChapter, type ChapterPost, type SaveSessionBody, type SessionDetail } from "./progress";
-import { prefetch, setCacheScope } from "./cache";
+import { prefetch, setCacheScope, useCached } from "./cache";
 import { ChapterTab, NameModal, unreadTotal, useMe } from "./chapter";
 import { CAN_CAPTURE_VIDEO, GazeAnchor, VideoIndicator, VideoOptIn, VideoPanel, useFrameSampler, type VideoGate } from "./video";
 import { HomePage } from "./home";
@@ -48,6 +48,7 @@ import { Flashcards } from "./flashcards";
 import { MasteryBlitz } from "./blitz";
 import { KnowledgeCheck, type Scope as QuizScope } from "./quiz";
 import { StudyTab } from "./studytab";
+import { DiagnosticModal, useDiagnostic } from "./diagnostic";
 import { useFlags } from "./flags";
 
 type ResponseMode = "type" | "speak";
@@ -467,6 +468,12 @@ export default function App() {
   // is served from a pre-generated bank, so it spends nothing and stays open to
   // signed-out visitors -- no gate, no allowance.
   const [quizCards, setQuizCards] = useState<{ cards: Term[]; title?: string; exam?: string; scope?: QuizScope; level?: Level } | null>(null);
+  // The diagnostic: closed, or open on the intro (a fresh attempt) or straight on
+  // the latest results. It needs no account and no allowance, like the quiz.
+  const [diagnosticOpen, setDiagnosticOpen] = useState<null | { results: boolean }>(null);
+  const diagnostic = useDiagnostic(!!authUser);
+  // The event they're already studying for, so the diagnostic can preselect it.
+  const diagCourse = useCached(authUser ? "/api/course" : null, myCourseOrNull);
   // Bumped whenever a study surface closes. Flipping a card or finishing a Blitz
   // writes progress on the SERVER, but the course on screen was fetched when the
   // view mounted and has no idea -- so without this the counters sit unchanged
@@ -567,6 +574,25 @@ export default function App() {
   // reached from the two surfaces that already have one.
   function startQuiz(cards: Term[], title?: string, opts?: { exam?: string; scope?: QuizScope; level?: Level }) {
     setQuizCards({ cards, title, exam: opts?.exam, scope: opts?.scope, level: opts?.level });
+  }
+
+  // From the diagnostic's results: study, or quiz on, the cards behind one area's
+  // misses. The diagnostic closes first, so the two overlays never stack.
+  async function practiceDiagnosticCards(mode: "study" | "quiz", termIds: string[], title: string) {
+    let all: Term[];
+    try {
+      all = await getAllTerms();
+    } catch (e) {
+      setError(errMsg(e));
+      return;
+    }
+    const wanted = new Set(termIds);
+    const cards = all.filter((t) => wanted.has(t.id));
+    if (!cards.length) return;
+    setDiagnosticOpen(null);
+    track("diagnostic_practice", { mode, area: title, cards: cards.length });
+    if (mode === "study") setFlashcard({ cards, title });
+    else startQuiz(cards, title, { scope: "deck" });
   }
 
   // Start a chapter assignment: open the drill it asks for, on its skill area when
@@ -1367,6 +1393,18 @@ export default function App() {
         />
       )}
       {blitzCards && <MasteryBlitz cards={blitzCards} onClose={() => { setBlitzCards(null); endStudy(); }} />}
+      {diagnosticOpen && (
+        <DiagnosticModal
+          authed={!!authUser}
+          defaultEventId={diagCourse.data?.event_id}
+          latest={diagnostic.latest}
+          openResults={diagnosticOpen.results}
+          onResult={diagnostic.remember}
+          onClose={() => setDiagnosticOpen(null)}
+          onPractice={practiceDiagnosticCards}
+          onSignup={() => { setDiagnosticOpen(null); openAuth("signup", "Create a free account to keep your diagnostic and have your study plan start with the areas that need work."); }}
+        />
+      )}
       {quizCards && (
         <KnowledgeCheck
           cards={quizCards.cards}
@@ -1448,6 +1486,9 @@ export default function App() {
             onOpenLibrary={() => goToView("course")}
             onOpenSession={loadSession}
             onOpenStudy={() => goToView("course")}
+            diagnostic={diagnostic.latest}
+            onTakeDiagnostic={() => setDiagnosticOpen({ results: false })}
+            onSeeDiagnostic={() => setDiagnosticOpen({ results: true })}
           />
         ) : view === "home" ? (
           <LandingPage
@@ -1483,6 +1524,9 @@ export default function App() {
             onQuiz={(cards, title, opts) => startQuiz(cards, title, opts)}
             onPractice={(name) => (name ? practiceCriterion(name) : enterPractice())}
             onSignup={() => openAuth("signup", "Create a free account to save your study plan and track it day by day.")}
+            diagnostic={diagnostic.latest}
+            onTakeDiagnostic={() => setDiagnosticOpen({ results: false })}
+            onSeeDiagnostic={() => setDiagnosticOpen({ results: true })}
           />
         ) : view === "chapter" && !authUser ? (
           authLoading ? (
@@ -1719,6 +1763,11 @@ export default function App() {
                   authReady && !authUser ? (onboarding ? "two_min_rep_score" : "roleplay_score") : undefined
                 }
                 onSignIn={() => openAuth("signup", "Want to see if you improve next time? Create an account to track your progress.")}
+                diagnosticNudge={
+                  // After the guided first rep only, and only until they have a result:
+                  // the natural next question is "so what should I work on?".
+                  onboarding && !diagnostic.latest ? () => setDiagnosticOpen({ results: false }) : undefined
+                }
               />
             )}
           </>
@@ -2582,7 +2631,7 @@ const FEATURE_SUMMARY: { label: string; line: string }[] = [
   },
   {
     label: "Mastery Blitz",
-    line: "Five terms, 45 seconds each: recall under the same pressure a judge applies.",
+    line: "Five terms, 60 seconds each: recall under the same pressure a judge applies.",
   },
   {
     label: "Tips & FAQ",
@@ -4672,6 +4721,8 @@ function FeedbackScreen(props: {
   // screen from having to know about `authReady` at all, undefined means "don't
   // ask", which is also the right answer for the tour and the demo.
   promptSource?: "two_min_rep_score" | "roleplay_score";
+  // Set after the guided first rep: offers the diagnostic as the next step.
+  diagnosticNudge?: () => void;
   // Optional controlled tab, so the product tour can step through the tabs. Left
   // undefined everywhere else, in which case the screen owns its own tab as before.
   tab?: FeedbackTab;
@@ -4843,6 +4894,18 @@ function FeedbackScreen(props: {
           )}{" "}
           Practice coaching, not an official competition score.
         </p>
+
+        {props.diagnosticNudge && !props.readOnly && (
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Not sure where to start?</p>
+              <p className="mt-1 max-w-[70ch] text-sm text-slate-600 dark:text-slate-300">
+                Take a ten-minute diagnostic and see which areas of your exam you already have and which need work. No account needed.
+              </p>
+            </div>
+            <button className={BTN_SECONDARY} onClick={props.diagnosticNudge}>Find my starting point</button>
+          </div>
+        )}
 
         {!props.loggedIn && props.onSignIn && (
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-slate-200 pt-5 dark:border-slate-800">

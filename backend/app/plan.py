@@ -245,10 +245,26 @@ def _stages(inputs: dict, today: date) -> list[dict]:
     return out
 
 
-def _queue(course: dict, goal: str, state: dict[str, dict], weak: list[dict]) -> list[dict]:
+_BAND_ORDER = {"needs_work": 0, "developing": 1, "mastered": 2}
+
+
+def _units_by_diagnostic(units: list[dict], rank: dict[str, str]) -> list[dict]:
+    """The course's units with the diagnostic's weak domains first and its mastered
+    domains last. Stable, so inside a band the course's own order holds. A domain
+    the diagnostic did not test counts as developing, it is neither prioritised nor
+    pushed back. Mastered units are only moved, not dropped: one clean quiz is not
+    proof of a whole domain, and they are still on the path to be reviewed."""
+    if not rank:
+        return units
+    return sorted(units, key=lambda u: _BAND_ORDER.get(rank.get(u.get("domain_id", ""), "developing"), 1))
+
+
+def _queue(course: dict, goal: str, state: dict[str, dict], weak: list[dict],
+           diag: dict[str, str] | None = None) -> list[dict]:
     """Remaining work as ordered groups. Weak skills first, then the core path in
-    course order, then (goal "all") the extended tier. Never re-sorted beyond that:
-    the course's own order is the order a student studies in."""
+    course order, then (goal "all") the extended tier. Course order holds except
+    for the diagnostic (if the student took one): its weak domains move up and its
+    mastered ones back. The course's own order is otherwise the order to study in."""
     def unproven(tid: str) -> bool:
         return state.get(tid, {}).get("status") != "known"
 
@@ -269,8 +285,9 @@ def _queue(course: dict, goal: str, state: dict[str, dict], weak: list[dict]) ->
 
     taken = set(weak_terms)
     tiers = ["core", "extended"] if goal == "all" else ["core"]
+    units = _units_by_diagnostic(course["units"], diag or {})
     for tier in tiers:
-        for u in course["units"]:
+        for u in units:
             ids = [t for t in u[f"{tier}_ids"] if unproven(t) and t not in taken]
             if ids:
                 groups.append({"kind": "learn", "tier": tier, "unit_id": u["id"], "topic": u["topic"],
@@ -483,7 +500,7 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
     live_before = [d for d in (live or []) if d < today]
     live_plan = {**_live_plan(stages, today, len(live_before)), "n": len(live_before)}
     state = {k: dict(v) for k, v in progress.items()}
-    queue = _queue(course, inputs.get("goal", "core"), state, weak)
+    queue = _queue(course, inputs.get("goal", "core"), state, weak, inputs.get("diagnostic"))
     core_remaining = sum(len(g["term_ids"]) for g in queue if g["tier"] == "core")
     tiers = ["core", "extended"] if inputs.get("goal") == "all" else ["core"]
     course_ids = {tid for u in course["units"] for t in tiers for tid in u[f"{t}_ids"]}
@@ -551,7 +568,7 @@ def _simulate(course: dict, inputs: dict, progress: dict[str, dict], weak: list[
     return {"stages": stages, "days": days, "core_remaining": core_remaining,
             "live_target": live_plan["target"],
             "proven_core": ctx["proven_core"], "proven_extended": ctx["proven_extended"],
-            "extended_remaining": sum(len(g["term_ids"]) for g in _queue(course, "all", progress, weak) if g["tier"] == "extended")}
+            "extended_remaining": sum(len(g["term_ids"]) for g in _queue(course, "all", progress, weak, inputs.get("diagnostic")) if g["tier"] == "extended")}
 
 
 def _finish_date(proven: list[tuple[date, int]], total: int) -> date | None:

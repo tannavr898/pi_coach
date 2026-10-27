@@ -4,7 +4,7 @@ Evidence is RANKED, because not all practice proves the same thing:
 
     flip      you looked at the card. Proves you saw it, nothing more.
     quiz      you picked the right answer out of four. Recognition, under no clock.
-    blitz     you used it under a 45-second clock and a model judged it.
+    blitz     you used it under a 60-second clock and a model judged it.
     roleplay  you applied it inside a graded role-play. The strongest proof there is.
 
 A quiz sits above a flip and below a blitz, and it deliberately cannot finish a

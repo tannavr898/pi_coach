@@ -237,7 +237,7 @@ export const FEATURE_INTROS: Record<Surface, { title: string; body: string }> = 
     body: "My path is your event: an ordered route through every skill it's graded on, split into short units, and a day-by-day plan once you add your competition dates. All domains is the whole library, searchable, with the terms you keep scoring low on marked. Progress counts the same in both.",
   },
   blitz: {
-    title: "Mastery Blitz: five terms, 45 seconds each",
+    title: "Mastery Blitz: five terms, 60 seconds each",
     body: "A speed drill you launch from a course unit or a flashcard set. It's for recall under pressure, the same pressure you're under when a judge asks a follow-up.",
   },
   tips: {
