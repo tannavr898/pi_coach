@@ -313,7 +313,23 @@ class AnalyticalSection(BaseModel):
     section_percent: float = 0.0  # section_score / 4 × 100
 
 
-# --- Section 3: Professional Presentation -----------------------------------
+# --- Section 3: Career Competencies ------------------------------------------
+
+
+class CareerCompetenciesSection(BaseModel):
+    """Section 3, four competencies each scored 1-4 by the model; the section
+    score is their plain average, computed by the backend."""
+
+    weight: float = 0.10
+    critical_thinking: SubScore
+    communication: SubScore
+    decision_making: SubScore
+    innovation: SubScore
+    section_score: float = 0.0  # mean of the four, 1-4
+    section_percent: float = 0.0  # section_score / 4 × 100
+
+
+# --- Section 4: Presentation Technique ---------------------------------------
 
 
 class PresentationSection(BaseModel):
@@ -331,7 +347,8 @@ class PresentationSection(BaseModel):
 
 
 class FinalScore(BaseModel):
-    """The weighted roll-up: 60% PIs + 25% analytical + 15% presentation."""
+    """The weighted roll-up: 50% PIs + 25% analytical + 10% career competencies
+    + 15% presentation."""
 
     percent: float = 0.0
     top_strength: str = ""
@@ -353,12 +370,14 @@ class ScoreResponse(BaseModel):
     followup_feedback: str = ""
     # Deterministically recomputed calculations (quantitative events only).
     math_checks: list[MathCheck] = []
-    # --- New 3-section weighted rubric ---
-    # Section 1 (Performance Indicators, 60%) rolls up from `scores`.
+    # --- 4-section weighted rubric ---
+    # Section 1 (Performance Indicators, 50%) rolls up from `scores`.
     pi_section_score: float = 0.0  # 0-4
     pi_section_percent: float = 0.0
     analytical: AnalyticalSection | None = None  # Section 2 (25%)
-    presentation: PresentationSection | None = None  # Section 3 (15%)
+    # Optional so sessions stored before this section existed still parse.
+    career_competencies: CareerCompetenciesSection | None = None  # Section 3 (10%)
+    presentation: PresentationSection | None = None  # Section 4 (15%)
     final: FinalScore | None = None
 
 

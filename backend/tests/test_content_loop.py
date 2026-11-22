@@ -168,6 +168,12 @@ def test_score_assembles_and_totals(monkeypatch, crit_ids):
                 "pi_application": {"score": 3, "justification": "applied", "evidence": None},
                 "creativity": {"bonus": 0.25, "justification": "apt acronym", "evidence": None},
             },
+            "career_competencies": {
+                "critical_thinking": {"score": 3, "justification": ""},
+                "communication": {"score": 4, "justification": ""},
+                "decision_making": {"score": 3, "justification": ""},
+                "innovation": {"score": 2, "justification": ""},
+            },
             "presentation": {"score": 3, "notes": "clear and structured"},
             "final": {"top_strength": "framing", "biggest_weakness": "brand", "one_key_fix": "quantify"},
             "summary": "ok", "strengths": ["a"], "improvements": ["b"], "followup_feedback": "decent",
@@ -194,8 +200,10 @@ def test_score_assembles_and_totals(monkeypatch, crit_ids):
     assert s["analytical"]["section_percent"] == 92.5
     # Section 3 (typed): model score 3/4 -> 75%
     assert s["presentation"]["section_percent"] == 75.0
-    # Final = 80*0.60 + 92.5*0.25 + 75*0.15 = 82.375 -> 82.4; overall rounds to 82
-    assert s["final"]["percent"] == 82.4
+    # Section 3 (career competencies): mean(3,4,3,2) = 3.0 -> 75%
+    assert s["career_competencies"]["section_percent"] == 75.0
+    # Final = 80*0.50 + 92.5*0.25 + 75*0.10 + 75*0.15 = 81.875 -> 81.9; overall rounds to 82
+    assert s["final"]["percent"] == 81.9
     assert s["overall_percent"] == 82
     assert s["overall_level"] == "proficient"
     assert s["final"]["one_key_fix"] == "quantify"
@@ -306,3 +314,11 @@ def test_score_503_without_key(monkeypatch, crit_ids):
         json={"scenario": "x", "criteria_ids": crit_ids, "response": "hi"},
     )
     assert r.status_code == 503
+
+
+def test_pi_count_per_event():
+    from app import events
+    assert events.pi_count_for(events.get_event("principles-marketing")) == 4
+    assert events.pi_count_for(events.get_event("food-marketing")) == 5
+    assert events.pi_count_for(events.get_event("marketing-management-team")) == 5
+    assert events.pi_count_for(events.get_event("personal-financial-literacy")) == 3

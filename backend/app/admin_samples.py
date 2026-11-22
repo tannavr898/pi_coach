@@ -18,6 +18,7 @@ from datetime import datetime, timedelta, timezone
 from .rubric import overall_level
 from .schemas import (
     AnalyticalSection,
+    CareerCompetenciesSection,
     CreativityScore,
     Criterion,
     CriterionScore,
@@ -97,6 +98,14 @@ def _score(content_score: int, levels: list[str]) -> ScoreResponse:
         section_score=3.25,
         section_percent=81.0,
     )
+    competencies = CareerCompetenciesSection(
+        critical_thinking=SubScore(score=3, justification="Sample."),
+        communication=SubScore(score=3, justification="Sample."),
+        decision_making=SubScore(score=3, justification="Sample."),
+        innovation=SubScore(score=2, justification="Sample."),
+        section_score=2.75,
+        section_percent=68.8,
+    )
     presentation = PresentationSection(section_score=3.2, section_percent=80.0, notes="Sample presentation note.")
     return ScoreResponse(
         scores=scores,
@@ -111,6 +120,7 @@ def _score(content_score: int, levels: list[str]) -> ScoreResponse:
         pi_section_score=round(total / len(scores) / 10 * 4, 2),
         pi_section_percent=pi_percent,
         analytical=analytical,
+        career_competencies=competencies,
         presentation=presentation,
         final=FinalScore(
             percent=float(content_score),

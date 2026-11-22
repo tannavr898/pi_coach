@@ -5,6 +5,7 @@ import {
   type DeliveryMetrics,
   type DeliveryResponse,
   type EventSummary,
+  type CareerCompetenciesSection,
   type Level,
   type MathCheck,
   type Mode,
@@ -3857,7 +3858,7 @@ function HowItWorksSection() {
   );
 }
 
-type FbSection = "pi" | "analysis" | "present";
+type FbSection = "pi" | "analysis" | "career" | "present";
 
 // The internal keys are abbreviations; these are what the funnel reports. Kept
 // separate from `feedback_section_viewed`, which still sends the raw key, so the
@@ -3865,6 +3866,7 @@ type FbSection = "pi" | "analysis" | "present";
 const FB_BAND_LABEL: Record<FbSection, string> = {
   pi: "indicators",
   analysis: "analytical",
+  career: "competencies",
   present: "presentation",
 };
 
@@ -3873,7 +3875,7 @@ function FeedbackExplainerSection() {
   const blocks: { key: FbSection; weight: number; short: string; title: string; body: string; looksFor: string }[] = [
     {
       key: "pi",
-      weight: 60,
+      weight: 50,
       short: "Performance Indicators",
       title: "Performance Indicators",
       body: "The specific business skills the event lists. For each one we judge whether you actually demonstrated it or only name-dropped it, then score it Novice to Exemplary and highlight the exact phrase in your transcript that earned the credit.",
@@ -3882,16 +3884,24 @@ function FeedbackExplainerSection() {
     {
       key: "analysis",
       weight: 25,
-      short: "Analytical",
-      title: "Analytical & Problem-Solving",
-      body: "How you think, not just what you cite. We look at how sharply you framed the real problem, whether your solution is specific and realistic, and whether you de-risked it instead of hand-waving.",
+      short: "Solution",
+      title: "Solution & Problem-Solving",
+      body: "How you think, not just what you cite. We look at how sharply you framed the real problem, whether your solution is specific, practical and effective, and whether you de-risked it instead of hand-waving.",
       looksFor: "a clear target audience, a sound plan, a pilot before a full rollout",
+    },
+    {
+      key: "career",
+      weight: 10,
+      short: "Competencies",
+      title: "Career Competencies",
+      body: "The habits behind a strong answer: critical thinking, communication, decision-making and innovation. Each is scored on what you actually said, not on how confident you sounded.",
+      looksFor: "a justified decision, tradeoffs named, an idea that fits this business",
     },
     {
       key: "present",
       weight: 15,
       short: "Presentation",
-      title: "Professional Presentation",
+      title: "Presentation Technique",
       body: "How it lands as a presentation. When you speak, we measure objective delivery signals against the clock. We never judge tone, confidence, or charisma.",
       looksFor: "structure, pace, filler words, and using your time well",
     },
@@ -3910,12 +3920,12 @@ function FeedbackExplainerSection() {
   return (
     <section ref={showcaseRef}>
       <SectionHeading
-        title="Graded on the same weighted rubric a judge uses"
-        blurb="Most tools hand you a vibe. PI Coach splits your score into the three things that actually decide a role-play, weighted exactly like the real sheet, and shows its work on each. Tap a band to see the feedback it produces."
+        title="A weighted rubric modeled on how judges score"
+        blurb="Most tools hand you a vibe. PI Coach splits your score into the four things that decide a role-play: indicators, your solution, career competencies and presentation. It is modeled on DECA's four-tier sheets, not an official score, and it shows its work on each. Tap a band to see the feedback it produces."
       />
 
       {/* The weighting IS the story, so the control shows the proportion: one bar
-          split 60 / 25 / 15 that doubles as the selector. No repeated card grid,
+          split 50 / 25 / 10 / 15 that doubles as the selector. No repeated card grid,
           the segment widths carry the data. */}
       <div
         className="mt-8 flex h-16 w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800"
@@ -3970,6 +3980,9 @@ function FeedbackExplainerSection() {
         </p>
         {active === "pi" && <CriteriaTab scores={DEMO_SCORE.scores} />}
         {active === "analysis" && <AnalysisTab score={DEMO_SCORE} />}
+        {active === "career" && DEMO_SCORE.career_competencies && (
+          <CompetenciesCard section={DEMO_SCORE.career_competencies} />
+        )}
         {active === "present" && <DeliveryTab metrics={DEMO_DELIVERY} audioBlob={null} />}
       </div>
 
@@ -4735,8 +4748,9 @@ function FeedbackScreen(props: {
   // The criteria worth studying: those below proficient (fall back to all).
   const weakIds = score.scores.filter((c) => c.level === "novice" || c.level === "developing").map((c) => c.criterion_id);
   const studyIds = weakIds.length > 0 ? weakIds : score.scores.map((c) => c.criterion_id);
-  // The backend now returns the FINAL weighted percent (60% indicators + 25%
-  // analysis + 15% presentation) directly, plus each section's own percentage.
+  // The backend now returns the FINAL weighted percent (50% indicators + 25%
+  // solution/analysis + 10% career competencies + 15% presentation) directly,
+  // plus each section's own percentage.
   const pct = score.overall_percent;
   const level = score.overall_level;
   const [ownTab, setTab] = useState<FeedbackTab>("overview");
@@ -4838,8 +4852,11 @@ function FeedbackScreen(props: {
       <Strip
         cells={[
           { label: `Overall, ${levelName}`, value: `${Math.round(pct)}%`, tone: LEVEL_COLOR[level] },
-          { label: "Indicators (60%)", value: `${Math.round(score.pi_section_percent)}%` },
-          { label: "Analysis (25%)", value: `${Math.round(score.analytical?.section_percent ?? 0)}%` },
+          { label: "Indicators (50%)", value: `${Math.round(score.pi_section_percent)}%` },
+          { label: "Solution (25%)", value: `${Math.round(score.analytical?.section_percent ?? 0)}%` },
+          ...(score.career_competencies
+            ? [{ label: "Competencies (10%)", value: `${Math.round(score.career_competencies.section_percent)}%` }]
+            : []),
           { label: "Presentation (15%)", value: `${Math.round(score.presentation?.section_percent ?? 0)}%` },
           { label: "Points", value: `${score.total_points} / ${score.max_points}` },
         ]}
@@ -4883,9 +4900,10 @@ function FeedbackScreen(props: {
         </div>
 
         <p className="max-w-[78ch] border-t border-slate-200 pt-5 text-[13px] leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400">
-          Your score weights <strong className="font-semibold text-slate-700 dark:text-slate-200">performance indicators</strong> (60%),
-          your <strong className="font-semibold text-slate-700 dark:text-slate-200">analytical problem-solving</strong> (25%), and
-          your <strong className="font-semibold text-slate-700 dark:text-slate-200">presentation</strong> (15%).{" "}
+          Your score weights <strong className="font-semibold text-slate-700 dark:text-slate-200">performance indicators</strong> (50%),
+          your <strong className="font-semibold text-slate-700 dark:text-slate-200">solution and problem-solving</strong> (25%),
+          your <strong className="font-semibold text-slate-700 dark:text-slate-200">career competencies</strong> (10%), and
+          your <strong className="font-semibold text-slate-700 dark:text-slate-200">presentation technique</strong> (15%).{" "}
           {props.delivery ? (
             <>Presentation blends measured delivery, pace, fillers, pauses, timing, with how you handled the follow-up. It never judges tone, confidence, or charisma.</>
           ) : (
@@ -5184,7 +5202,7 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
       <Card>
         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
           <div>
-            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Analytical &amp; problem-solving</h3>
+            <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Solution &amp; problem-solving</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">How well you applied the skills to actually solve the scenario · 25% of the score</p>
           </div>
           <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{Math.round(a.section_percent)}%</span>
@@ -5216,6 +5234,8 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
         )}
       </Card>
 
+      {score.career_competencies && <CompetenciesCard section={score.career_competencies} />}
+
       {d && (
         <Card>
           <div className="flex items-center justify-between">
@@ -5240,6 +5260,26 @@ function AnalysisTab({ score }: { score: ScoreResponse }) {
         </Card>
       )}
     </div>
+  );
+}
+
+function CompetenciesCard({ section }: { section: CareerCompetenciesSection }) {
+  return (
+    <Card>
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 dark:border-slate-800">
+        <div>
+          <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Career competencies</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">The thinking and communication habits judges look for · 10% of the score</p>
+        </div>
+        <span className="font-mono text-sm font-semibold text-slate-500 dark:text-slate-400">{Math.round(section.section_percent)}%</span>
+      </div>
+      <div className="mt-1">
+        <AnalysisRow label="Critical thinking" blurb="Weighing the situation and testing your own reasoning" sub={section.critical_thinking} />
+        <AnalysisRow label="Communication" blurb="Clear, organized, and aimed at your judge" sub={section.communication} />
+        <AnalysisRow label="Decision-making" blurb="A clear call, justified against the alternatives" sub={section.decision_making} />
+        <AnalysisRow label="Innovation" blurb="An idea that fits this business, not generic advice" sub={section.innovation} />
+      </div>
+    </Card>
   );
 }
 

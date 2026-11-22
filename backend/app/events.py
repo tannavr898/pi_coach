@@ -35,6 +35,23 @@ def timing_for(event: dict | None) -> dict:
     return dict(_TIMING.get(event.get("kind", ""), _DEFAULT_TIMING))
 
 
+# How many performance indicators a role-play grades, by event. Mirrors the
+# 2026-27 sheets: Principles 4, Individual Series 5, Team Decision Making 5,
+# Personal Financial Literacy 3. Counts only; no DECA indicator text lives here.
+_PI_COUNT_BY_KIND = {"principles": 4, "individual": 5, "team": 5}
+_PI_COUNT_BY_EVENT = {"personal-financial-literacy": 3}
+DEFAULT_PI_COUNT = 4
+
+
+def pi_count_for(event: dict | None) -> int:
+    """How many indicators a scenario for this event assesses."""
+    if not event:
+        return DEFAULT_PI_COUNT
+    if event.get("id") in _PI_COUNT_BY_EVENT:
+        return _PI_COUNT_BY_EVENT[event["id"]]
+    return _PI_COUNT_BY_KIND.get(event.get("kind", ""), DEFAULT_PI_COUNT)
+
+
 def is_quantitative(event: dict | None) -> bool:
     """Whether this event centers on calculations we must verify deterministically."""
     return bool(event and event.get("quantitative"))

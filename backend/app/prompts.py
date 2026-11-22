@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import random
 
-from . import rubric
+from . import events, rubric
 
 # Names the model reaches for by default, banning them forces genuine variety so
 # every session doesn't feature "Crestline" run by "Dana".
@@ -227,7 +227,7 @@ def build_scenario_prompt(
     event: dict | None = None,
     params: dict[str, str] | None = None,
 ) -> tuple[str, str]:
-    """Build the (system, user) messages: select 4-6 criteria, write the scenario,
+    """Build the (system, user) messages: select the event's number of criteria, write the scenario,
     and write the one-line share-card `hook`.
 
     When `params` (a sampled taxonomy combination) is given, the scenario is pinned
@@ -254,6 +254,7 @@ def build_scenario_prompt(
                 "consistent and realistic.\n"
             )
     variety = _params_block(params) if params else _variety_block()
+    n = events.pi_count_for(event)
     user = f"""{event_line}{quant_line}{variety}REQUESTED TOPIC: {topic}
 INDUSTRY / CONTEXT: {industry_line}
 COMPLEXITY: {level}   ({guide})
@@ -261,10 +262,10 @@ COMPLEXITY: {level}   ({guide})
 CANDIDATE EVALUATION CRITERIA (choose from these ids only):
 {_format_candidates(candidates)}
 
-STEP 1, SELECT the criteria to assess. Pick a coherent set of EXACTLY 4 criteria
+STEP 1, SELECT the criteria to assess. Pick a coherent set of EXACTLY {n} criteria
 from the list above that are genuinely relevant to the topic AND can all be
 demonstrated together in one role-play. Prefer a focused, complementary set over a
-scattered one. Use ONLY ids from the list. Return exactly 4 ids, no more, no fewer.
+scattered one. Use ONLY ids from the list. Return exactly {n} ids, no more, no fewer.
 
 STEP 2, WRITE an original role-play whose task naturally gives the participant a
 reason to demonstrate EVERY criterion you selected. The participant takes a
@@ -279,7 +280,7 @@ one-line problem.
 
 Return a JSON object with EXACTLY these keys:
 {{
-  "criteria_ids": ["the EXACTLY 4 ids you selected in step 1"],
+  "criteria_ids": ["the EXACTLY {n} ids you selected in step 1"],
   "situation": "The participant-facing situation ONLY. {guide} OPEN by establishing,
      in the first sentence or two, the participant's specific role AND a one-line
      description of the company (its name and what it does) so the participant has
@@ -322,10 +323,11 @@ CRITICAL: never put judge instructions, judge characterization, or answers insid
 
 SCORING_SYSTEM = (
     "You are an experienced, fair judge and coach grading a business role-play "
-    "practice response. You grade against a weighted rubric with three sections: "
+    "practice response. You grade against a weighted rubric with four sections: "
     "(1) the participant's UNDERSTANDING and EXPLANATION of each evaluation "
-    "criterion, (2) how well they APPLY business thinking to solve the scenario, "
-    "and (3) their professional presentation.\n\n"
+    "criterion, (2) how well they APPLY business thinking to solve the scenario "
+    "(including whether the solution itself is unique, practical and effective), "
+    "(3) their career competencies, and (4) their presentation technique.\n\n"
     "GLOBAL GRADING RULES (apply to every score):\n"
     "- Default to the MIDDLE of every scale. Move up only with specific evidence; "
     "move down when evidence is missing, vague, or wrong.\n"
@@ -441,7 +443,7 @@ def build_scoring_prompt(
     delivery_score: int | None = None,
     depth_vocab: list[dict] | None = None,
 ) -> tuple[str, str]:
-    """Build the (system, user) messages for the weighted 3-section scoring."""
+    """Build the (system, user) messages for the weighted 4-section scoring."""
     fq = "\n".join(f"- {q}" for q in followup_questions) or "(none)"
     depth_block = _depth_block(depth_vocab or [])
     math_instructions = _MATH_BLOCK if quantitative else ""
@@ -520,11 +522,29 @@ using the term, the bonus is +0.0. Do not reward a term used wrongly, and never
 invent a term they did not say. +0.25 one relevant term genuinely applied · +0.5 two
 or more, or one used to real analytical effect. List the ids you credited in "terms".
 
-SECTION 3, PROFESSIONAL PRESENTATION
-Give ONE integer score 1-4 for professional presentation, using DELIVERY_METRICS
-above, conversational versus memorized delivery, and the quality of the answer to
-the judge's follow-up. Do NOT score visual cues (eye contact, posture), this is
-audio/text only. Add a one-line "notes" summary.
+SECTION 3, CAREER COMPETENCIES
+Score four competencies, each an integer 1-4, from what the participant actually
+said and did across the main response and follow-up:
+  critical_thinking: 1 asserts without reasoning · 2 some reasoning, gaps unexamined ·
+    3 weighs the situation and supports its conclusion · 4 also tests assumptions,
+    risks or alternatives.
+  communication: 1 hard to follow · 2 understandable but disorganized or vague ·
+    3 clear, organized, to the point · 4 also persuasive, tailored to the judge's role.
+  decision_making: 1 no clear decision · 2 a decision with little basis · 3 a clear
+    decision justified against the situation · 4 also names tradeoffs and why the
+    alternatives lost.
+  innovation: 1 generic, any business could say it · 2 mostly generic · 3 fits this
+    business with some original thinking · 4 a fresh, practical idea that is
+    specific to this company. Innovation is not a creativity bonus; a plain, sound
+    answer is a 2 or 3, never a 1.
+Give a one-sentence justification for each.
+
+SECTION 4, PRESENTATION TECHNIQUE
+Give ONE integer score 1-4 for presentation technique (poise, confidence,
+organization), using DELIVERY_METRICS above, conversational versus memorized
+delivery, and the quality of the answer to the judge's follow-up. Do NOT score
+visual cues (eye contact, posture), this is audio/text only. Add a one-line "notes"
+summary.
 
 Return a JSON object with EXACTLY this shape:
 {{
@@ -539,6 +559,12 @@ Return a JSON object with EXACTLY this shape:
     "pi_application": {{"score": <1-4>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
     "creativity": {{"bonus": <0.0|0.25|0.5>, "justification": "<one sentence>", "evidence": "<exact quote or null>"}},
     "depth": {{"bonus": <0.0|0.25|0.5>, "terms": ["<depth vocabulary id>"], "justification": "<one sentence>", "evidence": "<exact quote showing the term APPLIED, or null>"}}
+  }},
+  "career_competencies": {{
+    "critical_thinking": {{"score": <1-4>, "justification": "<one sentence>"}},
+    "communication": {{"score": <1-4>, "justification": "<one sentence>"}},
+    "decision_making": {{"score": <1-4>, "justification": "<one sentence>"}},
+    "innovation": {{"score": <1-4>, "justification": "<one sentence>"}}
   }},
   "presentation": {{"score": <1-4>, "notes": "<one sentence on pace/delivery/follow-up>"}},
   "final": {{

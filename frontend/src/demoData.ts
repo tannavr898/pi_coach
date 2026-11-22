@@ -122,7 +122,7 @@ You will present your recommendation to Dana, who will play the role of the owne
 export const DEMO_SCORE: ScoreResponse = {
   total_points: 37,
   max_points: 50,
-  // Final weighted score: 74% indicators × 0.60 + 92.5% analysis × 0.25 + 84% present × 0.15 = 80.1.
+  // Final weighted score: 74% indicators × 0.50 + 98.8% analysis × 0.25 + 81.3% competencies × 0.10 + 84% present × 0.15 = 82.4.
   overall_percent: 82,
   overall_level: "proficient",
   pi_section_score: 2.96,
@@ -165,6 +165,31 @@ export const DEMO_SCORE: ScoreResponse = {
     section_score: 3.95,
     section_percent: 98.8,
   },
+  career_competencies: {
+    weight: 0.1,
+    critical_thinking: {
+      score: 3,
+      justification: "Weighs the slow afternoon window against the owner's budget and backs the pilot with a reason, not a hunch.",
+      evidence: null,
+    },
+    communication: {
+      score: 4,
+      justification: "Opens with the recommendation, signposts each point, and speaks to the owner's concerns directly.",
+      evidence: null,
+    },
+    decision_making: {
+      score: 3,
+      justification: "Commits to one plan and justifies it, though it never says why a pure discount strategy lost out.",
+      evidence: null,
+    },
+    innovation: {
+      score: 3,
+      justification: "The power hour and micro-influencer shift fit this business instead of being generic advice.",
+      evidence: null,
+    },
+    section_score: 3.25,
+    section_percent: 81.3,
+  },
   presentation: {
     weight: 0.15,
     section_score: 3.36,
@@ -173,7 +198,7 @@ export const DEMO_SCORE: ScoreResponse = {
       "Steady 129 WPM with only six fillers reads as conversational, not memorized, and the follow-up answer stayed composed and specific.",
   },
   final: {
-    percent: 81.7,
+    percent: 82.4,
     top_strength:
       "A realistic, well-sequenced solution: loyalty program, targeted promo, and a pilot to prove it before rollout.",
     biggest_weakness:

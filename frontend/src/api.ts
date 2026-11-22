@@ -172,7 +172,18 @@ export type AnalyticalSection = {
   section_percent: number;
 };
 
-// --- Section 3 (Professional Presentation) ---
+// --- Section 3 (Career Competencies) ---
+export type CareerCompetenciesSection = {
+  weight: number;
+  critical_thinking: SubScore;
+  communication: SubScore;
+  decision_making: SubScore;
+  innovation: SubScore;
+  section_score: number; // 1-4, mean of the four
+  section_percent: number;
+};
+
+// --- Section 4 (Presentation Technique) ---
 export type PresentationSection = {
   weight: number;
   section_score: number; // 0-4
@@ -198,11 +209,13 @@ export type ScoreResponse = {
   improvements: string[];
   followup_feedback: string;
   math_checks: MathCheck[];
-  // 3-section weighted rubric
+  // 4-section weighted rubric
   pi_section_score: number; // 0-4
-  pi_section_percent: number; // Section 1 (60%)
+  pi_section_percent: number; // Section 1 (50%)
   analytical: AnalyticalSection | null; // Section 2 (25%)
-  presentation: PresentationSection | null; // Section 3 (15%)
+  // Absent on sessions stored before this section existed.
+  career_competencies?: CareerCompetenciesSection | null; // Section 3 (10%)
+  presentation: PresentationSection | null; // Section 4 (15%)
   final: FinalScore | null;
 };
 

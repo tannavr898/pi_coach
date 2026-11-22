@@ -106,12 +106,12 @@ def candidate_pool(domain_ids: list[str]) -> list[dict]:
 
 # Every role-play assesses exactly this many indicators (matches a real role-play
 # and keeps feedback focused).
+# The default; each event sets its own count (events.pi_count_for).
 CRITERIA_PER_SCENARIO = 4
 
 
-def resolve_selection(criteria_ids: list[str], pool: list[dict]) -> list[dict]:
-    """Turn the model's chosen ids into exactly CRITERIA_PER_SCENARIO pinned
-    framework criteria.
+def resolve_selection(criteria_ids: list[str], pool: list[dict], count: int = CRITERIA_PER_SCENARIO) -> list[dict]:
+    """Turn the model's chosen ids into exactly `count` pinned framework criteria.
 
     - Keep only ids the model was actually offered (the pool), preserving order.
     - Drop duplicates.
@@ -127,10 +127,10 @@ def resolve_selection(criteria_ids: list[str], pool: list[dict]) -> list[dict]:
             chosen.append(cid)
             seen.add(cid)
     for cid in pool_ids:  # top up if the model under-picked
-        if len(chosen) >= CRITERIA_PER_SCENARIO:
+        if len(chosen) >= count:
             break
         if cid not in seen:
             chosen.append(cid)
             seen.add(cid)
-    chosen = chosen[:CRITERIA_PER_SCENARIO]
+    chosen = chosen[:count]
     return framework.get_criteria(chosen)

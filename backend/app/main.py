@@ -68,6 +68,7 @@ from .schemas import (
     AssignmentRow,
     AssignmentStatus,
     AssignmentTarget,
+    CareerCompetenciesSection,
     ChapterCreate,
     ChapterInfo,
     ChapterJoin,
@@ -402,7 +403,9 @@ async def scenario(
         hook = ""
 
     # The criteria selected here are the EXACT criteria scoring will grade against.
-    criteria = interpret.resolve_selection([str(i) for i in data.get("criteria_ids", [])], pool)
+    criteria = interpret.resolve_selection(
+        [str(i) for i in data.get("criteria_ids", [])], pool, events.pi_count_for(event)
+    )
     if not criteria:
         raise HTTPException(status_code=502, detail="No evaluation criteria were selected for this scenario.")
 
@@ -590,6 +593,20 @@ def _build_analytical(raw: dict, response_text: str = "", depth_offered: dict[st
     )
 
 
+def _build_competencies(raw: dict, response_text: str = "") -> CareerCompetenciesSection:
+    """Section 3: four 1-4 competency scores from the model, averaged here."""
+    subs = {
+        k: _own_words(_sub_score(raw.get(k, {}) or {}), response_text)
+        for k in ("critical_thinking", "communication", "decision_making", "innovation")
+    }
+    mean = sum(s.score for s in subs.values()) / len(subs)
+    return CareerCompetenciesSection(
+        **subs,
+        section_score=round(mean, 3),
+        section_percent=round(mean / 4 * 100, 1),
+    )
+
+
 def _build_presentation(raw: dict, spoken: bool, delivery_score: int | None) -> PresentationSection:
     """Section 3: the model's 1-4 read of presentation, blended with the objective
     delivery score when the run was spoken (60% metric / 40% model read). Typed
@@ -615,7 +632,8 @@ def _build_presentation(raw: dict, spoken: bool, delivery_score: int | None) -> 
 @app.post("/api/score-content", response_model=ScoreResponse, dependencies=[Depends(rate_limit_completion), Depends(daily_cap_completion)])
 def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreResponse:
     """Grade a response against the selected framework criteria using the weighted
-    three-section rubric (60% performance indicators, 25% analytical, 15% presentation)."""
+    four-section rubric (50% performance indicators, 25% analytical, 10% career
+    competencies, 15% presentation)."""
     # Resolve criteria from our framework, never trust the client for their text.
     criteria = framework.get_criteria(req.criteria_ids)
     if not criteria:
@@ -654,7 +672,7 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
             ),
         )
 
-    # --- Section 1: Performance Indicators (60%) ---
+    # --- Section 1: Performance Indicators (50%) ---
     entries = {str(e.get("criterion_id", "")): e for e in data.get("performance_indicators", [])}
     scores = [_score_one(c, entries.get(c["id"], {})) for c in criteria]
     total = sum(s.points for s in scores)
@@ -667,12 +685,19 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
     said = f"{req.response}\n{req.followup_answer}"
     analytical = _build_analytical(data.get("analytical", {}) or {}, said, {t["id"]: t for t in depth_vocab})
 
-    # --- Section 3: Professional Presentation (15%) ---
+    # --- Section 3: Career Competencies (10%) ---
+    competencies = _build_competencies(data.get("career_competencies", {}) or {}, said)
+
+    # --- Section 4: Presentation Technique (15%) ---
     presentation = _build_presentation(data.get("presentation", {}) or {}, req.spoken, req.delivery_score)
 
     # --- Final weighted roll-up (deterministic; the model never does the math) ---
     final_percent = round(
-        pi_percent * 0.60 + analytical.section_percent * 0.25 + presentation.section_percent * 0.15, 1
+        pi_percent * 0.50
+        + analytical.section_percent * 0.25
+        + competencies.section_percent * 0.10
+        + presentation.section_percent * 0.15,
+        1,
     )
     fraw = data.get("final", {}) or {}
     final = FinalScore(
@@ -702,6 +727,7 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
         pi_section_score=round(pi_percent / 25, 3),
         pi_section_percent=round(pi_percent, 1),
         analytical=analytical,
+        career_competencies=competencies,
         presentation=presentation,
         final=final,
     )
