@@ -144,6 +144,7 @@ async def lookup(
     user_id: str | None,
     want_context: str,
     strict_context: bool,
+    want_criteria: int | None = None,
 ) -> dict | None:
     """Find a servable cached scenario, or None to fall through to generation.
 
@@ -179,6 +180,20 @@ async def lookup(
         if not available:
             _STATS["misses"] += 1
             return None
+
+        if want_criteria is not None:
+            # Indicator counts differ by event now (3, 4 or 5). Scenarios pooled
+            # before that carry the old count, so skip them rather than serve a
+            # role-play graded on the wrong number of indicators.
+            def _count_ok(r: dict) -> bool:
+                sj = r.get("scenario_json")
+                crit = sj.get("criteria") if isinstance(sj, dict) else None
+                return isinstance(crit, list) and len(crit) == want_criteria
+
+            available = [r for r in available if _count_ok(r)]
+            if not available:
+                _STATS["misses"] += 1
+                return None
 
         if strict_context:
             available = [r for r in available if r.get("industry_hint") == want_context]

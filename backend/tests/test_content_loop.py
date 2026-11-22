@@ -322,3 +322,31 @@ def test_pi_count_per_event():
     assert events.pi_count_for(events.get_event("food-marketing")) == 5
     assert events.pi_count_for(events.get_event("marketing-management-team")) == 5
     assert events.pi_count_for(events.get_event("personal-financial-literacy")) == 3
+
+
+def test_cache_lookup_skips_wrong_indicator_count(monkeypatch):
+    """Pooled scenarios from before per-event indicator counts must not be served
+    to an event that now grades a different number."""
+    import asyncio
+    from app import scenario_cache, db
+
+    rows = [
+        {"id": "old", "industry_hint": "", "scenario_json": {"situation": "s", "criteria": [{}] * 4}},
+        {"id": "new", "industry_hint": "", "scenario_json": {"situation": "s", "criteria": [{}] * 3}},
+    ]
+
+    async def fake_list(key, limit=0):
+        return list(rows)
+
+    monkeypatch.setattr(scenario_cache, "enabled", lambda: True)
+    monkeypatch.setattr(db, "list_cached_scenarios", fake_list)
+
+    def run(n):
+        return asyncio.run(scenario_cache.lookup(
+            cache_key="k", seen_ids=[], user_id=None, want_context="",
+            strict_context=False, want_criteria=n,
+        ))
+
+    assert run(3)["id"] == "new"
+    assert run(4)["id"] == "old"
+    assert run(5) is None

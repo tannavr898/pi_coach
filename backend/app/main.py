@@ -348,6 +348,7 @@ async def scenario(
         user_id=uid,
         want_context=context,
         strict_context=focused,
+        want_criteria=events.pi_count_for(event),
     )
     if hit is not None:
         # Bookkeeping (serve counter + this user's seen list) happens after the
