@@ -36,6 +36,7 @@ import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
 import { useVisited, type Surface } from "./visited";
 import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
+import { buildDemo, DemoControls, FRAME_WIDTH, loadDemoConfig, Overview, saveDemoConfig } from "./admindash";
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
@@ -196,7 +197,7 @@ function clearChallengeParam() {
 
 // A deck handed over from a public /flashcards/<event> page, so "open this in the
 // app" lands in the interactive library already scoped to that event rather than a
-// generic 830-card list. Validated against the id shape rather than trusted: it
+// generic 989-card list. Validated against the id shape rather than trusted: it
 // reaches the API as a path segment.
 function readDeckParam(): string | null {
   try {
@@ -1867,11 +1868,14 @@ function DemoRibbon({ onExit }: { onExit: () => void }) {
   );
 }
 
-// --- admin QA page (/admin) ------------------------------------------------
-// Owner-only, gated by a secret passphrase verified server-side. Two jobs:
-//  1. Mock previews of the new surfaces (no data, no tokens).
-//  2. Seed/clear CANNED sample sessions in the logged-in account (no LLM tokens)
-//     so the REAL home page + progress graphs can be eyeballed with data.
+// --- owner dashboard (/admin) ----------------------------------------------
+// Owner-only, gated by a secret passphrase verified server-side. Four tabs:
+//  1. Overview: every counter as a daily time graph, spikes marked (admindash.tsx).
+//  2. Demo studio: the real screens with canned, customizable content, for
+//     screenshots and recordings. No API calls, no tokens.
+//  3. Chapters: approve or reject newly registered schools.
+//  4. Sandbox: seed/clear CANNED sample sessions in the logged-in account (no LLM
+//     tokens) so the REAL home page + progress graphs can be eyeballed with data.
 export function AdminApp() {
   const { theme, toggleTheme } = useTheme();
   const { user, ready } = useAuth();
@@ -1882,7 +1886,16 @@ export function AdminApp() {
   const [pass, setPass] = useState("");
   const [gateErr, setGateErr] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  const [tab, setTab] = useState<"live" | "feedback" | "beforeafter" | "onboarding" | "chapters">("live");
+  const [tab, setTab] = useState<"overview" | "studio" | "chapters" | "sandbox">("overview");
+  const [demo, setDemo] = useState(loadDemoConfig);
+  const [presenting, setPresenting] = useState(false);
+  useEffect(() => { saveDemoConfig(demo); }, [demo]);
+  useEffect(() => {
+    if (!presenting) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPresenting(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [presenting]);
   const [flashOpen, setFlashOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [busy, setBusy] = useState<"" | "seed" | "clear">("");
@@ -1926,7 +1939,7 @@ export function AdminApp() {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
         <form onSubmit={unlock} className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-500">Admin QA</div>
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-indigo-500">Owner dashboard</div>
           <h1 className="mt-2 font-display text-xl font-semibold text-slate-900 dark:text-slate-100">Enter the passphrase</h1>
           <input
             type="password"
@@ -1949,20 +1962,21 @@ export function AdminApp() {
   const noop = () => {};
   const before: RunSnapshot = { percent: 61, criteriaHit: 1, criteriaTotal: 4, fillerPerMin: 9.0, wpm: 108 };
   const tabs: { key: typeof tab; label: string }[] = [
-    { key: "live", label: "Live data (graphs)" },
-    { key: "feedback", label: "Feedback screen" },
-    { key: "beforeafter", label: "Before / after" },
-    { key: "onboarding", label: "Onboarding" },
+    { key: "overview", label: "Overview" },
+    { key: "studio", label: "Demo studio" },
     { key: "chapters", label: "Chapter review" },
+    { key: "sandbox", label: "Sandbox data" },
   ];
+  const d = buildDemo(demo);
+  const adminPass = (() => { try { return sessionStorage.getItem("pic-admin-pass") ?? ""; } catch { return ""; } })();
 
   return (
     <div className="flex min-h-dvh flex-col">
       <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
           <p className="text-sm text-amber-900 dark:text-amber-200">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-600">Admin QA</span>
-            <span className="ml-2">Owner-only preview. Sample data is fake and clearable.</span>
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-600">Owner</span>
+            <span className="ml-2">Private dashboard. Demo and sandbox data is fake and clearable.</span>
           </p>
           <div className="flex items-center gap-3">
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
@@ -1972,7 +1986,7 @@ export function AdminApp() {
       </div>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-20 pt-6">
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className={`mb-5 flex flex-wrap gap-2 ${presenting && tab === "studio" ? "hidden" : ""}`}>
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -1984,22 +1998,54 @@ export function AdminApp() {
               {t.label}
             </button>
           ))}
-          <button
-            onClick={() => setFlashOpen(true)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-          >
-            Flashcards ↗
-          </button>
         </div>
 
-        {tab === "live" && (
+        {tab === "overview" && (adminPass ? <Overview pass={adminPass} onGoChapters={() => setTab("chapters")} /> : <p className="text-sm text-amber-700 dark:text-amber-300">Re-enter the passphrase (reload and unlock) to load the dashboard.</p>)}
+
+        {tab === "studio" && (
+          <div className={presenting ? "" : "grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]"}>
+            {!presenting && <DemoControls cfg={demo} onChange={setDemo} onPresent={() => setPresenting(true)} />}
+            <div className="min-w-0">
+              {presenting && (
+                <div className="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                  <span>Presenting. Press Escape to bring the controls back.</span>
+                  <button onClick={() => setPresenting(false)} className="font-semibold text-indigo-600 dark:text-indigo-300">Show controls</button>
+                </div>
+              )}
+              <div className="mx-auto w-full" style={{ maxWidth: FRAME_WIDTH[demo.frame] }}>
+                {demo.screen === "feedback" && (
+                  <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
+                    utterances={[]} audioBlob={null} onRestart={noop} onStudyCriteria={(ids) => { void ids; setFlashOpen(true); }} />
+                )}
+                {demo.screen === "beforeafter" && (
+                  <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
+                    utterances={[]} audioBlob={null} onRestart={noop} onTryAgain={noop} priorSnapshot={before} />
+                )}
+                {demo.screen === "scenario" && <ReadyScreen scenario={d.scenario} onStart={noop} />}
+                {demo.screen === "onboarding" && <PreSessionScreen canRecord={CAN_RECORD} onStart={noop} onSkip={noop} />}
+                {demo.screen === "flashcards" && (
+                  <Card>
+                    <Eyebrow>Flashcards</Eyebrow>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">The deck opens over the page, the way it does for a student.</p>
+                    <button className={`mt-4 ${BTN_PRIMARY}`} onClick={() => setFlashOpen(true)}>Open flashcards</button>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "chapters" && <AdminChapters />}
+
+        {tab === "sandbox" && (
           <div className="mx-auto max-w-2xl space-y-4">
             <Card>
               <Eyebrow>Live data. Your account</Eyebrow>
               <h2 className="mt-2 font-display text-lg font-semibold text-slate-900 dark:text-slate-100">Seed sample sessions, then view the real Home</h2>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
                 This writes 6 backdated, canned sessions into your account (no LLM tokens) so the real delivery trend,
-                weakest-criterion nudge, and recent list render with data. Clear them any time.
+                weakest-criterion nudge, and recent list render with data. Clear them any time. They are tagged, so the
+                Overview graphs ignore them.
               </p>
               {!ready ? (
                 <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">Supabase isn't configured on this server.</p>
@@ -2025,41 +2071,6 @@ export function AdminApp() {
             </Card>
           </div>
         )}
-
-        {tab === "feedback" && (
-          <FeedbackScreen
-            scenario={DEMO_SCENARIO}
-            score={DEMO_SCORE}
-            response={DEMO_RESPONSE}
-            followupAnswer={DEMO_FOLLOWUP}
-            delivery={DEMO_DELIVERY}
-            utterances={[]}
-            audioBlob={null}
-            onRestart={noop}
-            onStudyCriteria={(ids) => { void ids; setFlashOpen(true); }}
-          />
-        )}
-
-        {tab === "beforeafter" && (
-          <FeedbackScreen
-            scenario={DEMO_SCENARIO}
-            score={DEMO_SCORE}
-            response={DEMO_RESPONSE}
-            followupAnswer={DEMO_FOLLOWUP}
-            delivery={DEMO_DELIVERY}
-            utterances={[]}
-            audioBlob={null}
-            onRestart={noop}
-            onTryAgain={noop}
-            priorSnapshot={before}
-          />
-        )}
-
-        {tab === "onboarding" && (
-          <PreSessionScreen canRecord={CAN_RECORD} onStart={noop} onSkip={noop} />
-        )}
-
-        {tab === "chapters" && <AdminChapters />}
       </main>
 
       {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} flags={flags} title="Flashcards preview" onClose={() => setFlashOpen(false)} />}
@@ -3734,7 +3745,7 @@ const STAT_LABEL: Record<PublicStatKey, string> = {
 
 function HeroFacts({ stats }: { stats: PublicStats | null }) {
   const live = stats ? stats.visible.map((k) => ({ n: stats[k], label: STAT_LABEL[k] })) : [];
-  const facts = [...live, { n: 28, label: "DECA events covered" }, { n: 830, label: "Study flashcards" }, { n: 1487, label: "Quiz questions" }, { n: 282, label: "Skills we can grade" }].slice(0, 4);
+  const facts = [...live, { n: 28, label: "DECA events covered" }, { n: 989, label: "Study flashcards" }, { n: 1487, label: "Quiz questions" }, { n: 282, label: "Skills we can grade" }].slice(0, 4);
   return (
     <dl className="mx-auto mt-14 grid max-w-5xl grid-cols-2 border-y border-slate-200 text-left dark:border-slate-800 sm:mt-20 sm:grid-cols-4">
       {facts.map((f, i) => (
@@ -3828,7 +3839,7 @@ function FeatureGrid() {
         <div className={`${cell} lg:col-span-2`}>
           <div>
             <h3 className={h}>The vocabulary, tracked</h3>
-            <p className={p}>830 flashcards, quizzes and a timed Blitz, with a dated study plan for your event.</p>
+            <p className={p}>989 flashcards, quizzes and a timed Blitz, with a dated study plan for your event.</p>
           </div>
           <div className="mt-auto space-y-2">
             {terms.map(([name, lv]) => (

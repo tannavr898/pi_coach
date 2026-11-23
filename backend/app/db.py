@@ -399,6 +399,28 @@ async def get_stats() -> dict[str, int]:
     return {r["kind"]: int(r["count"]) for r in resp.json()}
 
 
+async def list_stat_daily(since_day: str) -> list[dict]:
+    """Per-day counter rows from `since_day` (YYYY-MM-DD) on, for the owner dashboard."""
+    return await _get_all("stat_daily", {"day": f"gte.{since_day}", "select": "day,kind,count", "order": "day.asc"})
+
+
+async def list_auth_users() -> list[dict]:
+    """Every account's id and timestamps, from Supabase Auth's admin API. Never the
+    email: the dashboard only needs to count people, not name them."""
+    out: list[dict] = []
+    async with conn() as client:
+        for page in range(1, 51):
+            resp = await client.get(f"{config.SUPABASE_URL}/auth/v1/admin/users", headers=_headers(),
+                                    params={"page": str(page), "per_page": "1000"})
+            resp.raise_for_status()
+            users = resp.json().get("users") or []
+            out.extend({"id": u.get("id"), "created_at": u.get("created_at"), "last_sign_in_at": u.get("last_sign_in_at")}
+                       for u in users)
+            if len(users) < 1000:
+                break
+    return out
+
+
 # --- usage counters (tier caps) --------------------------------------------
 # Enforcement is server-side and ATOMIC: the cap check lives inside the SQL
 # statement that does the increment (see supabase/schema.sql), because a
@@ -477,6 +499,22 @@ async def _get(table: str, params: dict, timeout: float = 15.0) -> list[dict]:
         resp = await client.get(f"{_base()}/{table}", headers=_headers(), params=params)
     resp.raise_for_status()
     return resp.json()
+
+
+async def _get_all(table: str, params: dict, page: int = 1000, max_rows: int = 50000) -> list[dict]:
+    """Every matching row, fetched in pages: PostgREST caps one response (1000 rows
+    by default), and the dashboard's windows can be bigger than that."""
+    out: list[dict] = []
+    async with conn() as client:
+        while len(out) < max_rows:
+            resp = await client.get(f"{_base()}/{table}", headers=_headers(),
+                                    params={**params, "limit": str(page), "offset": str(len(out))})
+            resp.raise_for_status()
+            rows = resp.json()
+            out.extend(rows)
+            if len(rows) < page:
+                break
+    return out
 
 
 async def _insert(table: str, row: dict) -> dict:

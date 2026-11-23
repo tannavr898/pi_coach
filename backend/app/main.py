@@ -56,7 +56,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPE
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_samples, blitz, chapters, config, courses, db, delivery, diagnostic, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
+from . import admin_metrics, admin_samples, blitz, chapters, config, courses, db, delivery, diagnostic, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
@@ -645,7 +645,10 @@ def score_content(req: ScoreRequest, background: BackgroundTasks) -> ScoreRespon
 
     # Related study terms this role-play does NOT grade, offered so that reaching
     # beyond the criteria can be credited (Section 2 depth bonus, bonus-only).
-    depth_vocab = terms.depth_vocab_for(criteria)
+    depth_vocab = terms.depth_vocab_for(
+        criteria,
+        prefer_topics=events.preferred_topics_for(events.get_event(req.event) if req.event else None),
+    )
 
     system, user = prompts.build_scoring_prompt(
         req.scenario, criteria, req.response, req.followup_questions, req.followup_answer,
@@ -2299,6 +2302,18 @@ async def admin_set_chapter_status(chapter_id: str, req: AdminChapterStatus) -> 
     if not ch:
         raise HTTPException(status_code=404, detail="Chapter not found.")
     return {"status": ch["status"]}
+
+
+@app.get("/api/admin/overview", dependencies=[Depends(require_admin)])
+async def admin_overview(days: int = Query(default=30, ge=1, le=365), fresh: bool = False) -> dict:
+    """The owner dashboard: every counter as a daily series, plus headline totals.
+    Counts only, no emails or content. 503 when accounts aren't configured."""
+    if not config.has_supabase():
+        raise HTTPException(status_code=503, detail="Supabase isn't configured on this server, so there is nothing to chart.")
+    try:
+        return await admin_metrics.overview(days, fresh=fresh)
+    except httpx.HTTPError as exc:
+        raise _db_error("load the dashboard")(exc) from exc
 
 
 @app.get("/api/admin/cache-stats")

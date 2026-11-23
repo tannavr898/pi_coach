@@ -394,10 +394,25 @@ create table if not exists public.app_stat (
 
 alter table public.app_stat enable row level security;
 
+-- The same counters, one row per UTC day, so the owner dashboard (/admin) can
+-- graph them over time and see when something spiked. Counts only, like app_stat.
+-- Days before this table existed are backfilled by the dashboard from the tables
+-- that already carry timestamps (sessions, activity_event, cached_scenario).
+create table if not exists public.stat_daily (
+  day    date   not null,
+  kind   text   not null,
+  count  bigint not null default 0,
+  primary key (day, kind)
+);
+
+alter table public.stat_daily enable row level security;
+
 create or replace function public.bump_stat(p_kind text)
 returns void language sql as $$
   insert into public.app_stat (kind, count, updated_at) values (p_kind, 1, now())
   on conflict (kind) do update set count = public.app_stat.count + 1, updated_at = now();
+  insert into public.stat_daily (day, kind, count) values ((now() at time zone 'utc')::date, p_kind, 1)
+  on conflict (day, kind) do update set count = public.stat_daily.count + 1;
 $$;
 
 revoke execute on function public.bump_stat(text) from public, anon, authenticated;

@@ -742,6 +742,41 @@ async function adminFetch<T>(path: string, passphrase: string, init?: RequestIni
   return res.json() as Promise<T>;
 }
 
+// The owner dashboard: every counter as a daily series (backend/app/admin_metrics.py).
+export type AdminSeries = {
+  label: string;
+  kind: "sum" | "avg";
+  values: (number | null)[];
+  total: number | null;
+  prev_total: number | null;
+  peak: { day: string; n: number } | null;
+  spikes: number[];
+};
+
+export type AdminOverview = {
+  days: number;
+  axis: string[];
+  series: Record<string, AdminSeries>;
+  cumulative_users: number[];
+  totals: {
+    users: number | null;
+    ever_active: number;
+    wau: number;
+    mau: number;
+    pending_chapters: number;
+    counter_since: string | null;
+    lifetime_counted: Record<string, number>;
+  };
+  top_events: { event: string; n: number }[];
+  cache: { hits?: number; misses?: number; enabled?: boolean; [k: string]: unknown } | null;
+  notes: string[];
+  generated_at: string;
+};
+
+export function adminOverview(passphrase: string, days: number, fresh = false): Promise<AdminOverview> {
+  return adminFetch<AdminOverview>(`/api/admin/overview?days=${days}${fresh ? "&fresh=true" : ""}`, passphrase);
+}
+
 export function adminListChapters(passphrase: string, status: "pending" | "active" | "rejected"): Promise<AdminChapter[]> {
   return adminFetch<AdminChapter[]>(`/api/admin/chapters?status=${status}`, passphrase);
 }
