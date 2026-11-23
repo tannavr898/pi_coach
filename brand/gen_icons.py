@@ -119,7 +119,7 @@ def _og_card() -> Image.Image:
     d.text((88, 386), "out loud.", font=head, fill=INDIGO_PALE[:3])
     d.text(
         (88, 494),
-        "Original scenarios, per-criterion feedback, 830 study flashcards.",
+        "Original scenarios, per-criterion feedback, 989 study flashcards.",
         font=body,
         fill=(214, 220, 252),
     )

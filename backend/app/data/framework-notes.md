@@ -114,7 +114,7 @@ scoring.
 
 - **The framework stays at 282.** Scenario selection draws 4-6 from it and mastery
   math is tuned around it; none of that changed.
-- **The corpus is 830 terms**, the 282 graded ones plus 548 study-only terms, each
+- **The corpus is 989 terms**, the 282 graded ones plus 707 study-only terms, each
   with a plain definition, a worked example through the four beats, and one common
   mistake.
 - **`criterion_id`** links a term to its criterion when it has one. `tier` is
@@ -278,7 +278,7 @@ It also detects near-duplicates inside our own corpus and reports per-topic
 concentration (the automated look at grain drift). The report contains PI text, so it
 is written into `backend/reference/`, already git-ignored and docker-ignored.
 
-**Result at 830 terms, audited against 1,806 performance indicators:**
+**Result at 830 terms, audited against 1,806 performance indicators** (re-run at 989 terms after adding 159 named-concept terms: still 0 FAIL, the same single reviewed item, 0 near-duplicates, 0 grain-drift topics, worst run = 4):
 
 | | |
 |---|---|

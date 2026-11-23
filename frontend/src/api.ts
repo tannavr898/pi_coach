@@ -350,7 +350,7 @@ async function request<T>(
 
 /**
  * Reference data that is identical for every visitor and only changes when we
- * deploy: the event catalog, the domain list, and the 830-term study corpus.
+ * deploy: the event catalog, the domain list, and the 989-term study corpus.
  *
  * Nothing used to hold on to these, so every tab switch paid for them again and
  * the Study tab opened with a visible pause. What is cached here is the PROMISE,

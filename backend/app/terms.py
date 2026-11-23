@@ -24,11 +24,15 @@ from __future__ import annotations
 
 import json
 from functools import lru_cache
+from itertools import zip_longest
 from pathlib import Path
 
 _TERMS_PATH = Path(__file__).parent / "data" / "terms.json"
 
 BEATS = ("define", "explain", "connect", "above")
+
+# How many of the depth vocabulary's slots an event's preferred topics may claim.
+_PREFER_SLOTS = 8
 
 
 @lru_cache(maxsize=1)
@@ -86,7 +90,11 @@ def terms_for_topics(topics_wanted: list[tuple[str, str]]) -> list[dict]:
     return [t for t in all_terms() if (t["domain_id"], t["topic"]) in wanted]
 
 
-def depth_vocab_for(criteria: list[dict], limit: int = 16) -> list[dict]:
+def depth_vocab_for(
+    criteria: list[dict],
+    limit: int = 16,
+    prefer_topics: list[tuple[str, str]] | None = None,
+) -> list[dict]:
     """Terms related to the criteria being graded, the pool a competitor can earn
     Section 2's depth bonus from by bringing one in and actually applying it.
 
@@ -105,6 +113,11 @@ def depth_vocab_for(criteria: list[dict], limit: int = 16) -> list[dict]:
     Study-only terms sort first within each ring: they're what the course teaches
     beyond what we grade, which is the reach this bonus exists to reward.
 
+    `prefer_topics` pulls a few named topics in AHEAD of both rings, up to
+    _PREFER_SLOTS of the limit. It exists because some events (Personal Financial
+    Literacy above all) live in vocabulary that no graded criterion sits in, so the
+    rings alone would never offer it and the bonus could never reward it.
+
     Bounded by `limit` because it rides along in every scoring prompt.
     """
     graded = {c["id"] for c in criteria}
@@ -117,10 +130,22 @@ def depth_vocab_for(criteria: list[dict], limit: int = 16) -> list[dict]:
     # Stable sort: study-only first, file order (domain -> topic) preserved within.
     by_tier = lambda t: 0 if t["tier"] == "extended" else 1  # noqa: E731
 
+    # Round-robin across the preferred topics, not file order: taken in order, the
+    # first two topics would claim every slot and retirement, insurance and
+    # paychecks would never be offered.
+    lanes = [
+        [t for t in terms_for_topics([pt]) if usable(t) and t["tier"] == "extended"]
+        for pt in (prefer_topics or [])
+    ]
+    preferred = [
+        t for row in zip_longest(*lanes) for t in row if t is not None
+    ][:_PREFER_SLOTS]
+    taken = {t["id"] for t in preferred}
     near = sorted([t for t in terms_for_topics(list(topics)) if usable(t)], key=by_tier)
     wider = sorted(
         [t for t in terms_for_domains(domain_ids)
          if usable(t) and (t["domain_id"], t["topic"]) not in topics],
         key=by_tier,
     )
-    return (near + wider)[:limit]
+    rest = [t for t in near + wider if t["id"] not in taken]
+    return (preferred + rest)[:limit]

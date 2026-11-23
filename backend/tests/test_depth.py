@@ -200,3 +200,31 @@ def test_analytical_quote_they_never_said_is_dropped_but_the_score_stands():
     a = _build_analytical(raw, "First, the competition. We compete on meaning.")
     assert a.framing.evidence == "we compete on meaning"
     assert a.solution_quality.evidence is None and a.solution_quality.score == 3
+
+
+def test_event_preferred_topics_lead_the_depth_vocabulary():
+    """Personal Financial Literacy's vocabulary lives in topics no graded criterion
+    sits in, so without a preference the bonus could never offer it."""
+    from app import events, framework
+
+    crit = [c for c in framework.all_criteria() if c["domain_id"] == "financial_analysis"][:4]
+    pfl = events.preferred_topics_for(events.get_event("personal-financial-literacy"))
+    assert pfl, "PFL should prefer its personal finance topics"
+    plain = terms.depth_vocab_for(crit, limit=16)
+    led = terms.depth_vocab_for(crit, limit=16, prefer_topics=pfl)
+    wanted = set(pfl)
+    assert not any((t["domain_id"], t["topic"]) in wanted for t in plain)
+    assert sum((t["domain_id"], t["topic"]) in wanted for t in led) >= 5
+    assert len(led) == 16 and len({t["id"] for t in led}) == 16  # no duplicates, still bounded
+    assert all(t["tier"] == "extended" for t in led[:5])  # study-only, never a graded term
+    assert events.preferred_topics_for(events.get_event("food-marketing")) == []
+
+
+def test_preferred_topics_share_the_slots_instead_of_the_first_topic_taking_all():
+    from app import events, framework
+
+    crit = [c for c in framework.all_criteria() if c["domain_id"] == "financial_analysis"][:4]
+    pfl = events.preferred_topics_for(events.get_event("personal-financial-literacy"))
+    led = terms.depth_vocab_for(crit, limit=16, prefer_topics=pfl)
+    topics_offered = {t["topic"] for t in led if (t["domain_id"], t["topic"]) in set(pfl)}
+    assert len(topics_offered) >= 5, topics_offered

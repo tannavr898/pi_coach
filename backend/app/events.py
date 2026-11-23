@@ -52,6 +52,36 @@ def pi_count_for(event: dict | None) -> int:
     return _PI_COUNT_BY_KIND.get(event.get("kind", ""), DEFAULT_PI_COUNT)
 
 
+# Study topics an event lives in even though no graded criterion does. The depth
+# bonus offers these first, so the vocabulary a competitor studied for the event
+# is the vocabulary they can be credited for using.
+_FINANCE_TOPICS = [
+    ("financial_analysis", "Liquidity and Leverage Ratios"),
+    ("financial_analysis", "Profitability and Efficiency Ratios"),
+    ("financial_analysis", "Investment Appraisal"),
+    ("financial_analysis", "Accounting Fundamentals"),
+]
+_PERSONAL_FINANCE_TOPICS = [
+    ("financial_analysis", "Borrowing and Credit"),
+    ("financial_analysis", "Saving Money"),
+    ("financial_analysis", "Investing for the Future"),
+    ("financial_analysis", "Insurance and Protection"),
+    ("financial_analysis", "Paychecks and Budgeting"),
+]
+_PREFERRED_TOPICS_BY_EVENT = {
+    "personal-financial-literacy": _PERSONAL_FINANCE_TOPICS,
+    "principles-finance": _FINANCE_TOPICS,
+    "accounting-applications": _FINANCE_TOPICS,
+    "business-finance": _FINANCE_TOPICS,
+    "financial-services-team": _FINANCE_TOPICS,
+}
+
+
+def preferred_topics_for(event: dict | None) -> list[tuple[str, str]]:
+    """(domain_id, topic) pairs this event's depth vocabulary should lead with."""
+    return list(_PREFERRED_TOPICS_BY_EVENT.get((event or {}).get("id", ""), []))
+
+
 def is_quantitative(event: dict | None) -> bool:
     """Whether this event centers on calculations we must verify deterministically."""
     return bool(event and event.get("quantitative"))

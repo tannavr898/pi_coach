@@ -407,7 +407,7 @@ def cmd_gen(args) -> int:
                 if level == "icdc" and len(batch_cards) < 2:
                     print(f"  - skipped {domain_id}/{topic} w{window} [icdc]: too few cards")
                     continue
-                todo.append((domain_id, topic, batch_cards, level))
+                todo.append((domain_id, topic, batch_cards, level, window))
     if args.limit:
         todo = todo[: args.limit]
 
@@ -422,12 +422,16 @@ def cmd_gen(args) -> int:
     added = failed = dupes = 0
     done = 0
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(_gen_batch, d, tp, cs, lv, args.count): (d, tp, lv)
-                   for d, tp, cs, lv in todo}
+        futures = {pool.submit(_gen_batch, d, tp, cs, lv, args.count): (d, tp, lv, w)
+                   for d, tp, cs, lv, w in todo}
         for fut in as_completed(futures):
-            d, tp, lv = futures[fut]
+            d, tp, lv, w = futures[fut]
             try:
                 for row in fut.result():
+                    # Stamp the WINDOW's key. _gen_batch only knows the topic, so
+                    # without this every window of a long topic claimed window 0's
+                    # key, and a re-run could not tell which windows were done.
+                    row["batch"] = _batch_key(d, tp, lv, w)
                     if _is_dupe(row["question"], seen_stems):
                         dupes += 1
                         continue

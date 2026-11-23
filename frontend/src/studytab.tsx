@@ -1,7 +1,7 @@
 // The Study tab: one place to study, with two ways in.
 //
 // This used to be three nav items doing one job. "Study" was the event course,
-// "Library" was the 830-card browser, and "Flashcards" pointed at the public
+// "Library" was the 989-card browser, and "Flashcards" pointed at the public
 // server-rendered deck pages, which are an SEO surface rather than a tool. A
 // student reading the nav had no way to tell which of the three they wanted, and
 // the honest answer was that they wanted whichever one happened to hold the cards

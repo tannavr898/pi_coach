@@ -297,7 +297,7 @@ export function FlashcardLibrary({
   const [flaggedOnly, setFlaggedOnly] = useState(false);
 
   // The deck filter: which event's terms the library is scoped to. "" is the whole
-  // 830-term corpus. A competitor studies for ONE event, and 830 cards grouped by
+  // 989-term corpus. A competitor studies for ONE event, and 989 cards grouped by
   // all 13 domains buries the ~250 that are actually theirs. Remembered locally so
   // it survives a reload and does not need an account; the event catalog is public
   // either way.
