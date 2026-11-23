@@ -3745,7 +3745,7 @@ const STAT_LABEL: Record<PublicStatKey, string> = {
 
 function HeroFacts({ stats }: { stats: PublicStats | null }) {
   const live = stats ? stats.visible.map((k) => ({ n: stats[k], label: STAT_LABEL[k] })) : [];
-  const facts = [...live, { n: 28, label: "DECA events covered" }, { n: 989, label: "Study flashcards" }, { n: 1487, label: "Quiz questions" }, { n: 282, label: "Skills we can grade" }].slice(0, 4);
+  const facts = [...live, { n: 28, label: "DECA events covered" }, { n: 989, label: "Study flashcards" }, { n: 2068, label: "Quiz questions" }, { n: 282, label: "Skills we can grade" }].slice(0, 4);
   return (
     <dl className="mx-auto mt-14 grid max-w-5xl grid-cols-2 border-y border-slate-200 text-left dark:border-slate-800 sm:mt-20 sm:grid-cols-4">
       {facts.map((f, i) => (
