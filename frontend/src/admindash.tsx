@@ -560,6 +560,43 @@ function loadPresets(): Record<string, DemoConfig> {
 
 export const FRAME_WIDTH: Record<DemoFrame, string | undefined> = { full: undefined, tablet: "768px", phone: "390px" };
 
+// The app in an iframe at a real device width, so its own breakpoints pick the
+// layout exactly as they would on that device. Desktop is laid out at 1024 to
+// 1440px wide and scaled down to fit the pane, so it never collapses to the phone
+// layout just because the studio's preview pane is narrow. `fill` takes the whole
+// screen (demo mode), where a wide enough window shows the app at full size.
+export function PreviewFrame({ frame, fill }: { frame: DemoFrame; fill: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ w: 800, h: 600 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fill]);
+  const logical = frame === "full" ? Math.max(1024, Math.min(box.w, 1440)) : parseInt(FRAME_WIDTH[frame] ?? "1024", 10);
+  const scale = Math.min(1, box.w / logical);
+  return (
+    <div
+      ref={ref}
+      className={fill ? "fixed inset-0 z-30 overflow-hidden bg-slate-200 dark:bg-slate-950" : "min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-200/60 dark:border-slate-800 dark:bg-slate-950"}
+      style={fill ? undefined : { height: "calc(100dvh - 8rem)", minHeight: 560 }}
+    >
+      <div className="mx-auto" style={{ width: logical * scale, height: box.h }}>
+        <iframe
+          title="Demo preview"
+          src="/admin?preview=1"
+          className="border-0 bg-transparent"
+          style={{ width: logical, height: box.h / scale, transform: `scale(${scale})`, transformOrigin: "top left" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 const SCREENS: { key: DemoScreen; label: string; note: string }[] = [
   { key: "feedback", label: "Feedback", note: "The graded result: score, criteria, transcript, delivery." },
   { key: "beforeafter", label: "Before and after", note: "The retry view that shows improvement against the first attempt." },

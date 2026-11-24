@@ -36,7 +36,7 @@ import { GauntletCard, GauntletCardModal } from "./sharecard";
 import { FEATURE_INTROS, FeatureIntro, NavDot, TourShell, type TourStep } from "./tour";
 import { useVisited, type Surface } from "./visited";
 import { DEMO_DELIVERY, DEMO_FOLLOWUP, DEMO_RESPONSE, DEMO_SCENARIO, DEMO_SCORE } from "./demoData";
-import { buildDemo, DemoControls, FRAME_WIDTH, loadDemoConfig, Overview, saveDemoConfig } from "./admindash";
+import { buildDemo, DemoControls, loadDemoConfig, PreviewFrame, Overview, saveDemoConfig } from "./admindash";
 import { ONBOARDING_SCENARIO } from "./onboardingData";
 import { PreSessionScreen } from "./onboarding";
 import { AuthModal, useAuth } from "./auth";
@@ -1877,9 +1877,64 @@ function DemoRibbon({ onExit }: { onExit: () => void }) {
 //  4. Sandbox: seed/clear CANNED sample sessions in the logged-in account (no LLM
 //     tokens) so the REAL home page + progress graphs can be eyeballed with data.
 export function AdminApp() {
+  // /admin?preview=1 is the frame the Demo studio embeds: the real app chrome
+  // around one canned screen. It holds only canned data, so it needs no passphrase.
+  return new URLSearchParams(window.location.search).get("preview") === "1" ? <DemoPreview /> : <AdminDashboard />;
+}
+
+// The app as a student sees it (canvas, site header, shell with its sidebar,
+// footer) around one screen of the studio's canned, customizable demo. It runs in
+// an iframe at the chosen device width, so the app's own breakpoints decide the
+// layout exactly as they would on that device.
+function DemoPreview() {
+  const { theme, toggleTheme } = useTheme();
+  const flags = useFlags(null);
+  const [cfg, setCfg] = useState(loadDemoConfig);
+  const [flashOpen, setFlashOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === "pic-admin-demo-current") setCfg(loadDemoConfig()); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") window.parent.postMessage({ pic: "exit-demo" }, window.location.origin); };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("storage", onStorage); window.removeEventListener("keydown", onKey); };
+  }, []);
+  const noop = () => {};
+  const before: RunSnapshot = { percent: 61, criteriaHit: 1, criteriaTotal: 4, fillerPerMin: 9.0, wpm: 108 };
+  const d = buildDemo(cfg);
+  const wide = cfg.screen === "feedback" || cfg.screen === "beforeafter";
+  return (
+    <AppFrame>
+      <SiteHeader view="practice" onView={noop} onPractice={noop} onHome={noop} theme={theme} onToggleTheme={toggleTheme} onFeedback={() => setFeedbackOpen(true)} />
+      <Shell width={wide ? "wide" : "narrow"}>
+        {cfg.screen === "feedback" && (
+          <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
+            utterances={[]} audioBlob={null} onRestart={noop} onStudyCriteria={() => setFlashOpen(true)} />
+        )}
+        {cfg.screen === "beforeafter" && (
+          <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
+            utterances={[]} audioBlob={null} onRestart={noop} onTryAgain={noop} priorSnapshot={before} />
+        )}
+        {cfg.screen === "scenario" && <ReadyScreen scenario={d.scenario} onStart={noop} />}
+        {cfg.screen === "onboarding" && <PreSessionScreen canRecord={CAN_RECORD} onStart={noop} onSkip={noop} />}
+        {cfg.screen === "flashcards" && (
+          <div className="p-6">
+            <Eyebrow>Flashcards</Eyebrow>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">The deck opens over the page, the way it does for a student.</p>
+            <button className={`mt-4 ${BTN_PRIMARY}`} onClick={() => setFlashOpen(true)}>Open flashcards</button>
+          </div>
+        )}
+      </Shell>
+      <SiteFooter />
+      {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} flags={flags} title="Flashcards preview" onClose={() => setFlashOpen(false)} />}
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
+    </AppFrame>
+  );
+}
+
+function AdminDashboard() {
   const { theme, toggleTheme } = useTheme();
   const { user, ready } = useAuth();
-  const flags = useFlags(user?.id ?? null);
   const [unlocked, setUnlocked] = useState(() => {
     try { return sessionStorage.getItem("pic-admin-ok") === "1"; } catch { return false; }
   });
@@ -1892,11 +1947,15 @@ export function AdminApp() {
   useEffect(() => { saveDemoConfig(demo); }, [demo]);
   useEffect(() => {
     if (!presenting) return;
+    // Escape inside the frame arrives as a message, because the frame has the focus.
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPresenting(false); };
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin === window.location.origin && (e.data as { pic?: string } | null)?.pic === "exit-demo") setPresenting(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("message", onMsg);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("message", onMsg); };
   }, [presenting]);
-  const [flashOpen, setFlashOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [busy, setBusy] = useState<"" | "seed" | "clear">("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -1959,8 +2018,6 @@ export function AdminApp() {
     );
   }
 
-  const noop = () => {};
-  const before: RunSnapshot = { percent: 61, criteriaHit: 1, criteriaTotal: 4, fillerPerMin: 9.0, wpm: 108 };
   const tabs: { key: typeof tab; label: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "studio", label: "Demo studio" },
@@ -1968,7 +2025,6 @@ export function AdminApp() {
     { key: "sandbox", label: "Sandbox data" },
   ];
   const demoMode = presenting && tab === "studio";
-  const d = buildDemo(demo);
   const adminPass = (() => { try { return sessionStorage.getItem("pic-admin-pass") ?? ""; } catch { return ""; } })();
 
   return (
@@ -2021,27 +2077,7 @@ export function AdminApp() {
         {tab === "studio" && (
           <div className={presenting ? "" : "grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]"}>
             {!presenting && <DemoControls cfg={demo} onChange={setDemo} onPresent={() => setPresenting(true)} />}
-            <div className="min-w-0">
-              <div className="mx-auto w-full" style={{ maxWidth: FRAME_WIDTH[demo.frame] }}>
-                {demo.screen === "feedback" && (
-                  <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
-                    utterances={[]} audioBlob={null} onRestart={noop} onStudyCriteria={(ids) => { void ids; setFlashOpen(true); }} />
-                )}
-                {demo.screen === "beforeafter" && (
-                  <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
-                    utterances={[]} audioBlob={null} onRestart={noop} onTryAgain={noop} priorSnapshot={before} />
-                )}
-                {demo.screen === "scenario" && <ReadyScreen scenario={d.scenario} onStart={noop} />}
-                {demo.screen === "onboarding" && <PreSessionScreen canRecord={CAN_RECORD} onStart={noop} onSkip={noop} />}
-                {demo.screen === "flashcards" && (
-                  <Card>
-                    <Eyebrow>Flashcards</Eyebrow>
-                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">The deck opens over the page, the way it does for a student.</p>
-                    <button className={`mt-4 ${BTN_PRIMARY}`} onClick={() => setFlashOpen(true)}>Open flashcards</button>
-                  </Card>
-                )}
-              </div>
-            </div>
+            <PreviewFrame frame={demo.frame} fill={presenting} />
           </div>
         )}
 
@@ -2083,7 +2119,6 @@ export function AdminApp() {
         )}
       </main>
 
-      {flashOpen && <Flashcards ids={["FW-164", "FW-041", "FW-280"]} flags={flags} title="Flashcards preview" onClose={() => setFlashOpen(false)} />}
       <AuthModal open={authOpen} initialTab="login" reason="Log in to seed sample data into your account." onClose={() => setAuthOpen(false)} />
     </div>
   );
@@ -2242,6 +2277,15 @@ function useTheme() {
     root.classList.toggle("dark", theme === "dark");
     localStorage.setItem("pic-theme", theme);
   }, [theme]);
+  // The demo studio shows the app in an iframe; flipping the theme in the studio
+  // fires this in the frame, so the two never disagree.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "pic-theme" && (e.newValue === "light" || e.newValue === "dark")) setTheme(e.newValue);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   return { theme, toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")) };
 }
 
