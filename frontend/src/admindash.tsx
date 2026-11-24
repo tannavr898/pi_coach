@@ -414,7 +414,11 @@ export type DemoConfig = {
   owner: string;
   event: string;
   topic: string;
-  percent: number;
+  // The four graded sections, as percents. The overall score is derived from them.
+  indicators: number;
+  solution: number;
+  competencies: number;
+  presentation: number;
   response: string;
   followup: string;
   strength: string;
@@ -433,7 +437,10 @@ export const DEFAULT_DEMO: DemoConfig = {
   owner: ORIGINAL.owner,
   event: DEMO_SCENARIO.event,
   topic: DEMO_SCENARIO.topic,
-  percent: Math.round(DEMO_SCORE.overall_percent),
+  indicators: Math.round(DEMO_SCORE.pi_section_percent),
+  solution: Math.round(DEMO_SCORE.analytical?.section_percent ?? 99),
+  competencies: Math.round(DEMO_SCORE.career_competencies?.section_percent ?? 81),
+  presentation: Math.round(DEMO_SCORE.presentation?.section_percent ?? 84),
   response: DEMO_RESPONSE,
   followup: DEMO_FOLLOWUP,
   strength: DEMO_SCORE.final?.top_strength ?? "",
@@ -457,6 +464,22 @@ function levelFor(percent: number): ScoreResponse["overall_level"] {
   return percent >= 90 ? "exemplary" : percent >= 70 ? "proficient" : percent >= 40 ? "developing" : "novice";
 }
 
+const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(Number.isFinite(n) ? n : 0)));
+
+// The final grade, weighted the way the real rubric does: 50 / 25 / 10 / 15.
+export function overallPercent(cfg: Pick<DemoConfig, "indicators" | "solution" | "competencies" | "presentation">): number {
+  return Math.round((0.5 * clamp(cfg.indicators) + 0.25 * clamp(cfg.solution) + 0.1 * clamp(cfg.competencies) + 0.15 * clamp(cfg.presentation)) * 10) / 10;
+}
+
+// Spread `total` points over the criteria, each capped at its max, so the
+// per-indicator rows add up to the Indicators percent shown in the header.
+function spreadPoints(total: number, count: number, max: number): number[] {
+  const out = Array<number>(count).fill(Math.floor(total / count));
+  let rest = total - out.reduce((a, b) => a + b, 0);
+  for (let i = 0; rest > 0 && i < count; i++, rest--) out[i] += 1;
+  return out.map((v) => Math.min(max, v));
+}
+
 export function buildDemo(cfg: DemoConfig): {
   scenario: ScenarioResponse; score: ScoreResponse; response: string; followup: string; delivery: DeliveryMetrics;
 } {
@@ -467,18 +490,44 @@ export function buildDemo(cfg: DemoConfig): {
     [/Dana Okafor/g, owner],
     [/\bDana\b/g, owner.split(/\s+/)[0]],
   ];
-  const percent = Math.max(0, Math.min(100, Math.round(cfg.percent)));
+  const ind = clamp(cfg.indicators);
+  const sol = clamp(cfg.solution);
+  const comp = clamp(cfg.competencies);
+  const pres = clamp(cfg.presentation);
+  const overall = overallPercent(cfg);
   const fpm = Math.round((cfg.fillers / Math.max(1, DEMO_DELIVERY.duration_seconds / 60)) * 10) / 10;
 
   const scenario = rename({ ...DEMO_SCENARIO, event: cfg.event.trim() || DEMO_SCENARIO.event, topic: cfg.topic.trim() || DEMO_SCENARIO.topic }, pairs);
+
+  // Indicators: points per criterion follow the percent, and each level follows its points.
+  const rows = DEMO_SCORE.scores;
+  const maxEach = rows[0]?.max_points ?? 10;
+  const totalMax = rows.reduce((a, r) => a + r.max_points, 0);
+  const totalPts = Math.round((ind / 100) * totalMax);
+  const pts = spreadPoints(totalPts, rows.length, maxEach);
+  const scores = rows.map((r, i) => ({ ...r, points: pts[i], level: levelFor((pts[i] / r.max_points) * 100) }));
+
+  const base = DEMO_SCORE;
   const score = rename(
     {
-      ...DEMO_SCORE,
-      overall_percent: percent,
-      overall_level: levelFor(percent),
+      ...base,
+      overall_percent: overall,
+      overall_level: levelFor(overall),
+      total_points: pts.reduce((a, b) => a + b, 0),
+      max_points: totalMax,
+      pi_section_percent: ind,
+      pi_section_score: Math.round(ind * 0.04 * 100) / 100,
+      scores,
+      analytical: base.analytical ? { ...base.analytical, section_percent: sol, section_score: Math.round(sol * 0.04 * 100) / 100 } : base.analytical,
+      career_competencies: base.career_competencies
+        ? { ...base.career_competencies, section_percent: comp, section_score: Math.round(comp * 0.04 * 100) / 100 }
+        : base.career_competencies,
+      presentation: base.presentation
+        ? { ...base.presentation, section_percent: pres, section_score: Math.round(pres * 0.04 * 100) / 100 }
+        : base.presentation,
       final: {
-        ...(DEMO_SCORE.final as NonNullable<ScoreResponse["final"]>),
-        percent,
+        ...(base.final as NonNullable<ScoreResponse["final"]>),
+        percent: overall,
         top_strength: cfg.strength,
         biggest_weakness: cfg.weakness,
         one_key_fix: cfg.fix,
@@ -486,7 +535,7 @@ export function buildDemo(cfg: DemoConfig): {
     },
     pairs,
   );
-  const delivery: DeliveryMetrics = { ...DEMO_DELIVERY, pace_wpm: cfg.wpm, filler_count: cfg.fillers, filler_per_min: fpm };
+  const delivery: DeliveryMetrics = { ...DEMO_DELIVERY, pace_wpm: cfg.wpm, filler_count: cfg.fillers, filler_per_min: fpm, delivery_score: pres };
   return { scenario, score, response: rename(cfg.response, pairs), followup: rename(cfg.followup, pairs), delivery };
 }
 
@@ -613,10 +662,21 @@ export function DemoControls({ cfg, onChange, onPresent }: { cfg: DemoConfig; on
       </div>
 
       <div className="space-y-3">
-        <label className={LABEL}>
-          Overall score: <span className="font-mono text-slate-900 dark:text-slate-100">{cfg.percent}%</span>
-          <input type="range" min={0} max={100} value={cfg.percent} onChange={(e) => set("percent", Number(e.target.value))} className="mt-1 w-full accent-indigo-600" />
-        </label>
+        <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
+          <div className="text-xs text-slate-500 dark:text-slate-400">Overall score, from the four below</div>
+          <div className="font-display text-xl font-semibold text-slate-900 dark:text-slate-100">{Math.round(overallPercent(cfg))}%</div>
+        </div>
+        {([
+          ["indicators", "Indicators (50%)"],
+          ["solution", "Solution (25%)"],
+          ["competencies", "Competencies (10%)"],
+          ["presentation", "Presentation (15%)"],
+        ] as const).map(([k, label]) => (
+          <label key={k} className={LABEL}>
+            {label}: <span className="font-mono text-slate-900 dark:text-slate-100">{cfg[k]}%</span>
+            <input type="range" min={0} max={100} value={cfg[k]} onChange={(e) => set(k, Number(e.target.value))} className="mt-1 w-full accent-indigo-600" />
+          </label>
+        ))}
         <div className="grid grid-cols-2 gap-3">
           <label className={LABEL}>Pace (WPM)<input type="number" min={60} max={220} className={FIELD} value={cfg.wpm} onChange={(e) => set("wpm", Number(e.target.value) || 0)} /></label>
           <label className={LABEL}>Filler words<input type="number" min={0} max={80} className={FIELD} value={cfg.fillers} onChange={(e) => set("fillers", Math.max(0, Number(e.target.value) || 0))} /></label>
@@ -633,7 +693,7 @@ export function DemoControls({ cfg, onChange, onPresent }: { cfg: DemoConfig; on
 
       <div className="space-y-2 border-t border-slate-200 pt-4 dark:border-slate-800">
         <div className="flex gap-2">
-          <button className={`${BTN_PRIMARY} flex-1`} onClick={onPresent}>Present (hide controls)</button>
+          <button className={`${BTN_PRIMARY} flex-1`} onClick={onPresent}>Demo mode (hide everything)</button>
           <button className={BTN_SECONDARY} onClick={() => onChange({ ...DEFAULT_DEMO, screen: cfg.screen, frame: cfg.frame })} disabled={!edited}>Reset</button>
         </div>
         <div className="flex gap-2">

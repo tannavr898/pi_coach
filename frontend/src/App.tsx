@@ -1967,12 +1967,13 @@ export function AdminApp() {
     { key: "chapters", label: "Chapter review" },
     { key: "sandbox", label: "Sandbox data" },
   ];
+  const demoMode = presenting && tab === "studio";
   const d = buildDemo(demo);
   const adminPass = (() => { try { return sessionStorage.getItem("pic-admin-pass") ?? ""; } catch { return ""; } })();
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30">
+      <div className={`border-b border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30 ${demoMode ? "hidden" : ""}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
           <p className="text-sm text-amber-900 dark:text-amber-200">
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-amber-600">Owner</span>
@@ -1986,7 +1987,7 @@ export function AdminApp() {
       </div>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-20 pt-6">
-        <div className={`mb-5 flex flex-wrap gap-2 ${presenting && tab === "studio" ? "hidden" : ""}`}>
+        <div className={`mb-5 flex flex-wrap gap-2 ${demoMode ? "hidden" : ""}`}>
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -2003,15 +2004,24 @@ export function AdminApp() {
         {tab === "overview" && (adminPass ? <Overview pass={adminPass} onGoChapters={() => setTab("chapters")} /> : <p className="text-sm text-amber-700 dark:text-amber-300">Re-enter the passphrase (reload and unlock) to load the dashboard.</p>)}
 
         {tab === "studio" && (
+          <button
+            onClick={() => setPresenting((v) => !v)}
+            aria-pressed={presenting}
+            title={presenting ? "Show the controls (Esc)" : "Demo mode: hide everything but the screen"}
+            className={`fixed left-0 top-1/2 z-40 -translate-y-1/2 rounded-r-lg border border-l-0 px-1.5 py-3 font-mono text-[11px] font-semibold uppercase tracking-wider shadow-sm transition [writing-mode:vertical-rl] ${
+              presenting
+                ? "border-slate-200 bg-white text-slate-500 opacity-0 hover:opacity-100 focus-visible:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                : "border-indigo-600 bg-indigo-600 text-white"
+            }`}
+          >
+            {presenting ? "Exit demo mode" : "Demo mode"}
+          </button>
+        )}
+
+        {tab === "studio" && (
           <div className={presenting ? "" : "grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]"}>
             {!presenting && <DemoControls cfg={demo} onChange={setDemo} onPresent={() => setPresenting(true)} />}
             <div className="min-w-0">
-              {presenting && (
-                <div className="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-                  <span>Presenting. Press Escape to bring the controls back.</span>
-                  <button onClick={() => setPresenting(false)} className="font-semibold text-indigo-600 dark:text-indigo-300">Show controls</button>
-                </div>
-              )}
               <div className="mx-auto w-full" style={{ maxWidth: FRAME_WIDTH[demo.frame] }}>
                 {demo.screen === "feedback" && (
                   <FeedbackScreen scenario={d.scenario} score={d.score} response={d.response} followupAnswer={d.followup} delivery={d.delivery}
