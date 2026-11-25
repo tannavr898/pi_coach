@@ -1,69 +1,1429 @@
 {
-  "version": 1,
-  "note": "Short, predetermined scenarios for Mastery Blitz (Phase 5). Independently authored, general business situations, no DECA content. Each is 2-3 sentences and broad enough that any framework term can be applied to it in context. Picked at random per drill; the loop stays LLM-free.",
+  "version": 2,
+  "note": "Short predetermined scenarios for Mastery Blitz. Each is tagged with the domain (and the topics) it genuinely exercises so a round can be matched to the terms being drilled. Generic scenarios have an empty domain_id and are the fallback. Authored in-session; the loop stays LLM-free.",
   "scenarios": [
     {
+      "id": "marketing-01",
+      "domain_id": "marketing",
+      "topics": [
+        "Target Market",
+        "Research",
+        "Positioning"
+      ],
+      "text": "You run marketing for a regional pet-food brand that sells mostly to dog owners. Sales to cat owners are almost flat, and you have a small budget to figure out why and what to do about it."
+    },
+    {
+      "id": "marketing-02",
+      "domain_id": "marketing",
+      "topics": [
+        "Promotion",
+        "Digital Marketing",
+        "Metrics"
+      ],
+      "text": "A local escape room has spent two months on social media posts and discount codes. Followers are up, but bookings are not, and the owner wants to know what is working and what to cut."
+    },
+    {
+      "id": "marketing-03",
+      "domain_id": "marketing",
+      "topics": [
+        "Price",
+        "Product",
+        "Positioning"
+      ],
+      "text": "You are launching a premium line of reusable water bottles for a sporting goods chain. Cheaper bottles sit on the next shelf, and you must decide the price and how to explain why yours costs more."
+    },
+    {
+      "id": "marketing-04",
+      "domain_id": "marketing",
+      "topics": [
+        "Brand",
+        "Positioning",
+        "Relationship"
+      ],
+      "text": "A 30-year-old family furniture store feels dated to younger shoppers, but longtime customers love it. The owner wants a fresh brand look without losing the people who already buy."
+    },
+    {
+      "id": "marketing-05",
+      "domain_id": "marketing",
+      "topics": [
+        "Selling",
+        "Relationship",
+        "Journey"
+      ],
+      "text": "You sell fitness memberships at a gym front desk. Many visitors tour the club, say they will think about it, and never come back, and your manager wants more of them to sign."
+    },
+    {
+      "id": "marketing-06",
+      "domain_id": "marketing",
+      "topics": [
+        "Place",
+        "Merchandising",
+        "Product"
+      ],
+      "text": "A small grocery wants to boost sales of its locally made snacks. They sit on a bottom shelf in the back, and the owner wants a plan for where and how to display them."
+    },
+    {
+      "id": "marketing-07",
+      "domain_id": "marketing",
+      "topics": [
+        "Research",
+        "Target Market",
+        "Metrics"
+      ],
+      "text": "A coffee shop wants to add a lunch menu, but the owner is unsure anyone would buy it. You have two weeks and almost no budget to gather evidence before deciding."
+    },
+    {
+      "id": "marketing-08",
+      "domain_id": "marketing",
+      "topics": [
+        "Cause Marketing",
+        "Brand",
+        "Ethics"
+      ],
+      "text": "A shoe company wants to tie a new line to a local park cleanup. Leadership worries about looking like they are using a good cause to sell, and wants your advice on doing it credibly."
+    },
+    {
+      "id": "marketing-09",
+      "domain_id": "marketing",
+      "topics": [
+        "Global Marketing",
+        "Product",
+        "Price"
+      ],
+      "text": "A U.S. snack company is entering a country where its flagship flavor is unfamiliar and incomes are lower. You must decide what to change and what to keep for the first year."
+    },
+    {
+      "id": "marketing-10",
+      "domain_id": "marketing",
+      "topics": [
+        "Service Marketing",
+        "Journey",
+        "Relationship"
+      ],
+      "text": "You market a dental office whose services are the same as every other practice nearby. New patients rarely stay past the first visit, and the owner wants to change that."
+    },
+    {
+      "id": "marketing-11",
+      "domain_id": "marketing",
+      "topics": [
+        "Planning",
+        "Promotion",
+        "Metrics"
+      ],
+      "text": "A music festival has ten weeks until ticket sales open and a fixed promotion budget. You must lay out how to spend it and how you will know it is paying off."
+    },
+    {
+      "id": "marketing-12",
+      "domain_id": "marketing",
+      "topics": [
+        "Selling",
+        "Ethics",
+        "Relationship"
+      ],
+      "text": "A salesperson at an electronics store notices a customer is about to buy a costly warranty they do not need. Your commission would rise if they do, and you must decide how to handle it."
+    },
+    {
+      "id": "financial-analysis-01",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Cost and Profit",
+        "Pricing"
+      ],
+      "text": "A bakery sells cupcakes for $3.00. Ingredients cost $0.90 and packaging $0.30 each, rent and wages total $2,400 a month, and the owner wants to know how many cupcakes cover costs."
+    },
+    {
+      "id": "financial-analysis-02",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Statements",
+        "Analysis",
+        "Liquidity and Leverage Ratios"
+      ],
+      "text": "A landscaping company shows a profit on paper but keeps running short of cash before payday. The owner wants you to explain how that can happen and what the statements should show."
+    },
+    {
+      "id": "financial-analysis-03",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Planning",
+        "Paychecks and Budgeting"
+      ],
+      "text": "A college student earns $1,100 a month from a part-time job. Rent, a phone, and food take most of it, and they want a plan that still builds a small emergency fund."
+    },
+    {
+      "id": "financial-analysis-04",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Borrowing and Credit",
+        "Money Basics"
+      ],
+      "text": "A new graduate has two credit cards, a car loan, and a store card with a high rate. They ask which to pay down first and how to avoid sliding deeper into debt."
+    },
+    {
+      "id": "financial-analysis-05",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Investment",
+        "Investment Appraisal",
+        "Risk"
+      ],
+      "text": "A print shop can spend $40,000 on a new machine that should save $12,000 a year for five years. The owner asks whether it is worth buying and what could go wrong."
+    },
+    {
+      "id": "financial-analysis-06",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Profitability and Efficiency Ratios",
+        "Analysis"
+      ],
+      "text": "A restaurant group wants to compare two of its locations. Both have similar sales, but one earns much less profit, and you are asked which numbers to examine first."
+    },
+    {
+      "id": "financial-analysis-07",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Taxation",
+        "Records",
+        "Ethics and Compliance"
+      ],
+      "text": "A freelance photographer has mixed personal and business spending for a year and tax time is near. They need to know what to record, what counts as a business expense, and what to avoid."
+    },
+    {
+      "id": "financial-analysis-08",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Insurance and Protection",
+        "Risk"
+      ],
+      "text": "A young couple is opening a small catering business out of their home. They ask which kinds of insurance they need and which they can safely skip for now."
+    },
+    {
+      "id": "financial-analysis-09",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Saving Money",
+        "Investing for the Future"
+      ],
+      "text": "A 22-year-old just started a job with a 401(k) match. They are unsure whether to invest, build savings first, or pay off a loan, and ask you to sort out the order."
+    },
+    {
+      "id": "financial-analysis-10",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Business Valuation",
+        "Statements",
+        "Financial Communication"
+      ],
+      "text": "A founder wants to sell a profitable online store and asks what it is worth. You must explain what buyers look at and how to present the numbers clearly."
+    },
+    {
+      "id": "financial-analysis-11",
+      "domain_id": "financial_analysis",
+      "topics": [
+        "Accounting Fundamentals",
+        "Records"
+      ],
+      "text": "A new gym owner has been tracking everything in a notebook. A bank asks for financial statements to consider a loan, and the owner needs to know what to set up and why."
+    },
+    {
+      "id": "operations-01",
+      "domain_id": "operations",
+      "topics": [
+        "Process",
+        "Quality",
+        "Measurement"
+      ],
+      "text": "A pizza shop gets frequent complaints about late and cold deliveries. The owner asks you to find where the process breaks down and how to measure whether fixes work."
+    },
+    {
+      "id": "operations-02",
+      "domain_id": "operations",
+      "topics": [
+        "Supply",
+        "Vendor Relations",
+        "Risk"
+      ],
+      "text": "A bike shop depends on one supplier for most of its frames. That supplier just announced a three-month delay, and you must decide how to protect sales and relationships."
+    },
+    {
+      "id": "operations-03",
+      "domain_id": "operations",
+      "topics": [
+        "Capacity",
+        "Demand Fulfillment",
+        "Workforce Ops"
+      ],
+      "text": "A call center sees volume triple every December. Staff burn out and customers wait on hold, and management wants a plan that avoids both permanent overstaffing and long waits."
+    },
+    {
+      "id": "operations-04",
+      "domain_id": "operations",
+      "topics": [
+        "Quality",
+        "Process",
+        "Cost"
+      ],
+      "text": "A small factory that makes wooden toys keeps finding defects at the final inspection. Fixing them is costly, and the manager wants to catch problems earlier."
+    },
+    {
+      "id": "operations-05",
+      "domain_id": "operations",
+      "topics": [
+        "Safety",
+        "Facilities",
+        "Risk"
+      ],
+      "text": "A warehouse has had three minor injuries this month, all in the loading area. The manager asks for a plan to reduce risk without slowing shipments much."
+    },
+    {
+      "id": "operations-06",
+      "domain_id": "operations",
+      "topics": [
+        "Logistics",
+        "Supply",
+        "Cost"
+      ],
+      "text": "An online candle shop ships from one location and customers on the far coast wait a week. Shipping costs are rising, and the owner wonders whether to change the setup."
+    },
+    {
+      "id": "operations-07",
+      "domain_id": "operations",
+      "topics": [
+        "Projects",
+        "Coordination",
+        "Scaling"
+      ],
+      "text": "A restaurant is opening a second location in eight weeks. Hiring, equipment, permits, and menu training are all behind, and you must organize the work."
+    },
+    {
+      "id": "operations-08",
+      "domain_id": "operations",
+      "topics": [
+        "Sustainability",
+        "Cost",
+        "Technology"
+      ],
+      "text": "A laundromat chain wants to cut water and energy use. New machines cost a lot upfront, and the owner asks how to decide what to change and in what order."
+    },
+    {
+      "id": "operations-09",
+      "domain_id": "operations",
+      "topics": [
+        "Service Ops",
+        "Process",
+        "Technology"
+      ],
+      "text": "A clinic has patients waiting 40 minutes past appointment times. Staff say the schedule and check-in are the problem, and the manager wants a practical fix."
+    },
+    {
+      "id": "operations-10",
+      "domain_id": "operations",
+      "topics": [
+        "Innovation",
+        "Technology",
+        "Scaling"
+      ],
+      "text": "A family bakery wants to start taking online orders. Production is by hand, and orders could swing from ten a day to a hundred, so you must plan for it."
+    },
+    {
+      "id": "operations-11",
+      "domain_id": "operations",
+      "topics": [
+        "Supply",
+        "Demand Fulfillment",
+        "Measurement"
+      ],
+      "text": "A hardware store runs out of popular items and also sits on piles of slow sellers. The owner wants a better way to decide what and how much to order."
+    },
+    {
+      "id": "human-resources-01",
+      "domain_id": "human_resources",
+      "topics": [
+        "Staffing",
+        "Retention"
+      ],
+      "text": "A restaurant loses a third of its servers every season, and hiring and training each new person is expensive. The owner asks you to find out why and how to keep more of them."
+    },
+    {
+      "id": "human-resources-02",
+      "domain_id": "human_resources",
+      "topics": [
+        "Performance",
+        "Motivation",
+        "Development"
+      ],
+      "text": "A retail supervisor has an employee who does the job well but has stopped trying new things. You must decide how to give feedback and re-engage them."
+    },
+    {
+      "id": "human-resources-03",
+      "domain_id": "human_resources",
+      "topics": [
+        "Fair Treatment",
+        "Workplace Communication",
+        "Culture"
+      ],
+      "text": "Two employees at a design firm report that a manager makes jokes that make them uncomfortable. You are in HR and must decide how to respond and what to tell each person."
+    },
+    {
+      "id": "human-resources-04",
+      "domain_id": "human_resources",
+      "topics": [
+        "Workplace Safety",
+        "HR Operations"
+      ],
+      "text": "A small manufacturer has no written safety procedures, and an inspector is coming next month. You are asked to build and roll out what is needed in a short time."
+    },
+    {
+      "id": "human-resources-05",
+      "domain_id": "human_resources",
+      "topics": [
+        "Culture",
+        "Team Dynamics",
+        "Leadership"
+      ],
+      "text": "Two departments at a growing software company barely speak to each other, and projects keep stalling between them. You are asked to improve how they work together."
+    },
+    {
+      "id": "human-resources-06",
+      "domain_id": "human_resources",
+      "topics": [
+        "Staffing",
+        "Fair Treatment",
+        "HR Operations"
+      ],
+      "text": "A hotel needs to hire twelve seasonal workers in two weeks. You must write the hiring plan and make sure the process is fair and legal."
+    },
+    {
+      "id": "human-resources-07",
+      "domain_id": "human_resources",
+      "topics": [
+        "Development",
+        "Retention",
+        "Motivation"
+      ],
+      "text": "A call center promotes from outside because it says its own staff lack skills. Employees are frustrated, and you are asked to design a way to grow people from within."
+    },
+    {
+      "id": "human-resources-08",
+      "domain_id": "human_resources",
+      "topics": [
+        "Performance",
+        "Fair Treatment",
+        "HR Operations"
+      ],
+      "text": "A manager wants to fire an employee for repeated lateness, but there is nothing in writing. You must explain what steps to take first and why."
+    },
+    {
+      "id": "human-resources-09",
+      "domain_id": "human_resources",
+      "topics": [
+        "Motivation",
+        "Culture",
+        "Team Dynamics"
+      ],
+      "text": "A small marketing agency lost its biggest client and morale has dropped. The owner asks how to keep the team focused without making promises that cannot be kept."
+    },
+    {
+      "id": "human-resources-10",
+      "domain_id": "human_resources",
+      "topics": [
+        "Leadership",
+        "Workplace Communication",
+        "Team Dynamics"
+      ],
+      "text": "A new shift manager at a warehouse is younger than most of the team, and several workers ignore instructions. You are coaching them on how to earn respect."
+    },
+    {
+      "id": "customer-relations-01",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Recovery",
+        "Service",
+        "Reputation"
+      ],
+      "text": "A customer posts an angry review saying a restaurant ruined their anniversary dinner with a long wait and a wrong order. You manage the restaurant and must respond."
+    },
+    {
+      "id": "customer-relations-02",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Loyalty",
+        "Relationships",
+        "Feedback"
+      ],
+      "text": "A coffee shop has many first-time visitors but few regulars. The owner asks how to turn one-time customers into people who come back every week."
+    },
+    {
+      "id": "customer-relations-03",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Understanding Customers",
+        "Feedback",
+        "Service"
+      ],
+      "text": "A bookstore gets lukewarm comments but few specifics. The owner wants to learn what customers actually want without annoying them with long surveys."
+    },
+    {
+      "id": "customer-relations-04",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Service",
+        "Recovery",
+        "Communication"
+      ],
+      "text": "A shipping delay will make a customer's order arrive a week late for their event. You work for the seller and must reach out before they notice."
+    },
+    {
+      "id": "customer-relations-05",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Cultural Awareness",
+        "Communication",
+        "Service"
+      ],
+      "text": "A hotel is hosting a group of travelers from several countries. The front desk team wants to avoid mistakes and make every guest feel welcome."
+    },
+    {
+      "id": "customer-relations-06",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Ethics and Trust",
+        "Reputation",
+        "Relationships"
+      ],
+      "text": "A repair shop notices it overcharged several customers because of a billing error. The owner wonders whether to say anything or wait to see who complains."
+    },
+    {
+      "id": "customer-relations-07",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Loyalty",
+        "Understanding Customers",
+        "Relationships"
+      ],
+      "text": "A salon wants to launch a loyalty program but is unsure whether punch cards, discounts, or perks would matter to its customers. You must recommend one and explain it."
+    },
+    {
+      "id": "customer-relations-08",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Service",
+        "Understanding Customers",
+        "Reputation"
+      ],
+      "text": "A phone store has long lines on weekends and customers leave without buying. The manager asks how to improve service without hiring more people."
+    },
+    {
+      "id": "customer-relations-09",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Feedback",
+        "Reputation",
+        "Recovery"
+      ],
+      "text": "A fitness app has a rating of 2.8 stars after an update broke the workout tracker. The company fixed it last week, and you must win users back."
+    },
+    {
+      "id": "customer-relations-10",
+      "domain_id": "customer_relations",
+      "topics": [
+        "Relationships",
+        "Communication",
+        "Ethics and Trust"
+      ],
+      "text": "A long-time client of a small accounting firm is upset that the firm raised its fees. You must keep the relationship without discounting yourself into a loss."
+    },
+    {
+      "id": "communication-01",
+      "domain_id": "communication",
+      "topics": [
+        "Persuasion",
+        "Audience",
+        "Public Speaking"
+      ],
+      "text": "You must ask a school board for money to start a business club. Several members think it is unnecessary, and you have five minutes to change their minds."
+    },
+    {
+      "id": "communication-02",
+      "domain_id": "communication",
+      "topics": [
+        "Negotiation",
+        "Interpersonal",
+        "Listening"
+      ],
+      "text": "A vendor wants to raise prices on your restaurant's produce by 12%. You need to keep the relationship but cannot absorb the whole increase."
+    },
+    {
+      "id": "communication-03",
+      "domain_id": "communication",
+      "topics": [
+        "Written",
+        "Structure and Clarity",
+        "Audience"
+      ],
+      "text": "You must write an email telling customers that an online store will close for two weeks for repairs. Some will be unhappy, and some are waiting on orders."
+    },
+    {
+      "id": "communication-04",
+      "domain_id": "communication",
+      "topics": [
+        "Group",
+        "Listening",
+        "Interpersonal"
+      ],
+      "text": "In a team meeting, two coworkers keep talking over each other and the project is stalling. You are the team lead and need to get everyone heard and moving."
+    },
+    {
+      "id": "communication-05",
+      "domain_id": "communication",
+      "topics": [
+        "Digital Communication",
+        "Written",
+        "Structure and Clarity"
+      ],
+      "text": "A manager sends vague, one-line messages that cause confusion, and tasks are done wrong. You are asked to coach them on communicating clearly by chat and email."
+    },
+    {
+      "id": "communication-06",
+      "domain_id": "communication",
+      "topics": [
+        "Nonverbal",
+        "Public Speaking",
+        "Audience"
+      ],
+      "text": "You are presenting a new product idea to a panel of local business owners. You are nervous, and you worry that your body language will undercut what you say."
+    },
+    {
+      "id": "communication-07",
+      "domain_id": "communication",
+      "topics": [
+        "Listening",
+        "Interpersonal",
+        "Persuasion"
+      ],
+      "text": "An employee tells you they are thinking of quitting, but they are vague about why. You want to understand the real issue and not push them away."
+    },
+    {
+      "id": "communication-08",
+      "domain_id": "communication",
+      "topics": [
+        "Structure and Clarity",
+        "Audience",
+        "Persuasion"
+      ],
+      "text": "You must explain a complicated new return policy to store staff in a two-minute huddle. If they misunderstand it, customers will get conflicting answers."
+    },
+    {
+      "id": "communication-09",
+      "domain_id": "communication",
+      "topics": [
+        "Negotiation",
+        "Persuasion",
+        "Interpersonal"
+      ],
+      "text": "A coworker wants to swap schedules for the holiday weekend, and so do three others. You manage the schedule and must decide while keeping everyone willing to work with you."
+    },
+    {
+      "id": "communication-10",
+      "domain_id": "communication",
+      "topics": [
+        "Public Speaking",
+        "Structure and Clarity",
+        "Nonverbal"
+      ],
+      "text": "You have ten minutes to present quarterly results to your company's leaders. The results are mixed, and you want them to remember the key point."
+    },
+    {
+      "id": "economics-01",
+      "domain_id": "economics",
+      "topics": [
+        "Markets",
+        "Fundamentals",
+        "Competition"
+      ],
+      "text": "A concert venue sells out every show the moment tickets are released, and resale prices are triple face value. The owner asks why this happens and what to do about it."
+    },
+    {
+      "id": "economics-02",
+      "domain_id": "economics",
+      "topics": [
+        "Macro",
+        "Money",
+        "Fundamentals"
+      ],
+      "text": "Prices for groceries have risen about 8% in a year and a local diner is nervous about changing its menu prices. The owner asks how inflation affects the business and its customers."
+    },
+    {
+      "id": "economics-03",
+      "domain_id": "economics",
+      "topics": [
+        "Competition",
+        "Markets",
+        "Resource Allocation"
+      ],
+      "text": "A town has one gas station until a second one opens across the street. The owner of the first wonders how competition will change prices and what to do."
+    },
+    {
+      "id": "economics-04",
+      "domain_id": "economics",
+      "topics": [
+        "Government",
+        "Macro",
+        "Money"
+      ],
+      "text": "The state is raising the minimum wage next year. A small cafe owner asks how it could affect hiring, prices, and customers, and how to prepare."
+    },
+    {
+      "id": "economics-05",
+      "domain_id": "economics",
+      "topics": [
+        "Global",
+        "Markets",
+        "Fundamentals"
+      ],
+      "text": "A furniture maker imports wood from overseas, and a new tariff will raise its cost by 15%. The owner asks how trade policy affects the business and what choices exist."
+    },
+    {
+      "id": "economics-06",
+      "domain_id": "economics",
+      "topics": [
+        "Economic Systems",
+        "Resource Allocation",
+        "Fundamentals"
+      ],
+      "text": "A city has a limited budget and wants to decide between a new park and repairing roads. You are asked to explain how scarcity and trade-offs shape the choice."
+    },
+    {
+      "id": "economics-07",
+      "domain_id": "economics",
+      "topics": [
+        "Macro",
+        "Money",
+        "Government"
+      ],
+      "text": "Interest rates have risen sharply, and a homebuilder says buyers are disappearing. You must explain what is happening and how it may affect the wider economy."
+    },
+    {
+      "id": "economics-08",
+      "domain_id": "economics",
+      "topics": [
+        "Fundamentals",
+        "Markets",
+        "Competition"
+      ],
+      "text": "A small ice cream shop notices that demand falls hard when it raises prices in summer but barely moves in winter. The owner asks why and how to price."
+    },
+    {
+      "id": "economics-09",
+      "domain_id": "economics",
+      "topics": [
+        "Global",
+        "Competition",
+        "Resource Allocation"
+      ],
+      "text": "A clothing brand can make shirts at home for $14 or overseas for $6. Customers like local products, and you are asked to weigh the choice."
+    },
+    {
+      "id": "economics-10",
+      "domain_id": "economics",
+      "topics": [
+        "Markets",
+        "Government",
+        "Economic Systems"
+      ],
+      "text": "A city plans to cap rent increases to help tenants. Landlords and renters disagree, and you are asked to explain the likely effects on supply and demand."
+    },
+    {
+      "id": "business-law-01",
+      "domain_id": "business_law",
+      "topics": [
+        "Contracts",
+        "Risk and Liability"
+      ],
+      "text": "A wedding photographer agreed to shoot an event, then got a better offer for the same day and wants to cancel. The client says they have a signed contract and will sue."
+    },
+    {
+      "id": "business-law-02",
+      "domain_id": "business_law",
+      "topics": [
+        "Business Ownership",
+        "Risk and Liability",
+        "Legal Foundations"
+      ],
+      "text": "Two friends are opening a food truck and cannot decide between a sole proprietorship, a partnership, and an LLC. They ask how each affects their risk and taxes."
+    },
+    {
+      "id": "business-law-03",
+      "domain_id": "business_law",
+      "topics": [
+        "Protecting Assets",
+        "Regulation and Compliance"
+      ],
+      "text": "A student designs a clothing logo and starts selling shirts, then learns another brand uses a similar mark. She asks how to protect hers and avoid trouble."
+    },
+    {
+      "id": "business-law-04",
+      "domain_id": "business_law",
+      "topics": [
+        "Workplace Law",
+        "Regulation and Compliance",
+        "Ethics and Governance"
+      ],
+      "text": "A bakery owner treats several bakers as independent contractors but sets their hours and tools. An employee points out that this may be illegal."
+    },
+    {
+      "id": "business-law-05",
+      "domain_id": "business_law",
+      "topics": [
+        "Regulation and Compliance",
+        "Risk and Liability"
+      ],
+      "text": "A new restaurant wants to open next month but has not applied for a health permit or a liquor license. The owner asks what is needed and in what order."
+    },
+    {
+      "id": "business-law-06",
+      "domain_id": "business_law",
+      "topics": [
+        "Real Property",
+        "Contracts",
+        "Risk and Liability"
+      ],
+      "text": "A boutique signs a five-year lease and later finds it must pay for repairs to the building. The owner asks what to check before signing a lease and what rights exist."
+    },
+    {
+      "id": "business-law-07",
+      "domain_id": "business_law",
+      "topics": [
+        "Risk and Liability",
+        "Ethics and Governance",
+        "Legal Foundations"
+      ],
+      "text": "A customer slips on a wet floor at a store and says they will sue. The manager asks what the store's responsibility is and what to do now."
+    },
+    {
+      "id": "business-law-08",
+      "domain_id": "business_law",
+      "topics": [
+        "Protecting Assets",
+        "Contracts",
+        "Ethics and Governance"
+      ],
+      "text": "A software startup wants contractors to build its app but fears they might reuse the code. You must explain what protections to put in place."
+    },
+    {
+      "id": "business-law-09",
+      "domain_id": "business_law",
+      "topics": [
+        "Workplace Law",
+        "Ethics and Governance",
+        "Regulation and Compliance"
+      ],
+      "text": "A manager wants to ask job applicants about their age and family plans. You are asked to explain what is legal to ask and why it matters."
+    },
+    {
+      "id": "business-law-10",
+      "domain_id": "business_law",
+      "topics": [
+        "Contracts",
+        "Legal Foundations",
+        "Ethics and Governance"
+      ],
+      "text": "A customer says a salesperson promised a free installation, but the written contract says nothing about it. The owner asks who is right and how to prevent this."
+    },
+    {
+      "id": "entrepreneurship-01",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Opportunity",
+        "Planning",
+        "Startup"
+      ],
+      "text": "A teenager notices that classmates struggle to find tutors in specific subjects. They wonder whether it can become a real business and where to start."
+    },
+    {
+      "id": "entrepreneurship-02",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Model",
+        "Startup",
+        "Growth"
+      ],
+      "text": "A founder sells handmade soap at craft fairs and online. Sales are growing, but she is unsure whether to keep selling directly or approach stores."
+    },
+    {
+      "id": "entrepreneurship-03",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Risk",
+        "Planning",
+        "Startup"
+      ],
+      "text": "An entrepreneur wants to quit a steady job to open a bike repair shop. They ask how to test the idea and limit the downside before taking the leap."
+    },
+    {
+      "id": "entrepreneurship-04",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Innovation",
+        "Opportunity",
+        "Model"
+      ],
+      "text": "A founder has invented a lunchbox that keeps food cold for twelve hours. She must decide whether to license the idea, sell it herself, or find a partner."
+    },
+    {
+      "id": "entrepreneurship-05",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Networking",
+        "Startup",
+        "Growth"
+      ],
+      "text": "A first-time founder has a good prototype but no contacts in the industry. You are asked how to find advisors, partners, and early customers."
+    },
+    {
+      "id": "entrepreneurship-06",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Startup",
+        "Planning",
+        "Ethics"
+      ],
+      "text": "A founder needs money to start a car-wash business and is deciding between a loan, a partner, and savings. Each has trade-offs, and they ask for your advice."
+    },
+    {
+      "id": "entrepreneurship-07",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Model",
+        "Opportunity",
+        "Risk"
+      ],
+      "text": "A subscription box company is losing customers after the third month. The founder wants to know whether the idea or the way it is run needs to change."
+    },
+    {
+      "id": "entrepreneurship-08",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Growth",
+        "Planning",
+        "Model"
+      ],
+      "text": "A tutoring startup has twenty regular customers and is thinking about hiring its first employee. The founder asks how to know whether the business can support it."
+    },
+    {
+      "id": "entrepreneurship-09",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Opportunity",
+        "Innovation",
+        "Startup"
+      ],
+      "text": "A student sees that a nearby town has no place for young people to hang out after school. They ask how to judge whether it is a real opportunity."
+    },
+    {
+      "id": "entrepreneurship-10",
+      "domain_id": "entrepreneurship",
+      "topics": [
+        "Ethics",
+        "Startup",
+        "Risk"
+      ],
+      "text": "A founder is tempted to exaggerate sales numbers to impress an investor. You are advising them on what to do and what it could cost them later."
+    },
+    {
+      "id": "strategic-management-01",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Analysis",
+        "Competitive Dynamics",
+        "Direction"
+      ],
+      "text": "A neighborhood video-game store is losing sales to online retailers. The owner asks you to analyze the situation and recommend where to compete."
+    },
+    {
+      "id": "strategic-management-02",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Goals",
+        "Measurement",
+        "Execution"
+      ],
+      "text": "A company's leadership wants to double revenue in three years, but different departments have different goals. You are asked to align them and set measures."
+    },
+    {
+      "id": "strategic-management-03",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Growth",
+        "Risk",
+        "Resources"
+      ],
+      "text": "A successful local pizza chain can expand to a nearby city, buy a competitor, or launch a frozen product. You are asked to weigh the options."
+    },
+    {
+      "id": "strategic-management-04",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Change",
+        "Leadership",
+        "Stakeholders"
+      ],
+      "text": "A company plans to switch to a new software system, and employees are worried and resistant. You are asked to lead the change so it sticks."
+    },
+    {
+      "id": "strategic-management-05",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Stakeholders",
+        "Judgment",
+        "Long-term"
+      ],
+      "text": "A manufacturer wants to close a plant to save money. The town depends on it, and you are asked to weigh costs, people, and the company's long-term reputation."
+    },
+    {
+      "id": "strategic-management-06",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Globalization",
+        "Growth",
+        "Risk"
+      ],
+      "text": "A U.S. coffee roaster is considering selling in Japan. You are asked to identify what to learn first and what could go wrong."
+    },
+    {
+      "id": "strategic-management-07",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Structure",
+        "Execution",
+        "Leadership"
+      ],
+      "text": "A fast-growing startup has 60 employees and no clear reporting lines. Decisions are slow and people do not know who is responsible for what."
+    },
+    {
+      "id": "strategic-management-08",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Analysis",
+        "Direction",
+        "Competitive Dynamics"
+      ],
+      "text": "A regional bank has strong local loyalty but is losing young customers to apps. You are asked to define its strengths, weaknesses, and a direction."
+    },
+    {
+      "id": "strategic-management-09",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Measurement",
+        "Goals",
+        "Long-term"
+      ],
+      "text": "A nonprofit hits its fundraising target every year but wonders whether it is making a difference. You are asked what it should measure and why."
+    },
+    {
+      "id": "strategic-management-10",
+      "domain_id": "strategic_management",
+      "topics": [
+        "Execution",
+        "Resources",
+        "Change"
+      ],
+      "text": "A company has a strong plan to enter a new market but keeps missing deadlines. You are asked to find out why and what to do differently."
+    },
+    {
+      "id": "information-management-01",
+      "domain_id": "information_management",
+      "topics": [
+        "Security",
+        "Systems",
+        "Information Ethics"
+      ],
+      "text": "A small dental office stores patient records on a shared computer with one password. An employee asks whether that is a problem and how to fix it."
+    },
+    {
+      "id": "information-management-02",
+      "domain_id": "information_management",
+      "topics": [
+        "Data",
+        "Analysis",
+        "Decision Support"
+      ],
+      "text": "An online clothing store has months of sales data but does not use it. The owner asks what to look at to decide what to stock for next season."
+    },
+    {
+      "id": "information-management-03",
+      "domain_id": "information_management",
+      "topics": [
+        "Research",
+        "Data",
+        "Knowledge"
+      ],
+      "text": "A new product team must learn about customers in a market it does not know. You are asked how to gather reliable information quickly and cheaply."
+    },
+    {
+      "id": "information-management-04",
+      "domain_id": "information_management",
+      "topics": [
+        "Technology",
+        "Systems",
+        "Records"
+      ],
+      "text": "A landscaping company tracks jobs on paper and loses invoices. The owner wants to choose a digital system and asks what to look for."
+    },
+    {
+      "id": "information-management-05",
+      "domain_id": "information_management",
+      "topics": [
+        "Security",
+        "Crisis Information",
+        "Communication"
+      ],
+      "text": "A retailer discovers that customer email addresses may have been exposed. You are asked what to do first and how to communicate with customers."
+    },
+    {
+      "id": "information-management-06",
+      "domain_id": "information_management",
+      "topics": [
+        "Knowledge",
+        "Communication",
+        "Records"
+      ],
+      "text": "A veteran employee is retiring and much of what they know is only in their head. You are asked how to capture it before they leave."
+    },
+    {
+      "id": "information-management-07",
+      "domain_id": "information_management",
+      "topics": [
+        "Analysis",
+        "Decision Support",
+        "Data"
+      ],
+      "text": "A manager has a report showing website visits are up but sales are down. You are asked how to dig into the data before drawing conclusions."
+    },
+    {
+      "id": "information-management-08",
+      "domain_id": "information_management",
+      "topics": [
+        "Information Ethics",
+        "Data",
+        "Security"
+      ],
+      "text": "A marketing team wants to track what customers do across apps to personalize ads. You are asked what is legal, what is ethical, and what customers would expect."
+    },
+    {
+      "id": "information-management-09",
+      "domain_id": "information_management",
+      "topics": [
+        "Technology",
+        "Communication",
+        "Systems"
+      ],
+      "text": "A company moves to remote work and files are scattered across email, personal drives, and chat. You are asked to organize how information is stored and shared."
+    },
+    {
+      "id": "information-management-10",
+      "domain_id": "information_management",
+      "topics": [
+        "Research",
+        "Analysis",
+        "Decision Support"
+      ],
+      "text": "A founder reads two market reports that disagree about demand for a new product. You are asked how to judge which source to trust and what to do."
+    },
+    {
+      "id": "professional-development-01",
+      "domain_id": "professional_development",
+      "topics": [
+        "Career",
+        "Goals",
+        "Skills"
+      ],
+      "text": "A high school junior wants a career in business but is unsure which field. You are asked how to explore options and plan the next two years."
+    },
+    {
+      "id": "professional-development-02",
+      "domain_id": "professional_development",
+      "topics": [
+        "Demeanor",
+        "Ownership",
+        "Workplace Adaptability"
+      ],
+      "text": "A new part-time employee is often late and checks their phone during shifts. The manager asks you to coach them before it affects their job."
+    },
+    {
+      "id": "professional-development-03",
+      "domain_id": "professional_development",
+      "topics": [
+        "Networking",
+        "Career",
+        "Growth"
+      ],
+      "text": "A college freshman wants an internship but knows no one in business. You are asked how to build connections and approach professionals."
+    },
+    {
+      "id": "professional-development-04",
+      "domain_id": "professional_development",
+      "topics": [
+        "Skills",
+        "Growth",
+        "Self-Management"
+      ],
+      "text": "An employee is overwhelmed with deadlines and keeps missing small tasks. You are asked to help them organize their time and priorities."
+    },
+    {
+      "id": "professional-development-05",
+      "domain_id": "professional_development",
+      "topics": [
+        "Ownership",
+        "Ethics",
+        "Teamwork"
+      ],
+      "text": "You made a mistake on a client report that went out with a wrong number. Nobody has noticed yet, and you must decide what to do."
+    },
+    {
+      "id": "professional-development-06",
+      "domain_id": "professional_development",
+      "topics": [
+        "Leadership",
+        "Teamwork",
+        "Goals"
+      ],
+      "text": "You are put in charge of a group project in which two members do nothing. You are asked how to lead, set expectations, and get results."
+    },
+    {
+      "id": "professional-development-07",
+      "domain_id": "professional_development",
+      "topics": [
+        "Career",
+        "Skills",
+        "Goals"
+      ],
+      "text": "A candidate is preparing for a job interview at a retail company and has no work experience. You are asked how they should present themselves."
+    },
+    {
+      "id": "professional-development-08",
+      "domain_id": "professional_development",
+      "topics": [
+        "Growth",
+        "Workplace Adaptability",
+        "Skills"
+      ],
+      "text": "A company introduces new software, and a long-time employee feels left behind. You are asked how they can keep up and stay valuable."
+    },
+    {
+      "id": "professional-development-09",
+      "domain_id": "professional_development",
+      "topics": [
+        "Demeanor",
+        "Networking",
+        "Career"
+      ],
+      "text": "You are attending a business networking event and know no one. You are asked how to make a good first impression and follow up afterward."
+    },
+    {
+      "id": "professional-development-10",
+      "domain_id": "professional_development",
+      "topics": [
+        "Self-Management",
+        "Goals",
+        "Ownership"
+      ],
+      "text": "A student works part-time, plays sports, and runs a club, and their grades are slipping. You are asked how to set priorities and protect what matters most."
+    },
+    {
+      "id": "emotional-intelligence-01",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Conflict",
+        "Others",
+        "Communication Style"
+      ],
+      "text": "Two members of your team are arguing over who gets credit for a successful project. You are the team lead and must resolve it fairly."
+    },
+    {
+      "id": "emotional-intelligence-02",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Self",
+        "Adaptability",
+        "Growth Mindset"
+      ],
+      "text": "You were just told that the project you worked on for months is being canceled. You must keep working and stay positive for your team."
+    },
+    {
+      "id": "emotional-intelligence-03",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Leadership",
+        "Influence",
+        "Teamwork"
+      ],
+      "text": "You are the captain of a group that must raise money for a charity. Teammates lack energy and you must motivate them without bossing anyone around."
+    },
+    {
+      "id": "emotional-intelligence-04",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Others",
+        "Communication Style",
+        "Teamwork"
+      ],
+      "text": "A coworker is quiet in meetings, but you suspect they have good ideas. You want to help them contribute without putting them on the spot."
+    },
+    {
+      "id": "emotional-intelligence-05",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Ethics",
+        "Self",
+        "Professional Presence"
+      ],
+      "text": "A manager asks you to round up a number in a report so the results look better. You are uncomfortable and must decide how to respond."
+    },
+    {
+      "id": "emotional-intelligence-06",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Conflict",
+        "Self",
+        "Professional Presence"
+      ],
+      "text": "A customer yells at you over something that was not your fault. You must stay calm and still solve the problem."
+    },
+    {
+      "id": "emotional-intelligence-07",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Adaptability",
+        "Leadership",
+        "Growth Mindset"
+      ],
+      "text": "Your team's plan failed in front of a client. You are asked how to lead the debrief so people learn from it instead of blaming each other."
+    },
+    {
+      "id": "emotional-intelligence-08",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Networking",
+        "Influence",
+        "Professional Presence"
+      ],
+      "text": "You want a busy executive to mentor you. You have one short chance to speak with them and want to make a good impression without being pushy."
+    },
+    {
+      "id": "emotional-intelligence-09",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Others",
+        "Teamwork",
+        "Conflict"
+      ],
+      "text": "A teammate seems upset and distracted, and their work is slipping. You are asked how to check in respectfully and offer support."
+    },
+    {
+      "id": "emotional-intelligence-10",
+      "domain_id": "emotional_intelligence",
+      "topics": [
+        "Self",
+        "Growth Mindset",
+        "Leadership"
+      ],
+      "text": "You receive harsh feedback on a presentation you were proud of. You are asked how to take it in, respond professionally, and improve."
+    },
+    {
       "id": "bakery-chain",
+      "domain_id": "",
+      "topics": [],
       "text": "You're advising the owner of a neighborhood bakery. Foot traffic is down about 20% since a chain cafe opened two blocks away, the budget is tight, and the owner wants a plan for the next quarter."
     },
     {
       "id": "studio-launch",
+      "domain_id": "",
+      "topics": [],
       "text": "You're the manager of a new boutique fitness studio opening downtown next month. You have one shot at a strong launch, a modest marketing budget, and a lot of established gyms nearby."
     },
     {
       "id": "app-retention",
+      "domain_id": "",
+      "topics": [],
       "text": "You're on the team at a consumer mobile app. Lots of people download it, but most stop using it within a week, and leadership wants that fixed before the next funding conversation."
     },
     {
       "id": "food-truck-scale",
+      "domain_id": "",
+      "topics": [],
       "text": "You're advising a food-truck owner who's doing well and wants to add a second truck. Cash is limited, staff is stretched, and one bad decision could sink the whole business."
     },
     {
       "id": "retail-shrink",
+      "domain_id": "",
+      "topics": [],
       "text": "You manage a mid-size electronics store. Sales are steady but profit is slipping, and you suspect a mix of rising costs and inventory problems is to blame."
     },
     {
       "id": "salon-reviews",
+      "domain_id": "",
+      "topics": [],
       "text": "You're advising the owner of a hair salon whose online reviews have turned negative after a few bad experiences. New-client bookings have dropped and the owner is worried about the reputation spreading."
     },
     {
       "id": "nonprofit-donors",
+      "domain_id": "",
+      "topics": [],
       "text": "You work at a small nonprofit that relies on a handful of large donors. One major donor just pulled out, and you need a plan to stabilize funding without alienating the people you serve."
     },
     {
       "id": "startup-pricing",
+      "domain_id": "",
+      "topics": [],
       "text": "You're a founder about to launch a subscription software product for small businesses. You haven't set a price yet, competitors range widely, and you only get one first impression."
     },
     {
       "id": "restaurant-turnover",
+      "domain_id": "",
+      "topics": [],
       "text": "You manage a busy family restaurant losing servers faster than you can train them. Service quality is slipping, customers are noticing, and hiring season is competitive."
     },
     {
       "id": "boutique-expansion",
+      "domain_id": "",
+      "topics": [],
       "text": "You're advising an online clothing boutique that wants to open its first physical store. Demand looks strong online, but a lease is a big fixed commitment and the team has never run a storefront."
     },
     {
       "id": "coffee-loyalty",
+      "domain_id": "",
+      "topics": [],
       "text": "You manage a coffee shop with lots of one-time visitors but few regulars. The owner wants more repeat business but is skeptical of spending on a complicated loyalty program."
     },
     {
       "id": "hotel-slow-season",
+      "domain_id": "",
+      "topics": [],
       "text": "You're the manager of a beach-town hotel heading into a slow off-season. Rooms will sit empty for months unless you find a way to fill them, and deep discounting could cheapen the brand."
     },
     {
       "id": "manufacturer-cost",
+      "domain_id": "",
+      "topics": [],
       "text": "You're advising a small manufacturer whose material costs just jumped. Raising prices risks losing key customers, but absorbing the increase would wipe out the margin on every unit."
     },
     {
       "id": "gym-competitor",
+      "domain_id": "",
+      "topics": [],
       "text": "You manage a neighborhood gym. A big-box fitness chain just opened nearby with lower prices and more equipment, and some of your members are already asking why they should stay."
     },
     {
       "id": "bookstore-event",
+      "domain_id": "",
+      "topics": [],
       "text": "You're advising an independent bookstore that wants to draw more people in. The owner has space for events and a small community following, but limited time and no dedicated marketing person."
     },
     {
       "id": "juice-launch",
+      "domain_id": "",
+      "topics": [],
       "text": "You're on the team at a small juice brand about to put a new product on grocery shelves. Shelf space is competitive, the launch window is short, and first-week sales will shape whether stores keep carrying it."
     }
   ]

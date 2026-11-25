@@ -318,6 +318,126 @@ CRITICAL: never put judge instructions, judge characterization, or answers insid
 
 
 # ---------------------------------------------------------------------------
+# 2b. Official-format scenario (real DECA performance indicators)
+# ---------------------------------------------------------------------------
+
+PI_SCENARIO_SYSTEM = (
+    "You are an expert author of DECA role-play events. You write ORIGINAL practice "
+    "role-plays in the exact format and tone of the official DECA event sheets, and "
+    "you build each one around real DECA performance indicators (PIs) so a student "
+    "who practices it is practicing the real event. You never copy a sample: new "
+    "company, new people, new problem.\n\n"
+    f"{_STYLE_RULE}"
+    "Return ONLY a single JSON object (no markdown, no code fences, no commentary)."
+)
+
+
+def _format_pi_candidates(pool: list[dict]) -> str:
+    by_area: dict[str, list[dict]] = {}
+    for c in pool:
+        by_area.setdefault(c["domain"], []).append(c)
+    lines: list[str] = []
+    for area, items in by_area.items():
+        lines.append(f"[{area}]")
+        lines.extend(f"- {c['id']}: {c['name']}" for c in items)
+    return "\n".join(lines)
+
+
+def _example_block(examples: list[dict]) -> str:
+    out: list[str] = []
+    for s in examples:
+        pis = "\n".join(f"  {i}. {p}" for i, p in enumerate(s.get("pis", []), 1))
+        qs = "\n".join(f"  {i}. {q}" for i, q in enumerate(s.get("judge_questions", []), 1))
+        out.append(
+            "OFFICIAL SAMPLE (study its length, structure and voice; do NOT reuse its company, "
+            "people, facts or wording):\n"
+            + (f"Performance indicators:\n{pis}\n" if pis else "")
+            + f"Event situation:\n{s['situation']}\n"
+            + (f"The judge asks:\n{qs}\n" if qs else "")
+        )
+    return "\n".join(out)
+
+
+def build_pi_scenario_prompt(
+    topic: str,
+    industry: str,
+    level: str,
+    pool: list[dict],
+    event: dict,
+    examples: list[dict],
+    words: str,
+    params: dict[str, str] | None = None,
+) -> tuple[str, str]:
+    """(system, user) for an official-format role-play: pick the event's real PIs from
+    `pool`, then write the Event Situation and the judge's scripted questions."""
+    n = events.pi_count_for(event)
+    kind = event.get("kind", "individual")
+    team = kind == "team"
+    nq = 2 if kind == "principles" else 3
+    industry_line = industry.strip() or "not specified, choose one that fits the event and topic"
+    who = "two teammates present together to the judge" if team else "one participant presents to the judge"
+    quant = ""
+    if event.get("quantitative"):
+        quant = (
+            "QUANTITATIVE EVENT: give the raw numbers the participant needs (prices, costs, units, "
+            "rates, balances, dates) as inputs and have them compute the result. Never state a derived "
+            "figure (margin, break-even, ROI, totals) as fact. Keep the inputs consistent.\n"
+        )
+    variety = _params_block(params) if params else _variety_block()
+    # Official sheets name the judge by title "(judge)", never a personal name.
+    variety = variety.split("The counterpart the participant meets")[0]
+    deliverable = (
+        "For this event type the judge asks for a concrete deliverable, so after the background "
+        "paragraphs include a short lead-in such as \"The recommendation should include:\" followed by "
+        "3 to 5 bullet lines (each starting with \"- \") naming what the participant must cover."
+        if kind != "principles"
+        else "Keep it to one clear ask, as in the official Principles events; no bullet list."
+    )
+    user = f"""EVENT: {event['name']} ({event.get('cluster', '')}), {who}.
+{quant}{variety}REQUESTED TOPIC: {topic}
+INDUSTRY / CONTEXT: {industry_line}
+LEVEL: {level}
+
+{_example_block(examples)}
+CANDIDATE PERFORMANCE INDICATORS (official DECA wording, choose from these ids only):
+{_format_pi_candidates(pool)}
+
+STEP 1, SELECT exactly {n} performance indicators from the list that fit the topic and can all be
+demonstrated together in one role-play. Official role-plays draw their indicators from ONE
+instructional area (two at most), so prefer indicators from the same bracketed group. Use ONLY ids
+from the list.
+
+STEP 2, WRITE the Event Situation exactly as the official sheet does, {words}:
+1. First paragraph: "You are to assume the role of ..." (a specific role at a specific invented
+   company, with the company named in CAPITALS, and one line on what it does), then who the judge is
+   (a role title written as "(judge)", not a personal name) and what the judge wants from the participant.
+2. One or two background paragraphs with concrete, believable facts: size, history, the pressure that
+   created the problem, and 2 to 3 realistic data points or constraints a strong answer must use.
+3. {deliverable}
+4. Final paragraph, in the official wording pattern: "You will [present/explain/recommend] ... to the
+   [judge role] (judge) in a role-play to take place in/at [place]. The [judge role] (judge) will begin
+   the role-play by [greeting you and asking ...]. After you have [presented ...] and have answered the
+   [judge role]'s (judge's) questions, the [judge role] (judge) will conclude the role-play by thanking
+   you for your work."
+Every selected indicator must have a natural reason to come up. Never show the indicator list or the
+judge's questions inside the situation. The problem must be about the topic and the selected indicators.
+
+Return a JSON object with EXACTLY these keys:
+{{
+  "pi_ids": ["the EXACTLY {n} ids from step 1"],
+  "situation": "the Event Situation text; separate paragraphs with a blank line (\\n\\n), bullets with \\n- ",
+  "judge_role": "the judge's role title only, for example 'president of COUCH GAMES' or 'customer'",
+  "followup_questions": [{nq} questions the judge asks, as in the official sheet. They are written before
+     the participant speaks, so they must never reference what the participant said. Make them test
+     the selected indicators: consequences, how to implement or communicate, risks, how to measure success.],
+  "hook": "A punchy third-person challenge about the BUSINESS, HARD LIMIT 20 words, one concrete number or
+     stake, no 'you', no question, ends with a period."
+}}
+Output ONLY the JSON."""
+    return PI_SCENARIO_SYSTEM, user
+
+
+# ---------------------------------------------------------------------------
 # 3. Scoring against the selected framework criteria
 # ---------------------------------------------------------------------------
 

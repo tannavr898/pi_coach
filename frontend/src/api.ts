@@ -76,7 +76,17 @@ export type Timing = {
   target_seconds: number;
 };
 
+export type SheetItem = { name: string; text: string };
+
 export type ScenarioResponse = {
+  // True when built on the event's real DECA performance indicators; the fields
+  // below then carry the official sheet sections.
+  official?: boolean;
+  cluster?: string;
+  instructional_area?: string;
+  solution?: SheetItem[];
+  competencies?: SheetItem[];
+  judge_role?: string;
   topic: string;
   industry: string;
   event: string;
@@ -527,7 +537,7 @@ export function postScore(body: {
 
 // --- Mastery Blitz (Phase 5) ----------------------------------------------
 
-export type BlitzScenario = { id: string; text: string };
+export type BlitzScenario = { id: string; text: string; domain_id?: string; topics?: string[] };
 export type BlitzVerdict = "correct" | "partial" | "missed";
 export type BlitzResult = { term_id: string; verdict: BlitzVerdict; note: string };
 

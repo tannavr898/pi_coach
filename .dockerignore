@@ -12,5 +12,5 @@
 backend/.env
 backend/.env.*
 
-# Copyrighted DECA reference material (PI PDFs + sample role-plays) — local only.
+# Raw DECA source files (PDFs, exams). Runtime data is built into backend/app/data.
 backend/reference

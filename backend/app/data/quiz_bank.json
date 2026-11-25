@@ -285,6 +285,53 @@
       "batch": "business_law|Business Ownership|district|w1"
     },
     {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Business Ownership",
+      "term_ids": [
+        "FW-002"
+      ],
+      "concepts": [
+        "Forms of Business Ownership"
+      ],
+      "format": "recognition",
+      "question": "A business owned and operated by one person is a",
+      "options": [
+        {
+          "id": "a",
+          "text": "cooperative",
+          "correct": false,
+          "rationale": "A cooperative is owned by its members."
+        },
+        {
+          "id": "b",
+          "text": "sole proprietorship",
+          "correct": true,
+          "rationale": "A sole proprietorship has a single owner."
+        },
+        {
+          "id": "c",
+          "text": "partnership",
+          "correct": false,
+          "rationale": "A partnership has two or more owners."
+        },
+        {
+          "id": "d",
+          "text": "corporation",
+          "correct": false,
+          "rationale": "A corporation is a separate legal entity with shareholders."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Business Ownership|district",
+      "id": "Q-2087"
+    },
+    {
       "level": "state",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -794,7 +841,7 @@
         },
         {
           "id": "d",
-          "text": "Doubling an order is a change big enough to need a fresh contract.",
+          "text": "A bigger order needs a fresh contract.",
           "correct": false,
           "rationale": "Size is not what decides it; authority is."
         }
@@ -841,7 +888,7 @@
         },
         {
           "id": "d",
-          "text": "As a material breach, since the core purpose of the order isn't met.",
+          "text": "A material breach, since the order's core purpose failed.",
           "correct": true,
           "rationale": "Correct: delivering far short of the promised quantity defeats the purpose of the deal, making it a material breach."
         }
@@ -1554,7 +1601,7 @@
         },
         {
           "id": "d",
-          "text": "As soon as the employee learns the cousin's company is one of the bidders",
+          "text": "As soon as the employee learns the cousin is bidding.",
           "correct": true,
           "rationale": "The duty attaches to the existence of the interest, not to whether it ends up changing anything."
         }
@@ -1583,7 +1630,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Because retaliation includes quieter actions like exclusion or reduced hours, not just firing",
+          "text": "Retaliation includes quieter acts like exclusion or cut hours.",
           "correct": true,
           "rationale": "This matches the common mistake: retaliation isn't limited to termination, it covers subtler punishments too."
         },
@@ -1601,7 +1648,7 @@
         },
         {
           "id": "d",
-          "text": "Because the manager must have a personal financial stake in the outcome for it to count",
+          "text": "The manager must have a personal financial stake for it to count.",
           "correct": false,
           "rationale": "This describes a conflict of interest concern, not what defines retaliation under whistleblower protections."
         }
@@ -1924,13 +1971,13 @@
         },
         {
           "id": "b",
-          "text": "A criminal matter, since breaking a signed agreement is treated as an offense against the public",
+          "text": "A criminal matter: breaking a contract offends the public",
           "correct": false,
           "rationale": "Confuses breach of a private agreement with a public offense; the state has no charge here."
         },
         {
           "id": "c",
-          "text": "A civil matter, since it involves a private dispute over harm from a broken agreement",
+          "text": "A civil matter: a private dispute over a broken contract",
           "correct": true,
           "rationale": "Correct: this is a private dispute between two parties over harm from a broken contract, the hallmark of a civil case."
         },
@@ -1971,7 +2018,7 @@
         },
         {
           "id": "b",
-          "text": "Because the court lacks the authority to hear that kind of case or dispute",
+          "text": "The court lacks authority to hear that kind of case.",
           "correct": true,
           "rationale": "Correct: jurisdiction is about whether the court has the legal power to hear the case at all, independent of the facts."
         },
@@ -2949,6 +2996,53 @@
       "batch": "business_law|Protecting Assets|district"
     },
     {
+      "level": "district",
+      "domain_id": "business_law",
+      "domain": "Business Law",
+      "topic": "Protecting Assets",
+      "term_ids": [
+        "T-0660"
+      ],
+      "concepts": [
+        "Patents, Copyrights, and Trademarks Compared"
+      ],
+      "format": "recognition",
+      "question": "A trademark protects a business's",
+      "options": [
+        {
+          "id": "a",
+          "text": "customer lists",
+          "correct": false,
+          "rationale": "Customer lists are usually protected as trade secrets."
+        },
+        {
+          "id": "b",
+          "text": "brand names and logos",
+          "correct": true,
+          "rationale": "Trademarks guard the marks that identify a brand."
+        },
+        {
+          "id": "c",
+          "text": "written works",
+          "correct": false,
+          "rationale": "Written works are protected by copyright."
+        },
+        {
+          "id": "d",
+          "text": "new inventions",
+          "correct": false,
+          "rationale": "Inventions are protected by patents."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "business_law|Protecting Assets|district",
+      "id": "Q-2088"
+    },
+    {
       "level": "state",
       "domain_id": "business_law",
       "domain": "Business Law",
@@ -3399,13 +3493,13 @@
         },
         {
           "id": "b",
-          "text": "The landlord becomes responsible for any zoning violation fines instead of the tenant",
+          "text": "The landlord pays any zoning fines instead of the tenant.",
           "correct": false,
           "rationale": "Liability for illegal use typically falls on the business operating there, not automatically the landlord."
         },
         {
           "id": "c",
-          "text": "The business could end up paying rent on a space it cannot legally use as planned",
+          "text": "The business could pay rent on space it cannot legally use.",
           "correct": true,
           "rationale": "Correct: this is the first-order consequence described directly on the card."
         },
@@ -3775,13 +3869,13 @@
       "options": [
         {
           "id": "a",
-          "text": "Businesses should disclose known product defects even if a claim is technically true",
+          "text": "Businesses should disclose known defects, even if claims are true",
           "correct": false,
           "rationale": "This describes consumer protection and fair dealing, a different concept."
         },
         {
           "id": "b",
-          "text": "Businesses should win customers through better products instead of rigging the market with rivals",
+          "text": "Businesses should win through better products, not market rigging.",
           "correct": true,
           "rationale": "Correct: matches the definition of growing by being better, not by colluding or abusing power."
         },
@@ -3822,19 +3916,19 @@
       "options": [
         {
           "id": "a",
-          "text": "The company is treating the warranty as just a sales pitch instead of a real financial obligation",
+          "text": "It treats the warranty as a sales pitch, not an obligation.",
           "correct": true,
           "rationale": "Correct: this is exactly the common mistake described, no budget or process behind the promise."
         },
         {
           "id": "b",
-          "text": "The company is violating antitrust rules by offering an unfair advantage over competitors",
+          "text": "It breaks antitrust rules by giving an unfair advantage.",
           "correct": false,
           "rationale": "Warranty length has nothing to do with antitrust or collusion."
         },
         {
           "id": "c",
-          "text": "The company is making a deceptive advertising claim by offering the warranty at all",
+          "text": "It makes a deceptive claim by offering the warranty at all.",
           "correct": false,
           "rationale": "Offering a warranty itself isn't deceptive advertising; the issue is failing to fund and honor it."
         },
@@ -4539,13 +4633,13 @@
         },
         {
           "id": "b",
-          "text": "The business asks a neutral third party to settle a claim dispute quickly.",
+          "text": "A neutral third party settles the claim dispute quickly.",
           "correct": false,
           "rationale": "Describes mediation or arbitration, not insurance."
         },
         {
           "id": "c",
-          "text": "The business pays a premium so an insurer absorbs a large uncertain future loss.",
+          "text": "The business pays a premium so an insurer absorbs a large loss.",
           "correct": true,
           "rationale": "This matches the core definition: shifting the financial cost of a big uncertain loss onto an insurer for a known smaller cost."
         },
@@ -4592,7 +4686,7 @@
         },
         {
           "id": "c",
-          "text": "It removes the need for either side to give ground on the dispute.",
+          "text": "Neither side has to give ground on the dispute.",
           "correct": false,
           "rationale": "Giving ground is how most of these settle."
         },
@@ -6396,13 +6490,13 @@
         },
         {
           "id": "b",
-          "text": "The audience trusts the rest of the presentation less because the presenter seems unprepared",
+          "text": "The audience trusts the rest of it less.",
           "correct": true,
           "rationale": "This matches the card's explanation that being blindsided by an obvious question lowers trust in the presenter."
         },
         {
           "id": "c",
-          "text": "The audience assumes the presenter chose the wrong delivery channel for the message",
+          "text": "The audience assumes the wrong delivery channel was chosen.",
           "correct": false,
           "rationale": "This confuses channel choice with preparation, a different concept entirely."
         },
@@ -6772,7 +6866,7 @@
       "options": [
         {
           "id": "a",
-          "text": "The calls will still run messy despite everyone being pleasant to each other.",
+          "text": "The calls will still run messy despite the friendliness.",
           "correct": true,
           "rationale": "Correct: matches the card's point that being polite alone isn't etiquette without the concrete mechanics like agendas, mute norms, and recaps."
         },
@@ -7695,7 +7789,7 @@
         },
         {
           "id": "d",
-          "text": "A quick yes doesn't prove the employee can actually repeat back the specific steps",
+          "text": "A quick yes does not prove the employee knows the steps.",
           "correct": true,
           "rationale": "Correct: the card names this exact pattern as the common mistake, since a quick 'yep' doesn't confirm real understanding."
         }
@@ -8247,13 +8341,13 @@
       "options": [
         {
           "id": "a",
-          "text": "Sending a vague memo hinting at changes so people aren't alarmed right away",
+          "text": "A vague memo hinting at changes so people stay calm",
           "correct": false,
           "rationale": "Excessive softening leaves people unsure what actually happened, the card's named mistake."
         },
         {
           "id": "b",
-          "text": "Announcing the cuts by email first and following up with a meeting later if needed",
+          "text": "An email first, with a meeting later if needed",
           "correct": false,
           "rationale": "The card specifically flags announcing bad news impersonally before speaking directly as a trust-breaking mistake."
         },
@@ -8265,7 +8359,7 @@
         },
         {
           "id": "d",
-          "text": "Stating the change plainly, explaining the reason, and covering what support is available",
+          "text": "State the change plainly, explain why, and offer support.",
           "correct": true,
           "rationale": "This matches being honest and clear while still respecting how people will feel, the definition's core."
         }
@@ -9056,13 +9150,13 @@
       "options": [
         {
           "id": "a",
-          "text": "It gives you a decided limit so in-room pressure can't push you past it.",
+          "text": "It sets a limit so pressure cannot push you past it.",
           "correct": true,
           "rationale": "The value is deciding where you stop while you are calm, so the decision is not made under pressure by someone with an interest in moving it."
         },
         {
           "id": "b",
-          "text": "It commits you to conceding equally on every point raised in the room.",
+          "text": "It commits you to concede equally on every point.",
           "correct": false,
           "rationale": "A boundary sets one limit, not a rule for trading everything else."
         },
@@ -9115,13 +9209,13 @@
         },
         {
           "id": "c",
-          "text": "Because it offers no real concession or added value for the other side.",
+          "text": "It offers no real concession or added value to the other side.",
           "correct": true,
           "rationale": "Matches the common mistake: relabeling your original position as win-win without any actual gain for the other party."
         },
         {
           "id": "d",
-          "text": "Because it fails to name any interest the two sides already have in common.",
+          "text": "It names no interest the two sides already share.",
           "correct": false,
           "rationale": "That describes missing common ground, a different concept from whether both sides gain something."
         }
@@ -10498,13 +10592,13 @@
         },
         {
           "id": "c",
-          "text": "Every year, this factory wastes enough water to fill an Olympic pool twice over",
+          "text": "This factory wastes two Olympic pools of water every year",
           "correct": true,
           "rationale": "This matches the card's example of a surprising, concrete fact that grabs attention in the first seconds."
         },
         {
           "id": "d",
-          "text": "Thank you all for coming, I really appreciate the chance to speak today",
+          "text": "Thank you for coming; I appreciate the chance to speak",
           "correct": false,
           "rationale": "This is the flat, thank-you-heavy opening the card explicitly says loses attention before content arrives."
         }
@@ -10533,25 +10627,25 @@
       "options": [
         {
           "id": "a",
-          "text": "The slide becomes the speech, so the audience reads instead of listening to the speaker",
+          "text": "The slide becomes the speech, so listeners read instead of listen",
           "correct": true,
           "rationale": "The card's common mistake names exactly this: reading dense text aloud turns the slide into the speech."
         },
         {
           "id": "b",
-          "text": "The visual aid stops being memorable because there are too many colors on the slide",
+          "text": "The visual aid loses impact because it uses too many colors",
           "correct": false,
           "rationale": "The problem described is text density and reading aloud, not color choice, which isn't addressed in the card."
         },
         {
           "id": "c",
-          "text": "The audience will retain more information because they see the words and hear them too",
+          "text": "The audience retains more because they see and hear the words",
           "correct": false,
           "rationale": "This contradicts the card, which says images paired with speech aid retention, not walls of read-aloud text."
         },
         {
           "id": "d",
-          "text": "The presenter loses credibility because visual aids should never be used in a talk",
+          "text": "The presenter loses credibility because slides are never appropriate",
           "correct": false,
           "rationale": "The card supports using visual aids well, it only warns against letting them replace the speaking itself."
         }
@@ -10974,7 +11068,7 @@
         },
         {
           "id": "c",
-          "text": "Share thoughts in the order they come to mind for a natural flow.",
+          "text": "Share thoughts in the order they come to mind.",
           "correct": false,
           "rationale": "This is the common mistake described on the card, ordering by recall instead of by strength of argument."
         },
@@ -11056,7 +11150,7 @@
       "options": [
         {
           "id": "a",
-          "text": "State the two or three most important points the team needs to act on.",
+          "text": "State the two or three key points to act on.",
           "correct": true,
           "rationale": "Correct: this matches the definition of naming the essentials people should remember and do."
         },
@@ -11068,7 +11162,7 @@
         },
         {
           "id": "c",
-          "text": "Retell the meeting in the same order it happened so nothing is left out.",
+          "text": "Retell the meeting in order so nothing is left out.",
           "correct": false,
           "rationale": "This is the common mistake: re-narrating everything instead of cutting it down."
         },
@@ -11593,7 +11687,7 @@
         },
         {
           "id": "c",
-          "text": "It slows down how fast an email can be sent to a client.",
+          "text": "It slows the sending of an email to a client.",
           "correct": false,
           "rationale": "Spell-check does not meaningfully delay sending; this isn't the actual risk described."
         },
@@ -12441,7 +12535,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Learning one set of customs per nationality and applying it to each visitor",
+          "text": "Applying one set of customs per nationality to each visitor",
           "correct": false,
           "rationale": "Swaps one script for several; still not reading the person."
         },
@@ -12547,7 +12641,7 @@
         },
         {
           "id": "c",
-          "text": "Ask the customer what would help and adjust service to fit their actual needs",
+          "text": "Ask the customer what helps and adjust the service to fit.",
           "correct": true,
           "rationale": "The person in front of you knows what they need, which is why asking beats any policy written in advance."
         },
@@ -12870,7 +12964,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Stay quiet about a self-serving option as long as nothing said is untrue",
+          "text": "Stay quiet about the self-serving option if nothing said is false",
           "correct": false,
           "rationale": "Withholding is how most conflicts actually do their damage."
         },
@@ -12882,7 +12976,7 @@
         },
         {
           "id": "c",
-          "text": "Let the customer work out the best deal without steering them either way",
+          "text": "Let the customer find the best deal without steering them.",
           "correct": false,
           "rationale": "Withdrawing advice is not the same as being straight about the conflict."
         },
@@ -13311,7 +13405,7 @@
         },
         {
           "id": "c",
-          "text": "The customer automatically notices the fix on their next visit and feels satisfied",
+          "text": "The customer notices the fix next visit and feels satisfied.",
           "correct": false,
           "rationale": "Nothing guarantees the customer will connect a silent internal fix to their complaint."
         },
@@ -13346,7 +13440,7 @@
       "options": [
         {
           "id": "a",
-          "text": "To get real data on how customers feel instead of relying on gut feelings",
+          "text": "To get real data on how customers feel, not gut feelings",
           "correct": true,
           "rationale": "Matches the definition and explain beat: structured questions replace guesswork with real data."
         },
@@ -14833,7 +14927,7 @@
         },
         {
           "id": "c",
-          "text": "Send an automatic email thanking them for their past business and process the cancellation.",
+          "text": "Send an automatic thank-you email and process the cancellation.",
           "correct": false,
           "rationale": "This lets the customer go without any attempt to find out why they disengaged or offer a fix."
         },
@@ -14933,7 +15027,7 @@
         },
         {
           "id": "d",
-          "text": "We ran late and cost you your afternoon, so tonight is on us",
+          "text": "We cost you your afternoon, so tonight is on us",
           "correct": true,
           "rationale": "It names what went wrong, shows the impact is understood, and moves to a fix, which is all three parts."
         }
@@ -15489,13 +15583,13 @@
       "options": [
         {
           "id": "a",
-          "text": "Setting up a monthly check-in text to keep a customer engaged after purchase.",
+          "text": "Setting up a monthly check-in text after purchase.",
           "correct": true,
           "rationale": "Correct: plans ongoing contact to deepen the relationship over time, not just close a sale."
         },
         {
           "id": "b",
-          "text": "Offering a discount only to close the deal on the customer's first visit.",
+          "text": "Offering a discount only to close the first visit.",
           "correct": false,
           "rationale": "This is a one-time sales tactic, not a plan for repeat engagement."
         },
@@ -16077,7 +16171,7 @@
         },
         {
           "id": "d",
-          "text": "Posting a generic apology asking the customer to message privately without naming the issue",
+          "text": "Posting a generic apology and asking them to message privately",
           "correct": false,
           "rationale": "Matches the common mistake of a canned, non-specific reply that avoids real accountability."
         }
@@ -17446,7 +17540,7 @@
         },
         {
           "id": "b",
-          "text": "Assuming a customer wants the same thing as most other shoppers that day",
+          "text": "Assuming a customer wants what most shoppers want",
           "correct": false,
           "rationale": "This is guessing rather than actually finding out what the customer wants."
         },
@@ -17458,7 +17552,7 @@
         },
         {
           "id": "d",
-          "text": "Asking questions to find out what the customer actually wants before recommending anything",
+          "text": "Asking questions to learn what the customer wants first",
           "correct": true,
           "rationale": "Correct: matches the definition of listening and asking instead of guessing."
         }
@@ -17487,7 +17581,7 @@
       "options": [
         {
           "id": "a",
-          "text": "The customer will stop mentioning their real reason for wanting the repair done quickly",
+          "text": "The customer will stop mentioning why they need it quickly",
           "correct": false,
           "rationale": "This confuses the situation with buying motives, not expectation-setting."
         },
@@ -17499,13 +17593,13 @@
         },
         {
           "id": "c",
-          "text": "The customer will assume the business has no internal customers to coordinate with",
+          "text": "The customer will assume the business has no internal customers",
           "correct": false,
           "rationale": "Internal customers are a separate concept and unrelated to this vague-promise scenario."
         },
         {
           "id": "d",
-          "text": "The customer will feel misled once the real timeframe turns out to be longer than expected",
+          "text": "The customer will feel misled when the real timeframe is longer",
           "correct": true,
           "rationale": "Correct: vague, softened promises set up disappointment when reality doesn't match, per the card's core warning."
         }
@@ -17534,25 +17628,25 @@
       "options": [
         {
           "id": "a",
-          "text": "A manager reminds staff to smile and use a customer's name during checkout",
+          "text": "A manager reminds staff to smile and use customer names",
           "correct": false,
           "rationale": "This is a personalization tactic with an external customer, not recognition of an internal one."
         },
         {
           "id": "b",
-          "text": "A warehouse team ships orders quickly to a paying customer who placed a large order",
+          "text": "A warehouse ships a large paying customer's order quickly",
           "correct": false,
           "rationale": "This is service to an external paying customer, not an internal one."
         },
         {
           "id": "c",
-          "text": "A prepress team flags file errors quickly so the design team can fix them before printing",
+          "text": "A prepress team flags file errors so designers can fix them",
           "correct": true,
           "rationale": "Correct: the design team relies on prepress's work internally, matching the card's example of serving a coworker who depends on your output."
         },
         {
           "id": "d",
-          "text": "A cashier asks a shopper follow-up questions to figure out what they actually need",
+          "text": "A cashier asks a shopper questions to learn their needs",
           "correct": false,
           "rationale": "This describes understanding customer needs with an external customer, not an internal one."
         }
@@ -18022,7 +18116,7 @@
         },
         {
           "id": "c",
-          "text": "It spreads fixed costs over more units so each item costs less to make.",
+          "text": "It spreads fixed costs over more units, lowering cost per item.",
           "correct": true,
           "rationale": "Correct: this matches the core mechanism, fixed costs divided across higher volume lowers per-unit cost."
         },
@@ -18069,7 +18163,7 @@
         },
         {
           "id": "c",
-          "text": "A barrier to entry that makes it hard for the new airline to compete.",
+          "text": "A barrier to entry that makes competing hard.",
           "correct": true,
           "rationale": "Correct: limited gate access is a structural obstacle blocking a new competitor, the definition of a barrier to entry."
         },
@@ -19205,7 +19299,7 @@
         },
         {
           "id": "b",
-          "text": "The utility of the groceries being a higher physical quality than store shelves",
+          "text": "A higher physical quality than store shelves offer",
           "correct": false,
           "rationale": "This wrongly assumes value comes from product quality, ignoring the convenience being described."
         },
@@ -19464,6 +19558,53 @@
       },
       "batch": "economics|Fundamentals|district|w1",
       "id": "Q-1590"
+    },
+    {
+      "level": "district",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Fundamentals",
+      "term_ids": [
+        "T-0111"
+      ],
+      "concepts": [
+        "Opportunity Cost Reasoning"
+      ],
+      "format": "recognition",
+      "question": "Opportunity cost is the value of",
+      "options": [
+        {
+          "id": "a",
+          "text": "the money originally spent",
+          "correct": false,
+          "rationale": "Money spent is the price, not the opportunity cost."
+        },
+        {
+          "id": "b",
+          "text": "the next best alternative given up",
+          "correct": true,
+          "rationale": "Every choice gives up the best other option, and that is the cost."
+        },
+        {
+          "id": "c",
+          "text": "the time saved by deciding",
+          "correct": false,
+          "rationale": "Time saved is not the alternative forgone."
+        },
+        {
+          "id": "d",
+          "text": "the item that was purchased",
+          "correct": false,
+          "rationale": "The item chosen is the benefit received."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Fundamentals|district|w1",
+      "id": "Q-2072"
     },
     {
       "level": "state",
@@ -20104,7 +20245,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Give it to whichever side gives up the least, not whoever is fastest.",
+          "text": "Give it to whoever gives up the least, not the fastest.",
           "correct": true,
           "rationale": "Comparative advantage is about what each side forgoes, which is why the better producer can still be the wrong one to do the job."
         },
@@ -20116,7 +20257,7 @@
         },
         {
           "id": "c",
-          "text": "Give it to whichever side charges the lowest flat price for the work.",
+          "text": "Give it to whoever charges the lowest flat price.",
           "correct": false,
           "rationale": "Price alone ignores what each side gives up to take it on."
         },
@@ -20700,6 +20841,100 @@
       "id": "Q-1808"
     },
     {
+      "level": "state",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Global",
+      "term_ids": [
+        "T-0112"
+      ],
+      "concepts": [
+        "Comparative Advantage"
+      ],
+      "format": "scenario",
+      "question": "Country A makes both goods more cheaply than Country B, yet the two countries still trade. This is explained by",
+      "options": [
+        {
+          "id": "a",
+          "text": "price fixing",
+          "correct": false,
+          "rationale": "Price fixing is an illegal agreement among sellers."
+        },
+        {
+          "id": "b",
+          "text": "absolute advantage",
+          "correct": false,
+          "rationale": "Absolute advantage alone would suggest no trade."
+        },
+        {
+          "id": "c",
+          "text": "protectionism",
+          "correct": false,
+          "rationale": "Protectionism restricts trade."
+        },
+        {
+          "id": "d",
+          "text": "comparative advantage",
+          "correct": true,
+          "rationale": "Each country gains by specializing where its opportunity cost is lower."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Global|state",
+      "id": "Q-2092"
+    },
+    {
+      "level": "state",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Global",
+      "term_ids": [
+        "T-0114"
+      ],
+      "concepts": [
+        "Tariffs and Trade Barriers"
+      ],
+      "format": "scenario",
+      "question": "A government taxes imported steel. What is the direct effect on imported steel?",
+      "options": [
+        {
+          "id": "a",
+          "text": "It arrives faster",
+          "correct": false,
+          "rationale": "Tariffs do not affect shipping speed."
+        },
+        {
+          "id": "b",
+          "text": "It becomes more expensive",
+          "correct": true,
+          "rationale": "A tariff adds to the cost of imports."
+        },
+        {
+          "id": "c",
+          "text": "It becomes tax free",
+          "correct": false,
+          "rationale": "A tariff is itself a tax."
+        },
+        {
+          "id": "d",
+          "text": "It becomes cheaper",
+          "correct": false,
+          "rationale": "Taxes raise, not lower, the price."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Global|state",
+      "id": "Q-2093"
+    },
+    {
       "level": "icdc",
       "domain_id": "economics",
       "domain": "Economics",
@@ -20958,13 +21193,13 @@
       "options": [
         {
           "id": "a",
-          "text": "Because non-payers can still benefit, so there's no profit incentive to provide it",
+          "text": "Non-payers still benefit, so there is no profit incentive",
           "correct": true,
           "rationale": "Matches the card's free-rider explanation for why private markets under-supply public goods."
         },
         {
           "id": "b",
-          "text": "Because people who don't pay can still be excluded from using the good",
+          "text": "People who do not pay can still be excluded",
           "correct": false,
           "rationale": "Reverses the actual trait; public goods are non-excludable, so this is backwards."
         },
@@ -21005,19 +21240,19 @@
       "options": [
         {
           "id": "a",
-          "text": "A company budgets once for a permit fee and assumes it never needs renewal or review again",
+          "text": "A company budgets for a permit fee once and never revisits it",
           "correct": true,
           "rationale": "Matches the card's warning that compliance costs recur through renewals, audits, and rule changes."
         },
         {
           "id": "b",
-          "text": "A company hires an extra worker to get certified before opening to avoid a shutdown risk",
+          "text": "A company hires a worker to get certified before opening",
           "correct": false,
           "rationale": "This shows planning ahead for compliance, the opposite of the mistake."
         },
         {
           "id": "c",
-          "text": "A company raises its prices after estimating higher inspection fees for the coming year",
+          "text": "A company raises prices after estimating higher inspection fees",
           "correct": false,
           "rationale": "This is proactive cost planning, not the mistake described on the card."
         },
@@ -21938,6 +22173,100 @@
       "id": "Q-1792"
     },
     {
+      "level": "district",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "term_ids": [
+        "T-0121"
+      ],
+      "concepts": [
+        "Inflation and Purchasing Power"
+      ],
+      "format": "fill in the blank",
+      "question": "When prices rise across the economy, the purchasing power of a dollar ______.",
+      "options": [
+        {
+          "id": "a",
+          "text": "doubles",
+          "correct": false,
+          "rationale": "A doubling would need prices to halve."
+        },
+        {
+          "id": "b",
+          "text": "stays fixed",
+          "correct": false,
+          "rationale": "Purchasing power changes as prices change."
+        },
+        {
+          "id": "c",
+          "text": "falls",
+          "correct": true,
+          "rationale": "Each dollar buys fewer goods when prices climb."
+        },
+        {
+          "id": "d",
+          "text": "rises",
+          "correct": false,
+          "rationale": "Rising prices reduce, not raise, buying power."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Macro|district",
+      "id": "Q-2073"
+    },
+    {
+      "level": "district",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "term_ids": [
+        "T-0636"
+      ],
+      "concepts": [
+        "The Business Cycle"
+      ],
+      "format": "recognition",
+      "question": "Falling output and rising unemployment mark which phase of the business cycle?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Peak",
+          "correct": false,
+          "rationale": "The peak is the high point before decline begins."
+        },
+        {
+          "id": "b",
+          "text": "Contraction",
+          "correct": true,
+          "rationale": "A contraction is the phase when the economy shrinks."
+        },
+        {
+          "id": "c",
+          "text": "Expansion",
+          "correct": false,
+          "rationale": "Expansion brings rising output and jobs."
+        },
+        {
+          "id": "d",
+          "text": "Recovery",
+          "correct": false,
+          "rationale": "Recovery is the climb out of the downturn."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Macro|district|w1",
+      "id": "Q-2074"
+    },
+    {
       "level": "state",
       "domain_id": "economics",
       "domain": "Economics",
@@ -22502,6 +22831,100 @@
       "id": "Q-1797"
     },
     {
+      "level": "state",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "term_ids": [
+        "T-0119"
+      ],
+      "concepts": [
+        "Fiscal Policy Effects"
+      ],
+      "format": "scenario",
+      "question": "To slow an overheating economy, the government could",
+      "options": [
+        {
+          "id": "a",
+          "text": "increase spending",
+          "correct": false,
+          "rationale": "More government spending adds demand."
+        },
+        {
+          "id": "b",
+          "text": "raise taxes",
+          "correct": true,
+          "rationale": "Higher taxes reduce spending power and cool demand."
+        },
+        {
+          "id": "c",
+          "text": "cut taxes",
+          "correct": false,
+          "rationale": "Tax cuts add spending power."
+        },
+        {
+          "id": "d",
+          "text": "lower interest rates",
+          "correct": false,
+          "rationale": "Lower rates are monetary policy and would add demand."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Macro|state",
+      "id": "Q-2094"
+    },
+    {
+      "level": "state",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Macro",
+      "term_ids": [
+        "T-0639"
+      ],
+      "concepts": [
+        "The Federal Reserve and Interest Rates"
+      ],
+      "format": "scenario",
+      "question": "The Federal Reserve raises interest rates. For a business, borrowing becomes",
+      "options": [
+        {
+          "id": "a",
+          "text": "tax free",
+          "correct": false,
+          "rationale": "Interest is not made tax free by the Fed."
+        },
+        {
+          "id": "b",
+          "text": "cheaper",
+          "correct": false,
+          "rationale": "Cheaper borrowing follows rate cuts."
+        },
+        {
+          "id": "c",
+          "text": "unavailable",
+          "correct": false,
+          "rationale": "Loans remain available but cost more."
+        },
+        {
+          "id": "d",
+          "text": "more expensive",
+          "correct": true,
+          "rationale": "Higher rates raise the cost of loans."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Macro|state|w1",
+      "id": "Q-2095"
+    },
+    {
       "level": "icdc",
       "domain_id": "economics",
       "domain": "Economics",
@@ -22913,7 +23336,7 @@
         },
         {
           "id": "b",
-          "text": "A streaming subscription and a movie theater ticket for the same new release",
+          "text": "A streaming subscription and a theater ticket for the same movie",
           "correct": false,
           "rationale": "These act as substitutes since a customer might choose one form of entertainment over the other."
         },
@@ -22925,7 +23348,7 @@
         },
         {
           "id": "d",
-          "text": "A movie ticket and a bucket of popcorn bought during the same visit",
+          "text": "A movie ticket and popcorn bought during the same visit",
           "correct": true,
           "rationale": "The card describes tickets and popcorn as complements since they are typically bought together."
         }
@@ -23125,6 +23548,100 @@
       },
       "batch": "economics|Markets|district|w1",
       "id": "Q-1777"
+    },
+    {
+      "level": "district",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "term_ids": [
+        "FW-055"
+      ],
+      "concepts": [
+        "Supply and Demand"
+      ],
+      "format": "recognition",
+      "question": "If demand for a product rises while supply stays the same, its price will usually",
+      "options": [
+        {
+          "id": "a",
+          "text": "drop to zero",
+          "correct": false,
+          "rationale": "A price of zero would mean unlimited supply."
+        },
+        {
+          "id": "b",
+          "text": "fall",
+          "correct": false,
+          "rationale": "Lower prices follow falling demand, not rising demand."
+        },
+        {
+          "id": "c",
+          "text": "rise",
+          "correct": true,
+          "rationale": "More buyers competing for the same supply pushes the price up."
+        },
+        {
+          "id": "d",
+          "text": "stay the same",
+          "correct": false,
+          "rationale": "The price moves when demand shifts and supply does not."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Markets|district",
+      "id": "Q-2070"
+    },
+    {
+      "level": "district",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "term_ids": [
+        "T-0124"
+      ],
+      "concepts": [
+        "Elasticity of Demand"
+      ],
+      "format": "recognition",
+      "question": "Demand is elastic when a small price change causes",
+      "options": [
+        {
+          "id": "a",
+          "text": "no change in quantity bought",
+          "correct": false,
+          "rationale": "No reaction to price describes inelastic demand."
+        },
+        {
+          "id": "b",
+          "text": "a change in supply only",
+          "correct": false,
+          "rationale": "Elasticity measures buyer response, not supply."
+        },
+        {
+          "id": "c",
+          "text": "a change in product quality",
+          "correct": false,
+          "rationale": "Price changes do not alter the product's quality."
+        },
+        {
+          "id": "d",
+          "text": "a large change in quantity bought",
+          "correct": true,
+          "rationale": "Elastic demand means buyers react strongly to price changes."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Markets|district",
+      "id": "Q-2071"
     },
     {
       "level": "state",
@@ -23456,6 +23973,100 @@
       "id": "Q-1780"
     },
     {
+      "level": "state",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "term_ids": [
+        "T-0127"
+      ],
+      "concepts": [
+        "Surplus and Shortage Conditions"
+      ],
+      "format": "scenario",
+      "question": "A bakery bakes 100 loaves, sells 70 at $5, and discards the rest. The $5 price is above equilibrium. What condition exists?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A surplus",
+          "correct": true,
+          "rationale": "At a price above equilibrium, quantity supplied exceeds quantity demanded."
+        },
+        {
+          "id": "b",
+          "text": "Equilibrium",
+          "correct": false,
+          "rationale": "At equilibrium, everything baked would sell."
+        },
+        {
+          "id": "c",
+          "text": "A shortage",
+          "correct": false,
+          "rationale": "A shortage occurs when the price is below equilibrium."
+        },
+        {
+          "id": "d",
+          "text": "A price floor",
+          "correct": false,
+          "rationale": "A price floor is a legal minimum, not a condition."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Markets|state|w1",
+      "id": "Q-2090"
+    },
+    {
+      "level": "state",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "term_ids": [
+        "T-0643"
+      ],
+      "concepts": [
+        "Price Ceilings and Price Floors"
+      ],
+      "format": "scenario",
+      "question": "A city caps rent below the market rate. What is the likely result?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A surplus of apartments",
+          "correct": false,
+          "rationale": "Surplus comes from a price above equilibrium."
+        },
+        {
+          "id": "b",
+          "text": "A shortage of apartments",
+          "correct": true,
+          "rationale": "Below-market rent attracts more renters than landlords supply."
+        },
+        {
+          "id": "c",
+          "text": "Falling demand",
+          "correct": false,
+          "rationale": "Cheaper rent raises, not lowers, quantity demanded."
+        },
+        {
+          "id": "d",
+          "text": "Higher quality housing",
+          "correct": false,
+          "rationale": "Caps rarely raise quality."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Markets|state|w1",
+      "id": "Q-2091"
+    },
+    {
       "level": "icdc",
       "domain_id": "economics",
       "domain": "Economics",
@@ -23603,6 +24214,104 @@
       "id": "Q-1420"
     },
     {
+      "level": "icdc",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "term_ids": [
+        "T-0643",
+        "T-0645"
+      ],
+      "concepts": [
+        "Price Ceilings and Price Floors",
+        "Deadweight Loss"
+      ],
+      "format": "cause and effect",
+      "question": "A rent cap holds rent below equilibrium. Besides a shortage, what does the cap create?",
+      "options": [
+        {
+          "id": "a",
+          "text": "A gain for every single renter",
+          "correct": false,
+          "rationale": "Some renters gain, but others cannot find housing."
+        },
+        {
+          "id": "b",
+          "text": "Deadweight loss from lost trades",
+          "correct": true,
+          "rationale": "Fewer apartments are offered, so mutually beneficial trades are lost."
+        },
+        {
+          "id": "c",
+          "text": "A lower demand for housing",
+          "correct": false,
+          "rationale": "Lower rent raises, not lowers, demand."
+        },
+        {
+          "id": "d",
+          "text": "A larger supply of housing",
+          "correct": false,
+          "rationale": "A cap lowers the incentive to supply."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "A price ceiling holds the price below equilibrium, and the lost trades are the deadweight loss.",
+        "review_flags": []
+      },
+      "batch": "economics|Markets|icdc|w1",
+      "id": "Q-2116"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Markets",
+      "term_ids": [
+        "FW-055",
+        "T-0125"
+      ],
+      "concepts": [
+        "Supply and Demand",
+        "Market Equilibrium"
+      ],
+      "format": "cause and effect",
+      "question": "A venue prices tickets below the equilibrium price. What results?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The price has to fall even further",
+          "correct": false,
+          "rationale": "A price below equilibrium needs to rise, not fall."
+        },
+        {
+          "id": "b",
+          "text": "Supply and demand match exactly",
+          "correct": false,
+          "rationale": "Matching happens only at the equilibrium price."
+        },
+        {
+          "id": "c",
+          "text": "Demand exceeds supply, so a shortage forms",
+          "correct": true,
+          "rationale": "Below equilibrium, more people want tickets than are available."
+        },
+        {
+          "id": "d",
+          "text": "Supply exceeds demand, so a surplus forms",
+          "correct": false,
+          "rationale": "A surplus appears above equilibrium, not below it."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "Supply and demand determine the market equilibrium; a price set below it leaves demand above supply.",
+        "review_flags": []
+      },
+      "batch": "economics|Markets|icdc",
+      "id": "Q-2117"
+    },
+    {
       "level": "district",
       "domain_id": "economics",
       "domain": "Economics",
@@ -23618,13 +24327,13 @@
       "options": [
         {
           "id": "a",
-          "text": "Credit lets a buyer get goods now without ever owing more than the sticker price",
+          "text": "Credit gets goods now without costing more than the sticker price",
           "correct": false,
           "rationale": "Ignores that interest adds cost beyond the sticker price, the core misconception the card warns about."
         },
         {
           "id": "b",
-          "text": "Credit and cash always cost the same as long as the total is paid eventually",
+          "text": "Credit and cash always cost the same once fully paid",
           "correct": false,
           "rationale": "Denies that timing and interest change the real cost, which the card says matters."
         },
@@ -24053,7 +24762,7 @@
         },
         {
           "id": "b",
-          "text": "A company is earning the highest possible profit margin on each unit sold.",
+          "text": "A company earns the highest possible margin on each unit.",
           "correct": false,
           "rationale": "High margins reflect pricing and cost control, not whether resources are aimed at what buyers value most."
         },
@@ -24147,7 +24856,7 @@
         },
         {
           "id": "b",
-          "text": "It leads to a lasting rise in what customers are willing to buy.",
+          "text": "It leads to a lasting rise in what customers will buy.",
           "correct": false,
           "rationale": "A cheaper input does not lift demand."
         },
@@ -24171,6 +24880,53 @@
       },
       "id": "Q-0240",
       "batch": "economics|Resource Allocation|district"
+    },
+    {
+      "level": "district",
+      "domain_id": "economics",
+      "domain": "Economics",
+      "topic": "Resource Allocation",
+      "term_ids": [
+        "T-0132"
+      ],
+      "concepts": [
+        "Factors of Production"
+      ],
+      "format": "recognition",
+      "question": "Land, labor, capital, and entrepreneurship are the four",
+      "options": [
+        {
+          "id": "a",
+          "text": "types of money",
+          "correct": false,
+          "rationale": "Money types include cash and credit."
+        },
+        {
+          "id": "b",
+          "text": "market structures",
+          "correct": false,
+          "rationale": "Market structures include monopoly and competition."
+        },
+        {
+          "id": "c",
+          "text": "factors of production",
+          "correct": true,
+          "rationale": "These are the resources used to produce goods and services."
+        },
+        {
+          "id": "d",
+          "text": "forms of ownership",
+          "correct": false,
+          "rationale": "Ownership forms include sole proprietorships and corporations."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "economics|Resource Allocation|district",
+      "id": "Q-2075"
     },
     {
       "level": "state",
@@ -24570,7 +25326,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Treating the disruption as a chance to test a new approach and move forward.",
+          "text": "Treating the disruption as a chance to test a new approach.",
           "correct": true,
           "rationale": "This matches the definition of actively adjusting and looking for what's useful instead of resisting."
         },
@@ -24909,7 +25665,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Assertiveness, since the manager should have set a firm deadline for the change.",
+          "text": "Assertiveness, since the manager should have set a firm deadline",
           "correct": false,
           "rationale": "The issue here is vagueness, not a lack of firmness or respect."
         },
@@ -24921,13 +25677,13 @@
         },
         {
           "id": "c",
-          "text": "Clarity, since the listener has no specific idea what change is actually being asked for.",
+          "text": "Clarity, since the listener has no idea what to change",
           "correct": true,
           "rationale": "The request is vague and leaves the listener guessing, which is exactly what clarity in expression is meant to prevent."
         },
         {
           "id": "d",
-          "text": "Tailoring, since the manager should have used different words for a different department.",
+          "text": "Tailoring, since the manager should have changed words for the department",
           "correct": false,
           "rationale": "The problem isn't about matching the audience, it's about the message itself being unclear to anyone."
         }
@@ -24962,7 +25718,7 @@
         },
         {
           "id": "b",
-          "text": "Stating your view the same firm way whoever happens to be in the room.",
+          "text": "Stating your view the same firm way to everyone.",
           "correct": false,
           "rationale": "The thing tailoring replaces."
         },
@@ -25033,6 +25789,53 @@
       },
       "batch": "emotional_intelligence|Communication Style|district",
       "id": "Q-1455"
+    },
+    {
+      "level": "district",
+      "domain_id": "emotional_intelligence",
+      "domain": "Emotional Intelligence",
+      "topic": "Communication Style",
+      "term_ids": [
+        "T-0137"
+      ],
+      "concepts": [
+        "Assertive Communication"
+      ],
+      "format": "recognition",
+      "question": "Stating your needs clearly while respecting others is",
+      "options": [
+        {
+          "id": "a",
+          "text": "defensive behavior",
+          "correct": false,
+          "rationale": "Defensive behavior answers criticism with protection."
+        },
+        {
+          "id": "b",
+          "text": "passive behavior",
+          "correct": false,
+          "rationale": "Passive behavior avoids stating needs."
+        },
+        {
+          "id": "c",
+          "text": "aggressive behavior",
+          "correct": false,
+          "rationale": "Aggressive behavior ignores others' rights."
+        },
+        {
+          "id": "d",
+          "text": "assertive behavior",
+          "correct": true,
+          "rationale": "Assertive communication is direct and respectful."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "emotional_intelligence|Communication Style|district",
+      "id": "Q-2089"
     },
     {
       "level": "state",
@@ -25779,7 +26582,7 @@
         },
         {
           "id": "c",
-          "text": "Admit the mix-up was their error and arrange to send the correct item right away.",
+          "text": "Admit the error and send the correct item right away.",
           "correct": true,
           "rationale": "Names the personal mistake and takes concrete action to fix it, matching the definition."
         },
@@ -27054,13 +27857,13 @@
       "options": [
         {
           "id": "a",
-          "text": "Waiting for the other person to bring up the topic themselves before saying anything.",
+          "text": "Waiting for the other person to raise the topic first",
           "correct": false,
           "rationale": "This is passive avoidance, not influence, since no framing or persuasion is happening at all."
         },
         {
           "id": "b",
-          "text": "Finding out what the other person cares about and framing your idea around that.",
+          "text": "Finding out what the other person cares about, then framing your idea",
           "correct": true,
           "rationale": "This matches the card's definition of influence as connecting to what actually matters to the other person."
         },
@@ -27530,7 +28333,7 @@
       "options": [
         {
           "id": "a",
-          "text": "It skips naming who did what, so the credit lands on no one in particular",
+          "text": "It names no one, so credit lands on nobody in particular",
           "correct": true,
           "rationale": "The card's common mistake is generic praise that could apply to anyone instead of naming the person and their specific contribution."
         },
@@ -27595,7 +28398,7 @@
         },
         {
           "id": "d",
-          "text": "People duplicate work or wait around because no one owns a clear task",
+          "text": "People duplicate work or wait because no one owns a task",
           "correct": true,
           "rationale": "The card states directly that teams stall under vague leadership because people double up or wait for someone else to decide."
         }
@@ -28782,7 +29585,7 @@
         },
         {
           "id": "c",
-          "text": "Consider how the change will feel to employees and adjust the rollout based on that.",
+          "text": "Consider how the change will feel and adjust the rollout",
           "correct": true,
           "rationale": "This matches the definition of factoring in how others will feel and react, not just what is easiest for the business."
         },
@@ -28817,25 +29620,25 @@
       "options": [
         {
           "id": "a",
-          "text": "A rep notices the customer's tone sharpen and shifts to addressing the frustration directly.",
+          "text": "A rep notices the customer's sharper tone and addresses the frustration",
           "correct": true,
           "rationale": "This matches noticing tone or body language and adjusting the response instead of continuing the script."
         },
         {
           "id": "b",
-          "text": "A rep says 'I can tell you're upset' but keeps finishing the full scripted explanation anyway.",
+          "text": "A rep says 'I can tell you're upset' but finishes the script",
           "correct": false,
           "rationale": "This is the common mistake of naming the emotion without changing the actual approach."
         },
         {
           "id": "c",
-          "text": "A rep sticks to the planned script even after the customer's tone turns sharp and short.",
+          "text": "A rep sticks to the script after the customer's tone turns sharp",
           "correct": false,
           "rationale": "This is plowing ahead with the script, the opposite of adjusting based on the cue."
         },
         {
           "id": "d",
-          "text": "A rep asks a coworker later whether the customer seemed annoyed during the call.",
+          "text": "A rep asks a coworker later if the customer seemed annoyed",
           "correct": false,
           "rationale": "This happens after the fact and doesn't involve adjusting behavior in the moment, missing the real-time noticing required."
         }
@@ -28864,7 +29667,7 @@
       "options": [
         {
           "id": "a",
-          "text": "The manager thanks him for speaking up and moves to the next topic",
+          "text": "The manager thanks him and moves to the next topic",
           "correct": false,
           "rationale": "Courteous, and the risk is still unaddressed."
         },
@@ -28876,7 +29679,7 @@
         },
         {
           "id": "c",
-          "text": "The manager asks him to explain the risk further and revises the plan",
+          "text": "The manager asks him to explain the risk and revises the plan",
           "correct": true,
           "rationale": "Respect for a view is visible in whether it was allowed to change anything, and here it did."
         },
@@ -29205,13 +30008,13 @@
         },
         {
           "id": "b",
-          "text": "Nothing changes since one incident rarely affects how people view a person's dependability",
+          "text": "Nothing changes, since one miss rarely affects how people see someone",
           "correct": false,
           "rationale": "Contradicts the card's point that trust can unravel quickly from small lapses."
         },
         {
           "id": "c",
-          "text": "People tend to start double-checking that person's future work rather than trusting it outright",
+          "text": "People start double-checking that person's work rather than trusting it",
           "correct": true,
           "rationale": "Directly reflects the card's claim that a missed deadline can undo goodwill and lead others to verify everything."
         },
@@ -29246,7 +30049,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Stating firmly that you are one of the hardest workers the interviewer will ever meet",
+          "text": "Stating firmly that you are one of the hardest workers around",
           "correct": false,
           "rationale": "This is generic self-praise without a verifiable incident, the exact mistake the card warns against."
         },
@@ -29264,7 +30067,7 @@
         },
         {
           "id": "d",
-          "text": "Describing a specific time you stayed late unpaid to fix an error before it caused problems",
+          "text": "Describing a time you stayed late unpaid to fix an error",
           "correct": true,
           "rationale": "Provides a verifiable, specific incident, exactly what the card says makes work ethic claims credible."
         }
@@ -30641,7 +31444,7 @@
         },
         {
           "id": "c",
-          "text": "She is failing to get the group to agree on one shared decision.",
+          "text": "She fails to get the group to agree on one decision.",
           "correct": false,
           "rationale": "That describes building consensus, which is about agreement, not about matching tasks to skills."
         },
@@ -31070,7 +31873,7 @@
         },
         {
           "id": "c",
-          "text": "Keeping promises to customers even when breaking them would be easier or cheaper.",
+          "text": "Keeping promises to customers even when breaking them is easier",
           "correct": true,
           "rationale": "Matches the core definition: honoring commitments even under short-term pressure to cut corners."
         },
@@ -31505,7 +32308,7 @@
         },
         {
           "id": "d",
-          "text": "Adjusting the specific part of the plan that the evidence says isn't working.",
+          "text": "Adjusting the specific part of the plan the evidence says is failing",
           "correct": true,
           "rationale": "Matches the card's definition: changing course based on evidence, not scrapping everything."
         }
@@ -31552,7 +32355,7 @@
         },
         {
           "id": "d",
-          "text": "It lets the owner keep every dollar of profit from the new locations.",
+          "text": "It lets the owner keep every dollar of new-location profit",
           "correct": false,
           "rationale": "The franchisee keeps most of it; that is the trade."
         }
@@ -31599,7 +32402,7 @@
         },
         {
           "id": "d",
-          "text": "Resilience, because the setback was treated as data and led to a specific change.",
+          "text": "Resilience, because the setback became data and led to a specific change",
           "correct": true,
           "rationale": "Matches the card's definition: reviewing data and adjusting approach rather than quitting or repeating blindly."
         }
@@ -31916,13 +32719,13 @@
       "options": [
         {
           "id": "a",
-          "text": "It lets the team catch flaws cheaply before spending big money on the finished version.",
+          "text": "It lets the team catch flaws cheaply before the final build",
           "correct": true,
           "rationale": "This matches the core purpose of prototyping: cheap testing before heavy investment."
         },
         {
           "id": "b",
-          "text": "It lets the team skip customer feedback since the design is already mostly finished.",
+          "text": "It lets the team skip customer feedback because the design is done",
           "correct": false,
           "rationale": "This inverts the point; prototypes exist to gather feedback, not avoid it."
         },
@@ -31934,7 +32737,7 @@
         },
         {
           "id": "d",
-          "text": "It lets the team lock in a factory contract before the design is tested.",
+          "text": "It lets the team lock in a factory contract before testing.",
           "correct": false,
           "rationale": "Locking in production early is the opposite of what a rough test version is meant to prevent."
         }
@@ -31963,7 +32766,7 @@
       "options": [
         {
           "id": "a",
-          "text": "Select the cheapest materials so the launch costs stay as low as possible.",
+          "text": "Select the cheapest materials to keep launch costs low.",
           "correct": false,
           "rationale": "Cost of materials isn't the focus of design thinking; understanding the customer's pain is."
         },
@@ -32010,19 +32813,19 @@
       "options": [
         {
           "id": "a",
-          "text": "Matching every feature of the market leader at the exact same price point.",
+          "text": "Matching every feature of the market leader at the same price",
           "correct": false,
           "rationale": "Matching the leader head to head is direct competition, not the underserved-segment approach."
         },
         {
           "id": "b",
-          "text": "Offering a simpler, cheaper option that reaches customers the big players currently ignore.",
+          "text": "Offering a simpler, cheaper option for customers big players ignore",
           "correct": true,
           "rationale": "This matches the core idea of winning by serving overlooked customers with something simpler and cheaper."
         },
         {
           "id": "c",
-          "text": "Releasing a flashy upgrade aimed at the same wealthy customers rivals already serve.",
+          "text": "Releasing a flashy upgrade for the wealthy customers rivals already serve",
           "correct": false,
           "rationale": "A flashy product for the same top customers is just a better version, not a disruptive entry."
         },
@@ -32363,7 +33166,7 @@
         },
         {
           "id": "d",
-          "text": "A clear statement of the specific customer and the pain the product solves",
+          "text": "A clear statement of the specific customer and the problem solved",
           "correct": true,
           "rationale": "This is exactly the value proposition gap: naming who has the pain and what pain it solves."
         }
@@ -32404,7 +33207,7 @@
         },
         {
           "id": "c",
-          "text": "Customers pay $10 monthly, and that covers hosting and support costs at current volume",
+          "text": "Customers pay $10 monthly, covering hosting and support at current volume",
           "correct": true,
           "rationale": "This names who pays, how much, how often, and shows it covers costs, the exact definition of revenue logic."
         },
@@ -33820,7 +34623,7 @@
       "options": [
         {
           "id": "a",
-          "text": "An absence of a product isn't automatically a real gap without demand behind it.",
+          "text": "A missing product is not a real gap without demand.",
           "correct": true,
           "rationale": "This reflects the card's point that 'nobody's doing this' doesn't equal a real opportunity unless demand actually exists."
         },
@@ -35307,13 +36110,13 @@
         },
         {
           "id": "c",
-          "text": "She hires a full design team to make the first prototype look polished.",
+          "text": "She hires a full design team to polish the first prototype",
           "correct": false,
           "rationale": "Hiring a team before validating demand assumes a budget she doesn't have, the opposite of bootstrapping."
         },
         {
           "id": "d",
-          "text": "She uses free software and her own time to build a working sample this week.",
+          "text": "She uses free software and her own time to build a sample",
           "correct": true,
           "rationale": "This matches the core definition: moving forward with what's already on hand instead of waiting for a budget."
         }
@@ -36798,6 +37601,53 @@
       "id": "Q-1949"
     },
     {
+      "level": "district",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Accounting Fundamentals",
+      "term_ids": [
+        "T-0591"
+      ],
+      "concepts": [
+        "The Accounting Equation"
+      ],
+      "format": "scenario",
+      "question": "A business has $90,000 in assets and $35,000 in liabilities. What is the owner's equity?",
+      "options": [
+        {
+          "id": "a",
+          "text": "$90,000",
+          "correct": false,
+          "rationale": "That is the total assets figure alone."
+        },
+        {
+          "id": "b",
+          "text": "$55,000",
+          "correct": true,
+          "rationale": "Equity equals assets minus liabilities: 90,000 minus 35,000."
+        },
+        {
+          "id": "c",
+          "text": "$35,000",
+          "correct": false,
+          "rationale": "That is the liabilities figure alone."
+        },
+        {
+          "id": "d",
+          "text": "$125,000",
+          "correct": false,
+          "rationale": "Adding the two figures is the wrong operation."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Accounting Fundamentals|district",
+      "id": "Q-2077"
+    },
+    {
       "level": "state",
       "domain_id": "financial_analysis",
       "domain": "Financial Analysis",
@@ -37125,6 +37975,53 @@
       },
       "batch": "financial_analysis|Accounting Fundamentals|state",
       "id": "Q-1956"
+    },
+    {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Accounting Fundamentals",
+      "term_ids": [
+        "T-0593"
+      ],
+      "concepts": [
+        "Cash Basis Versus Accrual Accounting"
+      ],
+      "format": "scenario",
+      "question": "A firm records revenue when it is earned, even if payment arrives later. Which method is this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tax accounting",
+          "correct": false,
+          "rationale": "Tax accounting follows tax rules, not timing of earning."
+        },
+        {
+          "id": "b",
+          "text": "Cash accounting",
+          "correct": false,
+          "rationale": "Cash accounting records revenue when money is received."
+        },
+        {
+          "id": "c",
+          "text": "Fund accounting",
+          "correct": false,
+          "rationale": "Fund accounting is used by nonprofits and governments."
+        },
+        {
+          "id": "d",
+          "text": "Accrual accounting",
+          "correct": true,
+          "rationale": "Accrual accounting records revenue when earned and expenses when incurred."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Accounting Fundamentals|state",
+      "id": "Q-2100"
     },
     {
       "level": "icdc",
@@ -37738,6 +38635,53 @@
       },
       "batch": "financial_analysis|Analysis|state|w1",
       "id": "Q-1521"
+    },
+    {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Analysis",
+      "term_ids": [
+        "FW-120"
+      ],
+      "concepts": [
+        "Return on Investment"
+      ],
+      "format": "calculation",
+      "question": "An owner invests $20,000 and earns $3,000 in net profit. What is the return on investment?",
+      "options": [
+        {
+          "id": "a",
+          "text": "3%",
+          "correct": false,
+          "rationale": "3% does not follow from the figures."
+        },
+        {
+          "id": "b",
+          "text": "15%",
+          "correct": true,
+          "rationale": "ROI is profit divided by the investment: 3,000 over 20,000."
+        },
+        {
+          "id": "c",
+          "text": "6.7%",
+          "correct": false,
+          "rationale": "6.7% flips the division."
+        },
+        {
+          "id": "d",
+          "text": "85%",
+          "correct": false,
+          "rationale": "85% subtracts instead of dividing."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Analysis|state",
+      "id": "Q-2099"
     },
     {
       "level": "icdc",
@@ -38361,6 +39305,53 @@
       },
       "id": "Q-1871",
       "batch": "financial_analysis|Borrowing and Credit|district"
+    },
+    {
+      "level": "district",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Borrowing and Credit",
+      "term_ids": [
+        "T-0553"
+      ],
+      "concepts": [
+        "Credit Scores and Credit Reports"
+      ],
+      "format": "recognition",
+      "question": "Which habit does the most to build a good credit score?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Closing old accounts quickly",
+          "correct": false,
+          "rationale": "Closing old accounts shortens credit history."
+        },
+        {
+          "id": "b",
+          "text": "Applying for many new cards",
+          "correct": false,
+          "rationale": "Many applications create repeated hard inquiries."
+        },
+        {
+          "id": "c",
+          "text": "Using every card to its limit",
+          "correct": false,
+          "rationale": "High balances relative to limits hurt a score."
+        },
+        {
+          "id": "d",
+          "text": "Paying bills on time",
+          "correct": true,
+          "rationale": "Payment history is the biggest factor in a credit score."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Borrowing and Credit|district",
+      "id": "Q-2079"
     },
     {
       "level": "state",
@@ -39311,6 +40302,53 @@
       "id": "Q-0897"
     },
     {
+      "level": "district",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Cost and Profit",
+      "term_ids": [
+        "FW-109"
+      ],
+      "concepts": [
+        "Break-even Thinking"
+      ],
+      "format": "recognition",
+      "question": "A business reaches its break-even point when total revenue equals",
+      "options": [
+        {
+          "id": "a",
+          "text": "its variable costs",
+          "correct": false,
+          "rationale": "Variable costs are only part of total costs."
+        },
+        {
+          "id": "b",
+          "text": "total profit",
+          "correct": false,
+          "rationale": "Profit is zero at break-even, so it cannot equal revenue."
+        },
+        {
+          "id": "c",
+          "text": "total costs",
+          "correct": true,
+          "rationale": "At break-even, revenue covers all costs, so profit is zero."
+        },
+        {
+          "id": "d",
+          "text": "its fixed costs",
+          "correct": false,
+          "rationale": "Fixed costs are only part of total costs."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Cost and Profit|district",
+      "id": "Q-2114"
+    },
+    {
       "level": "state",
       "domain_id": "financial_analysis",
       "domain": "Financial Analysis",
@@ -39450,6 +40488,53 @@
       },
       "batch": "financial_analysis|Cost and Profit|state",
       "id": "Q-0900"
+    },
+    {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Cost and Profit",
+      "term_ids": [
+        "FW-109"
+      ],
+      "concepts": [
+        "Break-even Thinking"
+      ],
+      "format": "calculation",
+      "question": "Fixed costs are $6,000. Each unit sells for $20 and has $8 in variable cost. How many units are needed to break even?",
+      "options": [
+        {
+          "id": "a",
+          "text": "500",
+          "correct": true,
+          "rationale": "Each unit contributes $12; 6,000 divided by 12 is 500."
+        },
+        {
+          "id": "b",
+          "text": "300",
+          "correct": false,
+          "rationale": "300 divides fixed cost by the price, ignoring variable cost."
+        },
+        {
+          "id": "c",
+          "text": "1,200",
+          "correct": false,
+          "rationale": "1,200 does not follow from any of the figures."
+        },
+        {
+          "id": "d",
+          "text": "750",
+          "correct": false,
+          "rationale": "750 divides fixed cost by the variable cost."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Cost and Profit|state",
+      "id": "Q-2096"
     },
     {
       "level": "icdc",
@@ -41352,6 +42437,100 @@
       "id": "Q-1909"
     },
     {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Investing for the Future",
+      "term_ids": [
+        "T-0563"
+      ],
+      "concepts": [
+        "Employer Match and Vesting"
+      ],
+      "format": "calculation",
+      "question": "An employer matches 50 percent of a worker's contribution up to 6 percent of pay. A worker earning $50,000 contributes 6 percent. What does the employer add?",
+      "options": [
+        {
+          "id": "a",
+          "text": "$1,500",
+          "correct": true,
+          "rationale": "The worker contributes $3,000; half of that is $1,500."
+        },
+        {
+          "id": "b",
+          "text": "$6,000",
+          "correct": false,
+          "rationale": "$6,000 does not follow from the figures."
+        },
+        {
+          "id": "c",
+          "text": "$750",
+          "correct": false,
+          "rationale": "$750 halves the match twice."
+        },
+        {
+          "id": "d",
+          "text": "$3,000",
+          "correct": false,
+          "rationale": "$3,000 is the worker's own contribution."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Investing for the Future|state",
+      "id": "Q-2109"
+    },
+    {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Investing for the Future",
+      "term_ids": [
+        "T-0564"
+      ],
+      "concepts": [
+        "Stocks Versus Bonds"
+      ],
+      "format": "recognition",
+      "question": "A bondholder is best described as a",
+      "options": [
+        {
+          "id": "a",
+          "text": "lender to the issuer",
+          "correct": true,
+          "rationale": "A bond is a loan the issuer repays with interest."
+        },
+        {
+          "id": "b",
+          "text": "paid employee",
+          "correct": false,
+          "rationale": "Employees earn wages, not interest."
+        },
+        {
+          "id": "c",
+          "text": "part owner of the company",
+          "correct": false,
+          "rationale": "Stockholders are part owners."
+        },
+        {
+          "id": "d",
+          "text": "supplier of goods",
+          "correct": false,
+          "rationale": "Suppliers sell goods, not lend money."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Investing for the Future|state",
+      "id": "Q-2110"
+    },
+    {
       "level": "icdc",
       "domain_id": "financial_analysis",
       "domain": "Financial Analysis",
@@ -42443,6 +43622,53 @@
       "id": "Q-1916"
     },
     {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Liquidity and Leverage Ratios",
+      "term_ids": [
+        "T-0579"
+      ],
+      "concepts": [
+        "Debt-to-Equity Ratio"
+      ],
+      "format": "recognition",
+      "question": "Which result most likely signals higher financial risk?",
+      "options": [
+        {
+          "id": "a",
+          "text": "High owner equity",
+          "correct": false,
+          "rationale": "High equity means less reliance on debt."
+        },
+        {
+          "id": "b",
+          "text": "A high current ratio",
+          "correct": false,
+          "rationale": "A high current ratio signals liquidity."
+        },
+        {
+          "id": "c",
+          "text": "A high gross margin",
+          "correct": false,
+          "rationale": "A high gross margin signals profitable sales."
+        },
+        {
+          "id": "d",
+          "text": "A high debt-to-equity ratio",
+          "correct": true,
+          "rationale": "More debt relative to equity means larger fixed obligations."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Liquidity and Leverage Ratios|state",
+      "id": "Q-2098"
+    },
+    {
       "level": "icdc",
       "domain_id": "financial_analysis",
       "domain": "Financial Analysis",
@@ -42490,6 +43716,55 @@
       },
       "batch": "financial_analysis|Liquidity and Leverage Ratios|icdc",
       "id": "Q-1917"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Liquidity and Leverage Ratios",
+      "term_ids": [
+        "T-0577",
+        "T-0578"
+      ],
+      "concepts": [
+        "Current Ratio",
+        "Quick Ratio (Acid-Test)"
+      ],
+      "format": "cause and effect",
+      "question": "A firm has a current ratio of 2.0 but a quick ratio of 0.6. What best explains the gap?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Its receivables are very large",
+          "correct": false,
+          "rationale": "Receivables count in the quick ratio."
+        },
+        {
+          "id": "b",
+          "text": "It has few current liabilities",
+          "correct": false,
+          "rationale": "Fewer liabilities would raise both ratios."
+        },
+        {
+          "id": "c",
+          "text": "Much of its current assets is inventory",
+          "correct": true,
+          "rationale": "The quick ratio leaves out inventory, so a big gap means inventory dominates current assets."
+        },
+        {
+          "id": "d",
+          "text": "It holds very large cash reserves",
+          "correct": false,
+          "rationale": "Large cash would raise the quick ratio too."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "The current ratio counts inventory while the quick ratio excludes it, which is why the two diverge.",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Liquidity and Leverage Ratios|icdc",
+      "id": "Q-2111"
     },
     {
       "level": "district",
@@ -43154,6 +44429,53 @@
       },
       "batch": "financial_analysis|Paychecks and Budgeting|district",
       "id": "Q-1884"
+    },
+    {
+      "level": "district",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Paychecks and Budgeting",
+      "term_ids": [
+        "T-0570"
+      ],
+      "concepts": [
+        "Gross Pay, Net Pay, and Withholding"
+      ],
+      "format": "fill in the blank",
+      "question": "The amount an employee takes home after taxes and deductions is ______ pay.",
+      "options": [
+        {
+          "id": "a",
+          "text": "gross",
+          "correct": false,
+          "rationale": "Gross pay is the amount before deductions."
+        },
+        {
+          "id": "b",
+          "text": "base",
+          "correct": false,
+          "rationale": "Base pay is the standard rate before extras."
+        },
+        {
+          "id": "c",
+          "text": "net",
+          "correct": true,
+          "rationale": "Net pay is gross pay minus withholdings and deductions."
+        },
+        {
+          "id": "d",
+          "text": "overtime",
+          "correct": false,
+          "rationale": "Overtime is pay for extra hours worked."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Paychecks and Budgeting|district",
+      "id": "Q-2078"
     },
     {
       "level": "state",
@@ -45103,6 +46425,53 @@
       "id": "Q-1932"
     },
     {
+      "level": "district",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Profitability and Efficiency Ratios",
+      "term_ids": [
+        "T-0582"
+      ],
+      "concepts": [
+        "Gross, Operating, and Net Profit Margin"
+      ],
+      "format": "recognition",
+      "question": "Gross profit is revenue minus",
+      "options": [
+        {
+          "id": "a",
+          "text": "operating expenses",
+          "correct": false,
+          "rationale": "Subtracting operating expenses gives operating profit."
+        },
+        {
+          "id": "b",
+          "text": "interest expense",
+          "correct": false,
+          "rationale": "Interest is a financing cost, deducted later."
+        },
+        {
+          "id": "c",
+          "text": "income taxes",
+          "correct": false,
+          "rationale": "Taxes come off much further down the statement."
+        },
+        {
+          "id": "d",
+          "text": "cost of goods sold",
+          "correct": true,
+          "rationale": "Gross profit is what remains after the direct cost of the goods sold."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Profitability and Efficiency Ratios|district",
+      "id": "Q-2076"
+    },
+    {
       "level": "state",
       "domain_id": "financial_analysis",
       "domain": "Financial Analysis",
@@ -45479,6 +46848,53 @@
       "id": "Q-1934"
     },
     {
+      "level": "state",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Profitability and Efficiency Ratios",
+      "term_ids": [
+        "T-0587"
+      ],
+      "concepts": [
+        "Contribution Margin"
+      ],
+      "format": "calculation",
+      "question": "A product sells for $50 and has $30 in variable cost. What is its contribution margin per unit?",
+      "options": [
+        {
+          "id": "a",
+          "text": "$20",
+          "correct": true,
+          "rationale": "Contribution margin is price minus variable cost."
+        },
+        {
+          "id": "b",
+          "text": "$30",
+          "correct": false,
+          "rationale": "$30 is the variable cost."
+        },
+        {
+          "id": "c",
+          "text": "$50",
+          "correct": false,
+          "rationale": "$50 is the selling price."
+        },
+        {
+          "id": "d",
+          "text": "$80",
+          "correct": false,
+          "rationale": "$80 adds the figures instead of subtracting."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Profitability and Efficiency Ratios|state|w1",
+      "id": "Q-2097"
+    },
+    {
       "level": "icdc",
       "domain_id": "financial_analysis",
       "domain": "Financial Analysis",
@@ -45575,6 +46991,55 @@
       },
       "batch": "financial_analysis|Profitability and Efficiency Ratios|icdc|w1",
       "id": "Q-1935"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Profitability and Efficiency Ratios",
+      "term_ids": [
+        "T-0580",
+        "T-0581"
+      ],
+      "concepts": [
+        "Return on Equity (ROE)",
+        "Return on Assets (ROA)"
+      ],
+      "format": "cause and effect",
+      "question": "A company has a high return on equity but a low return on assets. What most likely explains it?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Large owner investment",
+          "correct": false,
+          "rationale": "More owner investment would lower return on equity."
+        },
+        {
+          "id": "b",
+          "text": "Very high asset turnover",
+          "correct": false,
+          "rationale": "High turnover would lift return on assets too."
+        },
+        {
+          "id": "c",
+          "text": "Heavy use of debt financing",
+          "correct": true,
+          "rationale": "Debt magnifies the return on the smaller equity base."
+        },
+        {
+          "id": "d",
+          "text": "No debt at all",
+          "correct": false,
+          "rationale": "With no debt, the two returns would be similar."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "Return on equity rises above return on assets when leverage is used, so return on assets exposes the effect.",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Profitability and Efficiency Ratios|icdc",
+      "id": "Q-2112"
     },
     {
       "level": "district",
@@ -46668,6 +48133,53 @@
       },
       "batch": "financial_analysis|Saving Money|district",
       "id": "Q-1858"
+    },
+    {
+      "level": "district",
+      "domain_id": "financial_analysis",
+      "domain": "Financial Analysis",
+      "topic": "Saving Money",
+      "term_ids": [
+        "T-0551"
+      ],
+      "concepts": [
+        "Compound Interest"
+      ],
+      "format": "recognition",
+      "question": "Compound interest is earned on",
+      "options": [
+        {
+          "id": "a",
+          "text": "just the original deposit",
+          "correct": false,
+          "rationale": "Principal-only interest describes simple interest."
+        },
+        {
+          "id": "b",
+          "text": "just the earned interest",
+          "correct": false,
+          "rationale": "Earned interest alone ignores the original balance."
+        },
+        {
+          "id": "c",
+          "text": "just the future deposits",
+          "correct": false,
+          "rationale": "Future deposits are only part of what earns interest."
+        },
+        {
+          "id": "d",
+          "text": "principal and prior interest",
+          "correct": true,
+          "rationale": "Interest on interest is what makes savings grow faster over time."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "financial_analysis|Saving Money|district",
+      "id": "Q-2115"
     },
     {
       "level": "state",
@@ -54372,6 +55884,53 @@
       "id": "Q-0425"
     },
     {
+      "level": "district",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Brand",
+      "term_ids": [
+        "FW-164"
+      ],
+      "concepts": [
+        "Branding and Brand Identity"
+      ],
+      "format": "recognition",
+      "question": "A brand's name, logo, and slogan together make up its",
+      "options": [
+        {
+          "id": "a",
+          "text": "product mix",
+          "correct": false,
+          "rationale": "The product mix is the range of products sold."
+        },
+        {
+          "id": "b",
+          "text": "market share",
+          "correct": false,
+          "rationale": "Market share is a percentage of sales."
+        },
+        {
+          "id": "c",
+          "text": "brand identity",
+          "correct": true,
+          "rationale": "These visible elements identify the brand to customers."
+        },
+        {
+          "id": "d",
+          "text": "price point",
+          "correct": false,
+          "rationale": "A price point is a specific price."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Brand|district",
+      "id": "Q-2083"
+    },
+    {
       "level": "state",
       "domain_id": "marketing",
       "domain": "Marketing",
@@ -60699,6 +62258,53 @@
       "id": "Q-1973"
     },
     {
+      "level": "state",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Price",
+      "term_ids": [
+        "T-0626"
+      ],
+      "concepts": [
+        "Price Skimming and Penetration Pricing"
+      ],
+      "format": "scenario",
+      "question": "A new phone launches at a high price, and the price drops months later. Which strategy is this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Cost-plus pricing",
+          "correct": false,
+          "rationale": "Cost-plus adds a markup to cost."
+        },
+        {
+          "id": "b",
+          "text": "Penetration pricing",
+          "correct": false,
+          "rationale": "Penetration starts low to win share fast."
+        },
+        {
+          "id": "c",
+          "text": "Price skimming",
+          "correct": true,
+          "rationale": "Skimming starts high to earn from early adopters, then lowers."
+        },
+        {
+          "id": "d",
+          "text": "Loss leader pricing",
+          "correct": false,
+          "rationale": "A loss leader is sold below cost to draw traffic."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Price|state|w1",
+      "id": "Q-2102"
+    },
+    {
       "level": "icdc",
       "domain_id": "marketing",
       "domain": "Marketing",
@@ -61269,6 +62875,53 @@
       },
       "batch": "marketing|Product|district|w1",
       "id": "Q-1966"
+    },
+    {
+      "level": "district",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Product",
+      "term_ids": [
+        "FW-161"
+      ],
+      "concepts": [
+        "Product Life Cycle Awareness"
+      ],
+      "format": "recognition",
+      "question": "Sales grow fastest in which stage of the product life cycle?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Decline",
+          "correct": false,
+          "rationale": "Decline sales fall."
+        },
+        {
+          "id": "b",
+          "text": "Maturity",
+          "correct": false,
+          "rationale": "Maturity sales level off."
+        },
+        {
+          "id": "c",
+          "text": "Growth",
+          "correct": true,
+          "rationale": "In the growth stage, awareness spreads and sales climb quickly."
+        },
+        {
+          "id": "d",
+          "text": "Introduction",
+          "correct": false,
+          "rationale": "Introduction sales start slowly."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Product|district",
+      "id": "Q-2082"
     },
     {
       "level": "state",
@@ -62505,6 +64158,53 @@
       },
       "batch": "marketing|Promotion|district|w3",
       "id": "Q-1976"
+    },
+    {
+      "level": "district",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Promotion",
+      "term_ids": [
+        "T-0628"
+      ],
+      "concepts": [
+        "Push Versus Pull Promotion"
+      ],
+      "format": "fill in the blank",
+      "question": "Advertising directly to consumers so they ask stores for a product is a ______ strategy.",
+      "options": [
+        {
+          "id": "a",
+          "text": "channel",
+          "correct": false,
+          "rationale": "Channel is a path of distribution, not a promotion type."
+        },
+        {
+          "id": "b",
+          "text": "push",
+          "correct": false,
+          "rationale": "A push strategy promotes to retailers and wholesalers."
+        },
+        {
+          "id": "c",
+          "text": "trade",
+          "correct": false,
+          "rationale": "Trade promotion is aimed at intermediaries."
+        },
+        {
+          "id": "d",
+          "text": "pull",
+          "correct": true,
+          "rationale": "A pull strategy creates consumer demand that draws the product through stores."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Promotion|district|w3",
+      "id": "Q-2081"
     },
     {
       "level": "state",
@@ -65886,6 +67586,100 @@
       "id": "Q-1538"
     },
     {
+      "level": "state",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "term_ids": [
+        "FW-186"
+      ],
+      "concepts": [
+        "Cross-selling and Upselling"
+      ],
+      "format": "scenario",
+      "question": "A clerk suggests a case to a customer buying a phone. This is an example of",
+      "options": [
+        {
+          "id": "a",
+          "text": "upselling",
+          "correct": false,
+          "rationale": "Upselling offers a more expensive version of the same item."
+        },
+        {
+          "id": "b",
+          "text": "closing",
+          "correct": false,
+          "rationale": "Closing means asking for the sale."
+        },
+        {
+          "id": "c",
+          "text": "cross-selling",
+          "correct": true,
+          "rationale": "Cross-selling offers a related item alongside the main purchase."
+        },
+        {
+          "id": "d",
+          "text": "price matching",
+          "correct": false,
+          "rationale": "Price matching meets a competitor's price."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Selling|state|w1",
+      "id": "Q-2103"
+    },
+    {
+      "level": "state",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Selling",
+      "term_ids": [
+        "FW-184"
+      ],
+      "concepts": [
+        "Handling Buying Objections"
+      ],
+      "format": "scenario",
+      "question": "A customer says, \"The price is too high.\" What is the best first response?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Offer a bigger discount",
+          "correct": false,
+          "rationale": "Discounting at once gives away margin before knowing the cause."
+        },
+        {
+          "id": "b",
+          "text": "Argue the price is fair",
+          "correct": false,
+          "rationale": "Arguing damages rapport."
+        },
+        {
+          "id": "c",
+          "text": "Ask questions to learn the concern",
+          "correct": true,
+          "rationale": "Asking questions shows what is really behind the objection."
+        },
+        {
+          "id": "d",
+          "text": "End the conversation",
+          "correct": false,
+          "rationale": "Ending the talk loses the sale."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Selling|state",
+      "id": "Q-2104"
+    },
+    {
       "level": "icdc",
       "domain_id": "marketing",
       "domain": "Marketing",
@@ -67085,6 +68879,53 @@
       "id": "Q-1958"
     },
     {
+      "level": "district",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Target Market",
+      "term_ids": [
+        "FW-150"
+      ],
+      "concepts": [
+        "Market Segmentation"
+      ],
+      "format": "recognition",
+      "question": "Dividing a market by age, income, and gender is",
+      "options": [
+        {
+          "id": "a",
+          "text": "behavioral segmentation",
+          "correct": false,
+          "rationale": "Behavioral segments use buying habits."
+        },
+        {
+          "id": "b",
+          "text": "demographic segmentation",
+          "correct": true,
+          "rationale": "Age, income, and gender are demographic characteristics."
+        },
+        {
+          "id": "c",
+          "text": "psychographic segmentation",
+          "correct": false,
+          "rationale": "Psychographics cover attitudes and lifestyles."
+        },
+        {
+          "id": "d",
+          "text": "geographic segmentation",
+          "correct": false,
+          "rationale": "Geographic segments use location."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Target Market|district",
+      "id": "Q-2080"
+    },
+    {
       "level": "state",
       "domain_id": "marketing",
       "domain": "Marketing",
@@ -67414,6 +69255,53 @@
       },
       "batch": "marketing|Target Market|state|w1",
       "id": "Q-1959"
+    },
+    {
+      "level": "state",
+      "domain_id": "marketing",
+      "domain": "Marketing",
+      "topic": "Target Market",
+      "term_ids": [
+        "T-0377"
+      ],
+      "concepts": [
+        "Demographic and Psychographic Profiling"
+      ],
+      "format": "scenario",
+      "question": "A gym targets customers by lifestyle, values, and attitudes. Which kind of segmentation is this?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Psychographic",
+          "correct": true,
+          "rationale": "Lifestyle, values, and attitudes are psychographic characteristics."
+        },
+        {
+          "id": "b",
+          "text": "Geographic",
+          "correct": false,
+          "rationale": "Geographic segments use location."
+        },
+        {
+          "id": "c",
+          "text": "Demographic",
+          "correct": false,
+          "rationale": "Demographics are age, income, and similar facts."
+        },
+        {
+          "id": "d",
+          "text": "Volume",
+          "correct": false,
+          "rationale": "Volume segments use the amount purchased."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "marketing|Target Market|state",
+      "id": "Q-2101"
     },
     {
       "level": "icdc",
@@ -77900,6 +79788,53 @@
       "id": "Q-2022"
     },
     {
+      "level": "district",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Process",
+      "term_ids": [
+        "FW-214"
+      ],
+      "concepts": [
+        "Efficiency and Waste Reduction"
+      ],
+      "format": "recognition",
+      "question": "Reducing waste in a process mainly helps a business",
+      "options": [
+        {
+          "id": "a",
+          "text": "lower its costs",
+          "correct": true,
+          "rationale": "Less wasted time and material means lower cost per unit."
+        },
+        {
+          "id": "b",
+          "text": "increase its debt",
+          "correct": false,
+          "rationale": "Waste reduction does not require borrowing."
+        },
+        {
+          "id": "c",
+          "text": "raise its taxes",
+          "correct": false,
+          "rationale": "Taxes do not rise because waste falls."
+        },
+        {
+          "id": "d",
+          "text": "shrink its customer base",
+          "correct": false,
+          "rationale": "Efficiency does not push customers away."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Process|district",
+      "id": "Q-2086"
+    },
+    {
       "level": "state",
       "domain_id": "operations",
       "domain": "Operations",
@@ -78801,6 +80736,53 @@
       "id": "Q-2049"
     },
     {
+      "level": "state",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Projects",
+      "term_ids": [
+        "T-0445"
+      ],
+      "concepts": [
+        "Identifying the Critical Path"
+      ],
+      "format": "recognition",
+      "question": "In project planning, the critical path is the",
+      "options": [
+        {
+          "id": "a",
+          "text": "longest chain of dependent tasks",
+          "correct": true,
+          "rationale": "The critical path sets the minimum project length; any delay on it delays the project."
+        },
+        {
+          "id": "b",
+          "text": "cheapest set of tasks",
+          "correct": false,
+          "rationale": "Cost does not define the critical path."
+        },
+        {
+          "id": "c",
+          "text": "shortest chain of tasks",
+          "correct": false,
+          "rationale": "The shortest chain does not set the finish date."
+        },
+        {
+          "id": "d",
+          "text": "most staffed set of tasks",
+          "correct": false,
+          "rationale": "Staffing does not define the critical path."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Projects|state",
+      "id": "Q-2106"
+    },
+    {
       "level": "icdc",
       "domain_id": "operations",
       "domain": "Operations",
@@ -79277,6 +81259,53 @@
       "id": "Q-2031"
     },
     {
+      "level": "district",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Quality",
+      "term_ids": [
+        "FW-219"
+      ],
+      "concepts": [
+        "Quality Standards and Control"
+      ],
+      "format": "recognition",
+      "question": "Inspecting finished products to find defects is part of",
+      "options": [
+        {
+          "id": "a",
+          "text": "quality control",
+          "correct": true,
+          "rationale": "Quality control checks that output meets the standard."
+        },
+        {
+          "id": "b",
+          "text": "market research",
+          "correct": false,
+          "rationale": "Market research studies customers."
+        },
+        {
+          "id": "c",
+          "text": "capital budgeting",
+          "correct": false,
+          "rationale": "Capital budgeting evaluates investments."
+        },
+        {
+          "id": "d",
+          "text": "strategic planning",
+          "correct": false,
+          "rationale": "Strategic planning sets long-range direction."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Quality|district",
+      "id": "Q-2085"
+    },
+    {
       "level": "state",
       "domain_id": "operations",
       "domain": "Operations",
@@ -79604,6 +81633,53 @@
       },
       "batch": "operations|Quality|state|w1",
       "id": "Q-2035"
+    },
+    {
+      "level": "state",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Quality",
+      "term_ids": [
+        "T-0607"
+      ],
+      "concepts": [
+        "Total Quality Management"
+      ],
+      "format": "recognition",
+      "question": "In total quality management, who is responsible for quality?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Every employee",
+          "correct": true,
+          "rationale": "TQM makes quality everyone's job, not a final inspection step."
+        },
+        {
+          "id": "b",
+          "text": "Only inspectors",
+          "correct": false,
+          "rationale": "Inspectors catch defects but do not own quality."
+        },
+        {
+          "id": "c",
+          "text": "Only managers",
+          "correct": false,
+          "rationale": "Managers lead, but quality is shared."
+        },
+        {
+          "id": "d",
+          "text": "Only customers",
+          "correct": false,
+          "rationale": "Customers judge quality but do not produce it."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Quality|state|w1",
+      "id": "Q-2108"
     },
     {
       "level": "icdc",
@@ -82035,6 +84111,53 @@
       "id": "Q-2041"
     },
     {
+      "level": "district",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "term_ids": [
+        "FW-222"
+      ],
+      "concepts": [
+        "Inventory Management"
+      ],
+      "format": "recognition",
+      "question": "Holding too much inventory mainly increases",
+      "options": [
+        {
+          "id": "a",
+          "text": "stockouts",
+          "correct": false,
+          "rationale": "Stockouts come from holding too little."
+        },
+        {
+          "id": "b",
+          "text": "customer demand",
+          "correct": false,
+          "rationale": "Holding inventory does not raise demand."
+        },
+        {
+          "id": "c",
+          "text": "backorders",
+          "correct": false,
+          "rationale": "Backorders also come from too little stock."
+        },
+        {
+          "id": "d",
+          "text": "storage and carrying costs",
+          "correct": true,
+          "rationale": "Extra stock must be stored, insured, and financed, and it can spoil or go out of date."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Supply|district",
+      "id": "Q-2084"
+    },
+    {
       "level": "state",
       "domain_id": "operations",
       "domain": "Operations",
@@ -82552,6 +84675,100 @@
       "id": "Q-2046"
     },
     {
+      "level": "state",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "term_ids": [
+        "T-0610"
+      ],
+      "concepts": [
+        "Economic Order Quantity (EOQ)"
+      ],
+      "format": "recognition",
+      "question": "The order size that minimizes total ordering and holding cost is the",
+      "options": [
+        {
+          "id": "a",
+          "text": "safety stock",
+          "correct": false,
+          "rationale": "Safety stock is a buffer against uncertainty."
+        },
+        {
+          "id": "b",
+          "text": "bill of materials",
+          "correct": false,
+          "rationale": "A bill of materials lists the parts in a product."
+        },
+        {
+          "id": "c",
+          "text": "economic order quantity",
+          "correct": true,
+          "rationale": "EOQ balances the cost of placing orders against the cost of holding stock."
+        },
+        {
+          "id": "d",
+          "text": "reorder point",
+          "correct": false,
+          "rationale": "The reorder point is when to place an order."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Supply|state|w2",
+      "id": "Q-2105"
+    },
+    {
+      "level": "state",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "term_ids": [
+        "T-0462"
+      ],
+      "concepts": [
+        "Just-in-Time Inventory Practices"
+      ],
+      "format": "recognition",
+      "question": "Just-in-time inventory aims to",
+      "options": [
+        {
+          "id": "a",
+          "text": "buy in the largest bulk lots",
+          "correct": false,
+          "rationale": "Bulk buying increases inventory."
+        },
+        {
+          "id": "b",
+          "text": "stockpile for emergencies",
+          "correct": false,
+          "rationale": "Stockpiling is the opposite of JIT."
+        },
+        {
+          "id": "c",
+          "text": "maximize warehouse space",
+          "correct": false,
+          "rationale": "JIT reduces the need for storage."
+        },
+        {
+          "id": "d",
+          "text": "receive goods only as needed",
+          "correct": true,
+          "rationale": "JIT reduces carrying costs by timing deliveries to use."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "",
+        "review_flags": []
+      },
+      "batch": "operations|Supply|state|w1",
+      "id": "Q-2107"
+    },
+    {
       "level": "icdc",
       "domain_id": "operations",
       "domain": "Operations",
@@ -82893,6 +85110,55 @@
       },
       "batch": "operations|Supply|icdc|w2",
       "id": "Q-2047"
+    },
+    {
+      "level": "icdc",
+      "domain_id": "operations",
+      "domain": "Operations",
+      "topic": "Supply",
+      "term_ids": [
+        "T-0610",
+        "T-0611"
+      ],
+      "concepts": [
+        "Economic Order Quantity (EOQ)",
+        "Safety Stock and Reorder Points"
+      ],
+      "format": "cause and effect",
+      "question": "Which statement about inventory planning is correct?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Both exist only to cut holding costs",
+          "correct": false,
+          "rationale": "Safety stock raises, not cuts, holding cost."
+        },
+        {
+          "id": "b",
+          "text": "Neither depends on demand",
+          "correct": false,
+          "rationale": "Both rely on demand estimates."
+        },
+        {
+          "id": "c",
+          "text": "EOQ sets order size, and safety stock buffers uncertainty",
+          "correct": true,
+          "rationale": "Each tool answers a different question: how much to order, and how much cushion to keep."
+        },
+        {
+          "id": "d",
+          "text": "Safety stock sets order size, and EOQ buffers uncertainty",
+          "correct": false,
+          "rationale": "The roles are reversed in this option."
+        }
+      ],
+      "notes": {
+        "difficulty_justification": "Official-exam formula: short stem, short options.",
+        "synthesis_check": "Economic order quantity picks the order size while safety stock protects against demand and delivery uncertainty.",
+        "review_flags": []
+      },
+      "batch": "operations|Supply|icdc|w2",
+      "id": "Q-2113"
     },
     {
       "level": "district",

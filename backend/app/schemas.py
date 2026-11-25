@@ -162,7 +162,23 @@ class Sampling(BaseModel):
     labels: dict[str, str] = {}
 
 
+class Bullet(BaseModel):
+    """One official-sheet line: a named item and its wording (a Solution element or a
+    Career Competency)."""
+    name: str
+    text: str
+
+
 class ScenarioResponse(BaseModel):
+    # True when this role-play was built on the event's real DECA performance
+    # indicators and carries the official sheet sections below. False for events with
+    # no official list on file, which keep the framework criteria.
+    official: bool = False
+    cluster: str = ""
+    instructional_area: str = ""
+    solution: list[Bullet] = []
+    competencies: list[Bullet] = []
+    judge_role: str = ""
     # What we understood from the request.
     topic: str
     industry: str = ""
@@ -789,9 +805,13 @@ class PlanResponse(BaseModel):
 
 
 class BlitzScenario(BaseModel):
-    """A short, predetermined drill scenario."""
+    """A short, predetermined drill scenario. `domain_id` and `topics` say which study
+    terms it genuinely exercises, so a round can be matched to what is being drilled.
+    A blank `domain_id` marks a generic scenario (the fallback)."""
     id: str
     text: str
+    domain_id: str = ""
+    topics: list[str] = []
 
 
 class BlitzAnswer(BaseModel):

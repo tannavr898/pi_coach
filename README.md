@@ -66,10 +66,12 @@ playback).
   `POST /api/score-delivery` (voice), plus `GET /api/framework` (our domains) and
   `GET /api/rubric` (scoring levels). Backed by the Anthropic API and a
   transcription provider (AssemblyAI) for voice.
-- **Guardrails:** contains **zero** DECA performance-indicator text, codes, or
-  event-to-PI mapping; keys stay server-side; per-IP rate limit on the paid
-  endpoints; original clean-room scenarios; output labelled practice coaching,
-  never an official competition score.
+- **Guardrails:** role-plays use the official DECA performance indicators (used with
+  DECA's permission; `backend/app/data/pis.json`) in the official sheet format, with
+  original situations; keys stay server-side; per-IP rate limit on the paid endpoints;
+  output labelled practice coaching, never an official competition score, and the
+  not-affiliated disclaimer stays. Finance and Personal Financial Literacy have no
+  official list on file yet and keep the framework criteria.
 
 ## Run it (two terminals)
 
@@ -87,9 +89,10 @@ cd frontend && npm install && npm run dev
 Open the Vite URL and run a full typed loop. Without a key the scenario/scoring
 endpoints return a clear 503; the rest of the UI still works.
 
-> DECA's official sample role-plays (used privately to calibrate the rubric and
-> prompts) live under `backend/reference/` and are **gitignored**, copyright;
-> never committed or shipped. Our generated scenarios stay clean-room.
+> DECA's official sample role-plays and PI lists are used with DECA's permission as
+> style guides and as the indicator source (`backend/scripts/build_pis.py`,
+> `build_samples.py` turn `backend/reference/` into `backend/app/data/`). The raw
+> PDFs stay gitignored; the generated scenarios are original and never copy a sample.
 
 > **Note (this machine):** `npm install` here hits a TLS-inspection cert error
 > (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`). Run it as

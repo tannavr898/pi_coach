@@ -56,7 +56,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, Header, HTTPE
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.concurrency import run_in_threadpool
 
-from . import admin_metrics, admin_samples, blitz, chapters, config, courses, db, delivery, diagnostic, events, framework, interpret, llm, notify, plan, progress, prompts, quiz, rubric, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
+from . import admin_metrics, admin_samples, blitz, chapters, config, courses, db, delivery, diagnostic, events, framework, interpret, llm, notify, pis, plan, progress, prompts, quiz, rubric, samples, scenario_bank, scenario_cache, seo, stats, study, taxonomy, terms, transcription, usage, video
 from .auth import current_user, optional_user
 from pydantic import BaseModel
 from .ratelimit import daily_cap, daily_cap_completion, rate_limit, rate_limit_completion
@@ -68,6 +68,7 @@ from .schemas import (
     AssignmentRow,
     AssignmentStatus,
     AssignmentTarget,
+    Bullet,
     CareerCompetenciesSection,
     ChapterCreate,
     ChapterInfo,
@@ -284,6 +285,58 @@ def _criterion_view(c: dict, mode: Mode) -> Criterion:
     return Criterion(id=c["id"], domain=c["domain"], topic=c["topic"], name=c["name"])
 
 
+def _official_procedures(event: dict) -> list[str]:
+    """Participant instructions in the wording pattern of the official 2026 sheets,
+    with this event's real prep and presentation times."""
+    t = events.timing_for(event)
+    prep, present = t["prep_seconds"] // 60, t["present_seconds"] // 60
+    return [
+        "This event is presented to you through your review of the Solution, Career Competencies, "
+        "Performance Indicators and Event Situation.",
+        f"You have up to {prep} minutes to review this information and prepare your presentation. "
+        "You may make notes to use during your presentation.",
+        f"You will have up to {present} minutes to present to the judge(s).",
+        "You will be evaluated on your solution to the event situation, how you incorporate the "
+        "performance indicators of this event and how you demonstrate the career competencies.",
+        "Turn in all your notes and event materials when you have completed the event.",
+    ]
+
+
+def _main_area(criteria: list[dict]) -> str:
+    """The instructional area most of the selected indicators belong to."""
+    areas = [c["domain"] for c in criteria]
+    return max(set(areas), key=areas.count) if areas else ""
+
+
+def _from_bank(banked: dict, event: dict, level: str, mode: Mode, topic: str = "") -> ScenarioResponse:
+    """A hand-written bank role-play as the response the client expects."""
+    criteria = pis.get_pis(banked["pi_ids"])
+    return ScenarioResponse(
+        topic=topic or event["name"],
+        industry="",
+        event=event["name"],
+        event_kind=event["kind"],
+        quantitative=events.is_quantitative(event),
+        team=events.is_team(event),
+        timing=Timing(**events.timing_for(event)),
+        domain_focus=sorted({c["domain"] for c in criteria}),
+        level=level,
+        mode=mode,
+        criteria=[_criterion_view(c, mode) for c in criteria],
+        procedures=_official_procedures(event),
+        situation=banked["situation"],
+        hook=banked.get("hook", ""),
+        followup_questions=banked["followup_questions"],
+        official=True,
+        cluster=event["cluster"],
+        instructional_area=banked.get("area", "") or _main_area(criteria),
+        solution=[Bullet(**b) for b in pis.SOLUTION],
+        competencies=[Bullet(**b) for b in pis.CAREER_COMPETENCIES],
+        judge_role=banked.get("judge_role", ""),
+        scenario_id=banked["id"],
+    )
+
+
 @app.post("/api/scenario", response_model=ScenarioResponse, dependencies=[Depends(rate_limit), Depends(daily_cap)])
 async def scenario(
     req: ScenarioRequest,
@@ -327,7 +380,25 @@ async def scenario(
         interp["topic"] = sampled["dims"]["subtopic"]["label"]
         interp["industry"] = sampled["dims"]["business_type"]["label"]
 
-    pool = interpret.candidate_pool(interp["domain_ids"])
+    # Events with an official PI list generate against the real indicators; the rest
+    # (Finance, Personal Financial Literacy) keep the framework criteria.
+    official = pis.has_pis(event)
+
+    # 1a) The hand-written bank comes first: free, instant, and accurate. Only when the
+    # student typed no focus (a focus asks for something specific the bank can't know),
+    # and only while there is something they haven't seen for this event and level.
+    if official and not req.request.strip():
+        banked = scenario_bank.pick(event["id"], req.level, req.seen)
+        if banked is not None:
+            log.info("SCENARIO bank id=%s", banked["id"])
+            return _from_bank(banked, event, req.level, req.mode, interp["topic"])
+
+    if official:
+        pool = pis.candidate_pool(
+            event, req.level, f'{interp["topic"]} {interp["industry"]} {req.request}'
+        )
+    else:
+        pool = interpret.candidate_pool(interp["domain_ids"])
 
     # 1c) Cache lookup, BEFORE we spend anything on generation.
     #
@@ -338,7 +409,11 @@ async def scenario(
     # answering a restaurant question with a gym scenario is a regression no cost
     # saving justifies. With no focus, anything under the key is a correct answer.
     focused = bool(req.request.strip())
-    cache_key = scenario_cache.build_key(req.level, interp["domain_ids"], req.event)
+    # Official role-plays get their own key space so framework-era cached scenarios
+    # (criteria FW-xxx) are never served in place of one built on real PIs.
+    cache_key = scenario_cache.build_key(
+        req.level, ["official-pi-v1"] if official else interp["domain_ids"], req.event
+    )
     context = scenario_cache.normalize_context(interp["industry"])
     uid = user["id"] if user else None
 
@@ -372,13 +447,21 @@ async def scenario(
     log.info("SCENARIO cache=miss key=%s focused=%s", cache_key, focused)
 
     # 2) Generate: the model selects the criteria from the pool AND writes the scenario.
-    system, user = prompts.build_scenario_prompt(
-        interp["topic"], interp["industry"], req.level, pool, event,
-        params=sampled["labels"] if sampled else None,
-    )
+    if official:
+        system, user = prompts.build_pi_scenario_prompt(
+            interp["topic"], interp["industry"], req.level, pool, event,
+            samples.pick(event, 1), samples.words_for(event, req.level),
+            params=sampled["labels"] if sampled else None,
+        )
+    else:
+        system, user = prompts.build_scenario_prompt(
+            interp["topic"], interp["industry"], req.level, pool, event,
+            params=sampled["labels"] if sampled else None,
+        )
     try:
         data = await run_in_threadpool(
-            llm.complete_json, system, user, model=config.SCENARIO_MODEL, max_tokens=2400
+            llm.complete_json, system, user, model=config.SCENARIO_MODEL,
+            max_tokens=3600 if official else 2400,
         )
     except llm.LLMNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -405,7 +488,8 @@ async def scenario(
 
     # The criteria selected here are the EXACT criteria scoring will grade against.
     criteria = interpret.resolve_selection(
-        [str(i) for i in data.get("criteria_ids", [])], pool, events.pi_count_for(event)
+        [str(i) for i in data.get("pi_ids" if official else "criteria_ids", [])],
+        pool, events.pi_count_for(event),
     )
     if not criteria:
         raise HTTPException(status_code=502, detail="No evaluation criteria were selected for this scenario.")
@@ -425,10 +509,16 @@ async def scenario(
         level=req.level,
         mode=req.mode,
         criteria=[_criterion_view(c, req.mode) for c in criteria],
-        procedures=PROCEDURES,
+        procedures=_official_procedures(event) if official else PROCEDURES,
         situation=situation,
         hook=hook,
         followup_questions=followups,
+        official=official,
+        cluster=event["cluster"] if official else "",
+        instructional_area=_main_area(criteria) if official else "",
+        solution=[Bullet(**b) for b in pis.SOLUTION] if official else [],
+        competencies=[Bullet(**b) for b in pis.CAREER_COMPETENCIES] if official else [],
+        judge_role=str(data.get("judge_role", "")).strip()[:120] if official else "",
         sampling=Sampling(signature=sampled["signature"], labels=sampled["labels"]) if sampled else None,
     )
 
@@ -756,7 +846,8 @@ async def mark_scenario_seen(
     Anonymous callers are a no-op here (there is no server-side history to write);
     their never-repeat list lives in localStorage.
     """
-    if user and req.scenario_id:
+    # Bank scenarios are not rows in the shared pool; the client's own list covers them.
+    if user and req.scenario_id and not req.scenario_id.startswith("bank:"):
         await scenario_cache.mark_seen(req.scenario_id, user["id"])
     return {"status": "ok"}
 
@@ -777,6 +868,12 @@ async def get_scenario_by_id(
     exists in the pool). The rep it leads to is metered where the tokens are
     actually spent, scoring, and by the client-side signed-out roleplay cap.
     """
+    if scenario_id.startswith("bank:"):
+        row = scenario_bank.get(scenario_id)
+        ev = events.get_event(row["event"]) if row else None
+        if row is None or ev is None:
+            raise HTTPException(status_code=404, detail="That challenge link has expired or was never valid.")
+        return _from_bank(row, ev, row["level"], mode)
     hit = await scenario_cache.get_by_id(scenario_id)
     if hit is None:
         raise HTTPException(status_code=404, detail="That challenge link has expired or was never valid.")

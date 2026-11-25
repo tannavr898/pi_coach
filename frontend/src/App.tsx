@@ -2312,9 +2312,7 @@ function SiteFooter() {
           <span className="font-display text-sm font-semibold text-slate-600 dark:text-slate-300">PI Coach</span>
         </div>
         <p>
-          Trains the business skills and delivery that win DECA role-plays, using original practice scenarios and
-          our own independent evaluation framework. Not official DECA materials, and not affiliated with DECA Inc.
-          Feedback is practice coaching, never an official competition score.
+          Trains the business skills and delivery that win DECA role-plays. Not affiliated with DECA Inc.
         </p>
         <p className="mt-1.5">
           Recordings are transcribed to measure delivery, then discarded on our servers; your audio stays on your
@@ -5960,33 +5958,47 @@ function Segmented<T extends string>(props: { value: T; onChange: (v: T) => void
 function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedded?: boolean }) {
   const s = scenario;
   const learn = s.mode === "learn";
+  const official = !!s.official;
   const body = (
     <div className="space-y-4">
+      {official && (
+        <div className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {s.cluster}{s.instructional_area ? ` · ${s.instructional_area}` : ""}
+        </div>
+      )}
+      <div>
+        <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Participant instructions</h3>
+        <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+          {s.procedures.map((p, i) => (
+            <li key={i} className="flex gap-2"><span className="text-slate-300 dark:text-slate-600">•</span>{p}</li>
+          ))}
+        </ul>
+      </div>
+      {official && (s.solution?.length ?? 0) > 0 && (
+        <SheetList title="Solution" items={s.solution!} />
+      )}
+      {official && (s.competencies?.length ?? 0) > 0 && (
+        <SheetList title="Career competencies" items={s.competencies!} />
+      )}
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">
-            What you're evaluated on ({s.criteria.length})
+            {official ? "Performance indicators" : "What you're evaluated on"} ({s.criteria.length})
           </h3>
           <span className="font-mono text-[10px] uppercase tracking-wider text-indigo-500">
             {learn ? "Learn mode" : "Competition mode"}
           </span>
         </div>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {learn
-            ? "The business skills this role-play assesses, with what a strong answer looks like, so you can aim for it."
-            : "The business skills this role-play assesses, by name, just like a real role-play sheet. You supply the substance."}
+          {official
+            ? "The official DECA performance indicators this role-play is graded on, exactly as they appear on a real event sheet."
+            : learn
+              ? "The business skills this role-play assesses, with what a strong answer looks like, so you can aim for it."
+              : "The business skills this role-play assesses, by name, just like a real role-play sheet. You supply the substance."}
         </p>
         <ul className="mt-3 border-t border-slate-200 dark:border-slate-800">
-          {s.criteria.map((c) => (
-            <CriterionBrief key={c.id} c={c} learn={learn} />
-          ))}
-        </ul>
-      </div>
-      <div>
-        <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">Procedures</h3>
-        <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-          {s.procedures.map((p, i) => (
-            <li key={i} className="flex gap-2"><span className="text-slate-300 dark:text-slate-600">•</span>{p}</li>
+          {s.criteria.map((c, i) => (
+            <CriterionBrief key={c.id} c={c} learn={learn && !official} index={official ? i + 1 : undefined} />
           ))}
         </ul>
       </div>
@@ -5995,13 +6007,31 @@ function CoverSheet({ scenario, embedded }: { scenario: ScenarioResponse; embedd
   return embedded ? body : <Card>{body}</Card>;
 }
 
+// A titled list of official sheet items (the Solution elements, the Career Competencies).
+function SheetList({ title, items }: { title: string; items: { name: string; text: string }[] }) {
+  return (
+    <div>
+      <h3 className="font-display text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
+      <ul className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+        {items.map((it) => (
+          <li key={it.name} className="flex gap-2">
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span><span className="font-medium text-slate-800 dark:text-slate-100">{it.name}</span>{" "}<span className="text-slate-400">&ndash;</span> {it.text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // One criterion on the cover sheet. Competition mode shows just the name +
 // domain; Learn mode expands with the coaching question and what "good" looks
 // like (the teaching layer).
-function CriterionBrief({ c, learn }: { c: Criterion; learn: boolean }) {
+function CriterionBrief({ c, learn, index }: { c: Criterion; learn: boolean; index?: number }) {
   return (
     <li className="border-b border-slate-200 py-2.5 last:border-b-0 dark:border-slate-800">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        {index !== undefined && <span className="font-mono text-xs text-slate-400">{index}.</span>}
         <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{c.name}</span>
         <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
           {c.domain}{c.topic ? ` · ${c.topic}` : ""}
@@ -6024,7 +6054,25 @@ function SituationSheet({ text, embedded }: { text: string; embedded?: boolean }
   const body = (
     <>
       <Eyebrow>Event situation</Eyebrow>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-100">{text}</p>
+      <div className="mt-2 space-y-3 text-sm leading-relaxed text-slate-800 dark:text-slate-100">
+        {text.split(/\r?\n\s*\n/).map((para, i) => {
+          const lines = para.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          const bullets = lines.filter((l) => l.startsWith("- "));
+          const lead = lines.filter((l) => !l.startsWith("- ")).join(" ");
+          return (
+            <div key={i}>
+              {lead && <p>{lead}</p>}
+              {bullets.length > 0 && (
+                <ul className="mt-1.5 space-y-1">
+                  {bullets.map((b, j) => (
+                    <li key={j} className="flex gap-2"><span className="text-slate-300 dark:text-slate-600">•</span>{b.slice(2)}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </>
   );
   return embedded ? <div>{body}</div> : <Card>{body}</Card>;
@@ -6035,7 +6083,7 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
     <p className="max-w-[78ch] text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">
       You'll be graded on {scenario.criteria.length} business skills for this role-play, each scored
       Novice → Exemplary with specific feedback and the exact phrases that earned credit. Practice coaching
-      against our own evaluation framework, not an official competition score.
+      against the official performance indicators.
     </p>
   );
 }
@@ -6043,7 +6091,7 @@ function RubricNote({ scenario }: { scenario: ScenarioResponse }) {
 function HonestyNote() {
   return (
     <p className="max-w-xs text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-      Original practice scenarios that train the skills DECA role-plays reward, not official DECA materials.
+      Original practice scenarios built on official performance indicators. Not affiliated with DECA Inc.
     </p>
   );
 }
@@ -6282,31 +6330,8 @@ function FAQPage({ onStart }: { onStart: () => void }) {
             </li>
           </ul>
           <p>
-            It's all built on our own evaluation framework, authored from public business fundamentals (more on why
-            below), so the coaching is ours, end to end.
-          </p>
-        </FAQItem>
-        <FAQItem q="Why build your own framework instead of using DECA's performance indicators?">
-          <p>
-            DECA / MBA Research's performance-indicator lists are <strong className="font-semibold text-slate-800 dark:text-slate-200">licensed intellectual property</strong>. Rather than
-            ship their exact wording, codes, and event-to-PI mapping, we authored our own framework of business skills
-            from the underlying public concepts: the same fundamentals taught in any business course. It's the right
-            thing legally and lets us keep improving the rubric ourselves. It also means the framework can travel beyond
-            DECA later (FBLA, interview prep, and so on).
-          </p>
-        </FAQItem>
-      </FAQGroup>
-
-      <FAQGroup title="Is this allowed?">
-        <FAQItem q="Is PI Coach affiliated with DECA? Is using it against the rules?">
-          <p>
-            No affiliation. PI Coach is an independent practice tool and is <strong className="font-semibold text-slate-800 dark:text-slate-200">not endorsed by or connected to DECA
-            Inc.</strong> We use the name “DECA” only to describe the competition we help you prepare for.
-          </p>
-          <p>
-            Practicing your own skills with original scenarios is ordinary prep, like a mock interview. What isn't okay
-            is bringing prepared materials or outside help into the actual competition room. Use this to <em>train</em>
-            beforehand, then compete on your own. When in doubt, follow your chapter advisor and DECA's guidelines.
+            Role-plays use the real DECA performance indicators for your event, and the study cards are built on our own
+            framework of business fundamentals, so you practice the real event and learn the concepts behind it.
           </p>
         </FAQItem>
       </FAQGroup>

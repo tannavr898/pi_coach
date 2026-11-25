@@ -90,11 +90,7 @@ _KIND_PHRASE = {
     "principles": "an introductory principles role-play for first-year members",
 }
 
-_DISCLAIMER = (
-    "PI Coach is independent practice software. It is not affiliated with, endorsed by, or "
-    "sponsored by DECA Inc. These are not official DECA materials: the cards here are our own "
-    "study corpus, written from public business fundamentals."
-)
+_DISCLAIMER = "PI Coach is not affiliated with DECA Inc."
 
 
 # Cache-buster for the icon URLs. Browsers keep favicons in a store separate from

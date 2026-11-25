@@ -9,8 +9,10 @@ __pycache__/
 .env
 .env.local
 
-# DECA copyrighted sample role-plays — local calibration reference only.
-# Never commit or ship these (roadmap §9). Our scenarios stay clean-room.
+# Raw DECA source files (PDFs, exams, extracted text). The runtime data derived from
+# them (backend/app/data/pis.json, sample_roleplays.json) IS committed, used with
+# DECA's permission; rebuild it with backend/scripts/build_pis.py and build_samples.py.
+# The raw files stay local because they are large and not needed at runtime.
 backend/reference/
 
 # Node

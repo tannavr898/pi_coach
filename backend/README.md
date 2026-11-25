@@ -106,9 +106,20 @@ uv run pytest
   the shipped file and reports tier/position/padding drift.
 - `app/data/rubric.json`, the scoring scale: four generic quality levels
   (Novice / Developing / Proficient / Exemplary) and a 0-10 band per criterion.
-- `reference/pis-core-reference.json`, DECA's Business Administration Core PI list,
-  **kept only as an authoring reference** to check topic coverage while writing the
-  framework. It lives under `backend/reference/`, which is **git- and docker-ignored**,
-  so it never enters the repo or ships in the image. It is **not read by any runtime
-  code path** and none of its text is reproduced in `framework.json`. See
-  `framework-notes.md` for the two hard rules that keep this clean.
+- `app/data/pis.json`, the official DECA performance indicators (built by
+  `scripts/build_pis.py` from `reference/pis-core-reference.json`, used with DECA's
+  permission). `pis.py` serves them in criterion shape, so scoring, caching and feedback
+  treat a PI like any other criterion; `framework.get_criteria` resolves both id shapes.
+  `events.json` ids map to PI pools via `pis.json` `event_tags`; events without a list
+  (Finance, Personal Financial Literacy) keep the framework path.
+- `app/data/sample_roleplays.json`, official samples (built by `scripts/build_samples.py`),
+  used only as few-shot style guides in `prompts.build_pi_scenario_prompt` and to
+  calibrate length. Never returned to a student.
+- `app/data/scenario_bank.json`, hand-written official-format role-plays (about 10 per event,
+  district/state/ICDC), served first by `/api/scenario` with no model call and never repeated
+  while unseen ones remain. Author them as plain text in `scripts/scenario_bank_src/<event>.txt`
+  (PIs by official id) and build with `scripts/build_scenario_bank.py <event>`, which checks every
+  PI is in that event's pool, the PI and question counts, and the dash rule.
+- `scripts/build_exam_bank.py` extracts the official sample exams into a local, git-ignored reference file
+  used only to audit our own quiz questions. Exam items are never shipped or served.
+- `framework.json` and the study corpus stay our own and are what the study side uses.

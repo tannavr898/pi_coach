@@ -128,7 +128,10 @@ def test_scenario_from_event_without_focus(monkeypatch):
         })
 
     monkeypatch.setattr(llm, "complete", fake)
-    r = client.post("/api/scenario", json={"event": "principles-marketing", "level": "district", "mode": "competition"})
+    # The hand-written bank is served first, so mark it all seen to exercise generation.
+    from app import scenario_bank
+    seen = [x["id"] for x in scenario_bank._all() if x["event"] == "principles-marketing"]
+    r = client.post("/api/scenario", json={"event": "principles-marketing", "level": "district", "mode": "competition", "seen": seen})
     assert r.status_code == 200
     d = r.json()
     assert d["event"] == "Principles of Marketing"

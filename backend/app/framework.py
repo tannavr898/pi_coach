@@ -52,8 +52,16 @@ def get_criteria(ids: list[str]) -> list[dict]:
     """Resolve criterion ids against the framework, preserving order and
     skipping unknowns. This is the authoritative text, never trust the client
     (or the model) for criterion wording; always re-pin from here."""
+    from . import pis  # official PI ids resolve here too, so scoring/caching need no branch
+
     idx = _index()
-    return [idx[i] for i in ids if i in idx]
+    out: list[dict] = []
+    for i in ids:
+        if i in idx:
+            out.append(idx[i])
+        elif pis.is_pi_id(i):
+            out.append(pis.get_pis([i])[0])
+    return out
 
 
 def criteria_for_domains(domain_ids_wanted: list[str]) -> list[dict]:

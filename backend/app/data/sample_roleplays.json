@@ -1,0 +1,450 @@
+{
+ "version": "1.0-deca",
+ "note": "Official DECA sample role-plays, used with permission as style guides only. Never served to users.",
+ "samples": [
+  {
+   "id": "AAM",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Merchandising",
+   "area": "Product/Service Management",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the nature and scope of channel management.",
+    "Explain the relationship between customer service and distribution.",
+    "Explain the concept of product mix.",
+    "Describe factors used by marketers to position products/services.",
+    "Identify components of a retail image."
+   ],
+   "situation": "You are to assume the role of director of marketing for S UNNY SMITH, a designer fashion brand \nknown for high-quality beachwear. The senior vice president (judge) wants you to decide the \nbest locations and product mix for several SUNNY SMITH pop-up stores. \n \nThe SUNNY SMITH brand was formed in the early 1950s by a woman named Sunny Smith. The \nupscale beachwear was considered sophisticated and preppy at that time and the company has \nnot changed the quality or look of S UNNY SMITH products since. The company manufactures a \nwide variety of women’s swim suits, men’s swim trunks, cover-ups, hats, sandals and beach \numbrellas. Swim suits range in price from $99.99 to $199.99. \n \nThere are only five SUNNY SMITH stores across the nation, all on the west coast in affluent beach \ntowns. The vast majority of sales are made through the SUNNY SMITH website. The company has \na social media presence on Instagram, Pinterest and Facebook. \n \nThe senior vice president of S UNNY SMITH (judge) feels that sales would be highe r if more \npeople had access to truly see and feel the brand’s high-quality beachwear. Oftentimes, people \nare reluctant to purchase expensive items online because they cannot see the true quality of an \nitem. Pop up stores are most effective when they provide a solution for the customer. \n \nThe senior vice president (judge) feels that if S UNNY SMITH opened pop-up stores in several \nlocations other than the west coast, it would give people the chance to truly experience the \nproducts. The correct pop-up locations would provide a solution for the reluctant customers. The \nsenior vice president (judge) wants you to decide how many pop-up stores to open, where each \nshould be located, how long each pop-up should be open and the product mix that would attract \nthe most customers. \n \nYou will present your ideas to the senior vice president (judge) in a role-play to take place in the \nsenior vice president’s (judge’s) office. The senior vice president (judge) will begin the role-play \nby greeting you and asking to hear your ideas. After you have presented ideas and have answered \nthe senior vice president’s (judge’s) questions, the senior vice president (judge) will conclude the \nrole-play by thanking you for your work.",
+   "judge_questions": [
+    "Do you think pop-up stores are as an effective form of marketing as they have been in \nthe past?",
+    "What are your thoughts on including our entire product mix in our pop-up stores?",
+    "To appropriately position our image and brand in a pop-up store, what would be our \nbest promotional method?"
+   ],
+   "situation_words": 373
+  },
+  {
+   "id": "ASM",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Marketing Management",
+   "area": "Economics",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the principles of supply and demand.",
+    "Determine factors affecting business risk.",
+    "Explain the concept of competition.",
+    "Identify product’s/service’s competitive advantage.",
+    "Demonstrate a customer-service mindset."
+   ],
+   "situation": "You are to assume the role of general manag er at JOHNSON FAMILY ELITE, a local automobile \ndealership that sells both new and previously-owned ELITE vehicles. The owner of the local \ndealership (judge) is considering a change to the days the business is open and would like you to \nanalyze the benefits and consequences of the change and make a final decision. \n \nLike in most cities, there is an antiquated law that does not allow JOHNSON FAMILY ELITE, or \nany other car dealership, to be open on both Saturdays and Sundays. The law was first written \nover a century ago when the majority of businesses were closed on Sunday. Since that time, \nsocial culture and business has changed, with most businesses keeping Sunday hours of \noperation. Dealerships must choose to be open on either Saturday or Sunday. Most a utomobile \ndealerships have chosen to keep Saturdays as a business day and close on Sunday to follow the \nlaw. \n \nThe owner of J OHNSON FAMILY ELITE (judge) is considering changing the weekend business \nday. Instead of being open for business on Saturday, like all other dealerships in the area, \nJOHNSON FAMILY ELITE would be open on Sunday instead. This would make J OHNSON FAMILY \nELITE the only car dealership open for business on Sundays in a 750-mile radius. \n \nThe owner (judge) feels that being open on Sunday would gi ve the dealership a competitive \nedge, but worries that with many parts suppliers, inspection offices, third-party financers and the \nELITE manufacturer support being closed on Sunday, it could marginalize the level of service \nprovided. \n \nThe owner (judge) wants you to analyze the benefits and possible consequences of being open on \nSundays rather than Saturdays and make a final decision. The owner (judge) wants to hear of all \npotential risk s and advantages of the change regarding sales, customers, other deale rships and \nemployees. \n \nYou will present your analysis and recommendation to the owner (judge) in a role-play to take \nplace in the owner’s (judge’s) office. The owner (judge) will begin the role-play by greeting you \nand asking to hear your ideas. Af ter you have presented your recommendation and have \nanswered the owner’s (judge’s) questions, the owner (judge) will conclude the role-play by \nthanking you for your work.",
+   "judge_questions": [
+    "If we were to be open on Sundays rather than Saturdays, how should we \ncommunicate the change to the public?",
+    "What is the best way to get feedback from our employee s and customers prior to \nmaking a decision?",
+    "Are there any alternative operation hours that would give the dealership an advantage \nover our competitors?"
+   ],
+   "situation_words": 376
+  },
+  {
+   "id": "BSM",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Marketing Management",
+   "area": "Customer Relations",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the nature of positive customer relations.",
+    "Demonstrate a customer-service mindset.",
+    "Reinforce service orientation through communication.",
+    "Explain the concept of productivity.",
+    "Identify product’s/service’s competitive advantage."
+   ],
+   "situation": "You are to assume the r ole of director of customer service for INFOBOX, a file hosting service \nthat offers cloud storage, file synchronization and client software . The senior vice president \n(judge) has asked you to determine how to best remedy the company’s growing customer service \nneeds. \n \nINFOBOX operates business on its website, allowing users to upload content for storage and \nsharing. Users can access their content on any device and share it with co-workers and friends \nfor viewing or for editing. INFOBOX offers 2 gigabytes of free storage space, but charges users \nfor additional storage space and additional features. INFOBOX has a variety of business and non-\nbusiness customers. \n \nINFOBOX has a toll-free number available for customer service needs. Oftentimes , customers \nsimply need to troubleshoot a problem or , need help recovering a password or finding a \ndocument within their account. Most customer service phone calls are handled quickly and do \nnot require further investigating by the customer service representative. \n \nEven with the simple nature of the customer service phone calls, there are still long wait times \nfor customers to speak to an INFOBOX representative. Customers have complained that they wait \nlonger to speak to a representative than the time it takes for the rep resentative to fix the problem. \nAnother complaint is that the customer service department is only available 8:00AM – 7:00PM \nET, which means customers with problems occurring before or after those hours must wait for \nassistance. \n \nThe senior vice president (judge) understands the concerns with the limited availability of \ncustomer service representatives and the long hold times. The senior vice president (judge) feels \nthere are two possible solutions to the problem. First, the company could hire more customer \nservice representatives and extend the hours. Second, the company could spend $10,000 and \nhave a chatbot built. The chatbot would be available 24/7 to resolve simple problems. \n \nThe senior vice president (judge) would like you to analyze both options and determine which is \nthe best for INFOBOX and its customers, and both the short-term and long-term future of the \ncustomer service department. \n \nYou will present the analysis and recommendation to the senior vice president (judge) in a role-\nplay to take place in the senior vice president’s (judge’s) office. The senior vice president (judge) \nwill begin the role-play by greeting you and asking to hear your ideas. After you have presented \nthe analysis and have answered the senior vice president ’s (judge’s) questions, the senior vice \npresident (judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "Does the fact that we are an online service company have any impact on how our \ncustomers prefer us to respond to their concerns?",
+    "How will this change affect our productivity?",
+    "How do we communicate your recommended solution to our customers?"
+   ],
+   "situation_words": 423
+  },
+  {
+   "id": "ENT",
+   "format": "series",
+   "cluster": "Entrepreneurship",
+   "pathway": "",
+   "area": "Channel Management",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the nature of channels of distribution.",
+    "Explain the nature of channel strategies.",
+    "Select channels of distribution.",
+    "Explain the concept of market and market identification.",
+    "Identify company’s unique selling proposition."
+   ],
+   "situation": "You are to assume the role of an entrepreneur that has created a line of all-natural haircare \nproducts named CLEANSE. Your business partner (judge) has asked you to analyze a list of four \nretailers that want to sell C LEANSE products and decide which is the bes t sales channel for the \ncompany to reach the target market. \n \nCLEANSE is a new line of all-natural shampoos and conditioners that are certified organic and \nvegan. CLEANSE products are completely free of all animal ingredients and have not been tested \non animals. The shampoos and conditioners are softly scented and are packaged in 10-ounce \nbottles made from recycled materials. Currently , CLEANSE products are only available on the \ncompany website. Each 10-ounce bottle is priced at $15.99. \n \nProfessional women with moderate to high socio-economic status have been the l argest market \npurchasing CLEANSE products. The customers have an allegiance to the organic and vegan \nqualities that are important to the company and do not mind spending more for haircare products \nthat support that. \n \nThe company has been so successful th at several retailers have asked to carry C LEANSE \nproducts. Your business partner (judge) has narrowed the list to four different retailers that are \ninterested in selling the products. It is important that each retailer be analyzed to determine the \nsuccess CLEANSE will have using the sales channel to reach the target market. \n \nOption 1 – MAYGREENS – a popular drugstore with over 8,000 locations. E ach store has a \ndedicated cosmetics/beauty department where CLEANSE products would be located. \n \nOption 2 – X-MART – the world’s largest big-box retail chain. X-MART is the world’s largest \ncompany and has over 11,00 locations. C LEANSE products would be located with all other \nhaircare products in the health/beauty aisles. X-MART carries many brands of haircare products. \n \nOption 3 – WORDSTROM – a high-end department store with 200 locations. The department store \ndoes not typically sell haircare products, but would have a special display in the upscale \ncosmetics department. \n \nOption 4 – URBA – a specialty retailer that sells cosmetics, skincare, fragrances and haircare \nproducts. There are over 900 locations. URBA sells a wide variety of haircare products at all price \npoints, both less expensive and more expensive than CLEANSE. \n \nYou will present your analysis and recommenda tion to your business partner (judge) in a role-\nplay to take place in your partner’s (judge’s) office. Your business partner (judge) will begin the \nrole-play by greeting you and asking to hear your analysis. Af ter you have presented your \nanalysis and have answered your business partner’s (judge’s) questions, your business partner \n(judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "Which retailer is the least logical choice to carry CLEANSE products? Why?",
+    "Do you think we need to make any changes to our pricing, based on your selection of \nretailer?",
+    "How should we promote our new sales channel to our current customers?"
+   ],
+   "situation_words": 445
+  },
+  {
+   "id": "FMS",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Marketing Management",
+   "area": "Selling",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Analyze product information to identify product features and benefits.",
+    "Explain the role of customer service as a component of selling relationships.",
+    "Explain key factors in building a clientele.",
+    "Explain factors affecting pricing decisions.",
+    "Identify product’s/service’s competitive advantage."
+   ],
+   "situation": "You are to assume the role of director of operations for FOOD GALA, a regional grocery store \nchain that has forty locations . The senior vice president (judge) has asked you to analyze the \ncurrent grocery delivery companies that service F OOD GALA and recommend how the chain can \noffer a competitive store-branded service. \n \nFOOD GALA has always promoted itself as “the local choice” in the grocery business . Even with \nthree national chains servicing the same areas as F OOD GALA, its customer base remains large \nand loyal. F OOD GALA takes pride in the communities it serves; the company sponsor s many \nactivities and local charities and awards local students with scholarships each year. \n \nIn the past 12 months, two national grocery delivery companies have begun servicing customers \nin the area, delivering groceries from both the national chains and FOOD GALA. The two national \ngrocery delivery companies offer annual fees for unlimited deliver ies or a $10.00 fee for each \ndelivery made. Shoppers can log on to the grocery stores’ websites, choose items to be delivered, \npay for the items and schedule the delivery. \n \nThe two grocery delivery services in the area are C ART INSTANT and DRIVEON. CART INSTANT \ncharges an annual fee of $149.00 for unlimited deliveries, with no minimum purchase required \nper delivery and a one-hour guarantee. D RIVEON charges a $99.00 annual fee for unlimited \ndeliveries, with no minimum purchase required per delivery. Both C ART INSTANT and DRIVEON \nallow shoppers to use the service without the annual fee, but charge $10.00 per delivery. \n \nThe senior vice president of F OOD GALA (judge) feels the chain needs to begin offering its own \nstore-branded delivery service. Not only is it an additional service the company can provide its \nloyal customers, it is also a way the company can make a profit. \n \nThe senior vice president (judge) wants you to determine how the FOOD GALA grocery delivery \nservice will work. The senior vice president (judge) wants the service to offer competitive \npricing, so that customers will be more likely to use the store-branded service rather than C ART \nINSTANT or DRIVEON. You must determine pricing of the service, minimum purchase \nrequirements and any additional perks that would make the store-branded service more enticing \nthan the national chains. \n \nYou will present your ideas to the senior vice president (judge) in a role-play to take place in the \nsenior vice president’s (judge’s) office. The senior vice president (judge) will begin the role-play \nby greeting you and asking to hear your ideas. After you have presented your ideas and have \nanswered the senior vice president ’s (judge’s) questions, the senior vice president (judge) will \nconclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "Are there any benefits of conducting a test market prior to unveiling the delivery \nservice to all 40 stores at once?",
+    "What are added expenses FOOD GALA needs to consider with this new service?",
+    "What is the best way to communicate the new service to our customers and to the \ngeneral public?"
+   ],
+   "situation_words": 454
+  },
+  {
+   "id": "HLM",
+   "format": "series",
+   "cluster": "Hospitality and Tourism",
+   "pathway": "Lodging",
+   "area": "Economics",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Detail the functions of room service.",
+    "Distinguish between economic goods and services.",
+    "Identify factors affecting a business’s profit.",
+    "Explain the concept of competition.",
+    "Describe factors affecting the prices of hospitality and tourism products."
+   ],
+   "situation": "You are to assume the role of room service manager at CAPITOL CITY INN, a full-service hotel \nlocated in the downtown area of a large city . The general manager of the property (judge) has \nasked you to recommend changes to room services charges that would make the service mo re \ncompetitive to off-site restaurant delivery. \n \nCAPITOL CITY INN is located in the heart of a busy downtown neighborhood. The 800-room \nproperty is within walking distance of a large convention center, a large stadium and many \ntourist destinations. This ideal location results in the property consistently being at high capacity. \n \nCAPITOL CITY INN has two on-site restaurants available for guests and the general public. The \nproperty also has a coffee shop open during breakfast hours for quick bites. For guests that do \nnot want to leave their rooms, C APITOL CITY INN has a 24-hour room service menu. The room \nservice menu offers a selection of popular items for breakfast, lunch, dinner and late-night \nsnacks. All of the items available from room service are als o available at the property’s two on-\nsite restaurants. \n \nIn the past several years, a variety of restaurant delivery services have opened in the area. \nCustomers can log onto the restaurant delivery service’s website and place an order from a \nfavorite restaurant. The service then delivers the food item to the hotel’s lobby for easy pickup. \nThe restaurant delivery service charges a small fee per order for the service. Since these delivery \nservices have gotten more popular, the amount of room service orders have sharply declined. \n \nThe general manager (judge) feels that guests are choosing restaurant delivery services because \nroom service has too many fees. A cheeseburger ordered at the CAPITOL CITY INN’S restaurant is \npriced at $10.00 when ordered inside the restaurant, however it is priced at $12.00 on the room \nservice menu. Plus, there is an additional $5.00 delivery charge for room service and an added \n18% service fee. The receipt also leaves a space for the guest to add gratuity. The cheeseburger \nnearly doubles in price through room service. \n \nThe general manager (judge) has asked you to recommend changes to the room service charges \nthat will make ordering from room service preferable to using a restaurant delivery service. \n \nYou will present your recommendation to the general manager (judge) in a role-play to take \nplace in the general manager’s (judge’s) office. The general manager (judge) will begin the role-\nplay by greeting you and asking to hear your ideas. After you have presented your \nrecommendations and have answered the general manager ’s (judge’s) questions, the general \nmanager (judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "What elements of room service impact the pricing, relative to delivery from vendors \noutside the hotel?",
+    "What is the best way to promote our hotel’s in-room dining’s flexibility and service to \nour guests?",
+    "How will changes in allowing restaurant delivery service affect our hotel guests?"
+   ],
+   "situation_words": 445
+  },
+  {
+   "id": "HRM",
+   "format": "series",
+   "cluster": "Business Management and Administration",
+   "pathway": "Human Resources Management",
+   "area": "Emotional Intelligence",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the role of ethics in human resources management.",
+    "Assist with establishment of work rules.",
+    "Explain reasons for ethical dilemmas.",
+    "Maintain the confidentiality of others.",
+    "Foster positive working relationships."
+   ],
+   "situation": "You are to assume the role of human resources director for COUCH GAMES, an independent \ndeveloper of multi-platform and mobile vide o games. The president of the company (judge) has \nasked you to recommend a workplace procedure regarding staff dating. \n \nCOUCH GAMES prides itself on being named one of the top medium-sized companies to work for \nin the nation. With just over 200 employees, C OUCH GAMES’ headquarters office has a fun, \nplayful atmosphere that encourages employees to play branded games during schedule d breaks. \nThe company is relatively new, but in the last year doubled its number of employees due to its \nsuccess. \n \nDuring a one-on-one meeting with an employee, the president of C OUCH GAMES (judge) was \nmade aware that a person on the marketing team was dating someone in the finance department. \nAt first, the president (judge) thought it was simply gossip, but later realized that inter-office \ndating relationships needed to be addressed to the entire staff. Currently , there are no policies or \nprocedures regarding staff dating in the employee handbook. \n \nThe 200 employees at COUCH GAMES are divided into five different departments : executive, \nmarketing, sales, finance and human resources. Within each department are directors, managers, \nspecialists and administrative positions. \n \nThe president of C OUCH GAMES (judge) has asked you to create a statement/policy for \nemployees of the company regarding intraoffice relationships . The president (judge) wants to \nensure that both the procedures and the nature of the rela tionships are ethical. The procedure \nshould include: \n• A workplace statement on intra office relationships to include dating and other elements \nthat might affect the workplace \n• A timeline for employees to disclose an intraoffice relationship \n• An explanation of how to enforce the policy affecting all levels of seniority within the \ncompany \n• Action steps for employees if a relationship is terminated \n• Procedures to maintain confidentiality \n \nYou will present the new workplace procedure to the president (judge) in a role-play to take \nplace in the president ’s (judge’s) office. The president (judge) will begin the role-play by \ngreeting you and asking to hear your ideas. After you have presented your recommendations and \nhave answered the president ’s (judge’s) questions, the president (judge) will conclude the role-\nplay by thanking you for your work.",
+   "judge_questions": [
+    "Why is it important to have a workplace procedure regarding intraoffice \nrelationships?",
+    "What policies should be in place to address employees who do not follow the new \ndisclosure procedures?",
+    "What is the best method to communicate this new procedure to our staff?"
+   ],
+   "situation_words": 379
+  },
+  {
+   "id": "MCS",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Marketing Communications",
+   "area": "Marketing",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the use of video/images for digital marketing.",
+    "Develop schedule for marketing communications assignment.",
+    "Describe marketing functions and related activities.",
+    "Discuss actions employees can take to achieve the company’s desired results.",
+    "Discuss the relationship between promotion and marketing."
+   ],
+   "situation": "You are to assume the role of director of marketing at HOUSE OF VITAMINS, a chain of retailers \nspecializing in vitamins and nutritional supplements . You will be meeting with one of your \nregional managers (judge) to disc uss how each store manager will implement a local marketing \nstrategy using Instagram. \n \nHOUSE OF VITAMINS was founded in 1978 and in the last forty years has opened 700 brick and \nmortar stores. The majority of HOUSE OF VITAMINS locations are in strip malls, outdoor lifestyle \ncenters or in shopping malls. The stores contain a variety of vitamins, supplements, shakes, \npowders, and nutritious snacks. The retailer launched a loyalty shopper program, Vitamin \nHousehold, in 2012. Since that time, over 500,000 people have enrolled. \n \nThe retailer has maintained an Instagram account since 2015. The account is managed and \nmaintained by the corporate office and features images of top-rated products, new products, \nHOUSE OF VITAMINS philosophy, philanthropic activities , recipes, information and health tips. \nSince its activation, H OUSE OF VITAMINS’ Instagram page has over 200,000 followers and has \nover 4,000 posted images and videos. \n \nThe senior vice president has decided that rather than H OUSE OF VITAMINS’ Instagram page be \nmanaged and maintained by the corporate office, each of the 700 stores will have their own \nInstagram account. The senior vice president feels this opens each individual store location up to \nmanage their own local marketing strategy. \n \nTo introduce the new initiative, you will be meeting with one of the regional managers (judge) to \ndiscuss the local marketing strategy and how each store manager can best use the store’s unique \nInstagram account to their advantage. You must give the regional manager (jud ge) a schedule of \nhow the Instagram account should be used each week, including number of posts, pictures, \nvideos, specific content and national versus local information. \n \nYou will present your campaign to the regional manager (judge) in a role-play to ta ke place in \nthe regional manager’s (judge’s) office. The regional manager (judge) will begin the role-play by \ngreeting you and asking to hear your ideas. After you have presented your campaign and have \nanswered the regional manager’s (judge’s) questions, the regional manager (judge) will conclude \nthe role-play by thanking you for your work.",
+   "judge_questions": [
+    "How can we help regional managers become more aware of their store’s target \nmarket in determining their marketing strategy?",
+    "Are there other Instagram accounts each local store should be following?",
+    "How important is it that corporate still maintain a verified Instagram account?"
+   ],
+   "situation_words": 373
+  },
+  {
+   "id": "QSRM",
+   "format": "series",
+   "cluster": "Hospitality and Tourism",
+   "pathway": "Restaurant and Food and Beverage Services",
+   "area": "Marketing",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Build and maintain relationships with customers.",
+    "Describe marketing functions and related activities.",
+    "Explain factors that influence customer/client/business buying behavior.",
+    "Demonstrate connections between company actions and results.",
+    "Develop promotional materials."
+   ],
+   "situation": "You are to assume the role of director of marketing for SUB WORLD, one of the largest quick-\nserve restaurant chains. The senior vice president (judge) has asked you to develop a loyalty \nprogram for customers that will result in more frequent repeat business. \n \nSUB WORLD has an extremely large variety of fresh meats, cheese, vegetables, sauces and spices \nthat customers can mix and match to result in a perfect sandwich . Even though there is a wide \nvariety of ingredient s to choose from, the pricing is very simple. A six-inch sub sandwich is \npriced at $4.00 and a 12-inch sub sandwich is priced at $7.00. For an additional $2.50, a \ncustomer is able to add a beverage and a bag of chips. \n \nSUB WORLD was one of the very first quick-serve restaurant chains to offer low calorie menu \noptions, which brought in thousands of new customers and caused hundreds of new stores to \nopen each month across the nation. Customers loved the convenience of fast food while also \nhaving a meal that was low in calories and fat. \n \nIn the past several years, many other quick-serve and fast-casual restaurants have added healthier \noptions to their menus, resulting in lower sales at S UB WORLD locations. Many SUB WORLD \nrestaurants in cities with multiple locations have been closed due to the sharp decline in sales. \n \nThe senior vice president (judge) feels that if customers were given an incentive to visit S UB \nWORLD more frequently, they would choose the restaurant over others. The senior vice president \n(judge) has asked you to create a customer loyalty program that would reward customers after \nmeeting a goal. The senior vice president (judge) wants you to determine: \n• Impact of a loyalty program for the company \n• Name of the loyalty program \n• Loyalty requirements, including number of visits, amount of purchase and/or number of \nitems purchases \n• Loyalty rewards \n• Promotional strategy to share the loyalty program with current customers and the general \npublic \n \nYou will present the loyalty program to the senior vice pres ident (judge) in a role-play to take \nplace in the vice president ’s (judge’s) office. The senior vice president (judge) will begin the \nrole-play by greeting you and asking to hear your ideas. Af ter you have presented the loyalty \nprogram and have answered th e senior vice president ’s (judge’s) questions, the senior vice \npresident (judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "What are the advantages an d disadvantages to incorporating the loyalty program in \nthe restaurant’s current mobile app?",
+    "Should the loyalty program be transferrable to any SUB WORLD location?",
+    "How will we know if the loyalty program is successful?"
+   ],
+   "situation_words": 410
+  },
+  {
+   "id": "RFSM",
+   "format": "series",
+   "cluster": "Hospitality and Tourism",
+   "pathway": "Restaurant and Food and Beverage Services",
+   "area": "Marketing",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain menu items.",
+    "Sell ideas to others.",
+    "Explain factors that influence customer/client/business buying behavior.",
+    "Discuss actions employees can take to achieve the company’s desired results.",
+    "Demonstrate connections between company actions and results."
+   ],
+   "situation": "You are to assume the role of marketing manager for NATIONAL BLUEBERRY COUNCIL, an \norganization that promotes, researches and provides information about fresh blueberries and \nsupports blueberry growers. You will be meeting with the CEO of CLAYTON’S (judge), a \nrestaurant chain with 125 locations, to market fresh blueberries as an addition to the chain’s \nmenu. \n \nCLAYTON’S is a family restaurant that is open for lunch and dinner every day. The menu consists \nof classic American fare with six different categories : appetizers, salads, main entrees, side \ndishes, desserts and beverages. C LAYTON’S is considered inexpensive and provides a low-key \nsetting. \n \nOne of the N ATIONAL BLUEBERRY COUNCIL’S (NBC) missions is to promote fresh blueberries \nas a topping, add-in or ingredient in every meal. The NBC has received accolades in its work \npromoting fresh blueberries to different restaurants that feature breakfast menus, but have not \nbeen as successful at getting fresh blueberries in restaurants without a breakfast menu. \n \nThe CEO of C LAYTON’S (judge) is open to adding fresh blueberries to the menu as an added \ningredient or topping, but is uncertain how the unique ingredient could be best utilized during \nlunch and/or dinner. The CEO (judge) h as asked you to determine ways fresh blueberries could \nbe an added ingredient or a topping in at least two of its menu categories: appetizers, salads, \nmain entrees, side dishes, desserts and beverages. \n \nOnce you have chosen two uses for fresh blueberries, the CEO (judge) would like you to decide \nhow the chain and its employees can best market the blueberry items to customers that will result \nin sales of those items. \n \nYou will present the information to the CEO (judge) in a role-play to take place in the CE O’s \n(judge’s) office. The CEO (judge) will begin the role-play by greeting you and asking to hear \nyour ideas. Af ter you have presented the information and have answer ed the CEO ’s (judge’s) \nquestions, the CEO (judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "Will your menu ideas be easy for our kitch en staff to prepare, or will extensive \ntraining be needed?",
+    "Do you feel that your menu ideas are year-round or seasonal additions to our menu?",
+    "What can we offer restaurants to encourage their staff to support the use of fresh \nberries on the menu?"
+   ],
+   "situation_words": 335
+  },
+  {
+   "id": "RMS",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Merchandising",
+   "area": "Product/Service Management",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the importance of merchandising to retailers.",
+    "Identify emerging trends.",
+    "Generate product ideas.",
+    "Identify the impact of product life cycles on marketing decisions.",
+    "Explain the concept of market and market identification."
+   ],
+   "situation": "You are to assume the role of direct or of m erchandising for BULLSEYE, the second largest \ndiscount store retailer. The senior vice president (judge) has asked you to gener ate two product \nideas for the retailer’s private label that will attract teenage shoppers. \n \nBULLSEYE may not be the larg est or most profitable big-box discount retail chain, but it is \nconsidered trendier and more sophisticated than the leader by far . BULLSEYE executives have \ncarefully selected the brands and products it sells to craft interesting, stylish and affordable \nmerchandise. \n \nFor over five years, B ULLSEYE merchandisers have focused on Millennials, making certain the \nproducts and brands the retailer offers are exactly the type Millennials prefer. With that \ndemographic now having children and purchasing homes, BULLSEYE focused its attention on the \nbaby department and home goods departments. The focused attention was a success and \nMillennials have reported that BULLSEYE products best fit their style and budget. \n \nThe next market that B ULLSEYE would like to target are me mbers of Generation Z that are \ncurrently in high school. Teenagers often have income earned from part-time jobs or from \nallowances and are eager to purchase fun items for themselves. \n \nIt was reported that technology is the number one teen accessory. The s enior vice president \n(judge) wants the retailer to use this information to get more teenagers into B ULLSEYE stores. \nThe senior vice president (judge) wants you to generate two product ideas , targeted at teens that \nconsider technology to be an accessory, that the retailer can brand that will attract teenagers into \nBULLSEYE stores. \n \nYou will present your product ideas with the senior vice president (judge) in a role-play to take \nplace in the senior vice president’s (judge’s) office. The senior vice preside nt (judge) will begin \nthe role-play by greeting you and asking to hear your ideas. After you have presented your ideas \nand have answered the senior vice president’s (judge’s) questions, the senior vice president \n(judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "How can spending habits of teenagers affect our product line and profitability now \nand in the future?",
+    "Would your product suggestions be attractive to other demographics?",
+    "What is the best way to promote your suggested product lines to teenagers?"
+   ],
+   "situation_words": 339
+  },
+  {
+   "id": "SEM",
+   "format": "series",
+   "cluster": "Marketing",
+   "pathway": "Marketing Management",
+   "area": "Market Planning",
+   "skills": [
+    "Critical Thinking – Reason effectively and use systems thinking.",
+    "Problem Solving – Make judgments and decisions, and solve problems.",
+    "Communication – Communicate clearly.",
+    "Creativity and Innovation – Show evidence of creativity."
+   ],
+   "pis": [
+    "Explain the nature of marketing plans.",
+    "Explain the concept of marketing strategies.",
+    "Explain the concept of market and market identification.",
+    "Communicate core values of product/service.",
+    "Identify communications channels used in sales promotion."
+   ],
+   "situation": "You are t o assume the role of director of marketing for FEEL GOOD, a chain of fitness centers \nacross the nation. The president of the company (judge) has asked you to develop a marketing \nplan that will bring in new members during the off-peak months of July through September. \n \nFEEL GOOD has over 2,000 locations across the nation. Each location offers members a wide \nvariety of exercise and cardiovascular equipment, personal trainers and classes led by fitness \nexperts. FEEL GOOD also offers a variety of smoothies, jui ces and protein bars at snack counters \nlocated inside each center. \n \nThe busiest season at each FEEL GOOD location is the start of the new year. Many people choose \nto make new year’s resolutions that include living a healthier lifestyle. Memberships during the \nmonths of January and February almost double the number of new memberships in the other \nmonths combined. The months with the lowest number of new memberships is also identical in \nevery FEEL GOOD location. July, August and September prove to be poor months for beginning a \nnew fitness regiment. \n \nThe president of F EEL GOOD (judge) has asked you to develop a marketing plan that will \nincrease new memberships in the months of July through September. The president (judge) \nthinks one approach is to communicat e the feelings of determination and starting fresh that arise \nin January to potential customers. The president (judge) want s you to develop other \nconsiderations in your marketing plan to encourage membership in the low enrollment months. \n \nThe president (judge) wants you to include specific marketing strategies, primary and secondary \ntarget markets and communications channels in your marketing plan. \n \nYou will present your plan to the president (judge) in a role-play to take place in the president ’s \n(judge’s) office. The president (judge) will begin the role-play by greeting you and asking to hear \nyour ideas. After you have presented your plan and have answered the president ’s (judge’s) \nquestions, the president (judge) will conclude the role-play by thanking you for your work.",
+   "judge_questions": [
+    "What was the rationale for choosing this particular target market?",
+    "How do we prepare each location to participate in this new marketing campaign?",
+    "How will we measure the effectiveness of the marketing campaign?"
+   ],
+   "situation_words": 339
+  },
+  {
+   "id": "PBM_2024",
+   "format": "principles",
+   "cluster": "Business Management & Administration",
+   "pathway": "",
+   "area": "Information Management",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of an employee at CITY UTILITIES, a small city's water and sewer department. Your coworker (judge) wants to know how to collect needed information from customers. CITY UTILITIES currently sends out monthly bills for water and sewer services to its customers by regular mail and by email. The customer database has contact phone numbers for customers, but there is no indication if the phone number is for a mobile phone or a landline. CITY UTILITIES wants to soon begin sending text message reminders to customers that have not paid the monthly bill and are nearing the due date. Your coworker (judge) wants you to determine what specific information is needed from customers and how CITY UTILITIES can obtain the needed information from customers. You will explain the information to the coworker (judge) in a role-play to take place at the office. The coworker (judge) will begin the role-play by asking about the customer information. After you have explained and have answered the coworker's (judge's) questions, the coworker (judge) will conclude the role-play by thanking you for your work. Published 2024 by DECA Inc. Copyright � 2024 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "Why is it important to give customers the choice to opt-out of receiving text messages from us?",
+    "What other information could we put in customer text messages?"
+   ],
+   "situation_words": 208
+  },
+  {
+   "id": "PBM_2025",
+   "format": "principles",
+   "cluster": "Business Management & Administration",
+   "pathway": "",
+   "area": "Emotional Intelligence",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of an employee in the human resources department at BIG CITY TRANSIT (BCT), a large city's bus system. Your coworker (judge) wants to know why employee information needs to be kept confidential. The human resource department at BIG CITY TRANSIT (BCT) hires the city's bus drivers and also maintains the bus drivers' drug testing. All BCT employees must pass drug tests monthly. Your coworker (judge) does not understand why the human resource department must keep employee information confidential. You must explain the reasons why employee information is kept confidential. You will explain the information to the coworker (judge) in a role-play to take place at the office. The coworker (judge) will begin the role-play by asking about the customer's information. After you have explained and have answered the coworker's (judge's) questions, the coworker (judge) will conclude the role-play by thanking you for your work. Published 2025 by DECA Inc. Copyright � 2025 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "Are there consequences if the information is not kept confidential?",
+    "How can our office ensure that employees do not spread confidential information?"
+   ],
+   "situation_words": 174
+  },
+  {
+   "id": "PBM_2026",
+   "format": "principles",
+   "cluster": "Business Management &\n Administration",
+   "pathway": "",
+   "area": "Customer Relations",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of an employee in the customer service department at the CITY OF LOGAN, an office that houses public services and local government. You must address a customer (judge) that has complained about a change in policy for bill payment. The CITY OF LOGAN office has a customer service department that allows residents to pay their water bill and municipal court fees. Four months ago, it was announced that CITY OF LOGAN would no longer accept payments in cash starting this month. The notice was put in all monthly bills, on the city's website, and notices were posted at the customer service department. A customer (judge) wants to pay their water bill with cash and was told that CITY OF LOGAN no longer accepts cash payments. The customer (judge) is complaining and you have been asked to address the situation. You will address the customer (judge) in a role-play to take place at the office. The customer (judge) will begin the role-play by asking about paying the bill with cash. After you have explained the new policy and have answered the customer's (judge's) questions, the customer (judge) will conclude the role-play by thanking you for your work. Published 2026 by DECA Inc. Copyright � 2026 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "Why are more and more businesses going cashless?",
+    "How is paying with a card or check easier for me?"
+   ],
+   "situation_words": 226
+  },
+  {
+   "id": "PEN_2026",
+   "format": "principles",
+   "cluster": "Entrepreneurship",
+   "pathway": "",
+   "area": "Information Management",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of the owner of DRIVE DIAGNOSTICS, a business that provides mobile mechanic services. An employee (judge) has asked you how the business will obtain customer feedback and positive ratings. DRIVE DIAGNOSTICS is the first mobile mechanic service in town. The business does not have a physical location but instead has three licensed mechanics that travel to the customer to diagnose and fix vehicles. Customers call to request a mechanic to come to their residence, workplace or other location. DRIVE DIAGNOSTICS has a presence on several social media platforms and a website. You have mentioned that you would like DRIVE DIAGNOSTICS to collect customer feedback and showcase positive comments and ratings. An employee (judge) wants to know what information will be collected and how will it be obtained and managed. You will explain information management to the employee (judge) in a role-play to take place at an office. The employee (judge) will begin the role-play by asking about information management. After you have explained and have answered the employee's (judge's) questions, the employee (judge) will conclude the role-play by thanking you for your work. Published 2026 by DECA Inc. Copyright � 2026 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "How should the business respond to negative customer feedback?",
+    "How can we encourage customers to leave reviews? After the owner (participant) has presented information and has answered your questions, you will conclude the role-play by thanking the owner (participant) for the work."
+   ],
+   "situation_words": 213
+  },
+  {
+   "id": "PFN_2026",
+   "format": "principles",
+   "cluster": "Finance",
+   "pathway": "",
+   "area": ":\nOperations\n\nRate the participant's ability to: Novice Developing Proficient Exemplary Judged\n Score",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of a bank teller at GOLD STAR BANK. A new employee (judge) wants you to explain why security and confidentiality are important in bank operations. The new employee (judge) understands the need for security guards on premises at the bank to deter robberies but does not understand why bank tellers need to follow security precautions. The new employee (judge) also does not understand the concept of information security and privacy and why it is important to the bank and to customers. The new employee (judge) wants you to explain: � Routine security precautions for bank tellers � Information security and privacy considerations for the bank and its customers � Methods to maintain data security You will explain the information to the new employee (judge) in a role-play to take place at the bank. The new employee (judge) will begin the role-play by asking you about security. After you have discussed the information with the new employee (judge) and have answered the new employee's (judge's) questions, the new employee (judge) will conclude the role-play by thanking you for your work. Published 2026 by DECA Inc. Copyright � 2026 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "In addition to security precautions, are there safety precautions we should follow, too?",
+    "Why is it important that our customers feel safe and secure? After the bank teller (participant) has explained security and has answered your questions, you will conclude the role-play by thanking the bank teller (participant)."
+   ],
+   "situation_words": 209
+  },
+  {
+   "id": "PHT_2024",
+   "format": "principles",
+   "cluster": "Hospitality and Tourism",
+   "pathway": "",
+   "area": "Communication Skills",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of an employee onboard BREEZE CRUISE LINE, a luxury cruise ship that caters to families. The formal dining manager (judge) has asked you to decide how to best remind passengers of a change in formal dining policies at one restaurant. BREEZE CRUISE LINE offers dozens of food kiosks and restaurants onboard for passengers. One formal dining option is a four-star restaurant. Last month the cruise line changed its policy to only allow passengers aged 13 and older to dine at the four-star restaurant. This new policy will keep the dining experience formal and allow adults to enjoy a meal without small children. BREEZE CRUISE LINE offers plenty of kid club activities with staffed supervision so parents can dine without children. Passengers have been notified of the policy change via email before boarding. The new policy is also in all BREEZE CRUISE LINE literature provided to passengers inside their rooms. The dining manager (judge) has asked you to decide how to best remind passengers of the change in policy upon entering the formal dining area and how to respond to inquiries asking why young children are not allowed. You will present your ideas to the dining manager (judge) in a role-play to take place at the restaurant. The dining manager (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your ideas and have answered the dining manager's (judge's) questions, the dining manager (judge) will conclude the role-play by thanking you for your work. Published 2024 by DECA Inc. Copyright � 2024 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "How do we handle passengers that arrive with small children, expecting to dine as a family?",
+    "How can this one policy change help the company gain more cruisers? Published 2024 by DECA Inc. Copyright � 2024 by DECA Inc. No part of this publication may be reproduced for resale or posted 3 online without written permission from the publisher. Printed in the United States of America. PHT-24 District Event"
+   ],
+   "situation_words": 281
+  },
+  {
+   "id": "PHT_2025",
+   "format": "principles",
+   "cluster": "Hospitality and Tourism",
+   "pathway": "",
+   "area": "Customer Relations",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of a front desk employee at CAREFREE INN, a limited-service hotel. You must address a hotel guest (judge) that is upset due to certain items included in the complimentary breakfast being unavailable. CAREFREE INN offers guests a complimentary breakfast that includes coffee, juices, cold cereals, oatmeal, yogurts, fruit, scrambled eggs, sausage and assorted pastries. The breakfast area is an extension of the lobby area so the front desk staff also serves as breakfast attendants. Unfortunately, the small refrigerator that holds the yogurts and milk cartons was accidentally unplugged last night, and the contents are now unsafe for consumption. It was just now discovered, so staff removed the contents. There are no additional yogurts or milk cartons at this time. A hotel guest (judge) is upset about the lack of milk and yogurt and has complained to you about the situation. You must use positive customer relations and service in your response. You will meet with the guest (judge) in a role-play to take place at the front desk. The hotel guest (judge) will begin the role-play by greeting you and asking about the situation. After you have presented your ideas and have answered the guest's (judge's) questions, the guest (judge) will conclude the role-play by thanking you for your work. Published 2025 by DECA Inc. Copyright � 2025 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "Why do limited-service hotels tend to offer complimentary breakfasts?",
+    "What changes can be made to help this not happen again?"
+   ],
+   "situation_words": 240
+  },
+  {
+   "id": "PHT_2026",
+   "format": "principles",
+   "cluster": "Hospitality and Tourism",
+   "pathway": "",
+   "area": ":\nEconomics\n\nRate the participant's ability to: Novice Developing Proficient Exemplary Judged\n Score",
+   "skills": [],
+   "pis": [],
+   "situation": "You are to assume the role of a server at TACO CAF�, a local restaurant open during breakfast and lunch hours featuring a variety of tacos. A coworker (judge) wants you to explain why the price of certain menu items have increased. TACO CAF� is a popular spot for breakfast due to the variety of breakfast tacos on the menu. TACO CAF� promoted a special of 3 breakfast tacos for $5 for the last two years, but recently management had to end the promotion. The skyrocketing price of eggs resulted not only in the end of the promotion, but the price of any taco containing eggs increased by a dollar. The coworker (judge) wants you to explain why the price of tacos containing eggs increased. The coworker (judge) does not understand how food costs and menu pricing affect TACO CAF�'S profits. You will explain economics to the coworker (judge) in a role-play to take place at the restaurant. The coworker (judge) will begin the role-play by greeting you and asking about the pricing. After you have explained the information and have answered the coworker's (judge's) questions, the coworker (judge) will conclude the role-play by thanking you for your work. Published 2026 by DECA Inc. Copyright � 2026 by DECA Inc. No part of this publication may be reproduced for resale or posted 2",
+   "judge_questions": [
+    "What should we tell customers that ask about the price increase?",
+    "When will we be able to lower prices or offer the promotion again?"
+   ],
+   "situation_words": 223
+  }
+ ]
+}

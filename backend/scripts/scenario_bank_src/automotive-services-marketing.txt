@@ -1,0 +1,269 @@
+=== district | owner of QUICKLANE AUTO CARE
+PIS:
+- SE:076
+- SE:048
+- SE:932
+- CR:004
+- CR:005
+SITUATION:
+You are to assume the role of service advisor for QUICKLANE AUTO CARE, an independent repair shop with six bays that handles oil changes, brakes, tires and general repairs. The owner (judge) has asked you to recommend how the shop's service advisors should talk with customers at the front counter.
+
+QUICKLANE AUTO CARE has been open for 11 years and relies on repeat business. Online reviews describe the mechanics as skilled, but many customers say that the front counter feels rushed, that they were not told what repairs would cost before work began and that no one followed up after their visit. Last quarter, 18 customers who had come in for an oil change left without agreeing to recommended brake work, and three later complained that the shop never explained why the repair mattered.
+
+The shop's advisors are paid a small bonus for each additional repair they sell, and the owner worries that this has caused some advisors to push customers instead of listening. The shop completes about 60 vehicles a week, and a typical repair ticket is $310.
+
+The owner (judge) wants a plan that improves customer satisfaction without lowering the shop's income. The recommendation should include:
+- How advisors should greet customers and uncover what each customer needs and can afford
+- How to explain a recommended repair so customers understand the reason and the cost
+- How the shop should follow up after the repair is complete
+- How to change the bonus plan so that service comes first
+
+You will present your recommendation to the owner (judge) in a role-play to take place in the shop's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- What should an advisor say to a customer who declines a recommended repair?
+- How would you describe the difference between a needed repair and a repair that could wait?
+- What would you measure to find out whether customers are more satisfied?
+HOOK: A repair shop's mechanics are praised, yet customers leave the front counter feeling rushed.
+
+=== district | service manager of HARBORVIEW TIRE & WARRANTY
+PIS:
+- PM:020
+- PM:019
+- PM:017
+- PM:040
+- SE:106
+SITUATION:
+You are to assume the role of assistant service manager for HARBORVIEW TIRE & WARRANTY, a tire and brake center with three locations. The service manager (judge) has asked you to explain how the company should handle warranties and guarantees on its products and to recommend how staff should describe them to customers.
+
+HARBORVIEW TIRE & WARRANTY sells four grades of tires, ranging from a $89 economy tire to a $240 premium tire. The premium tires include a 60,000-mile treadwear guarantee, while the economy tires carry only a 12-month defect warranty. Last month, a customer returned with tires that had worn out at 30,000 miles and said a salesperson had promised the tires would last "for years." The company could not find the promise in writing, and the customer filed a complaint with a consumer protection agency.
+
+Staff are also unsure how to explain the difference between a warranty from the manufacturer and a guarantee from the shop. About 14 percent of customers request some kind of warranty claim in the first year, and each claim that is handled poorly can cost the company a customer who spends about $700 a year.
+
+The service manager (judge) wants clear and honest practices that comply with the law. The recommendation should include:
+- How staff should explain the grades of tires and what each warranty or guarantee covers
+- What should be put in writing and given to customers at the time of sale
+- What customers' rights are under consumer protection rules, and how the company should respond to a complaint
+- How to train staff so that they never promise more than the company can deliver
+
+You will present your recommendation to the service manager (judge) in a role-play to take place in the manager's office. The service manager (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the service manager's (judge's) questions, the service manager (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- How should the company handle the customer whose tires wore out at 30,000 miles?
+- Why is it risky for a salesperson to describe how long a product will last?
+- What should staff do if a manufacturer's warranty and the shop's guarantee conflict?
+HOOK: A customer says a salesperson promised tires would last for years, and nothing was in writing.
+
+=== district | marketing manager of ROADSTAR DETAILING
+PIS:
+- PR:001
+- PR:002
+- PR:003
+- PR:007
+- PR:247
+SITUATION:
+You are to assume the role of marketing coordinator for ROADSTAR DETAILING, a car wash and detailing business with two locations in a suburban area. The marketing manager (judge) has asked you to recommend how to promote a new monthly membership plan that offers unlimited washes for $29.
+
+ROADSTAR DETAILING has about 2,200 regular customers and serves roughly 400 cars on a typical weekend. Most customers pay $12 to $18 for a single wash, and the company believes that a membership would raise the number of visits and give more predictable income. The membership program launches in six weeks, and the company's goal is to sign up 500 members within three months.
+
+The company has never done much advertising. It has a small sign at the entrance, a website with limited information and a page on social media with 900 followers. A rival car wash across town advertises heavily on local radio and with coupons in the mail, and its prices are lower. The promotion budget is $4,500.
+
+The marketing manager (judge) wants a plan that fits within the budget and reaches current and new customers. The recommendation should include:
+- A description of the role promotion plays in launching the membership and which types of promotion to use
+- How to combine at least three elements of the promotional mix
+- Which advertising media to use and why
+- How to encourage word of mouth among existing customers
+
+You will present your recommendation to the marketing manager (judge) in a role-play to take place in the company's office. The marketing manager (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the marketing manager's (judge's) questions, the marketing manager (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- How would you promote the membership to customers who already visit often?
+- Which of your promotions would you cut first if the budget were reduced?
+- How could the company find out which promotion brought in the most new members?
+HOOK: A car wash wants 500 members in three months with $4,500 and a rival that advertises on the radio.
+
+=== district | owner of TOPGEAR PARTS & ACCESSORIES
+PIS:
+- PI:001
+- PI:002
+- PI:015
+- PI:017
+- PI:016
+SITUATION:
+You are to assume the role of store manager for TOPGEAR PARTS & ACCESSORIES, a retail store that sells car batteries, wiper blades, floor mats and other automotive items to drivers and small repair shops. The owner (judge) has asked you to recommend how the store should set prices after a competitor began advertising lower prices on batteries.
+
+TOPGEAR PARTS & ACCESSORIES sells a standard car battery for $149, which includes a 3-year free replacement warranty. The nearest competitor, an online seller, lists a similar battery for $119 but charges $15 for shipping and offers a 1-year warranty. Battery sales have dropped 22 percent in two months, though sales of wiper blades and floor mats have held steady. The store pays about $96 for each battery and has high fixed costs, including rent and a staff of seven.
+
+The owner is considering a price cut to $125 on batteries, which would reduce profit on each sale from $53 to $29. The store also sets its prices by hand, and a recent audit found that 40 items were priced differently on the shelf than at the register, which could lead to complaints.
+
+The owner (judge) wants a pricing approach that is competitive, legal and fair. The recommendation should include:
+- The factors that should influence the price of the battery
+- Whether to match the competitor and how to defend the value of the store's warranty
+- How the store should handle pricing mistakes and make sure advertised prices are honest
+- How technology can help the store keep prices accurate
+
+You will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- How would you explain to a customer why your battery costs more than the online price?
+- What legal problems could come from advertising a battery price that is not available at the register?
+- Under what conditions would you agree to lower the price?
+HOOK: A parts store's battery sales fell 22 percent after an online rival undercut it by $30.
+
+=== state | director of marketing at ROADWISE FLEET SERVICES
+PIS:
+- IM:010
+- IM:282
+- IM:281
+- IM:289
+- IM:293
+SITUATION:
+You are to assume the role of marketing research analyst for ROADWISE FLEET SERVICES, a company that maintains vehicles for small businesses such as delivery companies, plumbers and landscapers. The director of marketing (judge) has asked you to design a research study to find out why customers leave the company after their first year.
+
+ROADWISE FLEET SERVICES has 640 customers and loses about 30 percent of them within 12 months. Exit interviews have been informal, and the sales team believes customers leave because of price. However, several former customers have mentioned that repair times were longer than promised, and one said that the company's invoices were confusing. The company has customer records that include contract size, type of vehicle and repair history, but no survey has ever been conducted.
+
+The company has $10,000 to spend on research and wants results within six weeks, before the next budget cycle. About 70 percent of customers are small businesses with fewer than five vehicles, and the owners are often busy and difficult to reach.
+
+The director of marketing (judge) wants research that leads to clear action. The recommendation should include:
+- A statement of the research problem and how the research will answer it
+- The options the company has for obtaining information, including data it already has
+- How data should be collected from busy business owners, including how the questionnaire should be designed
+- How to avoid mistakes that could make the results misleading
+
+You will present your recommendation to the director of marketing (judge) in a role-play to take place in the director's office. The director of marketing (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the director's (judge's) questions, the director of marketing (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- What would you do with the company's existing records before collecting any new data?
+- How would you avoid asking leading questions in the survey?
+- What would you tell the sales team if the research shows price is not the main reason customers leave?
+HOOK: A fleet repair company loses 30 percent of its customers a year and blames price without proof.
+
+=== state | owner of PIT STOP QUICK LUBE
+PIS:
+- SE:828
+- CR:016
+- CR:030
+- CR:018
+- CR:017
+SITUATION:
+You are to assume the role of customer relations manager for PIT STOP QUICK LUBE, a chain of five oil change and maintenance shops. The owner (judge) has asked you to recommend how to build lasting relationships with customers and turn first-time visitors into repeat customers.
+
+PIT STOP QUICK LUBE serves about 1,100 vehicles a week across its five shops. A review of customer records shows that only 38 percent of customers come back within a year, though the company's own advice is that most vehicles need service every six months. The shops collect each customer's name, phone number and vehicle details but do not use them for marketing. Customers have said that the shops are fast but impersonal, and that they often forget when their next service is due.
+
+The company has a small budget of $7,000 for a program that could begin in two months. One shop manager has suggested a punch-card program, while another has said that text reminders would work better. The owner is also worried about contacting customers too often or sharing their information improperly.
+
+The owner (judge) wants a program that increases repeat visits in a way that respects customers. The recommendation should include:
+- How the company will build a clientele and what factors build loyalty in this business
+- What a customer relationship management system should track and how it should be used
+- How and when to follow up with customers after each visit
+- How the company will use technology while protecting customer privacy and trust
+
+You will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- Which is more effective for this business: a punch card, a text reminder or something else, and why?
+- How often should the company contact a customer before it becomes annoying?
+- What information should the company never collect or share?
+HOOK: Only 38 percent of one chain's oil change customers return within a year.
+
+=== state | marketing director of AUTOLINK DIGITAL MOTORS
+PIS:
+- PR:100
+- PR:089
+- PR:247
+- NF:094
+- IM:374
+SITUATION:
+You are to assume the role of digital marketing manager for AUTOLINK DIGITAL MOTORS, a used-car dealership group with four lots and an online showroom. The marketing director (judge) has asked you to recommend how to use digital marketing to bring more qualified buyers to the dealerships.
+
+AUTOLINK DIGITAL MOTORS sells about 260 vehicles a month and spends $38,000 a month on marketing, of which 60 percent goes to listing sites and print. The company's website receives 24,000 visits a month, but only 1.2 percent of visitors request a test drive. Analytics show that most visitors leave after viewing a single vehicle page, and that mobile users, who make up 68 percent of traffic, leave even faster. Competitors have begun using short videos and local social media ads.
+
+The marketing director must decide within a month how to rebalance the budget. The company's website was built five years ago and is slow to load, and none of the four lots keeps its inventory photographs consistent.
+
+The marketing director (judge) wants a digital plan that improves results without raising the total budget. The recommendation should include:
+- How technology has changed the way customers shop for vehicles and how that affects promotion
+- Which online advertising and email tactics to prioritize
+- How to use social media for digital marketing and how to get found through search
+- How the company will track results and decide where to shift spending
+
+You will present your recommendation to the marketing director (judge) in a role-play to take place in the director's office. The marketing director (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the marketing director's (judge's) questions, the marketing director (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- What would you fix on the website first to improve mobile visitors' experience?
+- How would you decide which part of the print and listing budget to move?
+- What measures would show whether the digital changes are working?
+HOOK: A dealership's website gets 24,000 visits a month and only 1.2 percent ask for a test drive.
+
+=== icdc | chief marketing officer of MERIDIAN AUTO GROUP
+PIS:
+- MP:006
+- MP:007
+- MP:008
+- MP:013
+- PR:073
+SITUATION:
+You are to assume the role of marketing planning manager for MERIDIAN AUTO GROUP, a regional chain of 12 dealerships and service centers selling new and used vehicles. The chief marketing officer (judge) has asked you to develop the marketing plan for the group's service centers for the coming year.
+
+The service centers earn 46 percent of the group's profit but have received only 15 percent of the marketing budget. Service revenue has been flat for three years, even though the number of vehicles sold has risen. Independent shops and quick-lube chains have taken customers with lower prices, and many customers do not realize that they can get the same service from the dealership at competitive rates. The company's board wants service revenue to grow by 9 percent next year, and the proposed budget for service marketing is $850,000.
+
+The group's customer data shows that 55 percent of people who buy a vehicle never return for service. Vehicle sales are expected to fall by about 6 percent next year because of higher interest rates.
+
+The chief marketing officer (judge) wants a plan the board can approve. The recommendation should include:
+- A situation analysis of the service business, including strengths, weaknesses, competitors and trends
+- How the plan connects to a forecast of the service business and the 9 percent goal
+- A promotional plan that divides the budget across activities and a timeline
+- How the company will measure results and adjust the plan during the year
+
+You will present your recommendation to the chief marketing officer (judge) in a role-play to take place in the executive conference room. The chief marketing officer (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the chief marketing officer's (judge's) questions, the chief marketing officer (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- How would your forecast change if vehicle sales fall more than expected?
+- Which part of the plan would you protect first if the budget were cut by 20 percent?
+- Why do so many vehicle buyers never return for service, and how would you address it?
+HOOK: A dealership group's service centers make 46 percent of its profit and get 15 percent of its marketing.
+
+=== icdc | vice president of EXPRESSWAY PARTS DISTRIBUTION
+PIS:
+- CM:005
+- CM:006
+- CM:007
+- CM:008
+- CM:021
+SITUATION:
+You are to assume the role of channel manager for EXPRESSWAY PARTS DISTRIBUTION, a company that supplies replacement auto parts to 1,800 independent repair shops and to a growing online store. The vice president (judge) has asked you to recommend how to manage relationships with the company's distribution partners after a conflict over online sales.
+
+EXPRESSWAY PARTS DISTRIBUTION launched an online store two years ago that sells directly to drivers at prices lower than those charged by the repair shops. Several large repair shops have complained that this undercuts their business, and four have threatened to switch to a competing supplier. Together those four shops account for $5.2 million in annual sales. At the same time, the online store has grown by 40 percent and has brought in customers who were not previously served.
+
+The company has also been approached by a national retailer that wants to carry EXPRESSWAY's most popular parts under its own name, which would create a new partnership but could further upset the repair shops.
+
+The vice president (judge) wants to keep the company's channel partners while continuing to grow. The recommendation should include:
+- How to coordinate the online store and the repair shop channel with other marketing activities
+- How the company should describe its relationship with channel members and affinity partners, and what it owes each
+- What legal and ethical considerations affect pricing and exclusivity in the channel
+- Whether to accept the retailer's offer and how to communicate the decision
+
+You will present your recommendation to the vice president (judge) in a role-play to take place in the executive office. The vice president (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the vice president's (judge's) questions, the vice president (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- How could the company keep the repair shops loyal without limiting the online store?
+- What are the risks of letting the national retailer sell under its own name?
+- What would you tell the four shops that are thinking of leaving?
+HOOK: Four repair shops worth $5.2 million threaten to leave over a parts distributor's online store.
+
+=== icdc | director of customer insights at VELOCITY MOTORS
+PIS:
+- IM:472
+- IM:473
+- NF:205
+- OP:429
+- IM:025
+SITUATION:
+You are to assume the role of senior marketing analyst for VELOCITY MOTORS, a car manufacturer's regional sales office that supports 40 dealerships. The director of customer insights (judge) has asked you to recommend how to use customer data to personalize marketing while protecting customer privacy.
+
+VELOCITY MOTORS has data from 310,000 customers, including purchase history, service visits, website activity and responses to past campaigns. Its current campaigns send the same message to everyone, and only 0.8 percent of customers respond. A pilot at three dealerships that used purchase and service history to recommend upgrades or trade-ins doubled the response rate to 1.7 percent. However, a customer recently complained that a message mentioned a repair that she thought was private, and a data security audit found that customer records are stored in six different systems.
+
+The company has a budget of $620,000 for the next phase. State regulations on the use of customer data are changing, and the company plans to begin using real-time offers on its website.
+
+The director of customer insights (judge) wants a plan that improves results and protects customers. The recommendation should include:
+- How customer data should be used to recommend personalized, relevant campaigns
+- How the company could customize website and in-store interactions in real time
+- How analytics tools will be used to track behavior and results
+- How marketing data should be secured, stored and protected from misuse
+
+You will present your recommendation to the director of customer insights (judge) in a role-play to take place in the director's office. The director of customer insights (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the director's (judge's) questions, the director of customer insights (judge) will conclude the role-play by thanking you for your work.
+QUESTIONS:
+- What personalization would you avoid because customers may find it intrusive?
+- How would you handle the data stored in six different systems?
+- How would you measure whether personalization is worth its cost?
+HOOK: Personalized messages doubled one carmaker's response rate and then upset a customer.

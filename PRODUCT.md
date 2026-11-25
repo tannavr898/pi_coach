@@ -16,7 +16,7 @@ The everyday surface is the trainer app, so PRODUCT.md defaults to the product r
 
 ## Product Purpose
 
-PI Coach is an AI trainer that runs a DECA role-play as a complete rep: interpret a free-text practice request, generate an original scenario built to require a handful of business skills, time the prep, capture a typed or spoken response, ask judge-style follow-ups, and return coaching feedback on both content and delivery. It grades the substance judges reward using its own independently authored 282-criterion framework, not DECA's licensed performance-indicator list. Success is a student who walks into the real thing feeling ready, reps exist to convert competition-day nerves into confidence.
+PI Coach is an AI trainer that runs a DECA role-play as a complete rep: interpret a free-text practice request, generate an original scenario built to require a handful of business skills, time the prep, capture a typed or spoken response, ask judge-style follow-ups, and return coaching feedback on both content and delivery. It builds each role-play on the event's real DECA performance indicators (used with DECA's permission) in the official sheet format, and grades the substance judges reward against them; the study side keeps its own 282-criterion framework and 989-term corpus. Success is a student who walks into the real thing feeling ready, reps exist to convert competition-day nerves into confidence.
 
 ## Positioning
 
@@ -38,7 +38,7 @@ Readiness is the metric, the north star is a student who feels prepared, so each
 
 Honest and specific, trust is earned by precise, evidence-backed feedback tied to what the student actually said; vague praise and inflated scores erode the whole premise.
 
-Practice like the real thing, original scenarios, a real timer, and real voice delivery keep fidelity to competition high, while the independent framework keeps the IP the product's own.
+Practice like the real thing, original scenarios, a real timer, and real voice delivery keep fidelity to competition high, while the official indicators and sheet format keep the practice faithful to the real event.
 
 Hold the line between the poles, resist both the gamified-cartoon reflex and the clinical-exam reflex on every decision; when a choice drifts toward either, correct back to serious-but-encouraging.
 

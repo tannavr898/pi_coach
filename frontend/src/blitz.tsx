@@ -71,6 +71,44 @@ function sample<T>(arr: T[], n: number): T[] {
   return a.slice(0, Math.min(n, a.length));
 }
 
+// Draw a round's terms so they sit together. A whole-course set spans many areas,
+// and five unrelated terms cannot share a believable scenario. So pick one
+// instructional area (weighted by how many cards it has), start from one topic in
+// it, and fill the rest from the same area, nearest topics first.
+function drawTerms(cards: Term[], area: string, n: number): Term[] {
+  const inArea = area ? cards.filter((c) => c.domain_id === area) : cards;
+  if (!inArea.length) return [];
+  const anchor = inArea[Math.floor(Math.random() * inArea.length)];
+  const sameDomain = inArea.filter((c) => c.domain_id === anchor.domain_id);
+  const sameTopic = sample(sameDomain.filter((c) => c.topic === anchor.topic), n);
+  const rest = sample(
+    sameDomain.filter((c) => !sameTopic.includes(c)),
+    n - sameTopic.length,
+  );
+  return [...sameTopic, ...rest];
+}
+
+// The scenario that best fits the terms being drilled: same area first, then the
+// most topic overlap, with a random pick among ties so repeats stay fresh. Generic
+// scenarios (no area) are only used when nothing tagged fits.
+function pickScenario(pool: BlitzScenario[], terms: Term[]): BlitzScenario | null {
+  if (!pool.length) return null;
+  const domains = new Map<string, number>();
+  for (const t of terms) domains.set(t.domain_id, (domains.get(t.domain_id) ?? 0) + 1);
+  const topDomain = [...domains.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+  const topics = new Set(terms.filter((t) => t.domain_id === topDomain).map((t) => t.topic));
+  let best = -1;
+  let ties: BlitzScenario[] = [];
+  for (const s of pool) {
+    const score = s.domain_id && s.domain_id === topDomain ? 10 + 3 * (s.topics ?? []).filter((t) => topics.has(t)).length : 0;
+    if (score > best) {
+      best = score;
+      ties = [s];
+    } else if (score === best) ties.push(s);
+  }
+  return ties[Math.floor(Math.random() * ties.length)] ?? null;
+}
+
 export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () => void }) {
   // The instructional areas this card set spans. A whole-course Blitz covers
   // several, and five random draws lean toward whichever area has the most cards,
@@ -89,11 +127,11 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
     return cards.some((c) => c.domain_id === saved) ? saved : "";
   });
   // Only changeable on the intro, so the draw is fixed once the drill starts.
-  const terms = useMemo(
-    () => sample(area ? cards.filter((c) => c.domain_id === area) : cards, TERMS_PER_BLITZ),
-    [cards, area],
-  );
-  const [scenario, setScenario] = useState<BlitzScenario | null>(null);
+  const terms = useMemo(() => drawTerms(cards, area, TERMS_PER_BLITZ), [cards, area]);
+  const [pool, setPool] = useState<BlitzScenario[] | null>(null);
+  // Re-picked whenever the draw changes (the student can switch area on the intro),
+  // so the scenario always fits the terms they are about to be asked.
+  const scenario = useMemo(() => (pool ? pickScenario(pool, terms) : null), [pool, terms]);
   const [scenarioErr, setScenarioErr] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("intro");
   const [mode, setMode] = useState<"type" | "speak">("type");
@@ -113,7 +151,7 @@ export function MasteryBlitz({ cards, onClose }: { cards: Term[]; onClose: () =>
   useEffect(() => {
     let active = true;
     getBlitzScenarios()
-      .then((pool) => active && setScenario(pool.length ? pool[Math.floor(Math.random() * pool.length)] : null))
+      .then((p) => active && setPool(p))
       .catch((e) => active && setScenarioErr(e instanceof Error ? e.message : String(e)));
     return () => {
       active = false;

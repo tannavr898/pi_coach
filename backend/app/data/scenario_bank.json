@@ -1,0 +1,1445 @@
+{
+ "version": 1,
+ "scenarios": [
+  {
+   "id": "bank:apparel-accessories-marketing:01",
+   "event": "apparel-accessories-marketing",
+   "level": "district",
+   "judge_role": "store owner of THREADWORKS",
+   "pi_ids": [
+    "PR:023",
+    "PR:342",
+    "PR:358",
+    "PR:359",
+    "PR:114"
+   ],
+   "area": "Promotion",
+   "situation": "You are to assume the role of merchandising manager for THREADWORKS, an independent boutique that sells women's and men's clothing and accessories. The store owner (judge) has asked you to recommend a plan to refresh the store's window and floor displays before the fall season.\n\nTHREADWORKS has been in a downtown shopping district for nine years. Foot traffic past the store has remained steady, but fewer people are walking in. The owner believes the windows look the same as they did two years ago, and the best-selling jackets are hung in the back of the store where few customers browse. A competitor two doors down recently redesigned its windows and has seen a visible increase in shoppers.\n\nThe store's three full-time employees and two part-time workers have never received training on how to build displays. The owner's last attempt, a pile of sweaters on a table by the door, was rearranged by customers within an hour. Weekend sales account for about 55 percent of weekly revenue, and the owner knows that most shoppers decide within a few seconds whether to walk in. The store's lighting is also dim in the front third of the sales floor, and two display fixtures are damaged.\n\nThe store owner (judge) has a budget of $3,500 for the project and wants to complete it within three weeks. The recommendation should include:\n- A concept for the fall window display and how it will attract passersby\n- A plan for rearranging the sales floor so key products are easy to find\n- How staff should greet and assist customers who enter because of the new displays\n- A simple way to promote the new look and measure whether it works\n\nYou will present your recommendation to the store owner (judge) in a role-play to take place in the store's office. The store owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the store owner's (judge's) questions, the store owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would you decide which products belong in the front of the store?",
+    "What would you do if the new displays attract more visitors but do not increase sales?",
+    "How often should the displays change?"
+   ],
+   "hook": "A boutique's neighbor redesigned its windows and the crowds followed.",
+   "words": 349
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:02",
+   "event": "apparel-accessories-marketing",
+   "level": "district",
+   "judge_role": "owner of SOLEMATES SHOES",
+   "pi_ids": [
+    "SE:828",
+    "SE:489",
+    "SE:107",
+    "SE:110",
+    "SE:111"
+   ],
+   "area": "Selling",
+   "situation": "You are to assume the role of sales manager for SOLEMATES SHOES, a family-owned shoe store with two locations. The owner (judge) has asked you to recommend how the store can bring more first-time customers back for a second purchase.\n\nSOLEMATES SHOES collects names and email addresses at checkout, and about 6,000 customers are in its database. A review of the records shows that only 22 percent of customers have bought more than once. Reviews describe the staff as friendly, but customers say they are rarely contacted after a purchase and do not know about sales or new arrivals. The store has no loyalty program and does not use the database for marketing.\n\nCustomers describe the staff as pleasant but say they only hear from the store when they walk in. Returning customers spend an average of $96 per visit, compared with $61 for first-time visitors, which tells the owner that repeat business is valuable. The store runs two sales a year, and a small sign at the register invites customers to join a mailing list that has never been used. The owner is not sure whether customers want texts, email or something else.\n\nThe owner (judge) wants a plan that can start within one month and costs less than $4,000. The recommendation should include:\n- How the store will use customer information to follow up after a purchase\n- A loyalty approach that rewards repeat buyers without cutting profit too deeply\n- How staff should ask for and use customer feedback\n- How technology can support personal selling in the stores\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Which customers should the store contact first, and why?",
+    "How would you prevent customers from feeling that the store is sending too many messages?",
+    "What would you measure after three months?"
+   ],
+   "hook": "A shoe store has 6,000 customers on file and only 22 percent ever came back.",
+   "words": 323
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:03",
+   "event": "apparel-accessories-marketing",
+   "level": "district",
+   "judge_role": "buyer for URBAN STITCH",
+   "pi_ids": [
+    "PM:254",
+    "PM:064",
+    "PM:063",
+    "PM:224",
+    "PM:263"
+   ],
+   "area": "Product/Service Management",
+   "situation": "You are to assume the role of assistant buyer for URBAN STITCH, a clothing and accessories store with a young adult customer base. The owner (judge) has asked you to recommend how to plan the purchase of winter merchandise after last year's winter season ended with a large amount of unsold stock.\n\nLast winter, URBAN STITCH bought 1,200 heavy coats and sold only 700 at full price. The remaining coats were marked down by 50 percent, which cut the profit on the category nearly in half. Scarves, hats and gloves sold out in six weeks, and customers asked for them after the stock was gone. The owner has $60,000 to spend on winter merchandise this year.\n\nLast winter's heavy coats were bought in only three sizes, and most unsold coats were in the smallest and largest sizes. The buyer who handled that season left the company, and the only records are a notebook and a spreadsheet with many blank cells. URBAN STITCH's best-selling category is denim, and its vendors require orders eight weeks before delivery, so the owner cannot change quantities late in the season. Rent and payroll are paid monthly, so unsold stock ties up cash the store needs.\n\nThe owner (judge) wants to avoid both overstocking and running out of items. The recommendation should include:\n- How you will decide how much of each product category to buy\n- A plan for tracking inventory during the season and acting on slow sellers\n- How you would set prices and plan markdowns\n- How you would work with vendors to reduce risk\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What information from last year would you use to plan this year's purchases?",
+    "When should a markdown happen, and how large should it be?",
+    "How could a vendor help reduce the risk of overbuying?"
+   ],
+   "hook": "A clothing store sold out of scarves in six weeks and discounted half its coats by 50 percent.",
+   "words": 324
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:04",
+   "event": "apparel-accessories-marketing",
+   "level": "district",
+   "judge_role": "social media manager of LUXE LOOP ACCESSORIES",
+   "pi_ids": [
+    "PR:003",
+    "PR:100",
+    "PR:247",
+    "PM:021",
+    "IM:469"
+   ],
+   "area": "Promotion",
+   "situation": "You are to assume the role of marketing coordinator for LUXE LOOP ACCESSORIES, an online retailer of handbags, jewelry and scarves. The social media manager (judge) has asked you to recommend how to use social media to launch a new line of affordable jewelry.\n\nLUXE LOOP ACCESSORIES has 18,000 followers, but only about 2 percent engage with posts. The new jewelry line will be priced between $15 and $40 and is aimed at college students and young professionals. The company has $5,000 to spend on promotion for the launch and has never worked with an influencer before.\n\nLUXE LOOP ACCESSORIES ships from a small warehouse and offers free returns within 30 days. Its handbags are well known among customers in their thirties, but the company has had little success with younger shoppers. The jewelry line was designed by two recent design school graduates who also manage the company's photography. A competitor recently ran a giveaway with a well-known college creator and added 4,000 followers in a week, and the owner has asked whether LUXE LOOP should do the same.\n\nThe social media manager (judge) wants a plan that reaches the right audience and stays within budget. The recommendation should include:\n- How the brand should be presented in the launch posts\n- Which social media platforms to focus on and why\n- Whether to work with influencers and how to choose them\n- How the budget will be divided and how the results will be measured\n\nYou will present your recommendation to the social media manager (judge) in a role-play to take place in the company's office. The social media manager (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the social media manager's (judge's) questions, the social media manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would make an influencer a good fit for the brand?",
+    "How would you decide whether to spend more on a platform that is working?",
+    "What could go wrong if an influencer posts something that does not match the brand?"
+   ],
+   "hook": "An accessories brand has 18,000 followers, a $5,000 launch budget and almost no engagement.",
+   "words": 315
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:05",
+   "event": "apparel-accessories-marketing",
+   "level": "state",
+   "judge_role": "marketing manager of NORTHSTAR DENIM",
+   "pi_ids": [
+    "MP:008",
+    "MP:006",
+    "PM:042",
+    "IM:298",
+    "PM:207"
+   ],
+   "area": "Market Planning",
+   "situation": "You are to assume the role of marketing manager for NORTHSTAR DENIM, a regional jeans company sold in 40 department stores and through its own website. The vice president of marketing (judge) has asked you to recommend how to reach a new segment of customers who want sustainable clothing, without losing the company's current buyers.\n\nNORTHSTAR DENIM's current customers are mostly adults aged 30 to 50 who value fit and durability. Sales have been flat for two years, while two newer brands that use recycled cotton and publish their factory conditions have grown 25 percent. Customer interviews show that younger shoppers think NORTHSTAR is \"my parents' brand.\" Producing a line using recycled materials would raise the cost per pair by about $9 and require retail prices of $98 to $120.\n\nThe company's two newer competitors both donate a share of profit to environmental groups, and one prints the country and factory of each garment on its tags. NORTHSTAR DENIM manufactures in the United States and Mexico and has a reputation for jeans that last ten years or more, but it has never promoted this publicly. About 60 percent of its sales come through department stores, which expect the company to keep prices stable and to support new lines with advertising.\n\nThe vice president (judge) wants to decide within a month whether to launch the new line. The recommendation should include:\n- How the new segment should be described and why it is attractive\n- How the new line should be positioned against the two growing competitors\n- How the new line can be marketed without alienating current customers\n- Which risks the company should consider before launching\n\nYou will present your recommendation to the vice president of marketing (judge) in a role-play to take place in the vice president's office. The vice president of marketing (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the vice president's (judge's) questions, the vice president of marketing (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would you test interest in the new line before committing to a full launch?",
+    "What message would you avoid using because it might hurt the current brand?",
+    "How should the company price the new line compared with its existing jeans?"
+   ],
+   "hook": "A denim brand is called \"my parents' brand\" while two eco-minded rivals grow 25 percent.",
+   "words": 349
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:06",
+   "event": "apparel-accessories-marketing",
+   "level": "state",
+   "judge_role": "owner of BELLE & BEAU BRIDAL ACCESSORIES",
+   "pi_ids": [
+    "SE:875",
+    "PM:041",
+    "PM:003",
+    "PI:002",
+    "SE:359"
+   ],
+   "area": "Selling",
+   "situation": "You are to assume the role of sales manager for BELLE & BEAU BRIDAL ACCESSORIES, a store that sells veils, jewelry, hair pieces and wedding party gifts. The owner (judge) has asked you to recommend how to increase the average sale, which has been stagnant at $140, without discouraging brides who are watching their budgets.\n\nMost brides visit the store once, about six months before their wedding, and many leave after buying only one item. A review of sales shows that bridesmaid gifts and groomsmen items are almost never purchased with the bride's items, though the store carries them. Competing online stores offer a bundle discount, and customers have asked why the store does not.\n\nThe store occupies 1,600 square feet in a shopping center and employs four people, including two part-time college students. Brides usually come in with their mothers or a close friend, and staff say that the mother often decides the budget while the bride makes the style choice. Wedding season runs from April through October, and the store's slow months are January and February, when sales fall by nearly two-thirds. The owner has also noticed that many brides ask for matching items for the groom's party that the store does not stock.\n\nThe owner (judge) wants a plan that raises the average sale by at least 15 percent in four months. The recommendation should include:\n- How the product mix should be organized to suggest complete purchases\n- How staff should use suggestive selling and cross-selling without being pushy\n- A pricing approach that includes bundles and protects profit\n- How buying behavior of brides and their families should influence the plan\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the store's back office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Who else besides the bride influences what is purchased, and how should staff involve them?",
+    "How would you set a bundle price so that the store does not lose money?",
+    "When is a suggestion to add another item likely to feel pushy?"
+   ],
+   "hook": "A bridal accessories store's average sale is stuck at $140 and bridesmaid gifts rarely sell.",
+   "words": 338
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:07",
+   "event": "apparel-accessories-marketing",
+   "level": "state",
+   "judge_role": "owner of THE VINTAGE RACK",
+   "pi_ids": [
+    "OP:416",
+    "OP:414",
+    "OP:412",
+    "NF:041",
+    "NF:104"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of operations manager for THE VINTAGE RACK, a secondhand clothing store that buys items from the public and resells them in-store and on a growing website. The owner (judge) has asked you to recommend a system for managing inventory now that online sales have grown from 10 to 40 percent of revenue.\n\nTHE VINTAGE RACK carries about 3,500 one-of-a-kind items, which means each item can only be sold once. Staff track online items on a spreadsheet and in-store items by tags, and in the past month 31 items were sold twice, one online and one in the store. Customers who were told an item was gone have left negative reviews. Staff also report spending about 12 hours a week photographing and listing items.\n\nStaff photograph each item with a phone and list it themselves, which means listing quality varies, and several customers have complained that the condition of items looked better online than in person. THE VINTAGE RACK pays sellers either cash or store credit, and about half of sellers choose credit, which brings them back to shop. The owner has considered adding a second employee dedicated to online orders and pays $2,400 a month in rent for the store.\n\nThe owner (judge) wants to fix the problem within two months and has up to $8,000 to spend. The recommendation should include:\n- How to track one-of-a-kind items accurately across the store and the website\n- What technology to adopt and how staff will be trained to use it\n- How to handle customers when an item is sold twice\n- How the purchasing process should change as online sales grow\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the store's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should staff say to a customer whose purchased item is no longer available?",
+    "How would you decide which items are worth the time to photograph and list online?",
+    "What would you do first if the new system is more expensive than $8,000?"
+   ],
+   "hook": "A vintage clothing store sold 31 one-of-a-kind items twice in a single month.",
+   "words": 338
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:08",
+   "event": "apparel-accessories-marketing",
+   "level": "icdc",
+   "judge_role": "chief merchandising officer of ATLAS ATHLETIC",
+   "pi_ids": [
+    "MP:006",
+    "IM:010",
+    "IM:298",
+    "PM:042",
+    "PR:003"
+   ],
+   "area": "Marketing-Information Management",
+   "situation": "You are to assume the role of senior marketing manager for ATLAS ATHLETIC, a national company that sells running shoes and athletic apparel through 85 stores and online. The chief merchandising officer (judge) has asked you to recommend a marketing plan for a new line of women's trail running shoes.\n\nWomen account for 38 percent of ATLAS ATHLETIC's footwear sales, but fewer than 10 percent of its trail shoe sales. Research shows that women who run trails often find that men's shoes fit poorly and that stores carry few options. Three competitors have recently launched women's-specific trail lines, and one has sponsored popular female athletes and a trail running series. The product launch budget is $2.4 million for the first year.\n\nATLAS ATHLETIC's trail line currently uses the same sizing patterns across men's and women's shoes, and customer reviews on its website say that women's sizes run wide in the heel. The company's stores in mountain regions report the highest trail sales, while stores in large cities report very few. The company has relationships with 14 running clubs, only two of which focus on trail running or have a majority of women as members. The board will meet in a month to approve or reject next year's budgets.\n\nThe chief merchandising officer (judge) wants a plan that the board can approve next month. The recommendation should include:\n- How the target market should be described and what additional research is needed\n- How the new line should be positioned within the ATLAS ATHLETIC brand\n- A promotional plan that divides the budget across in-store, online and event activities\n- How success will be measured in the first 12 months\n\nYou will present your recommendation to the chief merchandising officer (judge) in a role-play to take place in the executive conference room. The chief merchandising officer (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the chief merchandising officer's (judge's) questions, the chief merchandising officer (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What research would you do before spending the full launch budget?",
+    "How could the company avoid being seen as simply making a smaller version of a men's shoe?",
+    "What results after six months would make you change the plan?"
+   ],
+   "hook": "A running brand sells women 38 percent of its shoes but fewer than 10 percent of its trail shoes.",
+   "words": 349
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:09",
+   "event": "apparel-accessories-marketing",
+   "level": "icdc",
+   "judge_role": "director of e-commerce for CEDAR & CO. MENSWEAR",
+   "pi_ids": [
+    "IM:184",
+    "NF:041",
+    "PI:002",
+    "SE:107",
+    "PM:039"
+   ],
+   "area": "Marketing-Information Management",
+   "situation": "You are to assume the role of e-commerce manager for CEDAR & CO. MENSWEAR, a retailer of suits, dress shirts and accessories with 12 stores and an online shop. The director of e-commerce (judge) has asked you to recommend how to reduce the high rate of returns that is cutting into online profit.\n\nAbout 34 percent of online orders are returned, compared with 12 percent in stores. Most returns are for sizing and fit. Each return costs the company about $11 in shipping and handling, and returned dress shirts often cannot be sold at full price. The company offers free shipping and free returns, and a competitor has just announced a size-matching tool. Online sales are $14 million a year.\n\nCustomer service reports show that the three most common reasons for return are that the shirt was too tight in the neck, that the jacket sleeves were too long and that the color looked different from the photograph. The online store uses one size chart for all products, though the company sells three different fits. The warehouse team says that returned items sit for about nine days before being restocked, during which time they are not available for sale, and the company has no way to see which customers return the most.\n\nThe director (judge) wants a plan that cuts the return rate to below 25 percent without reducing sales. The recommendation should include:\n- How the company can use customer feedback and data to find the causes of returns\n- Technology that can help customers choose the right size\n- Whether to change the return and shipping policy and how that would affect pricing\n- How the changes will be communicated to customers\n\nYou will present your recommendation to the director of e-commerce (judge) in a role-play to take place in the director's office. The director of e-commerce (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the director's (judge's) questions, the director of e-commerce (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What risks come with charging customers for returns?",
+    "How would you use the store locations to help reduce online returns?",
+    "What information would you collect from customers who return an item?"
+   ],
+   "hook": "Over a third of one retailer's online orders come back, and each costs $11 to process.",
+   "words": 351
+  },
+  {
+   "id": "bank:apparel-accessories-marketing:10",
+   "event": "apparel-accessories-marketing",
+   "level": "icdc",
+   "judge_role": "owner of KINDRED KNITS",
+   "pi_ids": [
+    "PM:040",
+    "PR:099",
+    "PD:137",
+    "PM:206",
+    "CM:006"
+   ],
+   "area": "Product/Service Management",
+   "situation": "You are to assume the role of brand manager for KINDRED KNITS, a company that sells sweaters, scarves and blankets and promotes itself as \"ethically made.\" The owner (judge) has asked you to recommend how to respond after a news story reported poor working conditions at one of the company's overseas suppliers.\n\nThe supplier makes about 30 percent of KINDRED KNITS products. The story included photographs of crowded rooms and workers who said they were required to work overtime without pay. The company's own audit last year rated the supplier \"acceptable,\" and the owner did not review the full report. Social media posts about the story have been shared 9,000 times, and two retail partners have asked for a response within a week.\n\nKINDRED KNITS was founded eight years ago by two siblings who describe the company's values on every label and package. About 70 percent of its customers say in surveys that ethical sourcing is an important reason they buy. The company's largest retail partner has said it will review its agreement if the issue is not handled openly. A nonprofit that monitors workplace conditions has offered to inspect the factory, but the inspection would cost $12,000 and could reveal more problems.\n\nThe owner (judge) wants to protect both the workers and the brand. The recommendation should include:\n- What the company should say publicly in the next 48 hours\n- How the company should work with the supplier and whether to keep it\n- How the company will make sure its marketing claims about ethical production are accurate\n- A plan to rebuild customer trust over the next six months\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you do if the supplier denies the allegations?",
+    "Should the company change its \"ethically made\" claim for now? Why or why not?",
+    "How would you measure whether customer trust is returning?"
+   ],
+   "hook": "A sweater brand that markets itself as \"ethically made\" faces a news story about its supplier.",
+   "words": 333
+  },
+  {
+   "id": "bank:automotive-services-marketing:01",
+   "event": "automotive-services-marketing",
+   "level": "district",
+   "judge_role": "owner of QUICKLANE AUTO CARE",
+   "pi_ids": [
+    "SE:076",
+    "SE:048",
+    "SE:932",
+    "CR:004",
+    "CR:005"
+   ],
+   "area": "Selling",
+   "situation": "You are to assume the role of service advisor for QUICKLANE AUTO CARE, an independent repair shop with six bays that handles oil changes, brakes, tires and general repairs. The owner (judge) has asked you to recommend how the shop's service advisors should talk with customers at the front counter.\n\nQUICKLANE AUTO CARE has been open for 11 years and relies on repeat business. Online reviews describe the mechanics as skilled, but many customers say that the front counter feels rushed, that they were not told what repairs would cost before work began and that no one followed up after their visit. Last quarter, 18 customers who had come in for an oil change left without agreeing to recommended brake work, and three later complained that the shop never explained why the repair mattered.\n\nThe shop's advisors are paid a small bonus for each additional repair they sell, and the owner worries that this has caused some advisors to push customers instead of listening. The shop completes about 60 vehicles a week, and a typical repair ticket is $310.\n\nThe owner (judge) wants a plan that improves customer satisfaction without lowering the shop's income. The recommendation should include:\n- How advisors should greet customers and uncover what each customer needs and can afford\n- How to explain a recommended repair so customers understand the reason and the cost\n- How the shop should follow up after the repair is complete\n- How to change the bonus plan so that service comes first\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the shop's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should an advisor say to a customer who declines a recommended repair?",
+    "How would you describe the difference between a needed repair and a repair that could wait?",
+    "What would you measure to find out whether customers are more satisfied?"
+   ],
+   "hook": "A repair shop's mechanics are praised, yet customers leave the front counter feeling rushed.",
+   "words": 313
+  },
+  {
+   "id": "bank:automotive-services-marketing:02",
+   "event": "automotive-services-marketing",
+   "level": "district",
+   "judge_role": "service manager of HARBORVIEW TIRE & WARRANTY",
+   "pi_ids": [
+    "PM:020",
+    "PM:019",
+    "PM:017",
+    "PM:040",
+    "SE:106"
+   ],
+   "area": "Product/Service Management",
+   "situation": "You are to assume the role of assistant service manager for HARBORVIEW TIRE & WARRANTY, a tire and brake center with three locations. The service manager (judge) has asked you to explain how the company should handle warranties and guarantees on its products and to recommend how staff should describe them to customers.\n\nHARBORVIEW TIRE & WARRANTY sells four grades of tires, ranging from a $89 economy tire to a $240 premium tire. The premium tires include a 60,000-mile treadwear guarantee, while the economy tires carry only a 12-month defect warranty. Last month, a customer returned with tires that had worn out at 30,000 miles and said a salesperson had promised the tires would last \"for years.\" The company could not find the promise in writing, and the customer filed a complaint with a consumer protection agency.\n\nStaff are also unsure how to explain the difference between a warranty from the manufacturer and a guarantee from the shop. About 14 percent of customers request some kind of warranty claim in the first year, and each claim that is handled poorly can cost the company a customer who spends about $700 a year.\n\nThe service manager (judge) wants clear and honest practices that comply with the law. The recommendation should include:\n- How staff should explain the grades of tires and what each warranty or guarantee covers\n- What should be put in writing and given to customers at the time of sale\n- What customers' rights are under consumer protection rules, and how the company should respond to a complaint\n- How to train staff so that they never promise more than the company can deliver\n\nYou will present your recommendation to the service manager (judge) in a role-play to take place in the manager's office. The service manager (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the service manager's (judge's) questions, the service manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How should the company handle the customer whose tires wore out at 30,000 miles?",
+    "Why is it risky for a salesperson to describe how long a product will last?",
+    "What should staff do if a manufacturer's warranty and the shop's guarantee conflict?"
+   ],
+   "hook": "A customer says a salesperson promised tires would last for years, and nothing was in writing.",
+   "words": 341
+  },
+  {
+   "id": "bank:automotive-services-marketing:03",
+   "event": "automotive-services-marketing",
+   "level": "district",
+   "judge_role": "marketing manager of ROADSTAR DETAILING",
+   "pi_ids": [
+    "PR:001",
+    "PR:002",
+    "PR:003",
+    "PR:007",
+    "PR:247"
+   ],
+   "area": "Promotion",
+   "situation": "You are to assume the role of marketing coordinator for ROADSTAR DETAILING, a car wash and detailing business with two locations in a suburban area. The marketing manager (judge) has asked you to recommend how to promote a new monthly membership plan that offers unlimited washes for $29.\n\nROADSTAR DETAILING has about 2,200 regular customers and serves roughly 400 cars on a typical weekend. Most customers pay $12 to $18 for a single wash, and the company believes that a membership would raise the number of visits and give more predictable income. The membership program launches in six weeks, and the company's goal is to sign up 500 members within three months.\n\nThe company has never done much advertising. It has a small sign at the entrance, a website with limited information and a page on social media with 900 followers. A rival car wash across town advertises heavily on local radio and with coupons in the mail, and its prices are lower. The promotion budget is $4,500.\n\nThe marketing manager (judge) wants a plan that fits within the budget and reaches current and new customers. The recommendation should include:\n- A description of the role promotion plays in launching the membership and which types of promotion to use\n- How to combine at least three elements of the promotional mix\n- Which advertising media to use and why\n- How to encourage word of mouth among existing customers\n\nYou will present your recommendation to the marketing manager (judge) in a role-play to take place in the company's office. The marketing manager (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the marketing manager's (judge's) questions, the marketing manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would you promote the membership to customers who already visit often?",
+    "Which of your promotions would you cut first if the budget were reduced?",
+    "How could the company find out which promotion brought in the most new members?"
+   ],
+   "hook": "A car wash wants 500 members in three months with $4,500 and a rival that advertises on the radio.",
+   "words": 304
+  },
+  {
+   "id": "bank:automotive-services-marketing:04",
+   "event": "automotive-services-marketing",
+   "level": "district",
+   "judge_role": "owner of TOPGEAR PARTS & ACCESSORIES",
+   "pi_ids": [
+    "PI:001",
+    "PI:002",
+    "PI:015",
+    "PI:017",
+    "PI:016"
+   ],
+   "area": "Pricing",
+   "situation": "You are to assume the role of store manager for TOPGEAR PARTS & ACCESSORIES, a retail store that sells car batteries, wiper blades, floor mats and other automotive items to drivers and small repair shops. The owner (judge) has asked you to recommend how the store should set prices after a competitor began advertising lower prices on batteries.\n\nTOPGEAR PARTS & ACCESSORIES sells a standard car battery for $149, which includes a 3-year free replacement warranty. The nearest competitor, an online seller, lists a similar battery for $119 but charges $15 for shipping and offers a 1-year warranty. Battery sales have dropped 22 percent in two months, though sales of wiper blades and floor mats have held steady. The store pays about $96 for each battery and has high fixed costs, including rent and a staff of seven.\n\nThe owner is considering a price cut to $125 on batteries, which would reduce profit on each sale from $53 to $29. The store also sets its prices by hand, and a recent audit found that 40 items were priced differently on the shelf than at the register, which could lead to complaints.\n\nThe owner (judge) wants a pricing approach that is competitive, legal and fair. The recommendation should include:\n- The factors that should influence the price of the battery\n- Whether to match the competitor and how to defend the value of the store's warranty\n- How the store should handle pricing mistakes and make sure advertised prices are honest\n- How technology can help the store keep prices accurate\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would you explain to a customer why your battery costs more than the online price?",
+    "What legal problems could come from advertising a battery price that is not available at the register?",
+    "Under what conditions would you agree to lower the price?"
+   ],
+   "hook": "A parts store's battery sales fell 22 percent after an online rival undercut it by $30.",
+   "words": 321
+  },
+  {
+   "id": "bank:automotive-services-marketing:05",
+   "event": "automotive-services-marketing",
+   "level": "state",
+   "judge_role": "director of marketing at ROADWISE FLEET SERVICES",
+   "pi_ids": [
+    "IM:010",
+    "IM:282",
+    "IM:281",
+    "IM:289",
+    "IM:293"
+   ],
+   "area": "Marketing-Information Management",
+   "situation": "You are to assume the role of marketing research analyst for ROADWISE FLEET SERVICES, a company that maintains vehicles for small businesses such as delivery companies, plumbers and landscapers. The director of marketing (judge) has asked you to design a research study to find out why customers leave the company after their first year.\n\nROADWISE FLEET SERVICES has 640 customers and loses about 30 percent of them within 12 months. Exit interviews have been informal, and the sales team believes customers leave because of price. However, several former customers have mentioned that repair times were longer than promised, and one said that the company's invoices were confusing. The company has customer records that include contract size, type of vehicle and repair history, but no survey has ever been conducted.\n\nThe company has $10,000 to spend on research and wants results within six weeks, before the next budget cycle. About 70 percent of customers are small businesses with fewer than five vehicles, and the owners are often busy and difficult to reach.\n\nThe director of marketing (judge) wants research that leads to clear action. The recommendation should include:\n- A statement of the research problem and how the research will answer it\n- The options the company has for obtaining information, including data it already has\n- How data should be collected from busy business owners, including how the questionnaire should be designed\n- How to avoid mistakes that could make the results misleading\n\nYou will present your recommendation to the director of marketing (judge) in a role-play to take place in the director's office. The director of marketing (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the director's (judge's) questions, the director of marketing (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you do with the company's existing records before collecting any new data?",
+    "How would you avoid asking leading questions in the survey?",
+    "What would you tell the sales team if the research shows price is not the main reason customers leave?"
+   ],
+   "hook": "A fleet repair company loses 30 percent of its customers a year and blames price without proof.",
+   "words": 310
+  },
+  {
+   "id": "bank:automotive-services-marketing:06",
+   "event": "automotive-services-marketing",
+   "level": "state",
+   "judge_role": "owner of PIT STOP QUICK LUBE",
+   "pi_ids": [
+    "SE:828",
+    "CR:016",
+    "CR:030",
+    "CR:018",
+    "CR:017"
+   ],
+   "area": "Customer Relations",
+   "situation": "You are to assume the role of customer relations manager for PIT STOP QUICK LUBE, a chain of five oil change and maintenance shops. The owner (judge) has asked you to recommend how to build lasting relationships with customers and turn first-time visitors into repeat customers.\n\nPIT STOP QUICK LUBE serves about 1,100 vehicles a week across its five shops. A review of customer records shows that only 38 percent of customers come back within a year, though the company's own advice is that most vehicles need service every six months. The shops collect each customer's name, phone number and vehicle details but do not use them for marketing. Customers have said that the shops are fast but impersonal, and that they often forget when their next service is due.\n\nThe company has a small budget of $7,000 for a program that could begin in two months. One shop manager has suggested a punch-card program, while another has said that text reminders would work better. The owner is also worried about contacting customers too often or sharing their information improperly.\n\nThe owner (judge) wants a program that increases repeat visits in a way that respects customers. The recommendation should include:\n- How the company will build a clientele and what factors build loyalty in this business\n- What a customer relationship management system should track and how it should be used\n- How and when to follow up with customers after each visit\n- How the company will use technology while protecting customer privacy and trust\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Which is more effective for this business: a punch card, a text reminder or something else, and why?",
+    "How often should the company contact a customer before it becomes annoying?",
+    "What information should the company never collect or share?"
+   ],
+   "hook": "Only 38 percent of one chain's oil change customers return within a year.",
+   "words": 317
+  },
+  {
+   "id": "bank:automotive-services-marketing:07",
+   "event": "automotive-services-marketing",
+   "level": "state",
+   "judge_role": "marketing director of AUTOLINK DIGITAL MOTORS",
+   "pi_ids": [
+    "PR:100",
+    "PR:089",
+    "PR:247",
+    "NF:094",
+    "IM:374"
+   ],
+   "area": "Promotion",
+   "situation": "You are to assume the role of digital marketing manager for AUTOLINK DIGITAL MOTORS, a used-car dealership group with four lots and an online showroom. The marketing director (judge) has asked you to recommend how to use digital marketing to bring more qualified buyers to the dealerships.\n\nAUTOLINK DIGITAL MOTORS sells about 260 vehicles a month and spends $38,000 a month on marketing, of which 60 percent goes to listing sites and print. The company's website receives 24,000 visits a month, but only 1.2 percent of visitors request a test drive. Analytics show that most visitors leave after viewing a single vehicle page, and that mobile users, who make up 68 percent of traffic, leave even faster. Competitors have begun using short videos and local social media ads.\n\nThe marketing director must decide within a month how to rebalance the budget. The company's website was built five years ago and is slow to load, and none of the four lots keeps its inventory photographs consistent.\n\nThe marketing director (judge) wants a digital plan that improves results without raising the total budget. The recommendation should include:\n- How technology has changed the way customers shop for vehicles and how that affects promotion\n- Which online advertising and email tactics to prioritize\n- How to use social media for digital marketing and how to get found through search\n- How the company will track results and decide where to shift spending\n\nYou will present your recommendation to the marketing director (judge) in a role-play to take place in the director's office. The marketing director (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the marketing director's (judge's) questions, the marketing director (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you fix on the website first to improve mobile visitors' experience?",
+    "How would you decide which part of the print and listing budget to move?",
+    "What measures would show whether the digital changes are working?"
+   ],
+   "hook": "A dealership's website gets 24,000 visits a month and only 1.2 percent ask for a test drive.",
+   "words": 304
+  },
+  {
+   "id": "bank:automotive-services-marketing:08",
+   "event": "automotive-services-marketing",
+   "level": "icdc",
+   "judge_role": "chief marketing officer of MERIDIAN AUTO GROUP",
+   "pi_ids": [
+    "MP:006",
+    "MP:007",
+    "MP:008",
+    "MP:013",
+    "PR:073"
+   ],
+   "area": "Market Planning",
+   "situation": "You are to assume the role of marketing planning manager for MERIDIAN AUTO GROUP, a regional chain of 12 dealerships and service centers selling new and used vehicles. The chief marketing officer (judge) has asked you to develop the marketing plan for the group's service centers for the coming year.\n\nThe service centers earn 46 percent of the group's profit but have received only 15 percent of the marketing budget. Service revenue has been flat for three years, even though the number of vehicles sold has risen. Independent shops and quick-lube chains have taken customers with lower prices, and many customers do not realize that they can get the same service from the dealership at competitive rates. The company's board wants service revenue to grow by 9 percent next year, and the proposed budget for service marketing is $850,000.\n\nThe group's customer data shows that 55 percent of people who buy a vehicle never return for service. Vehicle sales are expected to fall by about 6 percent next year because of higher interest rates.\n\nThe chief marketing officer (judge) wants a plan the board can approve. The recommendation should include:\n- A situation analysis of the service business, including strengths, weaknesses, competitors and trends\n- How the plan connects to a forecast of the service business and the 9 percent goal\n- A promotional plan that divides the budget across activities and a timeline\n- How the company will measure results and adjust the plan during the year\n\nYou will present your recommendation to the chief marketing officer (judge) in a role-play to take place in the executive conference room. The chief marketing officer (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the chief marketing officer's (judge's) questions, the chief marketing officer (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would your forecast change if vehicle sales fall more than expected?",
+    "Which part of the plan would you protect first if the budget were cut by 20 percent?",
+    "Why do so many vehicle buyers never return for service, and how would you address it?"
+   ],
+   "hook": "A dealership group's service centers make 46 percent of its profit and get 15 percent of its marketing.",
+   "words": 318
+  },
+  {
+   "id": "bank:automotive-services-marketing:09",
+   "event": "automotive-services-marketing",
+   "level": "icdc",
+   "judge_role": "vice president of EXPRESSWAY PARTS DISTRIBUTION",
+   "pi_ids": [
+    "CM:005",
+    "CM:006",
+    "CM:007",
+    "CM:008",
+    "CM:021"
+   ],
+   "area": "Channel Management",
+   "situation": "You are to assume the role of channel manager for EXPRESSWAY PARTS DISTRIBUTION, a company that supplies replacement auto parts to 1,800 independent repair shops and to a growing online store. The vice president (judge) has asked you to recommend how to manage relationships with the company's distribution partners after a conflict over online sales.\n\nEXPRESSWAY PARTS DISTRIBUTION launched an online store two years ago that sells directly to drivers at prices lower than those charged by the repair shops. Several large repair shops have complained that this undercuts their business, and four have threatened to switch to a competing supplier. Together those four shops account for $5.2 million in annual sales. At the same time, the online store has grown by 40 percent and has brought in customers who were not previously served.\n\nThe company has also been approached by a national retailer that wants to carry EXPRESSWAY's most popular parts under its own name, which would create a new partnership but could further upset the repair shops.\n\nThe vice president (judge) wants to keep the company's channel partners while continuing to grow. The recommendation should include:\n- How to coordinate the online store and the repair shop channel with other marketing activities\n- How the company should describe its relationship with channel members and affinity partners, and what it owes each\n- What legal and ethical considerations affect pricing and exclusivity in the channel\n- Whether to accept the retailer's offer and how to communicate the decision\n\nYou will present your recommendation to the vice president (judge) in a role-play to take place in the executive office. The vice president (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the vice president's (judge's) questions, the vice president (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How could the company keep the repair shops loyal without limiting the online store?",
+    "What are the risks of letting the national retailer sell under its own name?",
+    "What would you tell the four shops that are thinking of leaving?"
+   ],
+   "hook": "Four repair shops worth $5.2 million threaten to leave over a parts distributor's online store.",
+   "words": 314
+  },
+  {
+   "id": "bank:automotive-services-marketing:10",
+   "event": "automotive-services-marketing",
+   "level": "icdc",
+   "judge_role": "director of customer insights at VELOCITY MOTORS",
+   "pi_ids": [
+    "IM:472",
+    "IM:473",
+    "NF:205",
+    "OP:429",
+    "IM:025"
+   ],
+   "area": "Marketing-Information Management",
+   "situation": "You are to assume the role of senior marketing analyst for VELOCITY MOTORS, a car manufacturer's regional sales office that supports 40 dealerships. The director of customer insights (judge) has asked you to recommend how to use customer data to personalize marketing while protecting customer privacy.\n\nVELOCITY MOTORS has data from 310,000 customers, including purchase history, service visits, website activity and responses to past campaigns. Its current campaigns send the same message to everyone, and only 0.8 percent of customers respond. A pilot at three dealerships that used purchase and service history to recommend upgrades or trade-ins doubled the response rate to 1.7 percent. However, a customer recently complained that a message mentioned a repair that she thought was private, and a data security audit found that customer records are stored in six different systems.\n\nThe company has a budget of $620,000 for the next phase. State regulations on the use of customer data are changing, and the company plans to begin using real-time offers on its website.\n\nThe director of customer insights (judge) wants a plan that improves results and protects customers. The recommendation should include:\n- How customer data should be used to recommend personalized, relevant campaigns\n- How the company could customize website and in-store interactions in real time\n- How analytics tools will be used to track behavior and results\n- How marketing data should be secured, stored and protected from misuse\n\nYou will present your recommendation to the director of customer insights (judge) in a role-play to take place in the director's office. The director of customer insights (judge) will begin the role-play by greeting you and asking to hear your ideas. After you have presented your recommendation and have answered the director's (judge's) questions, the director of customer insights (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What personalization would you avoid because customers may find it intrusive?",
+    "How would you handle the data stored in six different systems?",
+    "How would you measure whether personalization is worth its cost?"
+   ],
+   "hook": "Personalized messages doubled one carmaker's response rate and then upset a customer.",
+   "words": 306
+  },
+  {
+   "id": "bank:principles-business-management:01",
+   "event": "principles-business-management",
+   "level": "district",
+   "judge_role": "human resources manager of BIG CITY TRANSIT",
+   "pi_ids": [
+    "HR:410",
+    "HR:360",
+    "PD:252",
+    "PD:021"
+   ],
+   "area": "Professional Development",
+   "situation": "You are to assume the role of an employee in the human resources department at LAKESHORE TRANSIT, a city bus system with 240 drivers and 40 office staff. The human resources manager (judge) wants you to explain how the department helps new drivers get started and what rights they have.\n\nLAKESHORE TRANSIT hired 35 new drivers this spring. Several of them said they did not know whom to report problems to, and two did not know that they were entitled to rest breaks. One new driver went straight to the general manager with a schedule complaint instead of speaking with a supervisor first.\n\nThe human resources manager (judge) asks you to explain what human resources management does, what an orientation for new drivers should include, why the chain of command matters and which rights workers have.\n\nYou will explain your ideas to the human resources manager (judge) in a role-play to take place at the transit office. The human resources manager (judge) will begin the role-play by greeting you and asking about the new drivers. After you have explained your ideas and have answered the human resources manager's (judge's) questions, the human resources manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Who should a new driver speak with first about a schedule problem?",
+    "Why is it important for workers to know their rights from the first day?"
+   ],
+   "hook": "Thirty-five new bus drivers started this spring and many did not know who to ask for help.",
+   "words": 205
+  },
+  {
+   "id": "bank:principles-business-management:02",
+   "event": "principles-business-management",
+   "level": "district",
+   "judge_role": "owner of ACE ELECTRIC",
+   "pi_ids": [
+    "BL:003",
+    "BL:163",
+    "SM:001",
+    "PD:250"
+   ],
+   "area": "Business Law",
+   "situation": "You are to assume the role of an assistant at ACE ELECTRIC, an electrical contracting company with eight employees. The owner (judge) wants you to explain the different ways a business can be owned and why following laws and company rules matters as the company grows.\n\nThe company began as a one-person business and is owned entirely by the owner. The owner is thinking about adding a partner who would invest $60,000 and help manage the crews. Last month, an inspector found that a job had been started without a required permit. The owner says that permits take too long and slow down projects.\n\nThe owner (judge) asks you to explain the main types of business ownership, why management and following company policies are important and why the company should comply with the intent of regulations and not only their wording.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the company's office. The owner (judge) will begin the role-play by greeting you and asking about adding a partner. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What is one advantage and one disadvantage of taking on a partner?",
+    "What could happen to the company if it keeps skipping permits?"
+   ],
+   "hook": "An electrician weighs taking a partner after an inspector finds a job started without a permit.",
+   "words": 202
+  },
+  {
+   "id": "bank:principles-business-management:03",
+   "event": "principles-business-management",
+   "level": "district",
+   "judge_role": "store manager of TECH TOWN",
+   "pi_ids": [
+    "OP:228",
+    "PD:009",
+    "EI:077",
+    "PD:018"
+   ],
+   "area": "Professional Development",
+   "situation": "You are to assume the role of a sales associate at TECH TOWN, an electronics store with 25 employees. The store manager (judge) wants you to explain how employees can manage their time better during the busy holiday season.\n\nTECH TOWN employees have been asked to stock shelves, help customers, process online orders and attend training sessions. Last year, shelves were not restocked on time, two online orders shipped late and several employees reported feeling overwhelmed. The store manager has noticed that employees who plan their tasks each day miss fewer deadlines.\n\nThe store manager (judge) asks you to explain how employees should organize and prioritize their tasks, why being systematic helps and how personal goals can help employees meet commitments.\n\nYou will explain your ideas to the store manager (judge) in a role-play to take place in the manager's office. The store manager (judge) will begin the role-play by greeting you and asking about the holiday season. After you have explained your ideas and have answered the store manager's (judge's) questions, the store manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How should an employee decide which task to do first?",
+    "What should an employee do if they cannot meet a deadline?"
+   ],
+   "hook": "An electronics store's holiday rush left shelves empty and two online orders late.",
+   "words": 186
+  },
+  {
+   "id": "bank:principles-business-management:04",
+   "event": "principles-business-management",
+   "level": "district",
+   "judge_role": "owner of LITTLE LEAF DAYCARE",
+   "pi_ids": [
+    "EI:103",
+    "EI:029",
+    "OP:441",
+    "OP:152"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of a teacher's assistant at LITTLE LEAF DAYCARE, a center that cares for 70 children. The owner (judge) wants you to explain why information about children and families must be kept private.\n\nLITTLE LEAF DAYCARE keeps records of each child's allergies, medical conditions, pickup contacts and family situations. Last week, a staff member mentioned a family's financial trouble to a parent from another family while chatting at pickup. Another staff member left a clipboard with children's contact information on a counter near the front door.\n\nThe owner (judge) asks you to explain what confidentiality and privacy mean at the center, which procedures protect information and why employees must follow them.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place in the center's office. The owner (judge) will begin the role-play by greeting you and asking about the incidents. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should staff do with printed records when they are not in use?",
+    "How should an employee respond when a parent asks about another family?"
+   ],
+   "hook": "A daycare worker's chat at pickup exposed one family's private troubles to another.",
+   "words": 176
+  },
+  {
+   "id": "bank:principles-business-management:05",
+   "event": "principles-business-management",
+   "level": "state",
+   "judge_role": "plant manager of RIDGELINE FOODS",
+   "pi_ids": [
+    "OP:004",
+    "OP:005",
+    "OP:008",
+    "OP:010"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of a safety coordinator at RIDGELINE FOODS, a packaged-food plant with 180 employees on two shifts. The plant manager (judge) wants you to explain the plant's safety responsibilities after a state inspector's visit.\n\nThe inspector cited the plant for blocked exits near the packing line and a missing emergency eyewash station. An employee also told you that a coworker has been bypassing a machine guard to work faster, and no one has reported it. Last year, the plant recorded 9 injuries, and the plant manager wants that number cut in half.\n\nThe plant manager (judge) asks you to explain which health and safety regulations apply, how employees should report noncompliance and how the plant should prepare for emergencies.\n\nYou will present your ideas to the plant manager (judge) in a role-play to take place in the plant office. The plant manager (judge) will begin the role-play by greeting you and asking about the inspection. After you have presented your ideas and have answered the plant manager's (judge's) questions, the plant manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should you do about the employee bypassing the machine guard?",
+    "How should the plant make sure that employees feel safe reporting problems?"
+   ],
+   "hook": "A food plant with nine injuries last year fails an inspection for blocked exits.",
+   "words": 188
+  },
+  {
+   "id": "bank:principles-business-management:06",
+   "event": "principles-business-management",
+   "level": "state",
+   "judge_role": "manager of HILLTOP FITNESS",
+   "pi_ids": [
+    "EI:009",
+    "EI:041",
+    "EI:045",
+    "CO:083"
+   ],
+   "area": "Emotional Intelligence",
+   "situation": "You are to assume the role of a lead trainer at HILLTOP FITNESS, a gym with 14 trainers. The manager (judge) wants you to explain how to lead and coach a team that has lost its energy since the gym's busiest instructor left.\n\nSince the departure, group class attendance has fallen 20 percent. Trainers are working in separate groups, and a few have said that leaders at the gym do not listen. Two new trainers say they do not feel ready to lead classes, and one gave unclear directions that left a class confused about a piece of equipment.\n\nThe manager (judge) asks you to explain what leadership means in this setting, how you would coach the new trainers and how trainers can work well as a team and give clear directions to members.\n\nYou will present your ideas to the manager (judge) in a role-play to take place in the gym's office. The manager (judge) will begin the role-play by greeting you and asking about the team. After you have presented your ideas and have answered the manager's (judge's) questions, the manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would a coaching conversation with a new trainer include?",
+    "How can a leader show that they are listening to the team?"
+   ],
+   "hook": "A gym lost its star instructor and 20 percent of its class attendance with her.",
+   "words": 194
+  },
+  {
+   "id": "bank:principles-business-management:07",
+   "event": "principles-business-management",
+   "level": "state",
+   "judge_role": "owner of PAPER TRAIL BOOKS",
+   "pi_ids": [
+    "EC:001",
+    "EC:004",
+    "EC:003",
+    "EC:070"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of an operations assistant at PAPER TRAIL BOOKS, an independent bookstore that also sells coffee and hosts community events. The owner (judge) has been asked to explain at a chamber of commerce meeting what value a business creates for its customers.\n\nThe store sells new and used books, offers a reading space with seating and holds weekly events for children and adults. A customer survey showed that many shoppers value the store's location, its recommendations and its late weekend hours, even though most books cost $2 to $4 more than online. The store uses about 1,800 square feet of rented space and employs eight people.\n\nThe owner (judge) asks you to explain what economics is, what resources the store uses and what types of economic utility the store provides.\n\nYou will present your ideas to the owner (judge) in a role-play to take place at the bookstore. The owner (judge) will begin the role-play by greeting you and asking about the meeting. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How does being open late on weekends create value for customers?",
+    "What resources would the store lose if it moved online only?"
+   ],
+   "hook": "A bookstore charges $2 to $4 more than online and customers keep coming anyway.",
+   "words": 194
+  },
+  {
+   "id": "bank:principles-business-management:08",
+   "event": "principles-business-management",
+   "level": "icdc",
+   "judge_role": "chief operating officer of SUMMIT CONTRACTORS",
+   "pi_ids": [
+    "OP:519",
+    "OP:520",
+    "OP:521",
+    "OP:230"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of a project coordinator at SUMMIT CONTRACTORS, a construction company with 90 employees. The chief operating officer (judge) wants you to explain how to manage a 14-week renovation of a library that has fallen two weeks behind schedule.\n\nThe project has a $1.8 million budget and involves the electrical, plumbing and painting teams. A delay in delivery of windows has pushed back the painting crew, and the electrical team has reported that two required inspections are not yet scheduled. The library has told the company that it must reopen by the date in the contract, or the company will pay a penalty of $2,500 a day.\n\nThe chief operating officer (judge) asks you to explain how the project should have been planned, how you would monitor and correct the delays and how you would decide whether the project was a success.\n\nYou will present your recommendation to the chief operating officer (judge) in a role-play to take place at the company's headquarters. The chief operating officer (judge) will begin the role-play by greeting you and asking about the project. After you have presented your recommendation and have answered the chief operating officer's (judge's) questions, the chief operating officer (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you change first to get the project back on schedule?",
+    "Besides finishing on time, how would you measure whether the project succeeded?"
+   ],
+   "hook": "A $1.8 million library renovation is two weeks late with $2,500 a day in penalties looming.",
+   "words": 215
+  },
+  {
+   "id": "bank:principles-business-management:09",
+   "event": "principles-business-management",
+   "level": "icdc",
+   "judge_role": "owner of CORNER BAKE SHOP",
+   "pi_ids": [
+    "PD:017",
+    "PD:077",
+    "EI:134",
+    "EI:005"
+   ],
+   "area": "Professional Development",
+   "situation": "You are to assume the role of an assistant manager at CORNER BAKE SHOP, a bakery that has used the same menu and the same morning schedule for 15 years. The owner (judge) wants your help leading a change after a drop in sales.\n\nSales have declined 14 percent in two years, and customers say the shop is out of popular items by 10:00 a.m. Most baking happens between 3:00 and 7:00 a.m., and the owner is reluctant to alter either the menu or the schedule. Three longtime bakers have said they do not want to change how things have always been done. A younger employee has suggested adding an afternoon bake and an online preorder system.\n\nThe owner (judge) asks you to explain how to make a good decision here, how to solve the problem and how to lead the change while keeping the team on board.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the bakery's office. The owner (judge) will begin the role-play by greeting you and asking about the sales. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would you respond to the bakers who do not want to change?",
+    "What would you test first before making the whole change?"
+   ],
+   "hook": "A bakery that has run the same way for 15 years lost 14 percent of its sales.",
+   "words": 208
+  },
+  {
+   "id": "bank:principles-business-management:10",
+   "event": "principles-business-management",
+   "level": "icdc",
+   "judge_role": "director of GRANITE STATE CREDIT SERVICES",
+   "pi_ids": [
+    "NF:079",
+    "NF:278",
+    "NF:148",
+    "NF:003"
+   ],
+   "area": "Information Management",
+   "situation": "You are to assume the role of a business analyst at GRANITE STATE CREDIT SERVICES, a company that processes payments for 300 local merchants. The director (judge) wants your advice on how to use the company's data to decide where to expand.\n\nThe company has five years of transaction data that show higher growth in two counties. A consulting firm's report, paid for by a software vendor, recommends a costly new analytics system. A trade association survey of 40 merchants says most want faster payment processing, but the survey was sent only to the association's members. The director must present a plan to the board in a month.\n\nThe director (judge) asks you to explain how to judge the quality and sources of the information available, what data mining could show and how technology might change the way the company works.\n\nYou will present your recommendation to the director (judge) in a role-play to take place at the company's office. The director (judge) will begin the role-play by greeting you and asking about the data. After you have presented your recommendation and have answered the director's (judge's) questions, the director (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Why might the consulting firm's report be less reliable than the transaction data?",
+    "What conclusion would you avoid drawing from the merchant survey?"
+   ],
+   "hook": "A payments company has five years of data, a vendor-funded report and a survey of 40 merchants.",
+   "words": 201
+  },
+  {
+   "id": "bank:principles-entrepreneurship:01",
+   "event": "principles-entrepreneurship",
+   "level": "district",
+   "judge_role": "owner of GREEN THUMB GARDEN SHOP",
+   "pi_ids": [
+    "EC:065",
+    "EC:071",
+    "EC:009",
+    "EC:010"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a part-time employee at GREEN THUMB GARDEN SHOP, a small business that sells plants, soil and gardening tools. The owner (judge) wants you to explain what makes a small business important to the local economy.\n\nGREEN THUMB GARDEN SHOP is owned by one person and employs six people, mostly students. The owner buys many plants from nearby growers and pays about $18,000 a year in local taxes. A home improvement chain recently began selling plants and tools at lower prices, and the owner is worried about whether the shop can stay profitable.\n\nThe owner (judge) asks you to explain the types of activities a business carries out, how a small business like this helps the local economy and what affects the shop's profit.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the shop. The owner (judge) will begin the role-play by greeting you and asking about the shop's role in town. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What does the shop provide to the community besides products?",
+    "What is one way the shop could protect its profit against the chain?"
+   ],
+   "hook": "A garden shop that pays $18,000 in local taxes is undercut by a home improvement chain.",
+   "words": 192
+  },
+  {
+   "id": "bank:principles-entrepreneurship:02",
+   "event": "principles-entrepreneurship",
+   "level": "district",
+   "judge_role": "founder of SPARK TUTORING",
+   "pi_ids": [
+    "PD:066",
+    "EI:002",
+    "EI:023",
+    "EI:075"
+   ],
+   "area": "Emotional Intelligence",
+   "situation": "You are to assume the role of a high school junior who helps at SPARK TUTORING, a small business that matches students with tutors. The founder (judge) wants you to explain what it takes to be an entrepreneur after a classmate asked about starting a business.\n\nSPARK TUTORING began two years ago with the founder as the only tutor and now has 11 tutors and 90 regular students. The founder works about 55 hours a week and has said that the business has been rewarding and stressful. Your classmate wants to open a similar business but has never managed money or people.\n\nThe founder (judge) asks you to explain what career opportunities exist in entrepreneurship, what strengths and weaknesses a new entrepreneur should assess and why confidence and responsibility are important.\n\nYou will explain your ideas to the founder (judge) in a role-play to take place in the company's office. The founder (judge) will begin the role-play by greeting you and asking about your classmate. After you have explained your ideas and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What is one weakness your classmate could work on before starting a business?",
+    "Why does an owner need to take responsibility for mistakes?"
+   ],
+   "hook": "A tutoring founder works 55 hours a week while a classmate asks how to start a business.",
+   "words": 191
+  },
+  {
+   "id": "bank:principles-entrepreneurship:03",
+   "event": "principles-entrepreneurship",
+   "level": "district",
+   "judge_role": "owner of ROLLING PINS FOOD TRUCK",
+   "pi_ids": [
+    "EC:005",
+    "EC:006",
+    "EC:011",
+    "EC:012"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a cashier at ROLLING PINS FOOD TRUCK, a truck that sells pastries and sandwiches near an office park and a college. The owner (judge) wants you to explain how to set prices and manage risk as a new competitor arrives.\n\nROLLING PINS sells a pastry for $4. The price of butter has risen 25 percent, and another truck, which sells a similar pastry for $3.50, has begun parking nearby on the days the college is in session. On rainy days, sales drop by about half. The owner has a $9,000 loan on the truck and cannot afford a losing month.\n\nThe owner (judge) asks you to explain how supply and demand and competition affect the price of a pastry and what risks the truck faces.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the truck. The owner (judge) will begin the role-play by greeting you and asking about prices. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What could the truck do on rainy days to reduce its losses?",
+    "Should the truck lower its price to match the other truck? Why or why not?"
+   ],
+   "hook": "A pastry truck faces 25 percent costlier butter and a $3.50 rival, with a $9,000 loan to repay.",
+   "words": 190
+  },
+  {
+   "id": "bank:principles-entrepreneurship:04",
+   "event": "principles-entrepreneurship",
+   "level": "district",
+   "judge_role": "co-founder of PEBBLE & PINE",
+   "pi_ids": [
+    "FI:061",
+    "FI:783",
+    "FI:066",
+    "FI:069"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of an assistant at PEBBLE & PINE, a startup that sells handmade wooden toys online. The co-founder (judge) wants you to explain how an owner should handle money in the first year of a business.\n\nThe company earned $42,000 in its first year, and the two co-founders each took out $1,500 a month for personal expenses. At the end of the year, they were unsure how much was profit and how much was needed for new tools and materials. One co-founder suggested using business money to pay a personal credit card bill.\n\nThe co-founder (judge) asks you to explain how an owner earns income, how to budget between business and personal needs and why keeping financial records matters.\n\nYou will explain your ideas to the co-founder (judge) in a role-play to take place in the workshop. The co-founder (judge) will begin the role-play by greeting you and asking about the finances. After you have explained your ideas and have answered the co-founder's (judge's) questions, the co-founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Why should the business and the owners keep separate accounts?",
+    "How should the owners decide how much of the money to take out each month?"
+   ],
+   "hook": "Two toy makers earned $42,000 in a year and cannot tell how much of it was profit.",
+   "words": 183
+  },
+  {
+   "id": "bank:principles-entrepreneurship:05",
+   "event": "principles-entrepreneurship",
+   "level": "state",
+   "judge_role": "founder of FIELD & FORK MEALS",
+   "pi_ids": [
+    "EI:024",
+    "EI:134",
+    "PD:017",
+    "PD:077"
+   ],
+   "area": "Professional Development",
+   "situation": "You are to assume the role of a customer support associate at FIELD & FORK MEALS, a start-up that delivers weekly meal kits made with ingredients from local farms. The founder (judge) wants you to explain how employees can show initiative to help a young company grow.\n\nFIELD & FORK MEALS has 14 employees and 1,100 weekly subscribers. About 1 in 5 new customers cancels within a month, and the common reasons are that boxes arrive late and recipes are too complicated. The founder says that most employees wait to be told what to do, and the company's way of doing things has not changed since it began.\n\nThe founder (judge) asks you to explain what initiative looks like in a start-up, why employees should sometimes challenge how things are done and how to make decisions and solve the cancellation problem.\n\nYou will present your ideas to the founder (judge) in a role-play to take place in the company's office. The founder (judge) will begin the role-play by greeting you and asking about the cancellations. After you have presented your ideas and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What is one thing an employee could do on their own to reduce cancellations?",
+    "How should the company decide which idea from employees to try first?"
+   ],
+   "hook": "A meal-kit startup loses one in five new customers within a month.",
+   "words": 201
+  },
+  {
+   "id": "bank:principles-entrepreneurship:06",
+   "event": "principles-entrepreneurship",
+   "level": "state",
+   "judge_role": "owner of HOLLOW OAK CANDLES",
+   "pi_ids": [
+    "FI:085",
+    "EC:010",
+    "FI:579",
+    "FI:354"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a business student working part-time at HOLLOW OAK CANDLES, a company that makes and sells soy candles at markets and online. The owner (judge) wants you to explain what financial information shows about whether the business is doing well.\n\nHOLLOW OAK CANDLES sold $85,000 of candles last year, which felt like a success. The owner paid $31,000 for wax, jars and scents, $12,000 for market fees and shipping and $9,000 for equipment. The owner took home only $14,000 and does not understand why so little remained.\n\nThe owner (judge) asks you to explain what accounting tells a business owner, what factors affect profit and why financial information matters for decisions like pricing and spending.\n\nYou will present your ideas to the owner (judge) in a role-play to take place at the workshop. The owner (judge) will begin the role-play by greeting you and asking about the profit. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Which cost would you look at first to find savings?",
+    "What financial information should the owner review each month?"
+   ],
+   "hook": "A candle maker sold $85,000 in a year and took home $14,000.",
+   "words": 180
+  },
+  {
+   "id": "bank:principles-entrepreneurship:07",
+   "event": "principles-entrepreneurship",
+   "level": "state",
+   "judge_role": "owner of CLEARVIEW WINDOW WASH",
+   "pi_ids": [
+    "BL:003",
+    "EC:011",
+    "FI:081",
+    "BL:163"
+   ],
+   "area": "Business Law",
+   "situation": "You are to assume the role of an operations assistant at CLEARVIEW WINDOW WASH, a business that cleans windows for stores and office buildings. The owner (judge) wants your advice on legal protection after an employee fell from a ladder at a customer's building.\n\nCLEARVIEW WINDOW WASH is a sole proprietorship with four employees. The employee was not seriously hurt, but the building owner has said the company could be responsible for damage to a glass door. The owner does not have written safety procedures and carries only a basic insurance policy. A partner has suggested changing the business to a corporation.\n\nThe owner (judge) asks you to explain how the type of ownership affects the owner's risk, what insurance does and why the company should follow safety laws.\n\nYou will present your ideas to the owner (judge) in a role-play to take place at the company's office. The owner (judge) will begin the role-play by greeting you and asking about the accident. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What risk does the owner face personally as a sole proprietor?",
+    "What written procedure would you create first?"
+   ],
+   "hook": "A window washer's employee fell from a ladder and the owner's personal assets could be at stake.",
+   "words": 189
+  },
+  {
+   "id": "bank:principles-entrepreneurship:08",
+   "event": "principles-entrepreneurship",
+   "level": "icdc",
+   "judge_role": "founder of ECHO LEARNING",
+   "pi_ids": [
+    "PD:126",
+    "EC:004",
+    "EC:065",
+    "EC:011"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a product assistant at ECHO LEARNING, a start-up that makes a language-learning app used by 25,000 people. The founder (judge) wants your advice on whether to build a new feature that uses voice recognition to give pronunciation feedback.\n\nThe feature would cost about $120,000 to develop and take six months. Surveys show that 60 percent of users want help with speaking, but the app's main competitor has just announced a similar feature. The start-up has about eight months of cash left and a small team of nine.\n\nThe founder (judge) asks you to explain why innovation skills matter, what value the new feature would create for users and the economy, and what risks the company takes by building it.\n\nYou will present your recommendation to the founder (judge) in a role-play to take place in the company's office. The founder (judge) will begin the role-play by greeting you and asking about the feature. After you have presented your recommendation and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What is the biggest risk in spending $120,000 on this feature?",
+    "How could the company test the idea at a lower cost first?"
+   ],
+   "hook": "A language app weighs a $120,000 feature while its competitor announces the same idea.",
+   "words": 186
+  },
+  {
+   "id": "bank:principles-entrepreneurship:09",
+   "event": "principles-entrepreneurship",
+   "level": "icdc",
+   "judge_role": "founder of HONEYCOMB HOME CLEANING",
+   "pi_ids": [
+    "EI:007",
+    "EI:006",
+    "EI:060",
+    "EI:133"
+   ],
+   "area": "Emotional Intelligence",
+   "situation": "You are to assume the role of a team leader at HONEYCOMB HOME CLEANING, a cleaning company with 22 employees that has doubled in size in a year. The founder (judge) wants your help keeping the team motivated as the company grows and changes.\n\nThe founder has added a new scheduling system, a second crew and a premium service. Employees say that they are confused about what the company is trying to become, and two crews are competing for the best routes. Turnover has risen to 30 percent, and customers have noticed that crew members seem less cheerful.\n\nThe founder (judge) asks you to explain how to communicate the company's vision, how to inspire the team, how to enlist employees to share that vision and how the company can adapt to its rapid growth.\n\nYou will present your recommendation to the founder (judge) in a role-play to take place at the company's office. The founder (judge) will begin the role-play by greeting you and asking about the team. After you have presented your recommendation and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you say in a team meeting to explain where the company is headed?",
+    "How could the founder settle the competition between the two crews?"
+   ],
+   "hook": "A cleaning company doubled in a year and now 30 percent of its crew leaves annually.",
+   "words": 194
+  },
+  {
+   "id": "bank:principles-entrepreneurship:10",
+   "event": "principles-entrepreneurship",
+   "level": "icdc",
+   "judge_role": "owner of ARTISAN CRATE CO.",
+   "pi_ids": [
+    "EC:071",
+    "OP:443",
+    "OP:015",
+    "EC:013"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of an operations intern at ARTISAN CRATE CO., a company that sells gift boxes of locally made foods and crafts. The owner (judge) wants you to explain how the company's activities fit together as holiday orders triple.\n\nARTISAN CRATE CO. buys products from 26 local makers, packs the boxes by hand in a rented warehouse and ships them to customers across the country. Last year, a maker ran out of a best-selling jam two weeks before the holiday, and 180 boxes shipped incomplete. This year the owner expects 6,000 boxes, up from 2,000.\n\nThe owner (judge) asks you to explain the main types of business activities, how purchasing and production work together and how the supply chain can be managed to avoid shortages.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place at the warehouse. The owner (judge) will begin the role-play by greeting you and asking about the holiday orders. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What could the company do if one maker cannot deliver on time?",
+    "How should the company decide how many of each product to order?"
+   ],
+   "hook": "A gift-box company expects to triple its holiday orders after a jam shortage shorted 180 boxes last year.",
+   "words": 189
+  },
+  {
+   "id": "bank:principles-finance:01",
+   "event": "principles-finance",
+   "level": "district",
+   "judge_role": "branch manager of LAKEVIEW CREDIT UNION",
+   "pi_ids": [
+    "FI:060",
+    "FI:058",
+    "FI:270",
+    "FI:075"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a member service representative at LAKEVIEW CREDIT UNION, a not-for-profit financial institution serving a small city. The branch manager (judge) wants you to explain money and payment choices to a group of high school students who will visit the branch next week.\n\nLAKEVIEW CREDIT UNION offers checking and savings accounts, debit cards and small loans. Most of the visiting students have part-time jobs and are paid by direct deposit or by check, but many carry cash and have never used a savings account. The branch has 30 minutes with the group.\n\nThe branch manager (judge) wants to know what you will say about what money does, the different ways people pay for things, and why saving matters. You should also explain how a credit union differs from other places to keep money.\n\nYou will explain your ideas to the branch manager (judge) in a role-play to take place in the branch office. The branch manager (judge) will begin the role-play by greeting you and asking about the student visit. After you have explained your ideas and have answered the branch manager's (judge's) questions, the branch manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Why might a student choose a debit card over cash?",
+    "What is one reason a student should open a savings account now?"
+   ],
+   "hook": "A credit union has 30 minutes to teach a room of teenagers how money works.",
+   "words": 204
+  },
+  {
+   "id": "bank:principles-finance:02",
+   "event": "principles-finance",
+   "level": "district",
+   "judge_role": "owner of SUNNY SIDE LAWN CARE",
+   "pi_ids": [
+    "FI:061",
+    "FI:068",
+    "FI:067",
+    "FI:066"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of an office assistant at SUNNY SIDE LAWN CARE, a landscaping company that hires about 15 seasonal workers each spring. The owner (judge) wants you to explain pay and deductions to a new group of employees, most of whom are receiving their first paycheck.\n\nSeveral new workers were surprised that their first paycheck was about 15 percent smaller than the hourly rate multiplied by their hours. Two workers believed the company had made a mistake. The pay stub lists gross pay, federal and state taxes, Social Security and Medicare, and a small deduction for uniforms.\n\nThe owner (judge) asks you to explain how workers are paid, how to read a pay stub, why taxes are taken out, and how a new worker could plan a budget around take-home pay.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the company's office. The owner (judge) will begin the role-play by greeting you and asking about the paychecks. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What is the difference between gross pay and net pay?",
+    "How would you advise a worker to budget if their hours change each week?"
+   ],
+   "hook": "Seasonal lawn workers open their first paychecks and find 15 percent missing.",
+   "words": 195
+  },
+  {
+   "id": "bank:principles-finance:03",
+   "event": "principles-finance",
+   "level": "district",
+   "judge_role": "owner of METRO MOTORS",
+   "pi_ids": [
+    "FI:002",
+    "FI:782",
+    "FI:071",
+    "FI:568"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a finance assistant at METRO MOTORS, a used-car dealership. The owner (judge) wants you to explain to a young first-time buyer how credit works before the buyer signs a loan.\n\nThe buyer, a 20-year-old with a steady job, wants a $12,000 car and plans to borrow the entire amount at 9 percent interest for five years. The monthly payment would be about $249, and the buyer would pay about $2,900 in interest. The buyer has one credit card with a $900 balance and has never taken out a loan.\n\nThe owner (judge) asks you to explain why credit matters, how to find the real cost of the loan, and how the buyer can use credit wisely and avoid taking on more debt than is manageable.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the dealership. The owner (judge) will begin the role-play by greeting you and asking about the loan. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What could the buyer do to lower the total interest paid?",
+    "What might happen if the buyer misses a payment?"
+   ],
+   "hook": "A 20-year-old wants a $12,000 car loan and has never borrowed before.",
+   "words": 191
+  },
+  {
+   "id": "bank:principles-finance:04",
+   "event": "principles-finance",
+   "level": "district",
+   "judge_role": "founder of PIXEL PLAYGROUND",
+   "pi_ids": [
+    "FI:579",
+    "FI:085",
+    "FI:069",
+    "FI:354"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of an operations assistant at PIXEL PLAYGROUND, a small company that sells educational video games to schools. The founder (judge) wants to know why the company should keep careful financial records now that sales are growing.\n\nPIXEL PLAYGROUND has kept its records in a folder of receipts and a checkbook. Sales rose from $60,000 to $140,000 in one year. When the founder applied for a small business loan, the bank asked for financial statements, and it took three weeks to put the numbers together. At tax time, the company could not find receipts for about $6,000 in expenses.\n\nThe founder (judge) asks you to explain what accounting does, why a business needs financial information and what records the company should keep.\n\nYou will explain your ideas to the founder (judge) in a role-play to take place at the company's office. The founder (judge) will begin the role-play by greeting you and asking about the records. After you have explained your ideas and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Who else besides the founder needs to see the company's financial information?",
+    "How often should the company update its records?"
+   ],
+   "hook": "A game company's sales more than doubled, but its receipts are still in a folder.",
+   "words": 187
+  },
+  {
+   "id": "bank:principles-finance:05",
+   "event": "principles-finance",
+   "level": "state",
+   "judge_role": "financial advisor of HARBOR WEALTH PARTNERS",
+   "pi_ids": [
+    "FI:065",
+    "FI:062",
+    "FI:077",
+    "FI:081"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a client associate at HARBOR WEALTH PARTNERS, a small financial planning firm. The financial advisor (judge) wants you to explain the basics of planning to a 24-year-old client who has just received a $10,000 bonus.\n\nThe client has no debt other than a small student loan, saves very little and has never invested. A friend has urged the client to put the entire bonus into a single popular stock. The client also does not have renter's insurance or health coverage beyond what the employer provides.\n\nThe financial advisor (judge) asks you to explain how to set goals for the bonus, why starting early matters, the main types of investments and the role insurance plays in protecting the client's plans.\n\nYou will present your ideas to the financial advisor (judge) in a role-play to take place at the firm's office. The financial advisor (judge) will begin the role-play by greeting you and asking about the client. After you have presented your ideas and have answered the financial advisor's (judge's) questions, the financial advisor (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Why is putting all of the bonus into one stock risky?",
+    "What is one goal the client should set for the next year, and why?"
+   ],
+   "hook": "A 24-year-old with a $10,000 bonus is urged to put it all into one stock.",
+   "words": 190
+  },
+  {
+   "id": "bank:principles-finance:06",
+   "event": "principles-finance",
+   "level": "state",
+   "judge_role": "owner of BLOOM & BASKET",
+   "pi_ids": [
+    "FI:067",
+    "FI:074",
+    "FI:069",
+    "FI:063"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a bookkeeper at BLOOM & BASKET, a florist with two employees and about $210,000 in yearly sales. The owner (judge) wants to know what to expect at tax time and what records to keep to avoid problems.\n\nThe owner has paid employees in cash for some weekend work, mixed business and personal charges on one credit card, and has not saved any money for taxes. The company received a letter from a state agency about unpaid sales tax from the previous year. The owner is worried about penalties.\n\nThe owner (judge) asks you to explain what taxes a small business and its owner may owe, which records must be kept and what legal responsibilities come with business and consumer financial products such as credit cards.\n\nYou will present your ideas to the owner (judge) in a role-play to take place in the shop's back office. The owner (judge) will begin the role-play by greeting you and asking about the tax letter. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should the owner do first about the letter?",
+    "Why should business and personal spending be kept separate?"
+   ],
+   "hook": "A florist gets a tax letter after mixing business and personal charges for a year.",
+   "words": 194
+  },
+  {
+   "id": "bank:principles-finance:07",
+   "event": "principles-finance",
+   "level": "state",
+   "judge_role": "owner of CAMPUS CORNER CAFÉ",
+   "pi_ids": [
+    "FI:270",
+    "FI:569",
+    "FI:831",
+    "FI:783"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a part-time cashier at CAMPUS CORNER CAFÉ, a coffee shop near a university. The owner (judge) wants you to give advice to a student employee who is deciding between working more hours and taking out a larger loan.\n\nThe employee earns $14 an hour working 12 hours a week and has $9,000 in savings. Tuition is $11,500 a year and the employee has been offered a $6,000 student loan. The owner also offers a retirement account match to employees who contribute at least 3 percent of pay, but the employee believes it is too early to think about retirement.\n\nThe owner (judge) asks you to explain the options for paying for college, why saving and investing matter even for someone this young and how the employee can make a responsible decision.\n\nYou will present your ideas to the owner (judge) in a role-play to take place at the café. The owner (judge) will begin the role-play by greeting you and asking about the employee's choices. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What are the advantages of working more hours instead of borrowing more?",
+    "Why might the retirement match be worth using?"
+   ],
+   "hook": "A student barista weighs a $6,000 loan against more shifts and a retirement match.",
+   "words": 198
+  },
+  {
+   "id": "bank:principles-finance:08",
+   "event": "principles-finance",
+   "level": "icdc",
+   "judge_role": "chief financial officer of NORTHBRIDGE FREIGHT",
+   "pi_ids": [
+    "FI:354",
+    "FI:579",
+    "FI:062",
+    "EC:011"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a financial analyst at NORTHBRIDGE FREIGHT, a trucking company with 60 trucks and $18 million in annual revenue. The chief financial officer (judge) wants your advice on whether to replace 10 aging trucks this year or spread the purchases over three years.\n\nNew trucks cost $160,000 each and would reduce fuel and repair costs by about $22,000 per truck each year. The company could borrow at 7 percent. Fuel prices have been unstable, two large customers have not committed to contracts beyond next year, and cash on hand covers about six weeks of expenses.\n\nThe chief financial officer (judge) asks you to explain what role finance plays in a decision like this, what financial information is needed, how the time value of money affects the choice and what risks the company faces.\n\nYou will present your recommendation to the chief financial officer (judge) in a role-play to take place at the company's headquarters. The chief financial officer (judge) will begin the role-play by greeting you and asking about the trucks. After you have presented your recommendation and have answered the chief financial officer's (judge's) questions, the chief financial officer (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How would losing one of the two large customers change your recommendation?",
+    "What information would you want before making a final decision?"
+   ],
+   "hook": "A trucking company weighs $1.6 million in new trucks while two big customers hesitate to commit.",
+   "words": 207
+  },
+  {
+   "id": "bank:principles-finance:09",
+   "event": "principles-finance",
+   "level": "icdc",
+   "judge_role": "owner of BRIGHTSIDE DENTAL",
+   "pi_ids": [
+    "FI:075",
+    "FI:076",
+    "FI:002",
+    "FI:568"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of an office manager at BRIGHTSIDE DENTAL, a practice with three dentists and 12 employees. The owner (judge) wants to expand into a second office and needs help choosing where to get $350,000 in financing.\n\nThree options are on the table: a large national bank offering a 6.8 percent rate with a lengthy approval, a local community bank offering 7.2 percent and a faster decision, and an equipment lender that would finance only the $120,000 of dental equipment at 8.5 percent. The practice currently owes $90,000 on its existing equipment and brings in about $1.4 million a year.\n\nThe owner (judge) asks you to explain the types of financial-services providers, what to consider in choosing one and how to avoid taking on more debt than the practice can handle.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking about the options. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Why might the lowest interest rate not be the best choice?",
+    "How could the practice tell whether it can afford the new debt?"
+   ],
+   "hook": "A dental practice has three lenders, three rates and $350,000 on the line.",
+   "words": 195
+  },
+  {
+   "id": "bank:principles-finance:10",
+   "event": "principles-finance",
+   "level": "icdc",
+   "judge_role": "owner of TIDEWATER TEA CO.",
+   "pi_ids": [
+    "FI:085",
+    "FI:562",
+    "FI:579",
+    "FI:073"
+   ],
+   "area": "Financial Analysis",
+   "situation": "You are to assume the role of a business advisor at the TIDEWATER SMALL BUSINESS CENTER. The owner of TIDEWATER TEA CO. (judge), a small online tea retailer, has come to you after a data scare and wants help understanding the company's finances.\n\nThe owner lost a laptop containing customer payment information and financial files. No fraud has been reported, but the owner has not checked bank or credit accounts in months. The owner also has trouble separating the company's value from personal assets, owns the business outright, and has taken out a personal loan that is backed by the company's inventory.\n\nThe owner (judge) asks you to explain what accounting tells a business, how to tell what the owner and the business are each worth and how to protect the company and customers from identity theft.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place at the small business center. The owner (judge) will begin the role-play by greeting you and asking about the lost laptop. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What steps should the owner take right away to protect customers?",
+    "Why is it useful to know the business's net worth separately from personal net worth?"
+   ],
+   "hook": "A tea retailer's lost laptop holds customer payment data and months of unchecked accounts.",
+   "words": 199
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:01",
+   "event": "principles-hospitality-tourism",
+   "level": "district",
+   "judge_role": "general manager of SEASIDE INN",
+   "pi_ids": [
+    "EC:005",
+    "EC:006",
+    "EC:010",
+    "EC:012"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a front desk agent at SEASIDE INN, a 60-room hotel near a popular beach. The general manager (judge) wants you to explain why room rates change from season to season and from weekday to weekend.\n\nSEASIDE INN charges $240 a night in July and $95 a night in February. Last month, a guest complained that the same room cost $60 more on a Saturday than on a Tuesday. A new 40-room hotel opened a mile away and lists its rooms at $15 below SEASIDE INN's rate.\n\nThe general manager (judge) wants you to explain how demand, competition and costs affect the prices a hotel sets, and how the inn can protect its profit throughout the year.\n\nYou will explain your ideas to the general manager (judge) in a role-play to take place in the manager's office. The general manager (judge) will begin the role-play by greeting you and asking about room rates. After you have explained your ideas and have answered the general manager's (judge's) questions, the general manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What could the inn do in February to fill more rooms?",
+    "How should staff explain price differences to guests who ask?"
+   ],
+   "hook": "The same beach hotel room costs $240 in July and $95 in February.",
+   "words": 187
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:02",
+   "event": "principles-hospitality-tourism",
+   "level": "district",
+   "judge_role": "owner of DOCKSIDE GRILL",
+   "pi_ids": [
+    "CR:010",
+    "CR:004",
+    "CR:007",
+    "CR:005"
+   ],
+   "area": "Customer Relations",
+   "situation": "You are to assume the role of a server at DOCKSIDE GRILL, a seafood restaurant on a busy waterfront. The owner (judge) wants you to explain how to respond to a guest whose group was told that a reservation could not be honored.\n\nThe guest's party of eight arrived at 7:00 p.m. for a birthday dinner. The reservation had been entered for the wrong date, and the restaurant had no table for 45 minutes. The restaurant's policy is to offer a free appetizer when a reservation error is the restaurant's fault, but the manager is not working tonight. The guest is frustrated and has said so loudly.\n\nThe owner (judge) asks you to explain how you would handle the complaint, how you would explain the policy and how your words and tone can support the restaurant's service.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place in the restaurant's office. The owner (judge) will begin the role-play by greeting you and asking about the guest. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you say first to the guest?",
+    "What should you do if the guest asks for more than the policy allows?"
+   ],
+   "hook": "A birthday party of eight arrives to find the restaurant booked their table on the wrong date.",
+   "words": 197
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:03",
+   "event": "principles-hospitality-tourism",
+   "level": "district",
+   "judge_role": "manager of TRAILS END RESORT",
+   "pi_ids": [
+    "CO:014",
+    "CO:092",
+    "CO:063",
+    "OP:230"
+   ],
+   "area": "Communication Skills",
+   "situation": "You are to assume the role of a housekeeping supervisor at TRAILS END RESORT, a mountain resort with 90 rooms and a restaurant. The manager (judge) wants to know how to improve communication between housekeeping, the front desk and maintenance.\n\nGuests have complained that rooms were not ready by the 3:00 p.m. check-in time, and that broken items reported at the front desk were not fixed. Housekeepers say they are not told when guests check out early, and maintenance says it often hears about problems by word of mouth days late. The resort has a short staff meeting only once a week.\n\nThe manager (judge) asks you to explain what effective staff communication looks like, which channels should be used for which kinds of messages and how the three teams can coordinate their work.\n\nYou will explain your ideas to the manager (judge) in a role-play to take place in the resort's office. The manager (judge) will begin the role-play by greeting you and asking about the guest complaints. After you have explained your ideas and have answered the manager's (judge's) questions, the manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should be discussed in a short daily staff meeting?",
+    "How should an urgent repair request be passed along?"
+   ],
+   "hook": "A mountain resort's guests wait for rooms because three teams never talk to each other.",
+   "words": 195
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:04",
+   "event": "principles-hospitality-tourism",
+   "level": "district",
+   "judge_role": "owner of ISLAND TRAVEL CO.",
+   "pi_ids": [
+    "CR:003",
+    "CR:029",
+    "CR:006",
+    "EI:033"
+   ],
+   "area": "Customer Relations",
+   "situation": "You are to assume the role of a travel consultant at ISLAND TRAVEL CO., a small agency that plans vacations and group trips. The owner (judge) wants you to explain how to serve a group of visiting international clients well.\n\nThe agency will host 14 clients from three countries who are planning a two-week trip. Some speak limited English, others have dietary and religious needs that affect meals and schedules and one is traveling with an elderly parent. In the past, the agency lost a client who said staff were rushed and did not listen.\n\nThe owner (judge) asks you to explain what positive customer relations means in a travel business, how to build rapport and answer questions and how to show cultural sensitivity.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the agency. The owner (judge) will begin the role-play by greeting you and asking about the group. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How could you learn about each client's needs before they arrive?",
+    "What should you do if you make a mistake that offends a client?"
+   ],
+   "hook": "A small travel agency prepares to host 14 clients from three countries after losing one for not listening.",
+   "words": 183
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:05",
+   "event": "principles-hospitality-tourism",
+   "level": "state",
+   "judge_role": "owner of HARVEST TABLE",
+   "pi_ids": [
+    "FI:081",
+    "OP:441",
+    "OP:008",
+    "OP:009"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of an assistant manager at HARVEST TABLE, a farm-to-table restaurant with 35 employees. The owner (judge) wants your advice on safety, insurance and privacy after a kitchen accident and a guest-data concern in the same month.\n\nA cook received a deep cut from a slicer and missed two weeks of work. The restaurant's insurance covered the medical costs, but the incident revealed that no written accident procedure existed. The same month, a server photographed a reservation book that listed guests' names and phone numbers and posted it online by mistake.\n\nThe owner (judge) asks you to explain what insurance does for a business, how a safe workplace is maintained, how accidents should be handled and why guest information must be kept private.\n\nYou will present your ideas to the owner (judge) in a role-play to take place in the restaurant's office. The owner (judge) will begin the role-play by greeting you and asking about the incidents. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should be included in a written accident procedure?",
+    "How should the restaurant respond to guests whose information was posted?"
+   ],
+   "hook": "One restaurant's kitchen accident and a leaked reservation book arrived in the same month.",
+   "words": 188
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:06",
+   "event": "principles-hospitality-tourism",
+   "level": "state",
+   "judge_role": "director of CITY CENTER HOTEL",
+   "pi_ids": [
+    "CR:001",
+    "CR:002",
+    "HR:360",
+    "CR:004"
+   ],
+   "area": "Customer Relations",
+   "situation": "You are to assume the role of a human resources coordinator at CITY CENTER HOTEL, a 220-room downtown hotel known for its friendly service. The director (judge) wants to know how to protect the hotel's image as it hires 30 new employees for the summer season.\n\nCITY CENTER HOTEL promises \"a warm welcome in a busy city.\" In the past, new hires received only a one-hour tour and a handbook. Guest comments last summer said that seasonal workers seemed unsure of hotel services and sometimes gave conflicting information. The hotel's repeat guest rate fell from 38 to 31 percent.\n\nThe director (judge) asks you to explain what the brand promise means for employees, how an orientation could prepare new hires to support it and how everyday service can reinforce the hotel's image.\n\nYou will present your ideas to the director (judge) in a role-play to take place in the director's office. The director (judge) will begin the role-play by greeting you and asking about the seasonal staff. After you have presented your ideas and have answered the director's (judge's) questions, the director (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should be covered on a new hire's first day?",
+    "How could the hotel check whether the new employees are living up to the promise?"
+   ],
+   "hook": "A hotel's repeat-guest rate fell from 38 to 31 percent as seasonal hires gave guests conflicting answers.",
+   "words": 193
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:07",
+   "event": "principles-hospitality-tourism",
+   "level": "state",
+   "judge_role": "owner of BAYSIDE BITES",
+   "pi_ids": [
+    "EC:007",
+    "EC:009",
+    "EC:065",
+    "EC:070"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a general manager at BAYSIDE BITES, a family-owned seafood restaurant that has operated in a small coastal town for 22 years. The owner (judge) has been asked to speak to a local civics class about the role a small business plays in the community.\n\nBAYSIDE BITES employs 28 people, buys most of its fish from three local boats and sponsors the high school's baseball team. A town council member recently suggested that a large restaurant chain with national supply contracts would bring more jobs and tax revenue. Some residents agree, and others want to protect the businesses that already exist.\n\nThe owner (judge) asks you to explain how a private enterprise operates in a market economy, how small businesses affect an economy and what responsibilities a business has to the community it serves.\n\nYou will present your ideas to the owner (judge) in a role-play to take place at the restaurant. The owner (judge) will begin the role-play by greeting you and asking about the civics class. After you have presented your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How do small businesses and large chains each benefit a town?",
+    "What does it mean for a business to be private rather than owned by the government?"
+   ],
+   "hook": "A 22-year-old family restaurant must explain to students what it gives a town that a chain might not.",
+   "words": 200
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:08",
+   "event": "principles-hospitality-tourism",
+   "level": "icdc",
+   "judge_role": "chief executive officer of VOYAGE CRUISE & STAY",
+   "pi_ids": [
+    "EC:011",
+    "OP:189",
+    "OP:443",
+    "PD:017"
+   ],
+   "area": "Operations",
+   "situation": "You are to assume the role of an operations analyst at VOYAGE CRUISE & STAY, a company that runs three small cruise ships and four coastal hotels. The chief executive officer (judge) wants your recommendation on how to respond to rising risks in the company's supply of food, fuel and staff.\n\nFuel costs rose 22 percent in a year. The company's seafood supplier has missed two deliveries, and a hotel in the company's most profitable location is short 14 employees going into the busy season. The company's insurance renews in 60 days, and the cost may increase by 18 percent.\n\nThe chief executive officer (judge) asks you to explain how the company's operations depend on a supply chain, what factors create business risk and which decisions you would make first.\n\nYou will present your recommendation to the chief executive officer (judge) in a role-play to take place in the executive conference room. The chief executive officer (judge) will begin the role-play by greeting you and asking about the risks. After you have presented your recommendation and have answered the chief executive officer's (judge's) questions, the chief executive officer (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Which risk would you address first, and why?",
+    "How could the company reduce its dependence on one seafood supplier?"
+   ],
+   "hook": "A cruise and hotel company faces 22 percent higher fuel costs, missed deliveries and 14 open positions.",
+   "words": 199
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:09",
+   "event": "principles-hospitality-tourism",
+   "level": "icdc",
+   "judge_role": "owner of THE COPPER KETTLE",
+   "pi_ids": [
+    "EI:007",
+    "EI:015",
+    "EI:136",
+    "EI:036"
+   ],
+   "area": "Emotional Intelligence",
+   "situation": "You are to assume the role of a shift manager at THE COPPER KETTLE, a busy breakfast café with 20 employees. The owner (judge) wants your help resolving a conflict between the kitchen staff and the servers that has begun to affect guests.\n\nServers say the kitchen is slow and sometimes sends out wrong orders, and cooks say servers write unclear tickets and make changes after orders are sent. Last Saturday, a cook and a server argued within earshot of guests, and two tables left without ordering. Two of the café's best employees have said they may quit.\n\nThe owner (judge) asks you to explain how to communicate effectively with both groups, how to resolve the conflict and how to make sure both sides are treated with dignity and respect.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the café's office. The owner (judge) will begin the role-play by greeting you and asking about the argument. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What would you say to each group when you first meet with them?",
+    "How could the café prevent the same problem from returning?"
+   ],
+   "hook": "A café lost two tables to a shouting match between cooks and servers.",
+   "words": 190
+  },
+  {
+   "id": "bank:principles-hospitality-tourism:10",
+   "event": "principles-hospitality-tourism",
+   "level": "icdc",
+   "judge_role": "director of EVERGREEN LODGE",
+   "pi_ids": [
+    "EI:131",
+    "EI:132",
+    "EI:022",
+    "EI:125"
+   ],
+   "area": "Emotional Intelligence",
+   "situation": "You are to assume the role of an assistant director at EVERGREEN LODGE, a 120-room lodge that hosts weddings and corporate retreats. The director (judge) wants your advice on a decision that involves the lodge's honesty with a customer.\n\nA couple's wedding weekend is in three weeks. The lodge discovered that its main ballroom's heating system failed inspection and that repairs may not be finished in time. Moving the wedding to the smaller ballroom would reduce capacity from 180 to 110 guests. The lodge could stay quiet and hope the repairs finish, but a cancellation would cost the lodge about $38,000 in contract revenue.\n\nThe director (judge) asks you to explain what ethical leadership looks like in this situation, how the staff should behave and how the lodge should respond to the dilemma.\n\nYou will present your recommendation to the director (judge) in a role-play to take place in the director's office. The director (judge) will begin the role-play by greeting you and asking about the ballroom. After you have presented your recommendation and have answered the director's (judge's) questions, the director (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "When should the couple be told, and what should they hear?",
+    "How should the lodge treat the couple if the repair is not finished?"
+   ],
+   "hook": "A lodge learns its wedding ballroom may fail inspection three weeks before a 180-guest event.",
+   "words": 193
+  },
+  {
+   "id": "bank:principles-marketing:01",
+   "event": "principles-marketing",
+   "level": "district",
+   "judge_role": "owner of PEDAL POINT",
+   "pi_ids": [
+    "MK:001",
+    "MK:002",
+    "EC:012",
+    "EC:010"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a sales associate at PEDAL POINT, a bicycle shop in a mid-sized college town. The owner (judge) wants to know what marketing is and why the shop should spend time and money on it.\n\nPEDAL POINT sells commuter bikes, mountain bikes and repair services. The owner has always believed that a good shop will sell itself, and has never planned any marketing. Last year a national chain opened a store 10 minutes away and began offering low prices on similar bikes. Since then, the shop's profit has dropped by 18 percent, and the owner is unsure what to change.\n\nThe owner (judge) does not understand what marketing includes beyond advertising. You must explain the main marketing functions and how they could help the shop compete and protect its profit.\n\nYou will explain your ideas to the owner (judge) in a role-play to take place at the shop. The owner (judge) will begin the role-play by greeting you and asking about marketing. After you have explained your ideas and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Which marketing function should the shop work on first?",
+    "How can the shop compete without lowering all of its prices?"
+   ],
+   "hook": "A bike shop's profit fell 18 percent after a national chain moved in.",
+   "words": 194
+  },
+  {
+   "id": "bank:principles-marketing:02",
+   "event": "principles-marketing",
+   "level": "district",
+   "judge_role": "store manager of SOLE SOCIETY",
+   "pi_ids": [
+    "CO:090",
+    "CO:088",
+    "CO:089",
+    "CO:084"
+   ],
+   "area": "Communication Skills",
+   "situation": "You are to assume the role of an assistant manager at SOLE SOCIETY, a store that sells athletic shoes and sports apparel. The store manager (judge) wants you to explain how to write an email to customers about a change to the store's return policy.\n\nSOLE SOCIETY used to accept returns for any reason within 60 days. Because of a rise in worn shoes being returned, the store will now accept returns within 30 days, and only if the shoes are unworn. The store has 4,500 customers on its email list, ranging from high school athletes to parents shopping for children to older customers who walk for exercise.\n\nThe store manager (judge) is worried that a poorly written email will upset customers. You must explain how the email should be written, formatted and checked before it is sent, and how its tone should fit the different groups reading it.\n\nYou will explain your ideas to the store manager (judge) in a role-play to take place in the manager's office. The store manager (judge) will begin the role-play by greeting you and asking about the email. After you have explained your ideas and have answered the store manager's (judge's) questions, the store manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should the subject line and first sentence of the email say?",
+    "Why is it important to proofread before sending a message to customers?"
+   ],
+   "hook": "A shoe store must tell 4,500 customers its return window just shrank by half.",
+   "words": 213
+  },
+  {
+   "id": "bank:principles-marketing:03",
+   "event": "principles-marketing",
+   "level": "district",
+   "judge_role": "founder of FROSTY SCOOP",
+   "pi_ids": [
+    "EC:005",
+    "EC:006",
+    "EC:010",
+    "EC:012"
+   ],
+   "area": "Economics",
+   "situation": "You are to assume the role of a shift lead at FROSTY SCOOP, an ice cream shop that sells cones, sundaes and pints. The founder (judge) wants you to explain why the shop's prices should change from season to season.\n\nFROSTY SCOOP charges $4.50 for a single scoop all year. In July, the line is out the door and the shop runs out of popular flavors by mid-afternoon. In January, the shop sells about one-fifth as many cones, and it still pays the same rent and for the same two full-time employees. A new frozen yogurt shop across the street charges $4.00 for a similar-size serving.\n\nThe founder (judge) wants to know how supply and demand, competition and costs affect what the shop should charge and how much profit it can make during each season.\n\nYou will explain your ideas to the founder (judge) in a role-play to take place at the shop. The founder (judge) will begin the role-play by greeting you and asking about prices. After you have explained your ideas and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What might happen to sales if the shop raises its price in July?",
+    "What could the shop do in January to bring in more customers without losing money on each sale?"
+   ],
+   "hook": "An ice cream shop sells out every July afternoon and sits nearly empty in January.",
+   "words": 193
+  },
+  {
+   "id": "bank:principles-marketing:04",
+   "event": "principles-marketing",
+   "level": "district",
+   "judge_role": "manager of CITY SOUND RECORDS",
+   "pi_ids": [
+    "CR:029",
+    "CR:006",
+    "CR:019",
+    "CR:003"
+   ],
+   "area": "Customer Relations",
+   "situation": "You are to assume the role of a sales associate at CITY SOUND RECORDS, a music store that sells vinyl records, instruments and concert tickets. The manager (judge) wants you to explain how to make every kind of customer feel welcome in the store.\n\nCITY SOUND RECORDS serves collectors, teenagers who are new to vinyl, parents shopping for gifts, and tourists, including some who speak limited English. Online reviews say the staff know music well but sometimes talk too fast or only help customers who already know what they want. Two customers recently left without buying because no one greeted them.\n\nThe manager (judge) asks you to explain what positive customer relations look like and how staff can build rapport and answer questions for customers with very different backgrounds and needs.\n\nYou will explain your ideas to the manager (judge) in a role-play to take place in the store's back office. The manager (judge) will begin the role-play by greeting you and asking about customers. After you have explained your ideas and have answered the manager's (judge's) questions, the manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How should an employee respond when a customer asks a question they cannot answer?",
+    "What is one way staff could help a customer who speaks limited English?"
+   ],
+   "hook": "A record store's staff know music inside out but customers still walk out unwelcomed.",
+   "words": 191
+  },
+  {
+   "id": "bank:principles-marketing:05",
+   "event": "principles-marketing",
+   "level": "state",
+   "judge_role": "marketing director of HARBOR HOME GOODS",
+   "pi_ids": [
+    "CR:001",
+    "CR:002",
+    "CO:147",
+    "CR:004"
+   ],
+   "area": "Customer Relations",
+   "situation": "You are to assume the role of a customer experience specialist at HARBOR HOME GOODS, a regional chain of eight stores that sells kitchenware, candles and décor. The marketing director (judge) wants to know how employees can make the chain's brand promise real for every shopper.\n\nHARBOR HOME GOODS advertises that its stores are \"a calm place to find something special.\" Customer surveys, however, describe slow checkout lines, staff who talk about each other's schedules on the sales floor, and employees who hurry customers to make a decision. Stores with the lowest survey scores also have the highest rate of employee turnover. The company is preparing to open two new stores in the spring.\n\nThe marketing director (judge) asks you to explain what a brand promise is, how employee performance supports or damages it, and how staff should speak with customers to match it.\n\nYou will present your ideas to the marketing director (judge) in a role-play to take place at the company's headquarters. The marketing director (judge) will begin the role-play by greeting you and asking about the brand promise. After you have presented your ideas and have answered the marketing director's (judge's) questions, the marketing director (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should be included in training for employees at the new stores?",
+    "How could the chain measure whether employees are delivering on the promise?"
+   ],
+   "hook": "A chain promises \"a calm place to find something special\" while its checkout lines say otherwise.",
+   "words": 209
+  },
+  {
+   "id": "bank:principles-marketing:06",
+   "event": "principles-marketing",
+   "level": "state",
+   "judge_role": "owner of KINDLE KIDS",
+   "pi_ids": [
+    "NF:077",
+    "NF:078",
+    "NF:079",
+    "NF:278"
+   ],
+   "area": "Information Management",
+   "situation": "You are to assume the role of a marketing assistant at KINDLE KIDS, a company that sells educational toys through its website and at craft fairs. The owner (judge) wants to sell to preschool teachers and needs your advice on how to gather and judge information before spending money.\n\nKINDLE KIDS earns $320,000 a year, mostly from parents who buy gifts. The owner believes preschool teachers could buy sets in larger amounts, but has no data about what they need, how they buy or what they can spend. A pilot program would cost about $15,000. The owner has found three sources: a blog post written by a toy company, a government report on preschool spending, and a survey of 12 teachers collected at a craft fair.\n\nThe owner (judge) asks you to explain what information the company needs, how to get it efficiently and how to decide which sources to trust.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place at the company's office. The owner (judge) will begin the role-play by greeting you and asking about the information. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "Which of the three sources would you trust most, and why?",
+    "What conclusion could the company safely draw from a survey of only 12 teachers?"
+   ],
+   "hook": "A toy company weighs a $15,000 pilot using a blog post, a report and a survey of 12 teachers.",
+   "words": 211
+  },
+  {
+   "id": "bank:principles-marketing:07",
+   "event": "principles-marketing",
+   "level": "state",
+   "judge_role": "social media manager of LUMEN FITNESS",
+   "pi_ids": [
+    "CO:205",
+    "CO:206",
+    "PD:251",
+    "PD:250"
+   ],
+   "area": "Professional Development",
+   "situation": "You are to assume the role of a membership coordinator at LUMEN FITNESS, a gym with three locations and 5,200 members. The social media manager (judge) wants you to explain how employees' own social media accounts can help or hurt the gym.\n\nLast month, a personal trainer posted a photo of a crowded gym floor with a joking comment about members who do not clean equipment. The post was shared widely, and several members complained. In contrast, a front desk employee's post about a member's first 5K race brought in 14 new membership inquiries. LUMEN FITNESS has no written guidance about what employees may post about work.\n\nThe social media manager (judge) asks you to explain how employees' personal posts affect the gym's goals, how business and personal use of social media differ, and what rules should be put in place.\n\nYou will present your ideas to the social media manager (judge) in a role-play to take place in the gym's office. The social media manager (judge) will begin the role-play by greeting you and asking about the posts. After you have presented your ideas and have answered the social media manager's (judge's) questions, the social media manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What should happen when an employee posts something that violates the rules?",
+    "Should the gym ask employees to post about their work? Why or why not?"
+   ],
+   "hook": "One trainer's joke post angered members while a front-desk shout-out brought in 14 inquiries.",
+   "words": 209
+  },
+  {
+   "id": "bank:principles-marketing:08",
+   "event": "principles-marketing",
+   "level": "icdc",
+   "judge_role": "owner of RIVERBEND OUTFITTERS",
+   "pi_ids": [
+    "EI:022",
+    "EI:125",
+    "EI:124",
+    "EI:075"
+   ],
+   "area": "Emotional Intelligence",
+   "situation": "You are to assume the role of a sales manager at RIVERBEND OUTFITTERS, a retailer of camping and fishing gear with six stores. The owner (judge) wants your advice on how to respond after learning that a popular tent was advertised with a claim that is not true.\n\nFor two seasons, RIVERBEND OUTFITTERS has advertised its best-selling tent as \"waterproof in any storm.\" Testing by a customer group shows that the seams leak in heavy rain. The tent earns $410,000 a year, about 9 percent of company sales, and the owner has already ordered 800 more for the spring. Two sales employees say they privately told customers to treat the claim carefully, while others have not.\n\nThe owner (judge) asks you to explain why this situation is an ethical dilemma, what pressures led to it, and what the company should do now and who should take responsibility.\n\nYou will present your recommendation to the owner (judge) in a role-play to take place in the owner's office. The owner (judge) will begin the role-play by greeting you and asking about the tent. After you have presented your recommendation and have answered the owner's (judge's) questions, the owner (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What are the risks if the company continues to run the ad?",
+    "How should the company treat customers who already bought the tent?"
+   ],
+   "hook": "A camping retailer discovers its best-selling tent is not waterproof in any storm.",
+   "words": 207
+  },
+  {
+   "id": "bank:principles-marketing:09",
+   "event": "principles-marketing",
+   "level": "icdc",
+   "judge_role": "operations manager of BRIGHT LANE PRINT CO.",
+   "pi_ids": [
+    "CO:014",
+    "CO:092",
+    "OP:230",
+    "OP:228"
+   ],
+   "area": "Communication Skills",
+   "situation": "You are to assume the role of a team lead at BRIGHT LANE PRINT CO., a company with 35 employees that prints signs, banners and marketing materials for local businesses. The operations manager (judge) wants to know how to improve communication after several large orders were late.\n\nBRIGHT LANE PRINT CO. has three groups: design, printing and delivery. Orders are passed along by sticky notes, text messages and informal talk in the hallway. Last month, a large banner order for a festival was printed in the wrong size because a change request was sent only to the designer. The company missed 7 of 40 deadlines, and two customers have said they will take future orders elsewhere.\n\nThe operations manager (judge) asks you to explain what effective staff communication is, which channels should be used for which kinds of messages, and how the three groups can coordinate and prioritize their work.\n\nYou will present your recommendation to the operations manager (judge) in a role-play to take place at the company's office. The operations manager (judge) will begin the role-play by greeting you and asking about the late orders. After you have presented your recommendation and have answered the operations manager's (judge's) questions, the operations manager (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "How should an urgent change to an order be communicated?",
+    "What would you do to help the three groups decide which orders come first?"
+   ],
+   "hook": "A print shop missed 7 of 40 deadlines because a size change reached only one person.",
+   "words": 215
+  },
+  {
+   "id": "bank:principles-marketing:10",
+   "event": "principles-marketing",
+   "level": "icdc",
+   "judge_role": "founder of TRAILHEAD TREATS",
+   "pi_ids": [
+    "EI:024",
+    "PD:017",
+    "PD:077",
+    "EC:011"
+   ],
+   "area": "Professional Development",
+   "situation": "You are to assume the role of a sales and marketing coordinator at TRAILHEAD TREATS, a company that sells packaged trail mix and granola at farmers markets and in 40 local grocery stores. The founder (judge) wants your help deciding what to do after a large grocery chain offered to carry the products in 120 of its stores.\n\nThe offer would triple TRAILHEAD TREATS' sales, but the chain wants the first order of 30,000 bags within eight weeks and pays 60 days after delivery. The company can currently make about 10,000 bags a month with its three employees and a rented kitchen. The founder estimates that meeting the order would require about $45,000 for ingredients, packaging and extra workers before any payment is received.\n\nThe founder (judge) asks you to explain how to approach the decision, what risks are involved and what steps you would take on your own to help the company solve the problem.\n\nYou will present your recommendation to the founder (judge) in a role-play to take place at the company's kitchen. The founder (judge) will begin the role-play by greeting you and asking about the offer. After you have presented your recommendation and have answered the founder's (judge's) questions, the founder (judge) will conclude the role-play by thanking you for your work.",
+   "followup_questions": [
+    "What could the company do if it cannot meet the first order in eight weeks?",
+    "How would you decide whether the potential reward is worth the risk?"
+   ],
+   "hook": "A trail mix maker is offered a 120-store deal that would triple sales and strain its kitchen.",
+   "words": 216
+  }
+ ]
+}

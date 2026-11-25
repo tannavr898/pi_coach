@@ -149,9 +149,7 @@ export function PrivacyApp() {
 
       <Section heading="Who we are">
         <p>
-          PI Coach is a practice tool for DECA-style role-plays. It writes original practice scenarios and scores them
-          against our own independent evaluation framework. We are not affiliated with DECA Inc., these are not official
-          DECA materials, and our feedback is never an official competition score.
+          PI Coach is a practice tool for DECA role-plays. We are not affiliated with DECA Inc.
         </p>
       </Section>
 
@@ -345,18 +343,6 @@ export function TermsApp() {
         <p>
           By using PI Coach you agree to these terms. If you do not agree, please do not use the service. If you are
           under 18, you should have a parent, guardian, or teacher review these terms with you.
-        </p>
-      </Section>
-
-      <Section heading="What PI Coach is, and is not">
-        <Callout>
-          PI Coach is independent practice software. It is not affiliated with, endorsed by, or sponsored by DECA Inc.,
-          it does not reproduce official DECA materials, and its scores are practice coaching, never an official
-          competition result or any indication of how a real judge will score you.
-        </Callout>
-        <p>
-          Our scenarios are original, and we grade against our own evaluation framework rather than any organization's
-          published materials.
         </p>
       </Section>
 
